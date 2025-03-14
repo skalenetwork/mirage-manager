@@ -1,0 +1,54 @@
+# cspell:words solcoverjs
+
+name: test
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x, 22.x, 23.x]
+
+    env:
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: true
+
+    - name: Set up Node
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'yarn'
+
+    - name: Install project
+      run: yarn install
+
+    - name: lint
+      run: yarn fullCheck
+
+    # - name: Test deployment
+    #   run: ./scripts/test_deploy.sh
+
+    # - name: Test upgrade
+    #   env:
+    #     NODE_VERSION: ${{ matrix.node-version }}
+    #   run: ./scripts/test_upgrade.sh
+
+    # - name: Test ABI generation
+    #   run: npx hardhat run scripts/generateAbi.ts
+
+    # - name: Run tests
+    #   env:
+    #     NODE_OPTIONS: --max-old-space-size=12288
+    #   run: npx hardhat coverage --solcoverjs .solcover.js
+
+    # - name: Upload coverage to Codecov
+    #   uses: codecov/codecov-action@v2
+    #   with:
+    #     token: ${{ secrets.CODECOV_TOKEN }}
