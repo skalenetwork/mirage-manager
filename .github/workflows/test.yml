@@ -23,14 +23,23 @@ jobs:
     - name: Set up Node
       uses: actions/setup-node@v4
       with:
-        node-version: ${{ env.NODE_VERSION }}
+        node-version: ${{ matrix.node-version }}
         cache: 'yarn'
 
     - name: Install project
       run: yarn install
 
-    - name: lint
+    - name: Spell check
+      run: yarn cspell
+
+    - name: Lint
       run: yarn fullCheck
+
+    - name: Slither
+      uses: crytic/slither-action@v0.4.0
+      with:
+        ignore-compile: true
+        node-version: ${{ matrix.node-version }}
 
     # - name: Test deployment
     #   run: ./scripts/test_deploy.sh
