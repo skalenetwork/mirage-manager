@@ -1,0 +1,11 @@
+{
+  "extends": "solhint:all",
+  "rules": {
+    "foundry-test-functions": "off",
+
+    "explicit-types": "error",
+    "imports-order": "error",
+    "gas-named-return-values": "error",
+    "no-empty-blocks": "error"
+  }
+}

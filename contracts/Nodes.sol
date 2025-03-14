@@ -23,5 +23,5 @@ pragma solidity ^0.8.24;
 
 
 contract Nodes {
-
+    uint256 public constant REMOVE = 5;
 }
