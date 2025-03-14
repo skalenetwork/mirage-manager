@@ -10,6 +10,7 @@
     ],
     "dictionaries": ["domain-terms", "libraries", "names", "skale-terms", "solidity"],
     "ignorePaths": [
+        ".yarn",
         "artifacts",
         "cache",
         "venv",

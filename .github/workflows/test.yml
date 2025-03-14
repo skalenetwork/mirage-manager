@@ -26,9 +26,6 @@ jobs:
         node-version: ${{ env.NODE_VERSION }}
         cache: 'yarn'
 
-    - name: Enable Corepack
-      run: corepack enable
-
     - name: Install project
       run: yarn install
 
