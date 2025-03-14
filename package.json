@@ -1,4 +1,10 @@
 {
   "name": "playa-manager",
-  "packageManager": "yarn@4.7.0"
+  "packageManager": "yarn@4.7.0",
+  "devDependencies": {
+    "cspell": "^8.17.5"
+  },
+  "scripts": {
+    "cspell": "yarn exec cspell ."
+  }
 }
