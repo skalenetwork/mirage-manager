@@ -5,6 +5,9 @@
     "cspell": "^8.17.5"
   },
   "scripts": {
-    "cspell": "yarn exec cspell ."
+    "cspell": "yarn exec cspell .",
+    "fullCheck": "",
+    "hooks": "git config core.hooksPath .githooks",
+    "no-hooks": "git config core.hooksPath .git/hooks"
   }
 }
