@@ -1719,6 +1719,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@skalenetwork/playa-manager-interfaces@git@github.com:skalenetwork/playa-manager-interfaces.git":
+  version: 0.1.0
+  resolution: "@skalenetwork/playa-manager-interfaces@git@github.com:skalenetwork/playa-manager-interfaces.git#commit=ff1fab67a16935cdd1e4e1f7808939b4d25b3903"
+  checksum: 10c0/cc821cdfafe6b426762f2f8a8aa5b1acb676bdd59837e9a43889d0627382f308da4b5fa663a600008f015725ff4d5c9c8613cb876f5ec197398ffa8068aeaf46
+  languageName: node
+  linkType: hard
+
 "@solidity-parser/parser@npm:^0.14.0":
   version: 0.14.5
   resolution: "@solidity-parser/parser@npm:0.14.5"
@@ -5960,6 +5967,7 @@ __metadata:
     "@nomicfoundation/hardhat-chai-matchers": "npm:^2.0.0"
     "@nomicfoundation/hardhat-ethers": "npm:^3.0.0"
     "@nomicfoundation/hardhat-verify": "npm:^2.0.0"
+    "@skalenetwork/playa-manager-interfaces": "git@github.com:skalenetwork/playa-manager-interfaces.git"
     "@typechain/ethers-v6": "npm:^0.5.0"
     "@typechain/hardhat": "npm:^9.0.0"
     "@types/chai": "npm:^4.2.0"

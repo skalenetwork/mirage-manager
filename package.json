@@ -35,5 +35,8 @@
     "no-hooks": "git config core.hooksPath .git/hooks",
     "slither": "yarn compile && slither --hardhat-ignore-compile .",
     "tsc": "yarn exec tsc --noEmit"
+  },
+  "dependencies": {
+    "@skalenetwork/playa-manager-interfaces": "git@github.com:skalenetwork/playa-manager-interfaces.git"
   }
 }
