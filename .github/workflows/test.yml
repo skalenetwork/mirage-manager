@@ -33,6 +33,8 @@ jobs:
         cat package.json
 
     - name: Install project
+      env:
+        PERSONAL_ACCESS_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
       run: yarn install
 
     - name: Spell check
