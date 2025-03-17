@@ -30,7 +30,7 @@ jobs:
     - name: Update the reference to interfaces
       env:
         PERSONAL_ACCESS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: sed -i -e "s/git@github.com/https:\/\/${PERSONAL_ACCESS_TOKEN}@github.com/g" package.json
+      run: sed -i -e "s/git@github.com:/https:\/\/${PERSONAL_ACCESS_TOKEN}@github.com\//g" package.json
 
     - name: Install project
       run: yarn install
