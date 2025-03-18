@@ -30,7 +30,7 @@ jobs:
     - name: Debug cloning
       env:
         PERSONAL_ACCESS_TOKEN: ${{ secrets.PLAYA_ACCESS_TOKEN }}
-      run: git clone "https://github.com/skalenetwork/playa-manager-interfaces.git"
+      run: git clone "https://${PERSONAL_ACCESS_TOKEN}@github.com/skalenetwork/playa-manager-interfaces.git"
 
     - name: Update the reference to interfaces
       env:
