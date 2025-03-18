@@ -27,6 +27,11 @@ jobs:
         cache: 'yarn'
 
     # TODO: remove when the interfaces package is published
+    - name: Debug cloning
+      env:
+        PERSONAL_ACCESS_TOKEN: ${{ secrets.PLAYA_ACCESS_TOKEN }}
+      run: git clone "https://github.com/skalenetwork/playa-manager-interfaces.git"
+
     - name: Update the reference to interfaces
       env:
         PERSONAL_ACCESS_TOKEN: ${{ secrets.PLAYA_ACCESS_TOKEN }}
