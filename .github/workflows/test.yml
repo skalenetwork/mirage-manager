@@ -27,19 +27,12 @@ jobs:
         cache: 'yarn'
 
     # TODO: remove when the interfaces package is published
-    - name: Debug cloning
-      env:
-        PERSONAL_ACCESS_TOKEN: ${{ secrets.PLAYA_ACCESS_TOKEN }}
-      run: |
-        git clone "https://${PERSONAL_ACCESS_TOKEN}@github.com/skalenetwork/playa-manager-interfaces.git"
-        cat playa-manager-interfaces/package.json
-
     - name: Update the reference to interfaces
       env:
-        PERSONAL_ACCESS_TOKEN: ${{ secrets.PLAYA_ACCESS_TOKEN }}
+        ACCESS_TOKEN: ${{ secrets.PLAYA_ACCESS_TOKEN }}
       run: |
-        sed -i -e "s/git@github.com:/git+https:\/\/${PERSONAL_ACCESS_TOKEN}@github.com\//g" package.json
-        cat package.json
+        git clone "https://${ACCESS_TOKEN}@github.com/skalenetwork/playa-manager-interfaces.git"
+        yarn add @skalenetwork/playa-manager-interfaces@file:./playa-manager-interfaces
 
     - name: Install project
       run: yarn install
