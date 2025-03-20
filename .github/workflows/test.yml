@@ -62,10 +62,10 @@ jobs:
     #   run: ./scripts/test_upgrade.sh
 
     - name: Test ABI generation
-      run: npx hardhat run scripts/generateAbi.ts
+      run: yarn hardhat run scripts/generateAbi.ts
 
     - name: Run tests
-      run: npx hardhat coverage --solcoverjs .solcover.js
+      run: yarn hardhat coverage --solcoverjs .solcover.js
 
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v2
