@@ -1,9 +1,9 @@
-import { BaseContract } from "ethers";
 import { ethers, network, upgrades } from "hardhat";
 import { promises as fs } from 'fs';
 import {
     getVersion
 } from '@skalenetwork/upgrade-tools';
+import { Committee, DKG, Nodes, Staking, Status } from "../typechain-types";
 
 
 export const contracts = [
@@ -14,7 +14,15 @@ export const contracts = [
     "Status"
 ];
 
-export const deploy = async () => {
+interface DeployedContracts {
+    Committee: Committee,
+    DKG: DKG,
+    Nodes: Nodes,
+    Staking: Staking,
+    Status: Status
+}
+
+export const deploy = async (): Promise<DeployedContracts> => {
     let deployedContracts = {};
     for (const contract of contracts) {
         const factory = await ethers.getContractFactory(contract);
@@ -25,10 +33,10 @@ export const deploy = async () => {
             [contract]: instance
         }
     }
-    return deployedContracts;
+    return deployedContracts as DeployedContracts;
 }
 
-const storeAddresses = async (deployedContracts: {[key: string]: BaseContract}, version: string) => {
+const storeAddresses = async (deployedContracts: DeployedContracts, version: string) => {
     const addresses = Object.fromEntries(await Promise.all(Object.entries(deployedContracts).map(
             async ([name, contract]) => [name, await ethers.resolveAddress(contract)]
     )));
