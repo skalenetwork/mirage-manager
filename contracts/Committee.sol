@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 /**
- *   Nodes.sol - playa-manager
+ *   Committee.sol - playa-manager
  *   Copyright (C) 2025-Present SKALE Labs
  *   @author Dmytro Stebaiev
  *
@@ -21,29 +21,28 @@
 
 pragma solidity ^0.8.24;
 
-import {INodes, NodeId} from "@skalenetwork/playa-manager-interfaces/contracts/INodes.sol";
+import {CommitteeIndex, ICommittee} from "@skalenetwork/playa-manager-interfaces/contracts/ICommittee.sol";
 import {NotImplemented} from "./errors.sol";
 
 
-contract Nodes is INodes {
-    // TODO: remove
-    uint256 public constant REMOVE = 5;
+contract Committee is ICommittee {
 
-    function registerNode(
-        bytes calldata /* ip */,
-        uint256 /* port */
-    ) external override {
+    function select() external override {
         revert NotImplemented();
     }
 
-    function registerPassiveNode(
-        bytes calldata /* ip */,
-        uint256 /* port */
-    ) external override {
+    function getCommittee(
+        CommitteeIndex /*committeeIndex*/
+    )
+        external
+        view
+        override
+        returns (Committee memory committee)
+    {
         revert NotImplemented();
     }
 
-    function getNode(NodeId /* nodeId */) external view override returns (Node memory node) {
+    function getActiveCommitteeIndex() external view override returns (CommitteeIndex committeeIndex) {
         revert NotImplemented();
     }
 }

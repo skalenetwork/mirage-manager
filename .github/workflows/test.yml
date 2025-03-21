@@ -26,11 +26,23 @@ jobs:
         node-version: ${{ matrix.node-version }}
         cache: 'yarn'
 
+    # TODO: remove when the interfaces package is published
+    - name: Update the reference to interfaces
+      env:
+        ACCESS_TOKEN: ${{ secrets.PLAYA_ACCESS_TOKEN }}
+        INTERFACES_DIR: "${{ runner.temp }}/interfaces/"
+      run: |
+        git clone "https://${ACCESS_TOKEN}@github.com/skalenetwork/playa-manager-interfaces.git" "$INTERFACES_DIR"
+        yarn add "@skalenetwork/playa-manager-interfaces@file:$INTERFACES_DIR"
+
     - name: Install project
       run: yarn install
 
     - name: Spell check
       run: yarn cspell
+
+    - name: Compile
+      run: yarn compile
 
     - name: Lint
       run: yarn fullCheck
@@ -41,23 +53,21 @@ jobs:
         ignore-compile: true
         node-version: ${{ matrix.node-version }}
 
-    # - name: Test deployment
-    #   run: ./scripts/test_deploy.sh
+    - name: Test deployment
+      run: ./scripts/test_deploy.sh
 
     # - name: Test upgrade
     #   env:
     #     NODE_VERSION: ${{ matrix.node-version }}
     #   run: ./scripts/test_upgrade.sh
 
-    # - name: Test ABI generation
-    #   run: npx hardhat run scripts/generateAbi.ts
+    - name: Test ABI generation
+      run: yarn hardhat run scripts/generateAbi.ts
 
-    # - name: Run tests
-    #   env:
-    #     NODE_OPTIONS: --max-old-space-size=12288
-    #   run: npx hardhat coverage --solcoverjs .solcover.js
+    - name: Run tests
+      run: yarn hardhat coverage
 
-    # - name: Upload coverage to Codecov
-    #   uses: codecov/codecov-action@v2
-    #   with:
-    #     token: ${{ secrets.CODECOV_TOKEN }}
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v2
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}

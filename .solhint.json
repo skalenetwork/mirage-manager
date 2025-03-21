@@ -4,8 +4,10 @@
     "foundry-test-functions": "off",
 
     "explicit-types": "error",
+    "gas-calldata-parameters": "error",
     "imports-order": "error",
     "gas-named-return-values": "error",
-    "no-empty-blocks": "error"
+    "no-empty-blocks": "error",
+    "no-unused-vars": "error"
   }
 }

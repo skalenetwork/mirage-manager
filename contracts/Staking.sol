@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 /**
- *   Nodes.sol - playa-manager
+ *   Staking.sol - playa-manager
  *   Copyright (C) 2025-Present SKALE Labs
  *   @author Dmytro Stebaiev
  *
@@ -21,29 +21,20 @@
 
 pragma solidity ^0.8.24;
 
-import {INodes, NodeId} from "@skalenetwork/playa-manager-interfaces/contracts/INodes.sol";
+import {IStaking} from "@skalenetwork/playa-manager-interfaces/contracts/IStaking.sol";
 import {NotImplemented} from "./errors.sol";
 
 
-contract Nodes is INodes {
-    // TODO: remove
-    uint256 public constant REMOVE = 5;
-
-    function registerNode(
-        bytes calldata /* ip */,
-        uint256 /* port */
-    ) external override {
+contract Staking is IStaking {
+    function stake() external override {
         revert NotImplemented();
     }
 
-    function registerPassiveNode(
-        bytes calldata /* ip */,
-        uint256 /* port */
-    ) external override {
+    function retrieve(uint256 /*value*/) external override {
         revert NotImplemented();
     }
 
-    function getNode(NodeId /* nodeId */) external view override returns (Node memory node) {
+    function getStakedAmount() external view override returns (uint256 amount) {
         revert NotImplemented();
     }
 }

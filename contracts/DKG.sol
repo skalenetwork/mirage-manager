@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 /**
- *   Nodes.sol - playa-manager
+ *   DKG.sol - playa-manager
  *   Copyright (C) 2025-Present SKALE Labs
  *   @author Dmytro Stebaiev
  *
@@ -19,31 +19,26 @@
  *   along with playa-manager.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+// cspell:words IDKG
+
 pragma solidity ^0.8.24;
 
-import {INodes, NodeId} from "@skalenetwork/playa-manager-interfaces/contracts/INodes.sol";
+import {DKGId, IDKG} from "@skalenetwork/playa-manager-interfaces/contracts/IDKG.sol";
 import {NotImplemented} from "./errors.sol";
 
 
-contract Nodes is INodes {
-    // TODO: remove
-    uint256 public constant REMOVE = 5;
+contract DKG is IDKG {
 
-    function registerNode(
-        bytes calldata /* ip */,
-        uint256 /* port */
+    function alright() external override {
+        revert NotImplemented();
+    }
+    function broadcast(
+        G2Point[] calldata /*verificationVector*/,
+        KeyShare[] calldata /*secretKeyContribution*/
     ) external override {
         revert NotImplemented();
     }
-
-    function registerPassiveNode(
-        bytes calldata /* ip */,
-        uint256 /* port */
-    ) external override {
-        revert NotImplemented();
-    }
-
-    function getNode(NodeId /* nodeId */) external view override returns (Node memory node) {
+    function generate() external override returns (DKGId dkgId) {
         revert NotImplemented();
     }
 }

@@ -1,10 +1,9 @@
-import {ethers} from "hardhat";
 import { expect } from "chai";
+import { cleanDeployment } from "./fixtures";
 
 describe("Nodes", function () {
     it("should run test", async () => {
-        const Nodes = await ethers.getContractFactory("Nodes");
-        const nodes = await Nodes.deploy();
+        const {nodes} = await cleanDeployment();
         expect(await nodes.REMOVE()).to.equal(5n);
     });
 });

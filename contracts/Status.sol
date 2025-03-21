@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 /**
- *   Nodes.sol - playa-manager
+ *   Status.sol - playa-manager
  *   Copyright (C) 2025-Present SKALE Labs
  *   @author Dmytro Stebaiev
  *
@@ -21,29 +21,20 @@
 
 pragma solidity ^0.8.24;
 
-import {INodes, NodeId} from "@skalenetwork/playa-manager-interfaces/contracts/INodes.sol";
+import {NodeId} from "@skalenetwork/playa-manager-interfaces/contracts/INodes.sol";
+import {Duration, IStatus} from "@skalenetwork/playa-manager-interfaces/contracts/IStatus.sol";
+
 import {NotImplemented} from "./errors.sol";
 
 
-contract Nodes is INodes {
-    // TODO: remove
-    uint256 public constant REMOVE = 5;
-
-    function registerNode(
-        bytes calldata /* ip */,
-        uint256 /* port */
-    ) external override {
+contract Status is IStatus {
+    function alive() external override {
         revert NotImplemented();
     }
-
-    function registerPassiveNode(
-        bytes calldata /* ip */,
-        uint256 /* port */
-    ) external override {
+    function setHeartbeatInterval(Duration /*interval*/) external override {
         revert NotImplemented();
     }
-
-    function getNode(NodeId /* nodeId */) external view override returns (Node memory node) {
+    function isHealthy(NodeId /*nodeId*/) external view override returns (bool healthy) {
         revert NotImplemented();
     }
 }

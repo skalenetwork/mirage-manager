@@ -11,7 +11,9 @@ export default [
   ...tseslint.configs.recommended,
   {
     "ignores": [
-      ".pnp.cjs"
+      ".pnp.cjs",
+      "coverage/",
+      "typechain-types/"
     ],
   }
 ];
