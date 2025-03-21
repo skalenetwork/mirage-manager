@@ -10,11 +10,13 @@
     "@typechain/ethers-v6": "^0.5.0",
     "@typechain/hardhat": "^9.0.0",
     "@types/chai": "^4.2.0",
+    "@types/chai-as-promised": "^7.1.6",
     "@types/lodash": "^4",
     "@types/mocha": ">=9.1.0",
     "@types/node": ">=18.0.0",
     "axios": "^1.8.3",
     "chai": "^4.2.0",
+    "chai-as-promised": "^7.1.1",
     "cspell": "^8.17.5",
     "eslint": "^9.22.0",
     "ethers": "^6.4.0",
@@ -38,6 +40,7 @@
     "lint": "yarn solhint 'contracts/**/*.sol'",
     "no-hooks": "git config core.hooksPath .git/hooks",
     "slither": "yarn compile && slither --hardhat-ignore-compile .",
+    "test": "yarn tsc && npx hardhat test",
     "tsc": "yarn exec tsc --noEmit"
   },
   "dependencies": {

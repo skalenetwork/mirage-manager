@@ -1,20 +1,56 @@
 import { ethers } from "hardhat";
 import { expect } from "chai";
 import { cleanDeployment } from "./fixtures";
+import { Nodes } from "../typechain-types";
+import { toUtf8Bytes, toUtf8String, zeroPadValue } from "ethers";
+import chai from "chai";
+import chaiAsPromised from "chai-as-promised";
 
+const MOCK_IP = "192.168.0.1"
+const MOCK_IP_BYTES = toUtf8Bytes(MOCK_IP);
+
+chai.should();
+chai.use(chaiAsPromised)
 
 describe("Nodes", function () {
-    it("should run test", async () => {
+    let nodesContract: Nodes;
+    beforeEach(async () => {
         const {nodes} = await cleanDeployment();
-        expect(await nodes.REMOVE()).to.equal(5n);
+        nodesContract = nodes;
     });
 
-    it("should restrict access", async () => {
-        const {nodes} = await cleanDeployment();
-        await expect(nodes.registerNode("0x", 0))
-            .to.be.revertedWithCustomError(nodes, "NotImplemented");
-        const [,hacker] = await ethers.getSigners();
-        await expect(nodes.connect(hacker).registerNode("0x", 0))
-            .to.be.revertedWithCustomError(nodes, "AccessManagedUnauthorized");
+    it("should register Active Node", async () => {
+
+        await nodesContract.registerNode(MOCK_IP_BYTES, 8000);
+
+        const node = await nodesContract.getNode(0);
+
+        expect(node.id).to.equal(0n);
+        expect(node.port).to.equal(8000n);
+        expect(toUtf8String(node.ip)).to.equal(MOCK_IP);
+        const emptyBytes32 = zeroPadValue("0x", 32);
+        expect(node.nodePublicKey[0]).to.equal(emptyBytes32)
+        expect(node.nodePublicKey[1]).to.equal(emptyBytes32)
+
     });
+
+    it("should register Passive Node", async () => {
+
+        await nodesContract.registerPassiveNode(MOCK_IP_BYTES, 8000);
+
+        const node = await nodesContract.getNode(0);
+
+        expect(node.id).to.equal(0n);
+        expect(node.port).to.equal(8000n);
+        expect(toUtf8String(node.ip)).to.equal(MOCK_IP);
+        const emptyBytes32 = zeroPadValue("0x", 32);
+        expect(node.nodePublicKey[0]).to.equal(emptyBytes32)
+        expect(node.nodePublicKey[1]).to.equal(emptyBytes32)
+
+    });
+
+    it("should revert when nodeId does not exist", async () => {
+        await expect(nodesContract.getNode(0))
+        .to.be.revertedWithCustomError(nodesContract, "NodeDoesNotExist").withArgs(0);
+    })
 });

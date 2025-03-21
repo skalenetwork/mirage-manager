@@ -21,59 +21,105 @@
 
 pragma solidity ^0.8.24;
 
-import {
-    AccessManagedUpgradeable
-} from "@openzeppelin/contracts-upgradeable/access/manager/AccessManagedUpgradeable.sol";
-import {
-    INodes,
-    NodeId
-} from "@skalenetwork/playa-manager-interfaces/contracts/INodes.sol";
-import {NotImplemented} from "./errors.sol";
+import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+
+import {INodes, NodeId} from "@skalenetwork/playa-manager-interfaces/contracts/INodes.sol";
+
+contract Nodes is INodes {
+
+    using EnumerableSet for EnumerableSet.UintSet;
+
+    // For node Id generation
+    uint256 private _nodeIdCounter;
+
+    // Set to track passive node IDs
+    EnumerableSet.UintSet private _passiveNodeIds;
+
+    // Set to track active node IDs
+    EnumerableSet.UintSet private _activeNodeIds;
 
 
-contract Nodes is AccessManagedUpgradeable, INodes {
-    // TODO: remove
-    uint256 public constant REMOVE = 5;
+    // Mapping from node ID to Node struct
+    mapping(NodeId => Node) public nodes;
 
-    function initialize(address initialAuthority) public initializer {
-        __AccessManaged_init(initialAuthority);
-    }
+    error NodeDoesNotExist(NodeId nodeId);
 
-    function registerNode(
-        bytes calldata /* ip */,
-        uint16 /* port */
-    ) external override restricted {
-        revert NotImplemented();
+    function registerNode(bytes calldata ip, uint256 port) external override {
+        NodeId nodeId = NodeId.wrap(_nodeIdCounter);
+
+        unchecked {
+            ++_nodeIdCounter;
+        }
+
+        _addActiveNodeId(nodeId);
+
+        nodes[nodeId] = Node({
+            id: nodeId,
+            port: port,
+            // TODO: check/change? maybe receive as input
+            nodeAddress: msg.sender,
+            nodePublicKey: [bytes32(0), bytes32(0)],
+            ip: ip
+        });
+
+        emit NodeRegistered(nodeId, msg.sender, ip, port);
     }
 
     function registerPassiveNode(
-        bytes calldata /* ip */,
-        uint16 /* port */
+        bytes calldata ip,
+        uint256 port
     ) external override {
-        revert NotImplemented();
+        NodeId nodeId = NodeId.wrap(_nodeIdCounter);
+
+        unchecked {
+            ++_nodeIdCounter;
+        }
+
+        _addPassiveNodeId(nodeId);
+
+        nodes[nodeId] = Node({
+            id: nodeId,
+            port: port,
+            // TODO: check/change? maybe receive as input
+            nodeAddress: msg.sender,
+            nodePublicKey: [bytes32(0), bytes32(0)],
+            ip: ip
+        });
+
+        emit NodeRegistered(nodeId, msg.sender, ip, port);
     }
 
-    function setIpAddress(NodeId, bytes calldata, uint16) external override {
-        revert NotImplemented();
+    function getNode(NodeId nodeId)
+        external
+        view
+        override
+        returns (Node memory node)
+    {
+        _checkNodeIndex(nodeId);
+        return nodes[nodeId];
     }
 
-    function setDomainName(NodeId, string calldata) external {
-        revert NotImplemented();
+
+    function _addPassiveNodeId(NodeId nodeId) private {
+        _passiveNodeIds.add(NodeId.unwrap(nodeId));
     }
 
-    function requestChangeAddress(NodeId, address) external override {
-        revert NotImplemented();
+    function _addActiveNodeId(NodeId nodeId) private {
+        _activeNodeIds.add(NodeId.unwrap(nodeId));
     }
 
-    function confirmAddressChange(NodeId) external override {
-        revert NotImplemented();
+    function _checkNodeIndex(NodeId nodeId) private view {
+        if (!_isActiveNode(nodeId) && !_isPassiveNode(nodeId)){
+            revert NodeDoesNotExist(nodeId);
+        }
     }
 
-    function getNode(NodeId /* nodeId */) external view override returns (Node memory node) {
-        revert NotImplemented();
+    function _isActiveNode(NodeId nodeId) private view returns (bool result) {
+        result = _activeNodeIds.contains(NodeId.unwrap(nodeId));
     }
 
-    function getNodeId(address) external view override returns (NodeId nodeId) {
-        revert NotImplemented();
+    function _isPassiveNode(NodeId nodeId) private view returns (bool result) {
+        result = _passiveNodeIds.contains(NodeId.unwrap(nodeId));
     }
+
 }
