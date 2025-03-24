@@ -43,6 +43,7 @@ contract Nodes is INodes {
     mapping(NodeId => Node) public nodes;
 
     error NodeDoesNotExist(NodeId nodeId);
+    error NodeAlreadyExists(NodeId nodeId);
 
     function registerNode(bytes calldata ip, uint256 port) external override {
         NodeId nodeId = NodeId.wrap(_nodeIdCounter);
@@ -98,14 +99,18 @@ contract Nodes is INodes {
         _checkNodeIndex(nodeId);
         return nodes[nodeId];
     }
-
-
     function _addPassiveNodeId(NodeId nodeId) private {
-        _passiveNodeIds.add(NodeId.unwrap(nodeId));
+        bool result = _passiveNodeIds.add(NodeId.unwrap(nodeId));
+        if(!result) {
+            revert NodeAlreadyExists(nodeId);
+        }
     }
 
     function _addActiveNodeId(NodeId nodeId) private {
-        _activeNodeIds.add(NodeId.unwrap(nodeId));
+        bool result = _activeNodeIds.add(NodeId.unwrap(nodeId));
+        if(!result) {
+            revert NodeAlreadyExists(nodeId);
+        }
     }
 
     function _checkNodeIndex(NodeId nodeId) private view {
