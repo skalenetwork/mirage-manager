@@ -23,10 +23,10 @@
 
 pragma solidity ^0.8.24;
 
+import {ICommittee} from "@skalenetwork/playa-manager-interfaces/contracts/ICommittee.sol";
 import {DkgId, IDkg} from "@skalenetwork/playa-manager-interfaces/contracts/IDkg.sol";
 import {INodes, NodeId} from "@skalenetwork/playa-manager-interfaces/contracts/INodes.sol";
 
-import {NotImplemented} from "../errors.sol";
 import {G2Operations} from "./fieldOperations/G2Operations.sol";
 
 
@@ -47,21 +47,36 @@ contract DKG is IDkg {
         G2Point publicKey;
         uint256 numberOfBroadcasted;
         bytes32[] hashedData;
+        uint256 numberOfCompleted;
+        bool[] completed;
     }
 
     INodes public immutable NODES;
+    ICommittee public immutable COMMITTEE;
 
     mapping(DkgId dkg => Round round) public rounds;
 
     DkgId public lastDkgId;
 
     event BroadcastAndKeyShare(
+        DkgId dkg,
         NodeId indexed node,
         G2Point[] verificationVector,
         KeyShare[] secretKeyContribution
     );
 
+    event AllDataReceived(
+        DkgId dkg,
+        NodeId indexed node,
+        uint256 nodeIndex
+    );
+
+    event SuccessfulDkg(
+        DkgId dkg
+    );
+
     error DkgIsNotInBroadcastStage(DkgId id);
+    error DkgIsNotInAlrightStage(DkgId id);
     error IncorrectVerificationsVectorQuantity(
         uint256 actual,
         uint256 expected
@@ -73,14 +88,30 @@ contract DKG is IDkg {
     error NodeNotFound(NodeId node);
     error NodeAlreadyBroadcasted(NodeId node);
     error IncorrectG2Point(G2Point value);
+    error NodeIsAlreadyAlright(NodeId node);
 
     modifier onlyBroadcastingDkg(DkgId dkg) {
         require(rounds[dkg].status == Status.BROADCAST, DkgIsNotInBroadcastStage(dkg));
         _;
     }
 
-    function alright() external override {
-        revert NotImplemented();
+    modifier onlyAlrightDkg(DkgId dkg) {
+        require(rounds[dkg].status == Status.ALRIGHT, DkgIsNotInAlrightStage(dkg));
+        _;
+    }
+
+    function alright(DkgId dkg) external override onlyAlrightDkg(dkg) {
+        uint256 n = rounds[dkg].nodes.length;
+        NodeId node = NODES.getNodeId(msg.sender);
+        uint256 index = _getIndex(dkg, node);
+        Round storage round = rounds[dkg];
+        require(!round.completed[index], NodeIsAlreadyAlright(node));
+        round.completed[index] = true;
+        ++round.numberOfCompleted;
+        emit AllDataReceived(dkg, node, index);
+        if (round.numberOfCompleted == n) {
+            _processSuccessfulDkg(dkg);
+        }
     }
 
     function broadcast(
@@ -108,6 +139,7 @@ contract DKG is IDkg {
         _contributeToPublicKey(round, verificationVector[0]);
 
         emit BroadcastAndKeyShare(
+            dkg,
             node,
             verificationVector,
             secretKeyContribution
@@ -120,6 +152,11 @@ contract DKG is IDkg {
 
     // Private
 
+    function _processSuccessfulDkg(DkgId dkg) private {
+        rounds[dkg].status = Status.SUCCESS;
+        emit SuccessfulDkg(dkg);
+    }
+
     function _createRound(NodeId[] calldata nodes) private returns (DkgId id) {
         lastDkgId = DkgId.wrap(DkgId.unwrap(lastDkgId) + 1);
         id = lastDkgId;
@@ -129,7 +166,9 @@ contract DKG is IDkg {
             nodes: nodes,
             publicKey: G2Operations.getG2Zero(),
             numberOfBroadcasted: 0,
-            hashedData: new bytes32[](nodes.length)
+            hashedData: new bytes32[](nodes.length),
+            numberOfCompleted: 0,
+            completed: new bool[](nodes.length)
         });
     }
 

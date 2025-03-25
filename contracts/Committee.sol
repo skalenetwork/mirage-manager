@@ -33,6 +33,7 @@ import { DkgId } from "@skalenetwork/playa-manager-interfaces/contracts/IDkg.sol
 import { NodeId } from "@skalenetwork/playa-manager-interfaces/contracts/INodes.sol";
 import { NotImplemented } from "./errors.sol";
 
+import {DkgId} from "@skalenetwork/playa-manager-interfaces/contracts/IDkg.sol";
 
 
 contract Committee is AccessManagedUpgradeable, ICommittee {
