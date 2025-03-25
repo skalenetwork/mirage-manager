@@ -28,28 +28,29 @@ library Precompiled {
     address public constant EC_MUL = address(7);
     address public constant EC_PAIRING = address(8);
 
-    error BigModExpFailed();
-    error MultiplicationFailed();
-    error PairingCheckFailed();
+    error PrecompiledCallFailed(address precompiledContract);
 
     function bigModExp(
         uint256 base,
-        uint256 power,
+        uint256 exponent,
         uint256 modulus
     )
         internal
         view
         returns (uint256 value)
     {
-        uint256[6] memory inputToBigModExp;
-        inputToBigModExp[0] = 32;
-        inputToBigModExp[1] = 32;
-        inputToBigModExp[2] = 32;
-        inputToBigModExp[3] = base;
-        inputToBigModExp[4] = power;
-        inputToBigModExp[5] = modulus;
-        (bool success, bytes memory output) = MOD_EXP.staticcall(abi.encode(inputToBigModExp));
-        require(success, BigModExpFailed());
+        uint256 lengthOfBase = 32;
+        uint256 lengthOfExponent = 32;
+        uint256 lengthOfModulus = 32;
+
+        bytes memory output = _callPrecompiled(MOD_EXP, abi.encodePacked(
+            lengthOfBase,
+            lengthOfExponent,
+            lengthOfModulus,
+            base,
+            exponent,
+            modulus
+        ));
         return abi.decode(output, (uint256));
     }
 
@@ -62,12 +63,7 @@ library Precompiled {
         view
         returns (uint256 xValue, uint256 yValue)
     {
-        uint256[3] memory inputToMul;
-        inputToMul[0] = x;
-        inputToMul[1] = y;
-        inputToMul[2] = k;
-        (bool success, bytes memory output) = EC_MUL.staticcall(abi.encode(inputToMul));
-        require(success, MultiplicationFailed());
+        bytes memory output = _callPrecompiled(EC_MUL, abi.encodePacked(x, y, k));
         return abi.decode(output, (uint256, uint256));
     }
 
@@ -99,8 +95,32 @@ library Precompiled {
         inputToPairing[9] = b2;
         inputToPairing[10] = c2;
         inputToPairing[11] = d2;
-        (bool success, bytes memory output) = EC_PAIRING.staticcall(abi.encode(inputToPairing));
-        require(success, PairingCheckFailed());
+        bytes memory output = _callPrecompiled(EC_PAIRING, abi.encodePacked(
+            x1, y1,
+            a1, b1,
+            c1, d1,
+            x2, y2,
+            a2, b2,
+            c2, d2
+        ));
         return abi.decode(output, (uint256)) != 0;
+    }
+
+    // Private
+
+    function _callPrecompiled(
+        address precompiledContract,
+        bytes memory input
+    )
+        private
+        view
+        returns (bytes memory output)
+    {
+        // Have to use low-level calls
+        // because it's the only way to call precompiled contracts
+        // slither-disable-next-line low-level-calls
+        (bool success, bytes memory out) = precompiledContract.staticcall(input);
+        require(success, PrecompiledCallFailed(precompiledContract));
+        return out;
     }
 }

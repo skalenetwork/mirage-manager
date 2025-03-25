@@ -164,8 +164,8 @@ contract DKG is AccessManagedUpgradeable, IDkg {
         );
     }
 
-    function generate(NodeId[] calldata nodes) external override returns (DkgId dkg) {
-        return _createRound(nodes);
+    function generate(NodeId[] calldata participants) external override returns (DkgId dkg) {
+        return _createRound(participants);
     }
 
     function isNodeBroadcasted(DkgId dkg, NodeId node) external view returns (bool broadcasted) {
@@ -179,18 +179,18 @@ contract DKG is AccessManagedUpgradeable, IDkg {
         emit SuccessfulDkg(dkg);
     }
 
-    function _createRound(NodeId[] calldata nodes) private returns (DkgId id) {
+    function _createRound(NodeId[] calldata participants) private returns (DkgId id) {
         lastDkgId = DkgId.wrap(DkgId.unwrap(lastDkgId) + 1);
         id = lastDkgId;
         rounds[id] = Round({
             id: id,
             status: Status.BROADCAST,
-            nodes: nodes,
+            nodes: participants,
             publicKey: G2Operations.getG2Zero(),
             numberOfBroadcasted: 0,
-            hashedData: new bytes32[](nodes.length),
+            hashedData: new bytes32[](participants.length),
             numberOfCompleted: 0,
-            completed: new bool[](nodes.length)
+            completed: new bool[](participants.length)
         });
     }
 
