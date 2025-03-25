@@ -42,17 +42,27 @@ contract Nodes is INodes {
     // Mapping from node ID to Node struct
     mapping(NodeId => Node) public nodes;
 
+    //Maps addresses to NodeIds
+    mapping(address => NodeId) private _nodeIdByAddress;
+
     error NodeDoesNotExist(NodeId nodeId);
     error NodeAlreadyExists(NodeId nodeId);
+    error AddressAlreadyHasNode(address nodeAddress);
+    error AddressIsNotAssignedToAnyNode(address nodeAddress);
 
     function registerNode(bytes calldata ip, uint256 port) external override {
-        NodeId nodeId = NodeId.wrap(_nodeIdCounter);
+
+        _validateNewNodeInput(msg.sender);
 
         unchecked {
             ++_nodeIdCounter;
         }
 
+        NodeId nodeId = NodeId.wrap(_nodeIdCounter);
+
         _addActiveNodeId(nodeId);
+
+        _setNodeIdForAddress(msg.sender, nodeId);
 
         nodes[nodeId] = Node({
             id: nodeId,
@@ -70,13 +80,18 @@ contract Nodes is INodes {
         bytes calldata ip,
         uint256 port
     ) external override {
-        NodeId nodeId = NodeId.wrap(_nodeIdCounter);
+
+        _validateNewNodeInput(msg.sender);
 
         unchecked {
             ++_nodeIdCounter;
         }
 
+        NodeId nodeId = NodeId.wrap(_nodeIdCounter);
+
         _addPassiveNodeId(nodeId);
+
+        _setNodeIdForAddress(msg.sender, nodeId);
 
         nodes[nodeId] = Node({
             id: nodeId,
@@ -99,6 +114,14 @@ contract Nodes is INodes {
         _checkNodeIndex(nodeId);
         return nodes[nodeId];
     }
+
+    function getNodeId(address nodeAddress) external view returns (NodeId nodeId) {
+        nodeId = _nodeIdByAddress[nodeAddress];
+        if (NodeId.unwrap(nodeId) == 0) {
+            revert AddressIsNotAssignedToAnyNode(nodeAddress);
+        }
+    }
+
     function _addPassiveNodeId(NodeId nodeId) private {
         bool result = _passiveNodeIds.add(NodeId.unwrap(nodeId));
         if(!result) {
@@ -113,9 +136,19 @@ contract Nodes is INodes {
         }
     }
 
+    function _setNodeIdForAddress(address nodeAddress, NodeId nodeId) private {
+        _nodeIdByAddress[nodeAddress] = nodeId;
+    }
+
     function _checkNodeIndex(NodeId nodeId) private view {
         if (!_isActiveNode(nodeId) && !_isPassiveNode(nodeId)){
             revert NodeDoesNotExist(nodeId);
+        }
+    }
+
+    function _validateNewNodeInput(address nodeAddress) private view {
+        if (NodeId.unwrap(_nodeIdByAddress[nodeAddress]) != 0){
+            revert AddressAlreadyHasNode(nodeAddress);
         }
     }
 
