@@ -4,6 +4,7 @@ import {
     getVersion
 } from '@skalenetwork/upgrade-tools';
 import { Committee, DKG, Nodes, PlayaAccessManager, Staking, Status } from "../typechain-types";
+import { AddressLike } from "ethers";
 
 
 export const contracts = [
@@ -22,6 +23,20 @@ interface DeployedContracts {
     PlayaAccessManager: PlayaAccessManager,
     Staking: Staking,
     Status: Status
+}
+
+const deployDkg = async (authority: AddressLike, committee: Committee, nodes: Nodes): Promise<DKG> => {
+    const factory = await ethers.getContractFactory("DKG");
+    const instance = await upgrades.deployProxy(
+        factory,
+        [
+            await ethers.resolveAddress(authority),
+            await ethers.resolveAddress(committee),
+            await ethers.resolveAddress(nodes)
+        ]
+    );
+    await instance.waitForDeployment();
+    return instance as DKG;
 }
 
 export const deploy = async (): Promise<DeployedContracts> => {
@@ -59,7 +74,8 @@ export const deploy = async (): Promise<DeployedContracts> => {
         }
     }
 
-    return deployedContracts as DeployedContracts;
+    deployedContracts.DKG = await deployDkg(deployer, deployedContracts.Committee, deployedContracts.Nodes);
+    return deployedContracts;
 }
 const deployContract = async (name: string, args: unknown[]) => {
     const factory = await ethers.getContractFactory(name);

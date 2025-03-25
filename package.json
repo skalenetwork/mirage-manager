@@ -35,6 +35,7 @@
   },
   "scripts": {
     "compile": "yarn hardhat compile",
+    "cleanCompile": "yarn hardhat clean && yarn compile",
     "cspell": "yarn exec cspell .",
     "eslint": "yarn exec eslint .",
     "fullCheck": "yarn compile && yarn lint && yarn eslint",

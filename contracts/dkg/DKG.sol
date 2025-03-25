@@ -19,18 +19,22 @@
  *   along with playa-manager.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-// cspell:words IDKG
+// cspell:words Initializable
 
 pragma solidity ^0.8.24;
 
+import {
+    AccessManagedUpgradeable
+} from "@openzeppelin/contracts-upgradeable/access/manager/AccessManagedUpgradeable.sol";
 import {ICommittee} from "@skalenetwork/playa-manager-interfaces/contracts/ICommittee.sol";
 import {DkgId, IDkg} from "@skalenetwork/playa-manager-interfaces/contracts/IDkg.sol";
 import {INodes, NodeId} from "@skalenetwork/playa-manager-interfaces/contracts/INodes.sol";
 
+import {NotImplemented} from "../errors.sol";
 import {G2Operations} from "./fieldOperations/G2Operations.sol";
 
 
-contract DKG is IDkg {
+contract DKG is AccessManagedUpgradeable, IDkg {
     using G2Operations for G2Point;
 
     enum Status {
@@ -51,8 +55,8 @@ contract DKG is IDkg {
         bool[] completed;
     }
 
-    INodes public immutable NODES;
-    ICommittee public immutable COMMITTEE;
+    INodes public nodes;
+    ICommittee public committee;
 
     mapping(DkgId dkg => Round round) public rounds;
 
@@ -100,9 +104,23 @@ contract DKG is IDkg {
         _;
     }
 
+    function initialize(
+        address initialAuthority,
+        ICommittee committeeAddress,
+        INodes nodesAddress
+    )
+        public
+        override
+        initializer
+    {
+        __AccessManaged_init(initialAuthority);
+        committee = committeeAddress;
+        nodes = nodesAddress;
+    }
+
     function alright(DkgId dkg) external override onlyAlrightDkg(dkg) {
         uint256 n = rounds[dkg].nodes.length;
-        NodeId node = NODES.getNodeId(msg.sender);
+        NodeId node = nodes.getNodeId(msg.sender);
         uint256 index = _getIndex(dkg, node);
         Round storage round = rounds[dkg];
         require(!round.completed[index], NodeIsAlreadyAlright(node));
@@ -126,7 +144,7 @@ contract DKG is IDkg {
             secretKeyContribution.length == n,
             IncorrectSecretKeyContributionQuantity(secretKeyContribution.length, n)
         );
-        NodeId node = NODES.getNodeId(msg.sender);
+        NodeId node = nodes.getNodeId(msg.sender);
         uint256 index = _getIndex(dkg, node);
         Round storage round = rounds[dkg];
         require(round.hashedData[index] == bytes32(0), NodeAlreadyBroadcasted(node));
@@ -148,6 +166,10 @@ contract DKG is IDkg {
 
     function generate(NodeId[] calldata nodes) external override returns (DkgId dkg) {
         return _createRound(nodes);
+    }
+
+    function isNodeBroadcasted(DkgId dkg, NodeId node) external view returns (bool broadcasted) {
+        revert NotImplemented();
     }
 
     // Private
