@@ -398,4 +398,8 @@ contract Nodes is AccessManagedUpgradeable, INodes {
     function _isAddressOfActiveNode(address nodeAddress) private view returns (bool result) {
         result = _activeNodesAddressToId.contains(nodeAddress);
     }
+
+    function getNodeId(address /*nodeAddress*/) external view override returns (NodeId nodeId) {
+        revert NotImplemented();
+    }
 }
