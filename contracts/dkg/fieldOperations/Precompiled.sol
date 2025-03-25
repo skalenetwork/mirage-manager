@@ -82,19 +82,6 @@ library Precompiled {
         uint256 d2)
         internal view returns (bool pairing)
     {
-        uint256[12] memory inputToPairing;
-        inputToPairing[0] = x1;
-        inputToPairing[1] = y1;
-        inputToPairing[2] = a1;
-        inputToPairing[3] = b1;
-        inputToPairing[4] = c1;
-        inputToPairing[5] = d1;
-        inputToPairing[6] = x2;
-        inputToPairing[7] = y2;
-        inputToPairing[8] = a2;
-        inputToPairing[9] = b2;
-        inputToPairing[10] = c2;
-        inputToPairing[11] = d2;
         bytes memory output = _callPrecompiled(EC_PAIRING, abi.encodePacked(
             x1, y1,
             a1, b1,
