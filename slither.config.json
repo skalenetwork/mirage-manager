@@ -1,4 +1,3 @@
 {
-    "detectors_to_exclude": "similar-names,solc-version,assembly",
-    "filter_paths": "(node_modules/|contracts/hardhat-dependency-compiler/|thirdparty/|test/)"
+    "detectors_to_exclude": "solc-version,assembly"
 }
