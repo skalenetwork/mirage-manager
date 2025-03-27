@@ -89,7 +89,7 @@ contract DKG is AccessManagedUpgradeable, IDkg {
         uint256 actual,
         uint256 expected
     );
-    error NodeNotFound(NodeId node);
+    error NodeDoesNotParticipateInDkg(NodeId node);
     error NodeAlreadyBroadcasted(NodeId node);
     error IncorrectG2Point(G2Point value);
     error NodeIsAlreadyAlright(NodeId node);
@@ -147,7 +147,7 @@ contract DKG is AccessManagedUpgradeable, IDkg {
         NodeId node = nodes.getNodeId(msg.sender);
         uint256 index = _getIndex(dkg, node);
         Round storage round = rounds[dkg];
-        require(round.hashedData[index] == bytes32(0), NodeAlreadyBroadcasted(node));
+        require(!_isNodeBroadcasted(dkg, index), NodeAlreadyBroadcasted(node));
 
         ++round.numberOfBroadcasted;
         if ( round.numberOfBroadcasted == n ) {
@@ -168,8 +168,9 @@ contract DKG is AccessManagedUpgradeable, IDkg {
         return _createRound(participants);
     }
 
-    function isNodeBroadcasted(DkgId dkg, NodeId node) external view returns (bool broadcasted) {
-        revert NotImplemented();
+    function isNodeBroadcasted(DkgId dkg, NodeId node) external view override returns (bool broadcasted) {
+        uint256 index = _getIndex(dkg, node);
+        return _isNodeBroadcasted(dkg, index);
     }
 
     // Private
@@ -206,7 +207,11 @@ contract DKG is AccessManagedUpgradeable, IDkg {
                 return index;
             }
         }
-        revert NodeNotFound(node);
+        revert NodeDoesNotParticipateInDkg(node);
+    }
+
+    function _isNodeBroadcasted(DkgId dkg, uint256 index) private view returns (bool broadcasted) {
+        return rounds[dkg].hashedData[index] != bytes32(0);
     }
 
     function _getT(uint256 n) private pure returns (uint256 t) {
