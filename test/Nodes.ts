@@ -58,6 +58,7 @@ describe("Nodes", function () {
         expect(await nodesContract.getNodeId(deployer.address)).to.equal(1n);
 
         expect(await nodesContract.getActiveNodesIds()).to.eql([1n]);
+        expect(await nodesContract.activeNodeExists(1)).to.eql(true);
     });
 
     it("should register Passive Nodes", async () => {

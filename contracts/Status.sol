@@ -24,38 +24,96 @@ pragma solidity ^0.8.24;
 import {
     AccessManagedUpgradeable
 } from "@openzeppelin/contracts-upgradeable/access/manager/AccessManagedUpgradeable.sol";
-import {INodes, NodeId} from "@skalenetwork/playa-manager-interfaces/contracts/INodes.sol";
-import {
-    Duration,
-    IStatus
-} from "@skalenetwork/playa-manager-interfaces/contracts/IStatus.sol";
+import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
-import {NotImplemented} from "./errors.sol";
+import { INodes, NodeId } from "@skalenetwork/playa-manager-interfaces/contracts/INodes.sol";
+import { Duration, IStatus } from "@skalenetwork/playa-manager-interfaces/contracts/IStatus.sol";
+
 
 
 contract Status is AccessManagedUpgradeable, IStatus {
-    function initialize(address initialAuthority, INodes) public initializer override {
+
+    using EnumerableSet for EnumerableSet.UintSet;
+
+    Duration public heartbeatInterval;
+    mapping (NodeId id => Duration timestamp) public lastHeartbeatTimestamp;
+    EnumerableSet.UintSet private _whitelist;
+
+    INodes public nodes;
+
+    error NodeAlreadyWhitelisted(NodeId nodeId);
+    error NodeNotWhitelisted(NodeId nodeId);
+    error NodeDoesNotExist(NodeId nodeId);
+
+    modifier nodeExists(NodeId nodeId) {
+        require(nodes.activeNodeExists(nodeId), NodeDoesNotExist(nodeId));
+        _;
+    }
+    function initialize(address initialAuthority, INodes nodesAddress) public override initializer {
         __AccessManaged_init(initialAuthority);
+        nodes = nodesAddress;
     }
+
     function alive() external override {
-        revert NotImplemented();
+        // Nodes.sol will revert if sender has no Active Node
+        NodeId nodeId = nodes.getNodeId(msg.sender);
+
+        lastHeartbeatTimestamp[nodeId] = Duration.wrap(block.timestamp);
     }
-    function setHeartbeatInterval(Duration /*interval*/) external override {
-        revert NotImplemented();
+    function setHeartbeatInterval(Duration interval) external override restricted {
+        heartbeatInterval = interval;
     }
-    function whitelistNode(NodeId) external override {
-        revert NotImplemented();
+
+    function whitelistNode(NodeId nodeId) external override restricted nodeExists(nodeId) {
+        require(_whitelist.add(NodeId.unwrap(nodeId)), NodeAlreadyWhitelisted(nodeId));
     }
-    function removeNodeFromWhitelist(NodeId) external override {
-        revert NotImplemented();
+
+    function removeNodeFromWhitelist(NodeId nodeId) external override restricted {
+        require(_whitelist.remove(NodeId.unwrap(nodeId)), NodeNotWhitelisted(nodeId));
     }
-    function isHealthy(NodeId /*nodeId*/) external view override returns (bool healthy) {
-        revert NotImplemented();
+
+    function isHealthy(NodeId nodeId) external view override returns (bool healthy) {
+        healthy = _isHealthy(nodeId);
     }
+
     function getNodesEligibleForCommittee() external view override returns (NodeId[] memory nodeIds) {
-        revert NotImplemented();
+        // TODO: Select random subset ?
+        uint256[] memory ids = _whitelist.values();
+        NodeId[] memory temp = new NodeId[](ids.length);
+        uint256 count = 0;
+        uint256 idsLength = ids.length;
+
+        for (uint256 i = 0; i < idsLength; ++i) {
+            NodeId nodeId = NodeId.wrap(ids[i]);
+            if (!_isHealthy(nodeId)) {
+                continue;
+            }
+            // Node may not exist anymore in repository, but external call in a loop seems costly
+            // The other option would be to propagate node removals, but this introduces circular dependency
+            // Disabling for now
+            // slither-disable-next-line all
+            if (nodes.activeNodeExists(nodeId)) {
+                temp[count] = nodeId;
+                ++count;
+            }
+        }
+
+        nodeIds = new NodeId[](count);
+        for (uint256 i = 0; i < count; ++i) {
+            nodeIds[i] = temp[i];
+        }
     }
+
     function getWhitelistedNodes() external view override returns (uint256[] memory nodeIds) {
-        revert NotImplemented();
+        nodeIds = _whitelist.values();
+    }
+
+    function _isHealthy(NodeId nodeId) private view returns (bool healthy) {
+
+        uint256 interval = block.timestamp - Duration.unwrap(lastHeartbeatTimestamp[nodeId]);
+
+        // Disabling recommendation to not compare using block timestamps
+        // slither-disable-next-line all
+        healthy = interval < Duration.unwrap(heartbeatInterval);
     }
 }

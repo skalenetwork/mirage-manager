@@ -327,6 +327,10 @@ contract Nodes is AccessManagedUpgradeable, INodes {
         return nodes[nodeId];
     }
 
+    function activeNodeExists(NodeId nodeId) external view override returns(bool result){
+        result = _isActiveNode(nodeId);
+    }
+
     function getNodeId(address nodeAddress) external view override returns (NodeId nodeId) {
         // Getter for active node
         require(
