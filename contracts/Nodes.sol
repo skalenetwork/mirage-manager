@@ -25,12 +25,15 @@ import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet
 
 import {INodes, NodeId} from "@skalenetwork/playa-manager-interfaces/contracts/INodes.sol";
 
+
 contract Nodes is INodes {
 
     using EnumerableSet for EnumerableSet.UintSet;
     using EnumerableSet for EnumerableSet.AddressSet;
     using EnumerableSet for EnumerableSet.Bytes32Set;
 
+    bytes4 private constant ZERO_IPV4 = 0x00000000;
+    bytes16 private constant ZERO_IPV6 = 0x00000000000000000000000000000000;
     /// For node Id generation
     uint256 private _nodeIdCounter;
 
@@ -72,14 +75,53 @@ contract Nodes is INodes {
     error InvalidIp(bytes ip);
     error IpIsNotAvailable(bytes ip);
     error DomainNameAlreadyTaken(string domainName);
+    error InvalidSender();
 
-    function registerNode(bytes calldata ip, uint16 port) external override {
-
-        if (_passiveNodeAddresses.contains(msg.sender)) {
-            revert AddressInUseByPassiveNodes(msg.sender);
+    modifier checkNodeIndex(NodeId nodeId) {
+        if (!_isActiveNode(nodeId) && !_isPassiveNode(nodeId)){
+            revert NodeDoesNotExist(nodeId);
         }
+        _;
+    }
+    modifier validIp(bytes calldata ip) {
+        // Check if IPv4 or IPv6
+        if (ip.length == 4) {
+            if (bytes4(ip) == ZERO_IPV4){
+                revert InvalidIp(ip);
+            }
+        } else if (ip.length == 16) {
+            if (bytes16(ip) == ZERO_IPV6) {
+                revert InvalidIp(ip);
+            }
+        } else {
+            revert InvalidIp(ip);
+        }
+        _;
+    }
 
-        _validateNewNodeInput(msg.sender, ip, port);
+    modifier validPort(uint16 port) {
+        if (port == 0) {
+            revert InvalidPortNumber(port);
+        }
+        _;
+    }
+
+    modifier isNodeOwner(NodeId nodeId){
+        if (msg.sender != nodes[nodeId].nodeAddress) {
+            revert InvalidSender();
+        }
+        _;
+    }
+
+    function registerNode(
+        bytes calldata ip,
+        uint16 port
+    )
+        external
+        override
+        validIp(ip)
+        validPort(port)
+    {
 
         unchecked {
             ++_nodeIdCounter;
@@ -107,43 +149,44 @@ contract Nodes is INodes {
     }
 
 
-    function requestChangeAddress(NodeId nodeId, address newAddress) external override {
+    function requestChangeAddress(
+        NodeId nodeId,
+        address newAddress
+    )
+        external
+        override
+        checkNodeIndex(nodeId)
+        isNodeOwner(nodeId)
+    {
         if (_isPassiveNode(nodeId)) {
-            require(nodes[nodeId].nodeAddress == msg.sender, "You are not authorized to perform this request");
             if (_isAddressOfActiveNode(newAddress)) {
                 revert AddressAlreadyHasNode(newAddress);
             }
             addressChangeRequests[nodeId] = newAddress;
+            return;
         }
-        else if (_isActiveNode(nodeId)) {
-            require(nodes[nodeId].nodeAddress == msg.sender, "You are not authorized to perform this request");
-            if (_isAddressOfPassiveNodes(newAddress)) {
-                revert AddressInUseByPassiveNodes(newAddress);
-            }
-            if (_isAddressOfActiveNode(newAddress)) {
-                revert AddressAlreadyHasNode(newAddress);
-            }
-            addressChangeRequests[nodeId] = newAddress;
+
+        // Is active
+        if (_isAddressOfPassiveNodes(newAddress)) {
+            revert AddressInUseByPassiveNodes(newAddress);
         }
-        else{
-            revert NodeDoesNotExist(nodeId);
+        if (_isAddressOfActiveNode(newAddress)) {
+            revert AddressAlreadyHasNode(newAddress);
         }
+        addressChangeRequests[nodeId] = newAddress;
+
     }
 
     function confirmAddressChange(NodeId nodeId) external override {
         // TODO: Block if Node is in Committee ?
 
         address newAddress = addressChangeRequests[nodeId];
-        require(newAddress != address(0), "There is no address change request reccorded for this node.");
-        require(newAddress == msg.sender, "You are not authorized to perform this operation.");
+        require(newAddress != address(0), "No request reccorded for this node.");
+        if (newAddress != msg.sender) {
+            revert InvalidSender();
+        }
 
         if (_isActiveNode(nodeId)) {
-            if (_isAddressOfPassiveNodes(msg.sender)) {
-                revert AddressInUseByPassiveNodes(msg.sender);
-            }
-            if (_isAddressOfActiveNode(msg.sender)) {
-                revert AddressAlreadyHasNode(msg.sender);
-            }
 
             address oldAddress = nodes[nodeId].nodeAddress;
 
@@ -160,9 +203,6 @@ contract Nodes is INodes {
         }
         else if (_isPassiveNode(nodeId)) {
 
-            if (_isAddressOfActiveNode(newAddress)) {
-                revert AddressAlreadyHasNode(newAddress);
-            }
             address oldAddress = nodes[nodeId].nodeAddress;
 
             // Remove old address
@@ -183,9 +223,12 @@ contract Nodes is INodes {
     function registerPassiveNode(
         bytes calldata ip,
         uint16 port
-    ) external override {
-
-        _validateNewNodeInput(msg.sender, ip, port);
+    )
+        external
+        override
+        validIp(ip)
+        validPort(port)
+    {
 
         unchecked {
             ++_nodeIdCounter;
@@ -212,16 +255,20 @@ contract Nodes is INodes {
         emit NodeRegistered(nodeId, msg.sender, ip, port);
     }
 
-    function setIpAddress(NodeId nodeId, bytes calldata ip, uint16 port) external override {
+    function setIpAddress(
+        NodeId nodeId,
+        bytes calldata ip,
+        uint16 port
+        )
+            external
+            override
+            checkNodeIndex(nodeId)
+            isNodeOwner(nodeId)
+            validIp(ip)
+            validPort(port)
+        {
         //TODO: Block if Node is in Committee
-        _checkNodeIndex(nodeId);
         Node storage node = nodes[nodeId];
-
-        require(msg.sender == node.nodeAddress, "You are not authorized to perform this operation");
-
-        _validatePort(port);
-        _validateIp(ip);
-
 
         _ips.remove(keccak256(node.ip));
         if(!_ips.add(keccak256(ip))){
@@ -232,11 +279,13 @@ contract Nodes is INodes {
         //emit NodeIpChanged(nodeId, msg.sender, ip, port);
 
     }
-    function setDomainName(NodeId nodeId, string calldata name) external override {
-        _checkNodeIndex(nodeId);
+    function setDomainName(NodeId nodeId, string calldata name)
+        external
+        override
+        checkNodeIndex(nodeId)
+        isNodeOwner(nodeId)
+    {
         Node storage node = nodes[nodeId];
-
-        require(msg.sender == node.nodeAddress, "You are not authorized to perform this operation");
 
         bytes32 newName = keccak256(abi.encodePacked(name));
         require(newName != keccak256(""), "Provide a non empty name");
@@ -258,9 +307,9 @@ contract Nodes is INodes {
         external
         view
         override
+        checkNodeIndex(nodeId)
         returns (Node memory node)
     {
-        _checkNodeIndex(nodeId);
         return nodes[nodeId];
     }
 
@@ -276,6 +325,7 @@ contract Nodes is INodes {
     function _addPassiveNodeId(NodeId nodeId) private {
         bool result = _passiveNodeIds.add(NodeId.unwrap(nodeId));
         if(!result) {
+            // Should be impossible to happen
             revert NodeAlreadyExists(nodeId);
         }
     }
@@ -283,62 +333,32 @@ contract Nodes is INodes {
     function _addActiveNodeId(NodeId nodeId) private {
         bool result = _activeNodeIds.add(NodeId.unwrap(nodeId));
         if(!result) {
+            // Should be impossible to happen
             revert NodeAlreadyExists(nodeId);
         }
     }
 
     function _setActiveNodeIdForAddress(address nodeAddress, NodeId nodeId) private {
+        if (_isAddressOfPassiveNodes(nodeAddress)) {
+            revert AddressInUseByPassiveNodes(nodeAddress);
+        }
         bool result = _activeNodeAddresses.add(nodeAddress);
         if(!result) {
-            revert NodeAlreadyExists(nodeId);
+            revert AddressAlreadyHasNode(nodeAddress);
         }
         activeNodeIdByAddress[nodeAddress] = nodeId;
     }
 
     function _setPassiveNodeIdForAddress(address nodeAddress, NodeId nodeId) private {
+        if (_isAddressOfActiveNode(nodeAddress)) {
+            revert AddressAlreadyHasNode(nodeAddress);
+        }
         bool result = _passiveNodeIdByAddress[nodeAddress].add(NodeId.unwrap(nodeId));
         if (!result) {
             revert PassiveNodeAlreadyExistsForAddress(nodeAddress, nodeId);
         }
         // Ignore result: passive node address can already exist
         _passiveNodeAddresses.add(nodeAddress);
-    }
-
-    function _checkNodeIndex(NodeId nodeId) private view {
-        if (!_isActiveNode(nodeId) && !_isPassiveNode(nodeId)){
-            revert NodeDoesNotExist(nodeId);
-        }
-    }
-
-    function _validateNewNodeInput(address nodeAddress, bytes calldata ip, uint16 port) private view {
-
-        _validatePort(port);
-        _validateIp(ip);
-        if (_isAddressOfActiveNode(nodeAddress)){
-            revert AddressAlreadyHasNode(nodeAddress);
-        }
-    }
-    function _validatePort(uint16 port) private pure {
-        if (port == 0) {
-            revert InvalidPortNumber(port);
-        }
-    }
-    function _validateIp(bytes calldata ip) private view {
-        // Check if IPv4 or IPv6
-        if (ip.length != 4 && ip.length != 16) {
-            revert InvalidIp(ip);
-        }
-
-        bytes32 raw;
-        assembly {
-            raw := calldataload(ip.offset)
-        }
-        if (raw == bytes32(0)) {
-            revert InvalidIp(ip);
-        }
-        if (_ips.contains(keccak256(ip))) {
-            revert IpIsNotAvailable(ip);
-        }
     }
 
     function _isActiveNode(NodeId nodeId) private view returns (bool result) {

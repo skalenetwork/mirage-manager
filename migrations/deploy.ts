@@ -9,7 +9,7 @@ import { Committee, DKG, Nodes, PlayaAccessManager, Staking, Status } from "../t
 export const contracts = [
     "PlayaAccessManager", // must be first
     "Committee",
-    "DKG",
+    //"DKG", : missing input for initialize
     "Nodes",
     "Staking",
     "Status"

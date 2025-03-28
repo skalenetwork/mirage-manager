@@ -1,3 +1,3 @@
 {
-    "detectors_to_exclude": "solc-version,assembly"
+    "detectors_to_exclude": "solc-version"
 }

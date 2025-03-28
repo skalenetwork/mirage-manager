@@ -32,6 +32,7 @@ import {DkgId} from "@skalenetwork/playa-manager-interfaces/contracts/IDkg.sol";
 
 import {NotImplemented} from "./errors.sol";
 import {DkgId} from "@skalenetwork/playa-manager-interfaces/contracts/IDkg.sol";
+import {NotImplemented} from "./errors.sol";
 
 
 contract Committee is AccessManagedUpgradeable, ICommittee {
@@ -58,7 +59,7 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
     {
         revert NotImplemented();
     }
-    function processSuccessfulDkg(DkgId dkg) external override {
+    function processSuccessfulDkg(DkgId /*dkg*/) external override {
         revert NotImplemented();
     }
     function getActiveCommitteeIndex() external view override returns (CommitteeIndex committeeIndex) {
