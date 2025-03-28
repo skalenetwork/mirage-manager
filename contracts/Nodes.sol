@@ -21,29 +21,59 @@
 
 pragma solidity ^0.8.24;
 
-import {INodes, NodeId} from "@skalenetwork/playa-manager-interfaces/contracts/INodes.sol";
+import {
+    AccessManagedUpgradeable
+} from "@openzeppelin/contracts-upgradeable/access/manager/AccessManagedUpgradeable.sol";
+import {
+    INodes,
+    NodeId
+} from "@skalenetwork/playa-manager-interfaces/contracts/INodes.sol";
 import {NotImplemented} from "./errors.sol";
 
 
-contract Nodes is INodes {
+contract Nodes is AccessManagedUpgradeable, INodes {
     // TODO: remove
     uint256 public constant REMOVE = 5;
 
+    function initialize(address initialAuthority) public initializer {
+        __AccessManaged_init(initialAuthority);
+    }
+
     function registerNode(
         bytes calldata /* ip */,
-        uint256 /* port */
-    ) external override {
+        uint16 /* port */
+    ) external override restricted {
         revert NotImplemented();
     }
 
     function registerPassiveNode(
         bytes calldata /* ip */,
-        uint256 /* port */
+        uint16 /* port */
     ) external override {
         revert NotImplemented();
     }
 
+    function setIpAddress(NodeId, bytes calldata, uint16) external override {
+        revert NotImplemented();
+    }
+
+    function setDomainName(NodeId, string calldata) external {
+        revert NotImplemented();
+    }
+
+    function requestChangeAddress(NodeId, address) external override {
+        revert NotImplemented();
+    }
+
+    function confirmAddressChange(NodeId) external override {
+        revert NotImplemented();
+    }
+
     function getNode(NodeId /* nodeId */) external view override returns (Node memory node) {
+        revert NotImplemented();
+    }
+
+    function getNodeId(address) external view override returns (NodeId nodeId) {
         revert NotImplemented();
     }
 }

@@ -23,22 +23,42 @@
 
 pragma solidity ^0.8.24;
 
-import {DKGId, IDKG} from "@skalenetwork/playa-manager-interfaces/contracts/IDKG.sol";
+import {
+    AccessManagedUpgradeable
+} from "@openzeppelin/contracts-upgradeable/access/manager/AccessManagedUpgradeable.sol";
+import {ICommittee} from "@skalenetwork/playa-manager-interfaces/contracts/ICommittee.sol";
+import {
+    DkgId,
+    IDkg
+} from "@skalenetwork/playa-manager-interfaces/contracts/IDkg.sol";
+import {
+    INodes,
+    NodeId
+} from "@skalenetwork/playa-manager-interfaces/contracts/INodes.sol";
+
 import {NotImplemented} from "./errors.sol";
 
 
-contract DKG is IDKG {
+contract DKG is AccessManagedUpgradeable, IDkg {
 
-    function alright() external override {
+    function initialize(address initialAuthority, ICommittee, INodes) public initializer {
+        __AccessManaged_init(initialAuthority);
+    }
+
+    function alright(DkgId) external override {
         revert NotImplemented();
     }
     function broadcast(
+        DkgId,
         G2Point[] calldata /*verificationVector*/,
         KeyShare[] calldata /*secretKeyContribution*/
     ) external override {
         revert NotImplemented();
     }
-    function generate() external override returns (DKGId dkgId) {
+    function generate(NodeId[] calldata) external override returns (DkgId dkg) {
+        revert NotImplemented();
+    }
+    function isNodeBroadcasted(DkgId, NodeId) external view override returns (bool broadcasted) {
         revert NotImplemented();
     }
 }

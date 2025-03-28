@@ -3,10 +3,11 @@ import { promises as fs } from 'fs';
 import {
     getVersion
 } from '@skalenetwork/upgrade-tools';
-import { Committee, DKG, Nodes, Staking, Status } from "../typechain-types";
+import { Committee, DKG, Nodes, PlayaAccessManager, Staking, Status } from "../typechain-types";
 
 
 export const contracts = [
+    "PlayaAccessManager", // must be first
     "Committee",
     "DKG",
     "Nodes",
@@ -18,15 +19,27 @@ interface DeployedContracts {
     Committee: Committee,
     DKG: DKG,
     Nodes: Nodes,
+    PlayaAccessManager: PlayaAccessManager,
     Staking: Staking,
     Status: Status
 }
 
 export const deploy = async (): Promise<DeployedContracts> => {
-    let deployedContracts = {};
+    const [deployer] = await ethers.getSigners();
+    let deployedContracts: DeployedContracts = {} as DeployedContracts;
     for (const contract of contracts) {
         const factory = await ethers.getContractFactory(contract);
-        const instance = await upgrades.deployProxy(factory);
+        const parameters = [];
+        if (contract === "PlayaAccessManager") {
+            parameters.push(await ethers.resolveAddress(deployer));
+        } else {
+            parameters.push(await ethers.resolveAddress(deployedContracts["PlayaAccessManager"]));
+            if (contract === "DKG") {
+                parameters.push(await ethers.resolveAddress(deployedContracts["Committee"]));
+                parameters.push(await ethers.resolveAddress(deployedContracts["Committee"]));
+            }
+        }
+        const instance = await upgrades.deployProxy(factory, parameters);
         await instance.waitForDeployment();
         deployedContracts = {
             ...deployedContracts,
