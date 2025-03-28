@@ -21,8 +21,9 @@
 
 pragma solidity ^0.8.24;
 
-import { AccessManagedUpgradeable }
-from "@openzeppelin/contracts-upgradeable/access/manager/AccessManagedUpgradeable.sol";
+import {
+    AccessManagedUpgradeable
+} from "@openzeppelin/contracts-upgradeable/access/manager/AccessManagedUpgradeable.sol";
 import {IStaking} from "@skalenetwork/playa-manager-interfaces/contracts/IStaking.sol";
 import {NotImplemented} from "./errors.sol";
 

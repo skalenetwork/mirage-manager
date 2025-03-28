@@ -21,8 +21,9 @@
 
 pragma solidity ^0.8.24;
 
-import {AccessManagerUpgradeable}
-from "@openzeppelin/contracts-upgradeable/access/manager/AccessManagerUpgradeable.sol";
+import {
+    AccessManagerUpgradeable
+} from "@openzeppelin/contracts-upgradeable/access/manager/AccessManagerUpgradeable.sol";
 
 
 contract PlayaAccessManager is AccessManagerUpgradeable {
