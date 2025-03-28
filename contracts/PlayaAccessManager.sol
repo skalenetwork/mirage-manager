@@ -24,12 +24,8 @@ pragma solidity ^0.8.24;
 import {AccessManagerUpgradeable}
 from "@openzeppelin/contracts-upgradeable/access/manager/AccessManagerUpgradeable.sol";
 
-// import {
-//     IPlayaAccessManager
-// } from "@skalenetwork/playa-manager-interfaces/contracts/IPlayaAccessManager.sol";
 
-
-contract PlayaAccessManager is /*IPlayaAccessManager,*/ AccessManagerUpgradeable {
+contract PlayaAccessManager is AccessManagerUpgradeable {
     function initialize(address initialAdmin) public initializer override {
         __AccessManager_init(initialAdmin);
     }
