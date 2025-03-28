@@ -2,7 +2,7 @@
 
 /*
     PlayaAccessManager.sol - playa-manager
-    Copyright (C) 2023-Present SKALE Labs
+    Copyright (C) 2025-Present SKALE Labs
     @author Dmytro Stebaiev
 
     playa-manager is free software: you can redistribute it and/or modify
