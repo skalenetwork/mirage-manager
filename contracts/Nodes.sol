@@ -182,7 +182,7 @@ contract Nodes is INodes {
         // TODO: Block if Node is in Committee ?
 
         address newAddress = addressChangeRequests[nodeId];
-        if(newAddress != address(0)){
+        if(newAddress == address(0)){
             revert AddressIsZero();
         }
         if (newAddress != msg.sender) {
@@ -195,6 +195,7 @@ contract Nodes is INodes {
 
             // Remove old address
             delete addressChangeRequests[nodeId];
+            // slither-disable-next-line all
             _activeNodeAddresses.remove(oldAddress);
             activeNodeIdByAddress[oldAddress] = NodeId.wrap(0);
 
@@ -202,7 +203,7 @@ contract Nodes is INodes {
             _setActiveNodeIdForAddress(newAddress, nodeId);
             nodes[nodeId].nodeAddress = newAddress;
 
-            //emit NodeAddressChanged(nodeId, oldAddress, newAddress);
+            emit NodeAddressChanged(nodeId, oldAddress, newAddress);
         }
         else if (_isPassiveNode(nodeId)) {
 
@@ -210,8 +211,10 @@ contract Nodes is INodes {
 
             // Remove old address
             delete addressChangeRequests[nodeId];
+            // slither-disable-next-line all
             _passiveNodeIdByAddress[oldAddress].remove(NodeId.unwrap(nodeId));
             if (_passiveNodeIdByAddress[oldAddress].length() == 0) {
+                // slither-disable-next-line all
                 _passiveNodeAddresses.remove(oldAddress);
             }
 
@@ -219,7 +222,7 @@ contract Nodes is INodes {
             _setPassiveNodeIdForAddress(newAddress, nodeId);
             nodes[nodeId].nodeAddress = newAddress;
 
-            //emit NodeAddressChanged(nodeId, oldAddress, newAddress);
+            emit NodeAddressChanged(nodeId, oldAddress, newAddress);
         }
     }
 
@@ -273,13 +276,14 @@ contract Nodes is INodes {
         //TODO: Block if Node is in Committee
         Node storage node = nodes[nodeId];
 
+        // slither-disable-next-line all
         _ips.remove(keccak256(node.ip));
         if(!_ips.add(keccak256(ip))){
             revert IpIsNotAvailable(ip);
         }
         node.ip = ip;
         node.port = port;
-        //emit NodeIpChanged(nodeId, msg.sender, ip, port);
+        emit NodeIpChanged(nodeId, msg.sender, ip, port);
 
     }
     function setDomainName(NodeId nodeId, string calldata name)
@@ -291,10 +295,10 @@ contract Nodes is INodes {
         Node storage node = nodes[nodeId];
 
         bytes32 newName = keccak256(abi.encodePacked(name));
-        require(newName != keccak256(""), "Provide a non empty name");
 
         bytes32 oldName = keccak256(abi.encodePacked(node.domainName));
         if (oldName != keccak256("")) {
+            // slither-disable-next-line all
             _domainNames.remove(oldName);
         }
 
@@ -303,7 +307,7 @@ contract Nodes is INodes {
         }
         node.domainName = name;
 
-        //emit NodeDomainNameChanged(nodeId, msg.sender, name);
+        emit NodeDomainNameChanged(nodeId, msg.sender, name);
     }
 
     function getNode(NodeId nodeId)
@@ -361,6 +365,7 @@ contract Nodes is INodes {
             revert PassiveNodeAlreadyExistsForAddress(nodeAddress, nodeId);
         }
         // Ignore result: passive node address can already exist
+        // slither-disable-next-line all
         _passiveNodeAddresses.add(nodeAddress);
     }
 
