@@ -35,7 +35,7 @@
     "compile": "yarn hardhat compile",
     "cspell": "yarn exec cspell .",
     "eslint": "yarn exec eslint .",
-    "fullCheck": "yarn compile && yarn lint && yarn eslint",
+    "fullCheck": "yarn compile && yarn lint && yarn eslint && yarn cspell",
     "hooks": "git config core.hooksPath .githooks",
     "lint": "yarn solhint 'contracts/**/*.sol'",
     "no-hooks": "git config core.hooksPath .git/hooks",

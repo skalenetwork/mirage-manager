@@ -62,14 +62,14 @@ contract Nodes is INodes {
     // Set to track domain Names taken
     EnumerableSet.Bytes32Set private _domainNames;
 
-    // Stores requests to change address before commiting changes
+    // Stores requests to change address before committing changes
     mapping(NodeId => address) public addressChangeRequests;
 
     error NodeDoesNotExist(NodeId nodeId);
     error NodeAlreadyExists(NodeId nodeId);
     error AddressAlreadyHasNode(address nodeAddress);
     error AddressIsNotAssignedToAnyNode(address nodeAddress);
-    error PassiveNodeAlreadyExistsForAddress(address nodeAdress, NodeId nodeId);
+    error PassiveNodeAlreadyExistsForAddress(address nodeAddress, NodeId nodeId);
     error AddressInUseByPassiveNodes(address nodeAddress);
     error InvalidPortNumber(uint16 port);
     error InvalidIp(bytes ip);
@@ -181,7 +181,7 @@ contract Nodes is INodes {
         // TODO: Block if Node is in Committee ?
 
         address newAddress = addressChangeRequests[nodeId];
-        require(newAddress != address(0), "No request reccorded for this node.");
+        require(newAddress != address(0), "No request stored for this node.");
         if (newAddress != msg.sender) {
             revert InvalidSender();
         }

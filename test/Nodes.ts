@@ -167,12 +167,12 @@ describe("Nodes", function () {
         expect(node.nodeAddress).to.equal(user1.address);
     });
 
-    it("should free old address after change is successfull", async () => {
+    it("should free old address after change is successful", async () => {
         await nodesContract.registerNode(MOCK_IP_0_BYTES, 8000);
 
         await nodesContract.requestChangeAddress(1, user1.address);
 
-        // Fails, request not submited yet
+        // Fails, request not made yet
         await expect(nodesContract.registerNode(MOCK_IP_1_BYTES, 8000))
         .to.be.revertedWithCustomError(nodesContract, "AddressAlreadyHasNode");
 
