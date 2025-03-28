@@ -34,6 +34,10 @@ export const deploy = async (): Promise<DeployedContracts> => {
             parameters.push(await ethers.resolveAddress(deployer));
         } else {
             parameters.push(await ethers.resolveAddress(deployedContracts["PlayaAccessManager"]));
+            if (contract === "DKG") {
+                parameters.push(await ethers.resolveAddress(deployedContracts["Committee"]));
+                parameters.push(await ethers.resolveAddress(deployedContracts["Committee"]));
+            }
         }
         const instance = await upgrades.deployProxy(factory, parameters);
         await instance.waitForDeployment();
