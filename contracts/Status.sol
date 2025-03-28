@@ -25,7 +25,10 @@ import {
     AccessManagedUpgradeable
 } from "@openzeppelin/contracts-upgradeable/access/manager/AccessManagedUpgradeable.sol";
 import {NodeId} from "@skalenetwork/playa-manager-interfaces/contracts/INodes.sol";
-import {Duration, IStatus} from "@skalenetwork/playa-manager-interfaces/contracts/IStatus.sol";
+import {
+    Duration,
+    IStatus
+} from "@skalenetwork/playa-manager-interfaces/contracts/IStatus.sol";
 
 import {NotImplemented} from "./errors.sol";
 

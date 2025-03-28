@@ -24,7 +24,10 @@ pragma solidity ^0.8.24;
 import {
     AccessManagedUpgradeable
 } from "@openzeppelin/contracts-upgradeable/access/manager/AccessManagedUpgradeable.sol";
-import {CommitteeIndex, ICommittee} from "@skalenetwork/playa-manager-interfaces/contracts/ICommittee.sol";
+import {
+    CommitteeIndex,
+    ICommittee
+} from "@skalenetwork/playa-manager-interfaces/contracts/ICommittee.sol";
 import {DkgId} from "@skalenetwork/playa-manager-interfaces/contracts/IDkg.sol";
 
 import {NotImplemented} from "./errors.sol";
