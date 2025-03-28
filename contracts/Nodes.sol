@@ -21,18 +21,24 @@
 
 pragma solidity ^0.8.24;
 
+import { AccessManagedUpgradeable }
+from "@openzeppelin/contracts-upgradeable/access/manager/AccessManagedUpgradeable.sol";
 import {INodes, NodeId} from "@skalenetwork/playa-manager-interfaces/contracts/INodes.sol";
 import {NotImplemented} from "./errors.sol";
 
 
-contract Nodes is INodes {
+contract Nodes is AccessManagedUpgradeable, INodes {
     // TODO: remove
     uint256 public constant REMOVE = 5;
+
+    function initialize(address initialAuthority) public initializer {
+        __AccessManaged_init(initialAuthority);
+    }
 
     function registerNode(
         bytes calldata /* ip */,
         uint256 /* port */
-    ) external override {
+    ) external override restricted {
         revert NotImplemented();
     }
 

@@ -21,11 +21,17 @@
 
 pragma solidity ^0.8.24;
 
+import { AccessManagedUpgradeable }
+from "@openzeppelin/contracts-upgradeable/access/manager/AccessManagedUpgradeable.sol";
 import {CommitteeIndex, ICommittee} from "@skalenetwork/playa-manager-interfaces/contracts/ICommittee.sol";
 import {NotImplemented} from "./errors.sol";
 
 
-contract Committee is ICommittee {
+contract Committee is AccessManagedUpgradeable, ICommittee {
+
+    function initialize(address initialAuthority) public initializer {
+        __AccessManaged_init(initialAuthority);
+    }
 
     function select() external override {
         revert NotImplemented();

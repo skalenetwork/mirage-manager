@@ -23,11 +23,17 @@
 
 pragma solidity ^0.8.24;
 
+import { AccessManagedUpgradeable }
+from "@openzeppelin/contracts-upgradeable/access/manager/AccessManagedUpgradeable.sol";
 import {DKGId, IDKG} from "@skalenetwork/playa-manager-interfaces/contracts/IDKG.sol";
 import {NotImplemented} from "./errors.sol";
 
 
-contract DKG is IDKG {
+contract DKG is AccessManagedUpgradeable, IDKG {
+
+    function initialize(address initialAuthority) public initializer {
+        __AccessManaged_init(initialAuthority);
+    }
 
     function alright() external override {
         revert NotImplemented();

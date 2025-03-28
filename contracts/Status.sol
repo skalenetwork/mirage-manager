@@ -21,13 +21,18 @@
 
 pragma solidity ^0.8.24;
 
+import { AccessManagedUpgradeable }
+from "@openzeppelin/contracts-upgradeable/access/manager/AccessManagedUpgradeable.sol";
 import {NodeId} from "@skalenetwork/playa-manager-interfaces/contracts/INodes.sol";
 import {Duration, IStatus} from "@skalenetwork/playa-manager-interfaces/contracts/IStatus.sol";
 
 import {NotImplemented} from "./errors.sol";
 
 
-contract Status is IStatus {
+contract Status is AccessManagedUpgradeable, IStatus {
+    function initialize(address initialAuthority) public initializer {
+        __AccessManaged_init(initialAuthority);
+    }
     function alive() external override {
         revert NotImplemented();
     }

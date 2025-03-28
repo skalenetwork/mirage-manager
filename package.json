@@ -41,6 +41,8 @@
     "tsc": "yarn exec tsc --noEmit"
   },
   "dependencies": {
+    "@openzeppelin/contracts": "^5.2.0",
+    "@openzeppelin/contracts-upgradeable": "^5.2.0",
     "@openzeppelin/hardhat-upgrades": "^3.9.0",
     "@openzeppelin/upgrades-core": "^1.42.2",
     "@skalenetwork/playa-manager-interfaces": "git@github.com:skalenetwork/playa-manager-interfaces.git",
