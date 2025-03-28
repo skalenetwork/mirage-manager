@@ -32,8 +32,8 @@ contract Nodes is INodes {
     using EnumerableSet for EnumerableSet.AddressSet;
     using EnumerableSet for EnumerableSet.Bytes32Set;
 
-    bytes4 private constant ZERO_IPV4 = 0x00000000;
-    bytes16 private constant ZERO_IPV6 = 0x00000000000000000000000000000000;
+    bytes4 private constant ZERO_IPV4 = bytes4(0);
+    bytes16 private constant ZERO_IPV6 = bytes16(0);
     /// For node Id generation
     uint256 private _nodeIdCounter;
 
@@ -44,15 +44,15 @@ contract Nodes is INodes {
     EnumerableSet.UintSet private _activeNodeIds;
 
     // Mapping from node ID to Node struct
-    mapping(NodeId => Node) public nodes;
+    mapping(NodeId nodeId => Node node) public nodes;
 
     //Maps addresses to NodeIds
-    mapping(address => NodeId) public activeNodeIdByAddress;
+    mapping(address nodeAddress => NodeId nodeId) public activeNodeIdByAddress;
     // Set to track active node addresses
     EnumerableSet.AddressSet private _activeNodeAddresses;
 
     //Maps addresses to NodeIds
-    mapping(address => EnumerableSet.UintSet) private _passiveNodeIdByAddress;
+    mapping(address nodeAddress => EnumerableSet.UintSet nodeIds) private _passiveNodeIdByAddress;
     // Set to track passive node addresses
     EnumerableSet.AddressSet private _passiveNodeAddresses;
 
@@ -63,7 +63,7 @@ contract Nodes is INodes {
     EnumerableSet.Bytes32Set private _domainNames;
 
     // Stores requests to change address before committing changes
-    mapping(NodeId => address) public addressChangeRequests;
+    mapping(NodeId nodeId => address nodeAddress) public addressChangeRequests;
 
     error NodeDoesNotExist(NodeId nodeId);
     error NodeAlreadyExists(NodeId nodeId);
@@ -76,6 +76,7 @@ contract Nodes is INodes {
     error IpIsNotAvailable(bytes ip);
     error DomainNameAlreadyTaken(string domainName);
     error InvalidSender();
+    error AddressIsZero();
 
     modifier checkNodeIndex(NodeId nodeId) {
         if (!_isActiveNode(nodeId) && !_isPassiveNode(nodeId)){
@@ -181,7 +182,9 @@ contract Nodes is INodes {
         // TODO: Block if Node is in Committee ?
 
         address newAddress = addressChangeRequests[nodeId];
-        require(newAddress != address(0), "No request stored for this node.");
+        if(newAddress != address(0)){
+            revert AddressIsZero();
+        }
         if (newAddress != msg.sender) {
             revert InvalidSender();
         }
