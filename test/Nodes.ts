@@ -201,7 +201,7 @@ describe("Nodes", function () {
 
     });
 
-    it("should not allow submit address change requests for not existant nodes", async () => {
+    it("should not allow submit address change requests for not existent nodes", async () => {
         await expect(nodesContract.requestChangeAddress(1, deployer.address))
         .to.be.reverted;
     });
@@ -357,10 +357,10 @@ describe("Nodes", function () {
         // two nodes requested the same address
         expect(address1).to.equal(address2);
 
-        // Node 1 gets new address successfuly
+        // Node 1 gets new address successfully
         await nodesContract.connect(user2).confirmAddressChange(1);
 
-        // Should fail to confirm the seccond change
+        // Should fail to confirm the next change
         await expect(nodesContract.connect(user2).confirmAddressChange(2))
         .to.be.revertedWithCustomError(nodesContract, "AddressIsAlreadyAssignedToNode");
 
