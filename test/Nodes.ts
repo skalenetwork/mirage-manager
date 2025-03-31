@@ -55,7 +55,9 @@ describe("Nodes", function () {
         expect(Buffer.from(getBytes(node.ip))).to.eql(MOCK_IP_0_BYTES);
         expect(node.nodeAddress).to.equal(deployer.address);
 
-        expect(await nodesContract.getNodeId(deployer.address)).to.equal(1n)
+        expect(await nodesContract.getNodeId(deployer.address)).to.equal(1n);
+
+        expect(await nodesContract.getActiveNodesIds()).to.eql([1n]);
 
         await nodesContract.connect(user1).registerPassiveNode(MOCK_IPV6_BYTES, 8000);
 

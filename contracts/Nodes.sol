@@ -158,6 +158,9 @@ contract Nodes is AccessManagedUpgradeable, INodes {
             domainName: ""
         });
 
+        // Notify Committee of new active nodeId
+        committeeContract.newNodeCreated(nodeId);
+
         emit NodeRegistered(nodeId, msg.sender, ip, port);
     }
 
@@ -338,6 +341,10 @@ contract Nodes is AccessManagedUpgradeable, INodes {
             revert AddressIsNotAssignedToAnyNode(nodeAddress);
         }
         nodeIds = _passiveNodeIdByAddress[nodeAddress].values();
+    }
+
+    function getActiveNodesIds() external view override returns (uint256[] memory nodeIds) {
+        nodeIds = _activeNodeIds.values();
     }
 
     function _addPassiveNodeId(NodeId nodeId) private {

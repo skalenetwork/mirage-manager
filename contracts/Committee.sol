@@ -62,7 +62,13 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
         revert NotImplemented();
     }
 
+    function newNodeCreated(NodeId /*nodeId*/) external override {
+        assert(true);
+    }
+
     function isNodeInCurrentOrNextCommittee(NodeId /*node*/) external view returns (bool result){
         return false;
     }
+
+
 }
