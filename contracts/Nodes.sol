@@ -90,9 +90,11 @@ contract Nodes is AccessManagedUpgradeable, INodes {
     error AddressMustNotBeZero();
 
     modifier nodeNotInCommittee(NodeId nodeId){
-        if (committeeContract.isNodeInCurrentOrNextCommittee(nodeId)) {
-            revert NodeIsInCommittee(nodeId);
-        }
+        require(
+            !committeeContract.isNodeInCurrentOrNextCommittee(nodeId),
+            NodeIsInCommittee(nodeId)
+        );
+
         _;
     }
 
@@ -155,9 +157,7 @@ contract Nodes is AccessManagedUpgradeable, INodes {
 
         _setActiveNodeIdForAddress(msg.sender, nodeId);
 
-        if(!_usedIps.add(keccak256(ip))){
-            revert IpIsNotAvailable(ip);
-        }
+        require(_usedIps.add(keccak256(ip)), IpIsNotAvailable(ip));
 
         nodes[nodeId] = Node({
             id: nodeId,
@@ -167,10 +167,10 @@ contract Nodes is AccessManagedUpgradeable, INodes {
             domainName: ""
         });
 
+        emit NodeRegistered(nodeId, msg.sender, ip, port);
+
         // Notify Committee of new active nodeId
         committeeContract.newNodeCreated(nodeId);
-
-        emit NodeRegistered(nodeId, msg.sender, ip, port);
     }
 
 
@@ -184,20 +184,23 @@ contract Nodes is AccessManagedUpgradeable, INodes {
         onlyNodeOwner(nodeId)
     {
         if (_isPassiveNode(nodeId)) {
-            if (_isAddressOfActiveNode(newAddress)) {
-                revert AddressIsAlreadyAssignedToNode(newAddress);
-            }
+            require(
+                !_isAddressOfActiveNode(newAddress),
+                AddressIsAlreadyAssignedToNode(newAddress)
+            );
             addressChangeRequests[nodeId] = newAddress;
             return;
         }
 
         // Is active
-        if (_isAddressOfPassiveNodes(newAddress)) {
-            revert AddressInUseByPassiveNodes(newAddress);
-        }
-        if (_isAddressOfActiveNode(newAddress)) {
-            revert AddressIsAlreadyAssignedToNode(newAddress);
-        }
+        require(
+            !_isAddressOfPassiveNodes(newAddress),
+            AddressInUseByPassiveNodes(newAddress)
+        );
+        require(
+            !_isAddressOfActiveNode(newAddress),
+            AddressIsAlreadyAssignedToNode(newAddress)
+        );
         addressChangeRequests[nodeId] = newAddress;
 
     }
@@ -262,9 +265,7 @@ contract Nodes is AccessManagedUpgradeable, INodes {
 
         _setPassiveNodeIdForAddress(msg.sender, nodeId);
 
-        if(!_usedIps.add(keccak256(ip))){
-            revert IpIsNotAvailable(ip);
-        }
+        require(_usedIps.add(keccak256(ip)), IpIsNotAvailable(ip));
 
         nodes[nodeId] = Node({
             id: nodeId,
@@ -293,9 +294,7 @@ contract Nodes is AccessManagedUpgradeable, INodes {
         Node storage node = nodes[nodeId];
 
         assert(_usedIps.remove(keccak256(node.ip)));
-        if(!_usedIps.add(keccak256(ip))){
-            revert IpIsNotAvailable(ip);
-        }
+        require(_usedIps.add(keccak256(ip)), IpIsNotAvailable(ip));
         node.ip = ip;
         node.port = port;
         emit NodeIpChanged(nodeId, msg.sender, ip, port);
@@ -316,9 +315,8 @@ contract Nodes is AccessManagedUpgradeable, INodes {
             assert(_usedDomainNames.remove(oldName));
         }
 
-        if(!_usedDomainNames.add(newName)){
-            revert DomainNameAlreadyTaken(name);
-        }
+        require(_usedDomainNames.add(newName), DomainNameAlreadyTaken(name));
+
         node.domainName = name;
 
         emit NodeDomainNameChanged(nodeId, msg.sender, name);
@@ -337,18 +335,21 @@ contract Nodes is AccessManagedUpgradeable, INodes {
 
     function getNodeId(address nodeAddress) external view override returns (NodeId nodeId) {
         // Getter for active node
-        if (!_isAddressOfActiveNode(nodeAddress)) {
-            revert AddressIsNotAssignedToAnyNode(nodeAddress);
-        }
+        require(
+            _isAddressOfActiveNode(nodeAddress),
+            AddressIsNotAssignedToAnyNode(nodeAddress)
+        );
+
         nodeId = NodeId.wrap(_activeNodesAddressToId.get(nodeAddress));
     }
 
     function getPassiveNodeIds(address nodeAddress) external view override returns (uint256[] memory nodeIds) {
         // Getter for passive nodes
         // Casting uint256[] to NodeId[] will come at a price if some other contract uses this function
-        if (!_isAddressOfPassiveNodes(nodeAddress)) {
-            revert AddressIsNotAssignedToAnyNode(nodeAddress);
-        }
+        require(
+            _isAddressOfPassiveNodes(nodeAddress),
+            AddressIsNotAssignedToAnyNode(nodeAddress)
+        );
         nodeIds = _passiveNodeIdByAddress[nodeAddress].values();
     }
 
@@ -365,25 +366,29 @@ contract Nodes is AccessManagedUpgradeable, INodes {
     }
 
     function _setActiveNodeIdForAddress(address nodeAddress, NodeId nodeId) private {
-        if (_isAddressOfPassiveNodes(nodeAddress)) {
-            revert AddressInUseByPassiveNodes(nodeAddress);
-        }
-        if(!_activeNodesAddressToId.set(nodeAddress, NodeId.unwrap(nodeId))) {
-            revert AddressIsAlreadyAssignedToNode(nodeAddress);
-        }
+        require(
+            !_isAddressOfPassiveNodes(nodeAddress),
+            AddressInUseByPassiveNodes(nodeAddress)
+        );
+        require(
+            _activeNodesAddressToId.set(nodeAddress, NodeId.unwrap(nodeId)),
+            AddressIsAlreadyAssignedToNode(nodeAddress)
+        );
     }
 
     function _setPassiveNodeIdForAddress(address nodeAddress, NodeId nodeId) private {
-        if (_isAddressOfActiveNode(nodeAddress)) {
-            revert AddressIsAlreadyAssignedToNode(nodeAddress);
-        }
-        bool result = _passiveNodeIdByAddress[nodeAddress].add(NodeId.unwrap(nodeId));
-        if (!result) {
-            revert PassiveNodeAlreadyExistsForAddress(nodeAddress, nodeId);
-        }
+        require(
+            !_isAddressOfActiveNode(nodeAddress),
+            AddressIsAlreadyAssignedToNode(nodeAddress)
+        );
+
+        require(
+            _passiveNodeIdByAddress[nodeAddress].add(NodeId.unwrap(nodeId)),
+            PassiveNodeAlreadyExistsForAddress(nodeAddress, nodeId)
+        );
+
         if (!_isAddressOfPassiveNodes(nodeAddress)) {
             assert(_passiveNodeAddresses.add(nodeAddress));
-
         }
     }
 
