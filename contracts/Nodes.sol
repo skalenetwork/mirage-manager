@@ -83,6 +83,11 @@ contract Nodes is AccessManagedUpgradeable, INodes {
     error InvalidIp(bytes ip);
     error IpIsNotAvailable(bytes ip);
     error DomainNameAlreadyTaken(string domainName);
+    error NodeDoesNotExist(NodeId nodeId);
+    error PortShouldNotBeZero();
+    error SenderIsNotNodeOwner();
+    error SenderIsNotNewNodeOwner();
+    error AddressMustNotBeZero();
 
     modifier nodeNotInCommittee(NodeId nodeId){
         if (committeeContract.isNodeInCurrentOrNextCommittee(nodeId)) {
@@ -92,7 +97,11 @@ contract Nodes is AccessManagedUpgradeable, INodes {
     }
 
     modifier nodeExists(NodeId nodeId) {
-        require(_isActiveNode(nodeId) || _isPassiveNode(nodeId), "Node must exist.");
+        require(
+            _isActiveNode(nodeId) || _isPassiveNode(nodeId),
+            NodeDoesNotExist(nodeId)
+        );
+
         _;
     }
     modifier validIp(bytes calldata ip) {
@@ -112,12 +121,12 @@ contract Nodes is AccessManagedUpgradeable, INodes {
     }
 
     modifier validPort(uint16 port) {
-        require(port > 0, "Port should not be 0.");
+        require(port > 0, PortShouldNotBeZero());
         _;
     }
 
     modifier onlyNodeOwner(NodeId nodeId){
-        require(msg.sender == nodes[nodeId].nodeAddress, "Only Node Owner");
+        require(msg.sender == nodes[nodeId].nodeAddress, SenderIsNotNodeOwner());
         _;
     }
 
@@ -203,8 +212,8 @@ contract Nodes is AccessManagedUpgradeable, INodes {
     {
         address newOwner = addressChangeRequests[nodeId];
 
-        require(newOwner != address(0), "Only valid addresses.");
-        require(msg.sender == newOwner, "Only new owner.");
+        require(newOwner != address(0), AddressMustNotBeZero());
+        require(msg.sender == newOwner, SenderIsNotNewNodeOwner());
 
         address oldOwner = nodes[nodeId].nodeAddress;
         // Remove old address
