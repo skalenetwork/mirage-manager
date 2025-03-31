@@ -74,10 +74,6 @@ contract Nodes is AccessManagedUpgradeable, INodes {
     // Set to track active node IDs
     EnumerableSet.UintSet private _activeNodeIds;
 
-
-
-
-    error NodeAlreadyExists(NodeId nodeId);
     error NodeIsInCommittee(NodeId nodeId);
     error AddressIsAlreadyAssignedToNode(address nodeAddress);
     error AddressIsNotAssignedToAnyNode(address nodeAddress);
@@ -345,17 +341,11 @@ contract Nodes is AccessManagedUpgradeable, INodes {
     }
 
     function _addPassiveNodeId(NodeId nodeId) private {
-        if(!_passiveNodeIds.add(NodeId.unwrap(nodeId))) {
-            // Should be impossible to happen
-            revert NodeAlreadyExists(nodeId);
-        }
+        assert(_passiveNodeIds.add(NodeId.unwrap(nodeId)));
     }
 
     function _addActiveNodeId(NodeId nodeId) private {
-        if(!_activeNodeIds.add(NodeId.unwrap(nodeId))) {
-            // Should be impossible to happen
-            revert NodeAlreadyExists(nodeId);
-        }
+        assert(_activeNodeIds.add(NodeId.unwrap(nodeId)));
     }
 
     function _setActiveNodeIdForAddress(address nodeAddress, NodeId nodeId) private {
