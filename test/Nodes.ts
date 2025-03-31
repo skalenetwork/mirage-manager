@@ -4,26 +4,31 @@ import { cleanDeployment } from "./fixtures";
 import { Nodes } from "../typechain-types";
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
-import { ethers } from "hardhat";
 import { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers";
-import { bytesToIpv4String, ipv4StringToBytes } from "./utils";
+import ip from "ip";
+import { getBytes } from 'ethers';
 
-const INVALID_IP_0 = "0.0.0.0"
-const INVALID_IP_0_BYTES = ipv4StringToBytes(INVALID_IP_0);
+
+const INVALID_IPV4 = "0.0.0.0"
+const INVALID_IPV4_BYTES = ip.toBuffer(INVALID_IPV4);
+
+const INVALID_IPV6 = "0000:0000:0000:0000:0000:0000:0000:0000"
+const INVALID_IPV6_BYTES = ip.toBuffer(INVALID_IPV6);
 
 const MOCK_IP_0 = "192.168.0.1"
-const MOCK_IP_0_BYTES = ipv4StringToBytes(MOCK_IP_0);
-//const MOCK_DOMAIN_NAME_0 = "playa.com"
+const MOCK_IP_0_BYTES = ip.toBuffer(MOCK_IP_0);
+const MOCK_DOMAIN_NAME_0 = "skale.pt"
 
 const MOCK_IP_1 = "190.168.0.1"
-const MOCK_IP_1_BYTES = ipv4StringToBytes(MOCK_IP_1);
+const MOCK_IP_1_BYTES = ip.toBuffer(MOCK_IP_1);
 const MOCK_DOMAIN_NAME_1 = "playa.pt"
 
 
 const MOCK_IP_2 = "191.168.0.1"
-const MOCK_IP_2_BYTES = ipv4StringToBytes(MOCK_IP_2);
-//const MOCK_DOMAIN_NAME_2 = "playa.ua"
+const MOCK_IP_2_BYTES = ip.toBuffer(MOCK_IP_2);
 
+const MOCK_IPV6 = "2001:0db8:85a3:0000:0000:8a2e:0370:7334";
+const MOCK_IPV6_BYTES = ip.toBuffer(MOCK_IPV6);
 
 chai.should();
 chai.use(chaiAsPromised)
@@ -47,25 +52,30 @@ describe("Nodes", function () {
         const node = await nodesContract.getNode(1);
         expect(node.id).to.equal(1n);
         expect(node.port).to.equal(8000n);
-        expect(bytesToIpv4String(node.ip)).to.equal(MOCK_IP_0);
+        expect(Buffer.from(getBytes(node.ip))).to.eql(MOCK_IP_0_BYTES);
         expect(node.nodeAddress).to.equal(deployer.address);
 
-        await nodesContract.connect(user1).registerPassiveNode(MOCK_IP_1_BYTES, 8000);
+        expect(await nodesContract.getNodeId(deployer.address)).to.equal(1n)
+
+        await nodesContract.connect(user1).registerPassiveNode(MOCK_IPV6_BYTES, 8000);
 
         const passiveNode = await nodesContract.getNode(2);
 
         expect(passiveNode.id).to.equal(2n);
         expect(passiveNode.port).to.equal(8000n);
-        expect(bytesToIpv4String(passiveNode.ip)).to.equal(MOCK_IP_1);
+        expect(Buffer.from(getBytes(passiveNode.ip))).to.eql(MOCK_IPV6_BYTES);
         expect(passiveNode.nodeAddress).to.equal(user1.address);
-
+        expect(await nodesContract.getPassiveNodeIds(user1.address)).to.eql([2n])
     });
 
     it("should revert when node does not exist", async () => {
         await expect(nodesContract.getNode(0))
-        .to.be.revertedWithCustomError(nodesContract, "NodeDoesNotExist").withArgs(0);
+        .to.be.reverted;
 
-        await expect(nodesContract.getNodeId(deployer))
+        await expect(nodesContract.getNodeId(deployer.address))
+        .to.be.revertedWithCustomError(nodesContract, "AddressIsNotAssignedToAnyNode");
+
+        await expect(nodesContract.getPassiveNodeIds(deployer.address))
         .to.be.revertedWithCustomError(nodesContract, "AddressIsNotAssignedToAnyNode");
     });
 
@@ -85,9 +95,15 @@ describe("Nodes", function () {
     it("should validate node input while registering", async () => {
 
         await expect(nodesContract.registerPassiveNode(MOCK_IP_0_BYTES, 0))
-        .to.be.revertedWithCustomError(nodesContract, "InvalidPortNumber");
+        .to.be.reverted;
 
-        await expect(nodesContract.registerPassiveNode(INVALID_IP_0_BYTES, 8000))
+        await expect(nodesContract.registerPassiveNode(INVALID_IPV4_BYTES, 8000))
+        .to.be.revertedWithCustomError(nodesContract, "InvalidIp");
+
+        await expect(nodesContract.registerNode(MOCK_IP_0_BYTES, 0))
+        .to.be.reverted;
+
+        await expect(nodesContract.registerNode(INVALID_IPV6_BYTES, 8000))
         .to.be.revertedWithCustomError(nodesContract, "InvalidIp");
 
     });
@@ -97,9 +113,9 @@ describe("Nodes", function () {
 
         // Node address is taken by active node
         await expect(nodesContract.registerPassiveNode(MOCK_IP_1_BYTES, 8000))
-        .to.be.revertedWithCustomError(nodesContract, "AddressAlreadyHasNode");
+        .to.be.revertedWithCustomError(nodesContract, "AddressIsAlreadyAssignedToNode");
         await expect(nodesContract.registerNode(MOCK_IP_1_BYTES, 8000))
-        .to.be.revertedWithCustomError(nodesContract, "AddressAlreadyHasNode");
+        .to.be.revertedWithCustomError(nodesContract, "AddressIsAlreadyAssignedToNode");
 
         // IP address is taken by active node
         await expect(nodesContract.connect(user1).registerPassiveNode(MOCK_IP_0_BYTES, 8000))
@@ -125,7 +141,7 @@ describe("Nodes", function () {
 
         const node_v1 = await nodesContract.getNode(1);
 
-        expect(bytesToIpv4String(node_v1.ip)).to.equal(MOCK_IP_0);
+        expect(Buffer.from(getBytes(node_v1.ip))).to.eql(MOCK_IP_0_BYTES);
         expect(node_v1.domainName).to.equal("");
 
         await nodesContract.setDomainName(1, MOCK_DOMAIN_NAME_1);
@@ -133,24 +149,105 @@ describe("Nodes", function () {
 
         const node_v2 = await nodesContract.getNode(1);
 
-        expect(bytesToIpv4String(node_v2.ip)).to.equal(MOCK_IP_1);
+        expect(Buffer.from(getBytes(node_v2.ip))).to.eql(MOCK_IP_1_BYTES);
         expect(node_v2.domainName).to.equal(MOCK_DOMAIN_NAME_1);
 
         await expect(nodesContract.connect(user1).setDomainName(1, MOCK_DOMAIN_NAME_1))
-        .to.be.revertedWithCustomError(nodesContract, "InvalidSender");
+        .to.be.reverted;
         await expect(nodesContract.connect(user1).setIpAddress(1, MOCK_IP_1_BYTES, 8000))
-        .to.be.revertedWithCustomError(nodesContract, "InvalidSender");
+        .to.be.reverted;
+
+        await nodesContract.setDomainName(1, MOCK_DOMAIN_NAME_0);
+
+        const node_v3 = await nodesContract.getNode(1);
+        expect(node_v3.domainName).to.equal(MOCK_DOMAIN_NAME_0);
+
     });
+
+    it("should block duplicate domain names ", async () => {
+        await nodesContract.registerNode(MOCK_IP_0_BYTES, 8000);
+
+        await nodesContract.setDomainName(1, MOCK_DOMAIN_NAME_1);
+
+        await nodesContract.connect(user1).registerNode(MOCK_IP_1_BYTES, 8000);
+
+        await expect(nodesContract.connect(user1).setDomainName(3, MOCK_DOMAIN_NAME_1))
+        .to.be.reverted;
+
+        await expect(nodesContract.connect(user1).setDomainName(2, MOCK_DOMAIN_NAME_1))
+        .to.be.revertedWithCustomError(nodesContract, "DomainNameAlreadyTaken");
+
+    });
+
+    it("should block invalid IP address change requests", async () => {
+        await nodesContract.registerNode(MOCK_IP_0_BYTES, 8000);
+
+        await expect(nodesContract.setIpAddress(2, MOCK_IP_1_BYTES, 8000))
+        .to.be.reverted;
+
+        await expect(nodesContract.setIpAddress(1, INVALID_IPV4_BYTES, 8000))
+        .to.be.revertedWithCustomError(nodesContract, "InvalidIp");
+
+        await expect(nodesContract.setIpAddress(1, "0x09", 8000))
+        .to.be.revertedWithCustomError(nodesContract, "InvalidIp");
+
+        await expect(nodesContract.setIpAddress(1, MOCK_IP_1_BYTES, 0))
+        .to.be.reverted;
+
+        await nodesContract.connect(user1).registerNode(MOCK_IP_1_BYTES, 8000);
+
+        await expect(nodesContract.setIpAddress(1, MOCK_IP_1_BYTES, 9000))
+        .to.be.revertedWithCustomError(nodesContract, "IpIsNotAvailable");
+
+    });
+
+    it("should not allow submit address change requests for not existant nodes", async () => {
+        await expect(nodesContract.requestChangeAddress(1, deployer.address))
+        .to.be.reverted;
+    });
+
 
     it("should allow only Node owner to request Node address change", async () => {
         await nodesContract.registerNode(MOCK_IP_0_BYTES, 8000);
 
         await expect(nodesContract.connect(user1).requestChangeAddress(1, user1.address))
-        .to.be.revertedWithCustomError(nodesContract, "InvalidSender");
+        .to.be.reverted;
 
         await nodesContract.requestChangeAddress(1, user1.address);
 
         expect(await nodesContract.addressChangeRequests(1)).to.equal(user1.address);
+
+    });
+
+    it("should not allow passive nodes to request active node's addresses", async () => {
+        await nodesContract.registerPassiveNode(MOCK_IP_0_BYTES, 8000);
+
+        await nodesContract.connect(user1).registerNode(MOCK_IP_1_BYTES, 8000);
+
+
+        await expect(nodesContract.requestChangeAddress(1, user1.address))
+        .to.be.revertedWithCustomError(nodesContract, "AddressIsAlreadyAssignedToNode");
+
+    });
+
+    it("should not allow active nodes to request passive node's addresses", async () => {
+        await nodesContract.registerPassiveNode(MOCK_IP_0_BYTES, 8000);
+
+        await nodesContract.connect(user1).registerNode(MOCK_IP_1_BYTES, 8000);
+
+
+        await expect(nodesContract.connect(user1).requestChangeAddress(2, deployer.address))
+        .to.be.revertedWithCustomError(nodesContract, "AddressInUseByPassiveNodes");
+
+    });
+
+    it("should not allow active nodes to request active node's addresses", async () => {
+        await nodesContract.registerNode(MOCK_IP_0_BYTES, 8000);
+
+        await nodesContract.connect(user1).registerNode(MOCK_IP_1_BYTES, 8000);
+
+        await expect(nodesContract.connect(user1).requestChangeAddress(2, deployer.address))
+        .to.be.revertedWithCustomError(nodesContract, "AddressIsAlreadyAssignedToNode");
 
     });
 
@@ -160,7 +257,7 @@ describe("Nodes", function () {
         await nodesContract.requestChangeAddress(1, user1.address);
 
         await expect(nodesContract.confirmAddressChange(1))
-        .to.be.revertedWithCustomError(nodesContract, "InvalidSender");
+        .to.be.reverted;
 
         await nodesContract.connect(user1).confirmAddressChange(1);
         const node = await nodesContract.getNode(1);
@@ -174,7 +271,7 @@ describe("Nodes", function () {
 
         // Fails, request not made yet
         await expect(nodesContract.registerNode(MOCK_IP_1_BYTES, 8000))
-        .to.be.revertedWithCustomError(nodesContract, "AddressAlreadyHasNode");
+        .to.be.revertedWithCustomError(nodesContract, "AddressIsAlreadyAssignedToNode");
 
         await nodesContract.connect(user1).confirmAddressChange(1);
         const node = await nodesContract.getNode(1);
@@ -195,7 +292,18 @@ describe("Nodes", function () {
         await nodesContract.connect(user1).registerNode(MOCK_IP_1_BYTES, 8000);
 
         await expect(nodesContract.connect(user1).confirmAddressChange(1))
-        .to.be.revertedWithCustomError(nodesContract, "AddressAlreadyHasNode");
+        .to.be.revertedWithCustomError(nodesContract, "AddressIsAlreadyAssignedToNode");
+
+        const node = await nodesContract.getNode(1);
+        expect(node.nodeAddress).to.equal(deployer.address);
+
+    });
+
+    it("should not allow address(0)", async () => {
+        await nodesContract.registerNode(MOCK_IP_0_BYTES, 8000);
+
+        await expect(nodesContract.confirmAddressChange(1))
+        .to.be.reverted;
 
         const node = await nodesContract.getNode(1);
         expect(node.nodeAddress).to.equal(deployer.address);
@@ -233,6 +341,44 @@ describe("Nodes", function () {
         const node3 = await nodesContract.getNode(3);
         expect(node3.nodeAddress).to.equal(deployer.address);
 
+    });
+
+    it("should not allow two nodes to request the same address and then confirm it", async () => {
+        await nodesContract.registerNode(MOCK_IP_0_BYTES, 8000);
+
+        await nodesContract.connect(user1).registerNode(MOCK_IP_1_BYTES, 8000);
+
+        await nodesContract.requestChangeAddress(1, user2.address);
+
+        await nodesContract.connect(user1).requestChangeAddress(2, user2.address);
+
+        const address1 = await nodesContract.addressChangeRequests(1);
+        const address2 = await nodesContract.addressChangeRequests(2);
+        // two nodes requested the same address
+        expect(address1).to.equal(address2);
+
+        // Node 1 gets new address successfuly
+        await nodesContract.connect(user2).confirmAddressChange(1);
+
+        // Should fail to confirm the seccond change
+        await expect(nodesContract.connect(user2).confirmAddressChange(2))
+        .to.be.revertedWithCustomError(nodesContract, "AddressIsAlreadyAssignedToNode");
+
+    });
+
+    it("should revert when passive node was already assigned to the new address", async () => {
+        await nodesContract.registerPassiveNode(MOCK_IP_0_BYTES, 8000);
+
+
+        await nodesContract.requestChangeAddress(1, deployer.address);
+
+        await expect(nodesContract.confirmAddressChange(1))
+        .to.be.revertedWithCustomError(nodesContract, "PassiveNodeAlreadyExistsForAddress");
+
+    });
+
+    it("should should not allow changing nodes if node in committee", async () => {
+        //TODO: depends on committee implementation
     });
 
 });

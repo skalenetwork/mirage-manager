@@ -9,8 +9,8 @@ import { Committee, DKG, Nodes, PlayaAccessManager, Staking, Status } from "../t
 export const contracts = [
     "PlayaAccessManager", // must be first
     "Committee",
-    //"DKG", : missing input for initialize
     "Nodes",
+    "DKG",
     "Staking",
     "Status"
 ];
@@ -36,6 +36,9 @@ export const deploy = async (): Promise<DeployedContracts> => {
             parameters.push(await ethers.resolveAddress(deployedContracts["PlayaAccessManager"]));
             if (contract === "DKG") {
                 parameters.push(await ethers.resolveAddress(deployedContracts["Committee"]));
+                parameters.push(await ethers.resolveAddress(deployedContracts["Nodes"]));
+            }
+            else if (contract === "Nodes") {
                 parameters.push(await ethers.resolveAddress(deployedContracts["Committee"]));
             }
         }

@@ -61,8 +61,4 @@ contract DKG is AccessManagedUpgradeable, IDkg {
     function isNodeBroadcasted(DkgId, NodeId) external view override returns (bool broadcasted) {
         revert NotImplemented();
     }
-    function isNodeBroadcasted(DkgId /*dkg*/, NodeId /*node*/) external view returns (bool broadcasted) {
-        revert NotImplemented();
-    }
-
 }

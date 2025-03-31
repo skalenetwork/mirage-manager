@@ -20,20 +20,51 @@
  */
 
 pragma solidity ^0.8.24;
+import {
+    AccessManagedUpgradeable
+} from "@openzeppelin/contracts-upgradeable/access/manager/AccessManagedUpgradeable.sol";
 
-import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+import { EnumerableMap } from "@openzeppelin/contracts/utils/structs/EnumerableMap.sol";
+import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+import { ICommittee } from "@skalenetwork/playa-manager-interfaces/contracts/ICommittee.sol";
+import {
+    INodes,
+    NodeId
+} from "@skalenetwork/playa-manager-interfaces/contracts/INodes.sol";
 
-import {INodes, NodeId} from "@skalenetwork/playa-manager-interfaces/contracts/INodes.sol";
 
-
-contract Nodes is INodes {
+contract Nodes is AccessManagedUpgradeable, INodes {
 
     using EnumerableSet for EnumerableSet.UintSet;
     using EnumerableSet for EnumerableSet.AddressSet;
     using EnumerableSet for EnumerableSet.Bytes32Set;
+    using EnumerableMap for EnumerableMap.AddressToUintMap;
 
-    bytes4 private constant ZERO_IPV4 = bytes4(0);
-    bytes16 private constant ZERO_IPV6 = bytes16(0);
+    bytes4 public constant ZERO_IPV4 = bytes4(0);
+    bytes16 public constant ZERO_IPV6 = bytes16(0);
+
+    // Mapping from node ID to Node struct
+    mapping(NodeId nodeId => Node node) public nodes;
+
+    // Stores requests to change address before committing changes
+    mapping(NodeId nodeId => address nodeAddress) public addressChangeRequests;
+
+    ICommittee public committeeContract;
+
+    //Maps addresses to NodeIds
+    EnumerableMap.AddressToUintMap private _activeNodesAddressToId;
+
+    //Maps addresses to NodeIds
+    mapping(address nodeAddress => EnumerableSet.UintSet nodeIds) private _passiveNodeIdByAddress;
+    // Set to track passive node addresses
+    EnumerableSet.AddressSet private _passiveNodeAddresses;
+
+    // Set to track IPs taken
+    EnumerableSet.Bytes32Set private _usedIps;
+
+    // Set to track domain Names taken
+    EnumerableSet.Bytes32Set private _usedDomainNames;
+
     /// For node Id generation
     uint256 private _nodeIdCounter;
 
@@ -43,31 +74,12 @@ contract Nodes is INodes {
     // Set to track active node IDs
     EnumerableSet.UintSet private _activeNodeIds;
 
-    // Mapping from node ID to Node struct
-    mapping(NodeId nodeId => Node node) public nodes;
 
-    //Maps addresses to NodeIds
-    mapping(address nodeAddress => NodeId nodeId) public activeNodeIdByAddress;
-    // Set to track active node addresses
-    EnumerableSet.AddressSet private _activeNodeAddresses;
 
-    //Maps addresses to NodeIds
-    mapping(address nodeAddress => EnumerableSet.UintSet nodeIds) private _passiveNodeIdByAddress;
-    // Set to track passive node addresses
-    EnumerableSet.AddressSet private _passiveNodeAddresses;
 
-    // Set to track IPs taken
-    EnumerableSet.Bytes32Set private _ips;
-
-    // Set to track domain Names taken
-    EnumerableSet.Bytes32Set private _domainNames;
-
-    // Stores requests to change address before committing changes
-    mapping(NodeId nodeId => address nodeAddress) public addressChangeRequests;
-
-    error NodeDoesNotExist(NodeId nodeId);
     error NodeAlreadyExists(NodeId nodeId);
-    error AddressAlreadyHasNode(address nodeAddress);
+    error NodeIsInCommittee(NodeId nodeId);
+    error AddressIsAlreadyAssignedToNode(address nodeAddress);
     error AddressIsNotAssignedToAnyNode(address nodeAddress);
     error PassiveNodeAlreadyExistsForAddress(address nodeAddress, NodeId nodeId);
     error AddressInUseByPassiveNodes(address nodeAddress);
@@ -75,13 +87,16 @@ contract Nodes is INodes {
     error InvalidIp(bytes ip);
     error IpIsNotAvailable(bytes ip);
     error DomainNameAlreadyTaken(string domainName);
-    error InvalidSender();
-    error AddressIsZero();
 
-    modifier checkNodeIndex(NodeId nodeId) {
-        if (!_isActiveNode(nodeId) && !_isPassiveNode(nodeId)){
-            revert NodeDoesNotExist(nodeId);
+    modifier nodeNotInCommittee(NodeId nodeId){
+        if (committeeContract.isNodeInCurrentOrNextCommittee(nodeId)) {
+            revert NodeIsInCommittee(nodeId);
         }
+        _;
+    }
+
+    modifier nodeExists(NodeId nodeId) {
+        require(_isActiveNode(nodeId) || _isPassiveNode(nodeId), "Node must exist.");
         _;
     }
     modifier validIp(bytes calldata ip) {
@@ -101,17 +116,18 @@ contract Nodes is INodes {
     }
 
     modifier validPort(uint16 port) {
-        if (port == 0) {
-            revert InvalidPortNumber(port);
-        }
+        require(port > 0, "Port should not be 0.");
         _;
     }
 
-    modifier isNodeOwner(NodeId nodeId){
-        if (msg.sender != nodes[nodeId].nodeAddress) {
-            revert InvalidSender();
-        }
+    modifier onlyNodeOwner(NodeId nodeId){
+        require(msg.sender == nodes[nodeId].nodeAddress, "Only Node Owner");
         _;
+    }
+
+    function initialize(address initialAuthority, ICommittee committeeAddress) public override initializer {
+        __AccessManaged_init(initialAuthority);
+        committeeContract = committeeAddress;
     }
 
     function registerNode(
@@ -134,7 +150,7 @@ contract Nodes is INodes {
 
         _setActiveNodeIdForAddress(msg.sender, nodeId);
 
-        if(!_ips.add(keccak256(ip))){
+        if(!_usedIps.add(keccak256(ip))){
             revert IpIsNotAvailable(ip);
         }
 
@@ -156,12 +172,12 @@ contract Nodes is INodes {
     )
         external
         override
-        checkNodeIndex(nodeId)
-        isNodeOwner(nodeId)
+        nodeExists(nodeId)
+        onlyNodeOwner(nodeId)
     {
         if (_isPassiveNode(nodeId)) {
             if (_isAddressOfActiveNode(newAddress)) {
-                revert AddressAlreadyHasNode(newAddress);
+                revert AddressIsAlreadyAssignedToNode(newAddress);
             }
             addressChangeRequests[nodeId] = newAddress;
             return;
@@ -172,58 +188,50 @@ contract Nodes is INodes {
             revert AddressInUseByPassiveNodes(newAddress);
         }
         if (_isAddressOfActiveNode(newAddress)) {
-            revert AddressAlreadyHasNode(newAddress);
+            revert AddressIsAlreadyAssignedToNode(newAddress);
         }
         addressChangeRequests[nodeId] = newAddress;
 
     }
 
-    function confirmAddressChange(NodeId nodeId) external override {
-        // TODO: Block if Node is in Committee ?
+    function confirmAddressChange(
+        NodeId nodeId
+    )
+        external
+        override
+        nodeExists(nodeId)
+        nodeNotInCommittee(nodeId)
+    {
+        address newOwner = addressChangeRequests[nodeId];
 
-        address newAddress = addressChangeRequests[nodeId];
-        if(newAddress == address(0)){
-            revert AddressIsZero();
-        }
-        if (newAddress != msg.sender) {
-            revert InvalidSender();
-        }
+        require(newOwner != address(0), "Only valid addresses.");
+        require(msg.sender == newOwner, "Only new owner.");
+
+        address oldOwner = nodes[nodeId].nodeAddress;
+        // Remove old address
+        delete addressChangeRequests[nodeId];
 
         if (_isActiveNode(nodeId)) {
-
-            address oldAddress = nodes[nodeId].nodeAddress;
-
-            // Remove old address
-            delete addressChangeRequests[nodeId];
-            // slither-disable-next-line all
-            _activeNodeAddresses.remove(oldAddress);
-            activeNodeIdByAddress[oldAddress] = NodeId.wrap(0);
+            assert(_activeNodesAddressToId.remove(oldOwner));
 
             // Register new address
-            _setActiveNodeIdForAddress(newAddress, nodeId);
-            nodes[nodeId].nodeAddress = newAddress;
-
-            emit NodeAddressChanged(nodeId, oldAddress, newAddress);
+            _setActiveNodeIdForAddress(newOwner, nodeId);
+            nodes[nodeId].nodeAddress = newOwner;
         }
-        else if (_isPassiveNode(nodeId)) {
+        if (_isPassiveNode(nodeId)) {
 
-            address oldAddress = nodes[nodeId].nodeAddress;
+            // Register new address
+            _setPassiveNodeIdForAddress(newOwner, nodeId);
 
-            // Remove old address
-            delete addressChangeRequests[nodeId];
-            // slither-disable-next-line all
-            _passiveNodeIdByAddress[oldAddress].remove(NodeId.unwrap(nodeId));
-            if (_passiveNodeIdByAddress[oldAddress].length() == 0) {
-                // slither-disable-next-line all
-                _passiveNodeAddresses.remove(oldAddress);
+            assert(_passiveNodeIdByAddress[oldOwner].remove(NodeId.unwrap(nodeId)));
+            if (_passiveNodeIdByAddress[oldOwner].length() == 0) {
+                assert(_passiveNodeAddresses.remove(oldOwner));
             }
-
-            // Register new address
-            _setPassiveNodeIdForAddress(newAddress, nodeId);
-            nodes[nodeId].nodeAddress = newAddress;
-
-            emit NodeAddressChanged(nodeId, oldAddress, newAddress);
+            nodes[nodeId].nodeAddress = newOwner;
         }
+
+        emit NodeAddressChanged(nodeId, oldOwner, newOwner);
+
     }
 
     function registerPassiveNode(
@@ -246,7 +254,7 @@ contract Nodes is INodes {
 
         _setPassiveNodeIdForAddress(msg.sender, nodeId);
 
-        if(!_ips.add(keccak256(ip))){
+        if(!_usedIps.add(keccak256(ip))){
             revert IpIsNotAvailable(ip);
         }
 
@@ -268,17 +276,16 @@ contract Nodes is INodes {
         )
             external
             override
-            checkNodeIndex(nodeId)
-            isNodeOwner(nodeId)
+            nodeExists(nodeId)
+            onlyNodeOwner(nodeId)
+            nodeNotInCommittee(nodeId)
             validIp(ip)
             validPort(port)
         {
-        //TODO: Block if Node is in Committee
         Node storage node = nodes[nodeId];
 
-        // slither-disable-next-line all
-        _ips.remove(keccak256(node.ip));
-        if(!_ips.add(keccak256(ip))){
+        assert(_usedIps.remove(keccak256(node.ip)));
+        if(!_usedIps.add(keccak256(ip))){
             revert IpIsNotAvailable(ip);
         }
         node.ip = ip;
@@ -289,8 +296,8 @@ contract Nodes is INodes {
     function setDomainName(NodeId nodeId, string calldata name)
         external
         override
-        checkNodeIndex(nodeId)
-        isNodeOwner(nodeId)
+        nodeExists(nodeId)
+        onlyNodeOwner(nodeId)
     {
         Node storage node = nodes[nodeId];
 
@@ -298,11 +305,10 @@ contract Nodes is INodes {
 
         bytes32 oldName = keccak256(abi.encodePacked(node.domainName));
         if (oldName != keccak256("")) {
-            // slither-disable-next-line all
-            _domainNames.remove(oldName);
+            assert(_usedDomainNames.remove(oldName));
         }
 
-        if(!_domainNames.add(newName)){
+        if(!_usedDomainNames.add(newName)){
             revert DomainNameAlreadyTaken(name);
         }
         node.domainName = name;
@@ -314,7 +320,7 @@ contract Nodes is INodes {
         external
         view
         override
-        checkNodeIndex(nodeId)
+        nodeExists(nodeId)
         returns (Node memory node)
     {
         return nodes[nodeId];
@@ -323,23 +329,30 @@ contract Nodes is INodes {
 
     function getNodeId(address nodeAddress) external view override returns (NodeId nodeId) {
         // Getter for active node
-        if (!_activeNodeAddresses.contains(nodeAddress)) {
+        if (!_isAddressOfActiveNode(nodeAddress)) {
             revert AddressIsNotAssignedToAnyNode(nodeAddress);
         }
-        nodeId = activeNodeIdByAddress[nodeAddress];
+        nodeId = NodeId.wrap(_activeNodesAddressToId.get(nodeAddress));
+    }
+
+    function getPassiveNodeIds(address nodeAddress) external view override returns (uint256[] memory nodeIds) {
+        // Getter for passive nodes
+        // Casting uint256[] to NodeId[] will come at a price if some other contract uses this function
+        if (!_isAddressOfPassiveNodes(nodeAddress)) {
+            revert AddressIsNotAssignedToAnyNode(nodeAddress);
+        }
+        nodeIds = _passiveNodeIdByAddress[nodeAddress].values();
     }
 
     function _addPassiveNodeId(NodeId nodeId) private {
-        bool result = _passiveNodeIds.add(NodeId.unwrap(nodeId));
-        if(!result) {
+        if(!_passiveNodeIds.add(NodeId.unwrap(nodeId))) {
             // Should be impossible to happen
             revert NodeAlreadyExists(nodeId);
         }
     }
 
     function _addActiveNodeId(NodeId nodeId) private {
-        bool result = _activeNodeIds.add(NodeId.unwrap(nodeId));
-        if(!result) {
+        if(!_activeNodeIds.add(NodeId.unwrap(nodeId))) {
             // Should be impossible to happen
             revert NodeAlreadyExists(nodeId);
         }
@@ -349,24 +362,23 @@ contract Nodes is INodes {
         if (_isAddressOfPassiveNodes(nodeAddress)) {
             revert AddressInUseByPassiveNodes(nodeAddress);
         }
-        bool result = _activeNodeAddresses.add(nodeAddress);
-        if(!result) {
-            revert AddressAlreadyHasNode(nodeAddress);
+        if(!_activeNodesAddressToId.set(nodeAddress, NodeId.unwrap(nodeId))) {
+            revert AddressIsAlreadyAssignedToNode(nodeAddress);
         }
-        activeNodeIdByAddress[nodeAddress] = nodeId;
     }
 
     function _setPassiveNodeIdForAddress(address nodeAddress, NodeId nodeId) private {
         if (_isAddressOfActiveNode(nodeAddress)) {
-            revert AddressAlreadyHasNode(nodeAddress);
+            revert AddressIsAlreadyAssignedToNode(nodeAddress);
         }
         bool result = _passiveNodeIdByAddress[nodeAddress].add(NodeId.unwrap(nodeId));
         if (!result) {
             revert PassiveNodeAlreadyExistsForAddress(nodeAddress, nodeId);
         }
-        // Ignore result: passive node address can already exist
-        // slither-disable-next-line all
-        _passiveNodeAddresses.add(nodeAddress);
+        if (!_isAddressOfPassiveNodes(nodeAddress)) {
+            assert(_passiveNodeAddresses.add(nodeAddress));
+
+        }
     }
 
     function _isActiveNode(NodeId nodeId) private view returns (bool result) {
@@ -382,7 +394,7 @@ contract Nodes is INodes {
     }
 
     function _isAddressOfActiveNode(address nodeAddress) private view returns (bool result) {
-        result = _activeNodeAddresses.contains(nodeAddress);
+        result = _activeNodesAddressToId.contains(nodeAddress);
     }
 
 }
