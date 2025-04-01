@@ -7,12 +7,12 @@ import { Committee, DKG, Nodes, PlayaAccessManager, Staking, Status } from "../t
 
 
 export const contracts = [
-    //"PlayaAccessManager", // must be first
-    //"Committee",
-    //"Nodes",
+    "Committee",
     "DKG",
-    "Staking",
-    "Status"
+    "Nodes",
+    "PlayaAccessManager",
+    "Status",
+    "Staking"
 ];
 
 interface DeployedContracts {
@@ -42,8 +42,9 @@ export const deploy = async (): Promise<DeployedContracts> => {
         await ethers.resolveAddress(deployedContracts.PlayaAccessManager),
         await ethers.resolveAddress(deployedContracts.Committee)
     );
-
-    for (const contract of contracts) {
+    const deployed = new Set(["PlayaAccessManager", "Committee", "Nodes"]);
+    const toDeploy = contracts.filter( c => !deployed.has(c));
+    for (const contract of toDeploy) {
         const parameters = [];
 
         parameters.push(await ethers.resolveAddress(deployedContracts["PlayaAccessManager"]));
