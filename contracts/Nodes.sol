@@ -23,7 +23,6 @@ pragma solidity ^0.8.24;
 import {
     AccessManagedUpgradeable
 } from "@openzeppelin/contracts-upgradeable/access/manager/AccessManagedUpgradeable.sol";
-
 import { EnumerableMap } from "@openzeppelin/contracts/utils/structs/EnumerableMap.sol";
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import { ICommittee } from "@skalenetwork/playa-manager-interfaces/contracts/ICommittee.sol";
@@ -31,7 +30,6 @@ import {
     INodes,
     NodeId
 } from "@skalenetwork/playa-manager-interfaces/contracts/INodes.sol";
-
 
 contract Nodes is AccessManagedUpgradeable, INodes {
 
@@ -47,7 +45,7 @@ contract Nodes is AccessManagedUpgradeable, INodes {
     mapping(NodeId nodeId => Node node) public nodes;
 
     // Stores requests to change address before committing changes
-    mapping(NodeId nodeId => address nodeAddress) public addressChangeRequests;
+    mapping(NodeId nodeId => address newNodeAddress) public addressChangeRequests;
 
     ICommittee public committeeContract;
 
@@ -87,9 +85,8 @@ contract Nodes is AccessManagedUpgradeable, INodes {
     error PortShouldNotBeZero();
     error SenderIsNotNodeOwner();
     error SenderIsNotNewNodeOwner();
-    error AddressMustNotBeZero();
 
-    modifier nodeNotInCommittee(NodeId nodeId){
+    modifier nodeNotInCurrentOrNextCommittee(NodeId nodeId){
         require(
             !committeeContract.isNodeInCurrentOrNextCommittee(nodeId),
             NodeIsInCommittee(nodeId)
@@ -109,13 +106,9 @@ contract Nodes is AccessManagedUpgradeable, INodes {
     modifier validIp(bytes calldata ip) {
         // Check if IPv4 or IPv6
         if (ip.length == 4) {
-            if (bytes4(ip) == ZERO_IPV4){
-                revert InvalidIp(ip);
-            }
+            require(bytes4(ip) != ZERO_IPV4, InvalidIp(ip));
         } else if (ip.length == 16) {
-            if (bytes16(ip) == ZERO_IPV6) {
-                revert InvalidIp(ip);
-            }
+            require(bytes16(ip) != ZERO_IPV6, InvalidIp(ip));
         } else {
             revert InvalidIp(ip);
         }
@@ -173,7 +166,6 @@ contract Nodes is AccessManagedUpgradeable, INodes {
         committeeContract.newNodeCreated(nodeId);
     }
 
-
     function requestChangeAddress(
         NodeId nodeId,
         address newAddress
@@ -211,11 +203,10 @@ contract Nodes is AccessManagedUpgradeable, INodes {
         external
         override
         nodeExists(nodeId)
-        nodeNotInCommittee(nodeId)
+        nodeNotInCurrentOrNextCommittee(nodeId)
     {
         address newOwner = addressChangeRequests[nodeId];
 
-        require(newOwner != address(0), AddressMustNotBeZero());
         require(msg.sender == newOwner, SenderIsNotNewNodeOwner());
 
         address oldOwner = nodes[nodeId].nodeAddress;
@@ -287,7 +278,7 @@ contract Nodes is AccessManagedUpgradeable, INodes {
             override
             nodeExists(nodeId)
             onlyNodeOwner(nodeId)
-            nodeNotInCommittee(nodeId)
+            nodeNotInCurrentOrNextCommittee(nodeId)
             validIp(ip)
             validPort(port)
         {
@@ -300,6 +291,7 @@ contract Nodes is AccessManagedUpgradeable, INodes {
         emit NodeIpChanged(nodeId, msg.sender, ip, port);
 
     }
+
     function setDomainName(NodeId nodeId, string calldata name)
         external
         override
@@ -331,7 +323,6 @@ contract Nodes is AccessManagedUpgradeable, INodes {
     {
         return nodes[nodeId];
     }
-
 
     function getNodeId(address nodeAddress) external view override returns (NodeId nodeId) {
         // Getter for active node
@@ -407,5 +398,4 @@ contract Nodes is AccessManagedUpgradeable, INodes {
     function _isAddressOfActiveNode(address nodeAddress) private view returns (bool result) {
         result = _activeNodesAddressToId.contains(nodeAddress);
     }
-
 }

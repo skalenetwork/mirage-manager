@@ -45,7 +45,7 @@ describe("Nodes", function () {
         [deployer, user1, user2] = await ethers.getSigners();
     });
 
-    it("should register Nodes", async () => {
+    it("should register Active Nodes", async () => {
 
         await nodesContract.registerNode(MOCK_IP_0_BYTES, 8000);
 
@@ -58,16 +58,19 @@ describe("Nodes", function () {
         expect(await nodesContract.getNodeId(deployer.address)).to.equal(1n);
 
         expect(await nodesContract.getActiveNodesIds()).to.eql([1n]);
+    });
 
-        await nodesContract.connect(user1).registerPassiveNode(MOCK_IPV6_BYTES, 8000);
+    it("should register Passive Nodes", async () => {
 
-        const passiveNode = await nodesContract.getNode(2);
+        await nodesContract.registerPassiveNode(MOCK_IPV6_BYTES, 8000);
 
-        expect(passiveNode.id).to.equal(2n);
+        const passiveNode = await nodesContract.getNode(1);
+
+        expect(passiveNode.id).to.equal(1n);
         expect(passiveNode.port).to.equal(8000n);
         expect(Buffer.from(getBytes(passiveNode.ip))).to.eql(MOCK_IPV6_BYTES);
-        expect(passiveNode.nodeAddress).to.equal(user1.address);
-        expect(await nodesContract.getPassiveNodeIds(user1.address)).to.eql([2n])
+        expect(passiveNode.nodeAddress).to.equal(deployer.address);
+        expect(await nodesContract.getPassiveNodeIds(deployer.address)).to.eql([1n])
     });
 
     it("should revert when node does not exist", async () => {
