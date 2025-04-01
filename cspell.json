@@ -14,5 +14,9 @@
         "artifacts",
         "cache",
         "venv",
+        "typechain-types",
+        "slither.config.json",
+        "coverage",
+        "coverage.json"
     ]
 }

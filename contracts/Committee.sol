@@ -24,13 +24,15 @@ pragma solidity ^0.8.24;
 import {
     AccessManagedUpgradeable
 } from "@openzeppelin/contracts-upgradeable/access/manager/AccessManagedUpgradeable.sol";
+
 import {
     CommitteeIndex,
     ICommittee
 } from "@skalenetwork/playa-manager-interfaces/contracts/ICommittee.sol";
-import {DkgId} from "@skalenetwork/playa-manager-interfaces/contracts/IDkg.sol";
+import { DkgId } from "@skalenetwork/playa-manager-interfaces/contracts/IDkg.sol";
+import { NodeId } from "@skalenetwork/playa-manager-interfaces/contracts/INodes.sol";
+import { NotImplemented } from "./errors.sol";
 
-import {NotImplemented} from "./errors.sol";
 
 
 contract Committee is AccessManagedUpgradeable, ICommittee {
@@ -40,10 +42,6 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
     }
 
     function select() external override {
-        revert NotImplemented();
-    }
-
-    function processSuccessfulDkg(DkgId /*dkg*/) external override {
         revert NotImplemented();
     }
 
@@ -57,8 +55,20 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
     {
         revert NotImplemented();
     }
-
+    function processSuccessfulDkg(DkgId /*dkg*/) external override {
+        revert NotImplemented();
+    }
     function getActiveCommitteeIndex() external view override returns (CommitteeIndex committeeIndex) {
         revert NotImplemented();
     }
+
+    function newNodeCreated(NodeId /*nodeId*/) external override {
+        assert(true);
+    }
+
+    function isNodeInCurrentOrNextCommittee(NodeId /*node*/) external view returns (bool result){
+        return false;
+    }
+
+
 }

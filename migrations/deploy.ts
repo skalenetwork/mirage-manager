@@ -7,12 +7,12 @@ import { Committee, DKG, Nodes, PlayaAccessManager, Staking, Status } from "../t
 
 
 export const contracts = [
-    "PlayaAccessManager", // must be first
     "Committee",
     "DKG",
     "Nodes",
-    "Staking",
-    "Status"
+    "PlayaAccessManager",
+    "Status",
+    "Staking"
 ];
 
 interface DeployedContracts {
@@ -27,26 +27,57 @@ interface DeployedContracts {
 export const deploy = async (): Promise<DeployedContracts> => {
     const [deployer] = await ethers.getSigners();
     let deployedContracts: DeployedContracts = {} as DeployedContracts;
-    for (const contract of contracts) {
-        const factory = await ethers.getContractFactory(contract);
+
+    deployedContracts.PlayaAccessManager = await deployContract(
+        "PlayaAccessManager",
+        [await ethers.resolveAddress(deployer)]
+    ) as PlayaAccessManager;
+
+    deployedContracts.Committee = await deployContract(
+        "Committee",
+        [await ethers.resolveAddress(deployedContracts.PlayaAccessManager)]
+    ) as Committee;
+
+    deployedContracts.Nodes = await deployNodes(
+        await ethers.resolveAddress(deployedContracts.PlayaAccessManager),
+        await ethers.resolveAddress(deployedContracts.Committee)
+    );
+    const deployed = new Set(["PlayaAccessManager", "Committee", "Nodes"]);
+    const toDeploy = contracts.filter( c => !deployed.has(c));
+    for (const contract of toDeploy) {
         const parameters = [];
-        if (contract === "PlayaAccessManager") {
-            parameters.push(await ethers.resolveAddress(deployer));
-        } else {
-            parameters.push(await ethers.resolveAddress(deployedContracts["PlayaAccessManager"]));
-            if (contract === "DKG") {
-                parameters.push(await ethers.resolveAddress(deployedContracts["Committee"]));
-                parameters.push(await ethers.resolveAddress(deployedContracts["Committee"]));
-            }
+
+        parameters.push(await ethers.resolveAddress(deployedContracts["PlayaAccessManager"]));
+        if (contract === "DKG") {
+            parameters.push(await ethers.resolveAddress(deployedContracts["Committee"]));
+            parameters.push(await ethers.resolveAddress(deployedContracts["Nodes"]));
         }
-        const instance = await upgrades.deployProxy(factory, parameters);
-        await instance.waitForDeployment();
+        const instance = await deployContract(contract, parameters);
         deployedContracts = {
             ...deployedContracts,
             [contract]: instance
         }
     }
+
     return deployedContracts as DeployedContracts;
+}
+const deployContract = async (name: string, args: unknown[]) => {
+    const factory = await ethers.getContractFactory(name);
+    const instance = await upgrades.deployProxy(
+        factory,
+        args
+    );
+    await instance.waitForDeployment();
+    return instance;
+}
+const deployNodes = async (
+    accessManagerAddress: string,
+    committeeAddress: string,
+): Promise<Nodes> => {
+    return await deployContract(
+        "Nodes",
+        [accessManagerAddress, committeeAddress]
+    ) as Nodes;
 }
 
 const storeAddresses = async (deployedContracts: DeployedContracts, version: string) => {
