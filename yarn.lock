@@ -2499,8 +2499,8 @@ __metadata:
 
 "@skalenetwork/playa-manager-interfaces@git@github.com:skalenetwork/playa-manager-interfaces.git":
   version: 0.1.0
-  resolution: "@skalenetwork/playa-manager-interfaces@git@github.com:skalenetwork/playa-manager-interfaces.git#commit=d4d60b5a242b89890495629e43bf124a395584d5"
-  checksum: 10c0/1cca7fde9ac40818c244050369f265f69b0c8f0e0a67ce7ac18c61814bcbc21b5c1af18ced2fbe83d28c91eb93e3bf47fe07e4dd5f56978e6dd284b65bbac194
+  resolution: "@skalenetwork/playa-manager-interfaces@git@github.com:skalenetwork/playa-manager-interfaces.git#commit=4241f23dab3d6b3ac621bc8c539b2aa16249aacb"
+  checksum: 10c0/2e9fcaed975c0ba0a2c6b3414d96aa0237e8c334bce57266f0db7d6af9de8b77fb01b2eabaaf2a50a6f85ecf17136f0a143af0f08e5915ecad62ddb96e4db8a7
   languageName: node
   linkType: hard
 

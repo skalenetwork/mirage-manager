@@ -196,7 +196,6 @@ contract Nodes is AccessManagedUpgradeable, INodes {
             AddressIsAlreadyAssignedToNode(newAddress)
         );
         addressChangeRequests[nodeId] = newAddress;
-
     }
 
     function confirmAddressChange(

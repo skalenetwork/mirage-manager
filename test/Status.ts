@@ -6,12 +6,10 @@ import { Nodes, Status } from "../typechain-types";
 import { HDNodeWallet, Wallet } from "ethers";
 import { ethers } from "hardhat";
 
-
 chai.should();
 chai.use(chaiAsPromised)
 
 describe("Status", function () {
-
     let nodesContract: Nodes;
     let statusContract: Status;
     // owns node 1
@@ -45,13 +43,16 @@ describe("Status", function () {
         await statusContract.whitelistNode(1);
 
         expect(await statusContract.getWhitelistedNodes()).to.eql([1n]);
+        expect(await statusContract.isWhitelisted(1)).to.eql(true);
     });
+
     it("should revert if node is already whitelisted", async () => {
         await statusContract.whitelistNode(1);
         expect(await statusContract.getWhitelistedNodes()).to.eql([1n]);
         await expect(statusContract.whitelistNode(1))
         .to.be.revertedWithCustomError(statusContract, "NodeAlreadyWhitelisted");
     });
+
     it("should revert if node does not exist", async () => {
         // 50 nodes registered
         await expect(statusContract.whitelistNode(51))
@@ -62,6 +63,7 @@ describe("Status", function () {
         await expect(statusContract.removeNodeFromWhitelist(6))
         .to.be.revertedWithCustomError(statusContract, "NodeNotWhitelisted");
     });
+
     it("should ensure alive() registers correctly", async () => {
         expect(await statusContract.lastHeartbeatTimestamp(1)).to.eql(0n);
 
@@ -74,6 +76,7 @@ describe("Status", function () {
 
         expect(secondTimestamp).to.be.greaterThan(firstTimestamp);
     });
+
     it("should revert alive() if node does not exist for sender", async () => {
         await expect(statusContract.connect(randomUser).alive())
         .to.be.revertedWithCustomError(nodesContract, "AddressIsNotAssignedToAnyNode")
@@ -85,6 +88,7 @@ describe("Status", function () {
         await statusContract.setHeartbeatInterval(1);
         expect(await statusContract.heartbeatInterval()).to.eql(1n);
     });
+
     it("should allow only creator to remove node from whitelist", async () => {
         await statusContract.whitelistNode(1);
         expect(await statusContract.getWhitelistedNodes()).to.eql([1n]);
@@ -96,6 +100,7 @@ describe("Status", function () {
         expect(await statusContract.getWhitelistedNodes()).to.eql([]);
 
     });
+
     it("should accurately change healthy status of node", async () => {
         await statusContract.setHeartbeatInterval(60);
         expect(await statusContract.isHealthy(1)).to.eql(false);

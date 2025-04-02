@@ -97,16 +97,16 @@ contract Status is AccessManagedUpgradeable, IStatus {
         }
     }
 
-
     function getWhitelistedNodes() external view override returns (uint256[] memory nodeIds) {
         nodeIds = _whitelist.values();
     }
 
+    function isWhitelisted(NodeId nodeId) external view override returns (bool whitelisted) {
+        whitelisted = _whitelist.contains(nodeId);
+    }
+
     function _isHealthy(NodeId nodeId) private view returns (bool healthy) {
-
         uint256 interval = block.timestamp - lastHeartbeatTimestamp[nodeId];
-
-        // Disabling recommendation to not compare using block timestamps
         healthy = interval < Duration.unwrap(heartbeatInterval);
     }
 }
