@@ -31,6 +31,9 @@ import {
     NodeId
 } from "@skalenetwork/playa-manager-interfaces/contracts/INodes.sol";
 
+import {NotImplemented} from "./errors.sol";
+
+
 contract Nodes is AccessManagedUpgradeable, INodes {
 
     using EnumerableSet for EnumerableSet.UintSet;
@@ -346,6 +349,10 @@ contract Nodes is AccessManagedUpgradeable, INodes {
 
     function getActiveNodesIds() external view override returns (uint256[] memory nodeIds) {
         nodeIds = _activeNodeIds.values();
+    }
+
+    function activeNodeExists(NodeId) external view override returns (bool result) {
+        revert NotImplemented();
     }
 
     function _addPassiveNodeId(NodeId nodeId) private {
