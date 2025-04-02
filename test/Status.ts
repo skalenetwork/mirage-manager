@@ -1,37 +1,42 @@
-import { ethers } from "hardhat";
 import { expect } from "chai";
-import { with5ActiveNodesDeployment } from "./fixtures";
+import { nodesRegistered } from "./fixtures";
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
-import { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers";
 import { Nodes, Status } from "../typechain-types";
+import { HDNodeWallet, Wallet } from "ethers";
+import { ethers } from "hardhat";
 
 
 chai.should();
 chai.use(chaiAsPromised)
 
-describe("Nodes", function () {
+describe("Status", function () {
 
     let nodesContract: Nodes;
     let statusContract: Status;
     // owns node 1
-    let user1: HardhatEthersSigner;
+    let user1: HDNodeWallet;
     // owns node 2
-    let user2: HardhatEthersSigner;
+    let user2: HDNodeWallet;
     // owns node 3
-    let user3: HardhatEthersSigner;
+    let user3: HDNodeWallet;
     // owns node 4
-    let user4: HardhatEthersSigner;
+    let user4: HDNodeWallet;
     // owns node 5
-    let user5: HardhatEthersSigner;
+    let user5: HDNodeWallet;
     // does not own nodes
-    let user6: HardhatEthersSigner;
+    let randomUser: HDNodeWallet;
 
     beforeEach(async () => {
-        const {nodes, status} = await with5ActiveNodesDeployment();
+        const { nodes, status , nodesData } = await nodesRegistered();
         nodesContract = nodes;
         statusContract = status;
-        [, user1, user2, user3, user4, user5, user6] = await ethers.getSigners();
+        user1 = nodesData[0].wallet;
+        user2 = nodesData[1].wallet;
+        user3 = nodesData[2].wallet;
+        user4 = nodesData[3].wallet;
+        user5 = nodesData[4].wallet;
+        randomUser = Wallet.createRandom().connect(ethers.provider);
     });
 
     it("should allow only creator to whitelist nodes", async () => {
@@ -48,7 +53,8 @@ describe("Nodes", function () {
         .to.be.revertedWithCustomError(statusContract, "NodeAlreadyWhitelisted");
     });
     it("should revert if node does not exist", async () => {
-        await expect(statusContract.whitelistNode(6))
+        // 50 nodes registered
+        await expect(statusContract.whitelistNode(51))
         .to.be.revertedWithCustomError(nodesContract, "NodeDoesNotExist");
     });
 
@@ -69,7 +75,7 @@ describe("Nodes", function () {
         expect(secondTimestamp).to.be.greaterThan(firstTimestamp);
     });
     it("should revert alive() if node does not exist for sender", async () => {
-        await expect(statusContract.connect(user6).alive())
+        await expect(statusContract.connect(randomUser).alive())
         .to.be.revertedWithCustomError(nodesContract, "AddressIsNotAssignedToAnyNode")
     });
 

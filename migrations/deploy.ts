@@ -40,15 +40,15 @@ export const deploy = async (): Promise<DeployedContracts> => {
         deployedContracts.Committee,
         deployedContracts.Nodes
     );
-    const deployed = new Set(["PlayaAccessManager", "Committee", "Nodes", "DKG"]);
+    deployedContracts.Status = await deployStatus(
+        deployedContracts.PlayaAccessManager,
+        deployedContracts.Nodes
+    );
+    const deployed = new Set(["PlayaAccessManager", "Committee", "Nodes", "DKG", "Status"]);
     const toDeploy = contracts.filter( c => !deployed.has(c));
     for (const contract of toDeploy) {
         const parameters = [];
-
         parameters.push(await ethers.resolveAddress(deployedContracts["PlayaAccessManager"]));
-        if (contract === "Status") {
-            parameters.push(await ethers.resolveAddress(deployedContracts["Nodes"]));
-        }
 
         const instance = await deployContract(contract, parameters);
         deployedContracts = {
@@ -110,6 +110,16 @@ const deployDkg = async (authority: PlayaAccessManager, committee: Committee, no
             await ethers.resolveAddress(nodes)
         ]
     ) as DKG;
+}
+
+const deployStatus = async (authority: PlayaAccessManager, nodes: Nodes): Promise<Status> => {
+    return await deployContract(
+        "Status",
+        [
+            await ethers.resolveAddress(authority),
+            await ethers.resolveAddress(nodes)
+        ]
+    ) as Status;
 }
 
 const storeAddresses = async (deployedContracts: DeployedContracts, version: string) => {

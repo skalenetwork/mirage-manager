@@ -23,7 +23,6 @@ pragma solidity ^0.8.24;
 import {
     AccessManagedUpgradeable
 } from "@openzeppelin/contracts-upgradeable/access/manager/AccessManagedUpgradeable.sol";
-import { EnumerableMap } from "@openzeppelin/contracts/utils/structs/EnumerableMap.sol";
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import { ICommittee } from "@skalenetwork/playa-manager-interfaces/contracts/ICommittee.sol";
 import {
@@ -31,15 +30,15 @@ import {
     NodeId
 } from "@skalenetwork/playa-manager-interfaces/contracts/INodes.sol";
 
-import {NotImplemented} from "./errors.sol";
-
+import { TypedMap } from "./structs/typed/TypedMap.sol";
+import { TypedSet } from "./structs/typed/TypedSet.sol";
 
 contract Nodes is AccessManagedUpgradeable, INodes {
 
-    using EnumerableSet for EnumerableSet.UintSet;
+    using TypedSet for TypedSet.NodeIdSet;
     using EnumerableSet for EnumerableSet.AddressSet;
     using EnumerableSet for EnumerableSet.Bytes32Set;
-    using EnumerableMap for EnumerableMap.AddressToUintMap;
+    using TypedMap for TypedMap.AddressToNodeIdMap;
 
     bytes4 public constant ZERO_IPV4 = bytes4(0);
     bytes16 public constant ZERO_IPV6 = bytes16(0);
@@ -53,10 +52,10 @@ contract Nodes is AccessManagedUpgradeable, INodes {
     ICommittee public committeeContract;
 
     //Maps addresses to NodeIds
-    EnumerableMap.AddressToUintMap private _activeNodesAddressToId;
+    TypedMap.AddressToNodeIdMap private _activeNodesAddressToId;
 
     //Maps addresses to NodeIds
-    mapping(address nodeAddress => EnumerableSet.UintSet nodeIds) private _passiveNodeIdByAddress;
+    mapping(address nodeAddress => TypedSet.NodeIdSet nodeIds) private _passiveNodeIdByAddress;
     // Set to track passive node addresses
     EnumerableSet.AddressSet private _passiveNodeAddresses;
 
@@ -70,10 +69,10 @@ contract Nodes is AccessManagedUpgradeable, INodes {
     uint256 private _nodeIdCounter;
 
     // Set to track passive node IDs
-    EnumerableSet.UintSet private _passiveNodeIds;
+    TypedSet.NodeIdSet private _passiveNodeIds;
 
     // Set to track active node IDs
-    EnumerableSet.UintSet private _activeNodeIds;
+    TypedSet.NodeIdSet private _activeNodeIds;
 
     error NodeIsInCommittee(NodeId nodeId);
     error AddressIsAlreadyAssignedToNode(address nodeAddress);
@@ -228,7 +227,7 @@ contract Nodes is AccessManagedUpgradeable, INodes {
             // Register new address
             _setPassiveNodeIdForAddress(newOwner, nodeId);
 
-            assert(_passiveNodeIdByAddress[oldOwner].remove(NodeId.unwrap(nodeId)));
+            assert(_passiveNodeIdByAddress[oldOwner].remove(nodeId));
             if (_passiveNodeIdByAddress[oldOwner].length() == 0) {
                 assert(_passiveNodeAddresses.remove(oldOwner));
             }
@@ -327,10 +326,6 @@ contract Nodes is AccessManagedUpgradeable, INodes {
         return nodes[nodeId];
     }
 
-    function activeNodeExists(NodeId nodeId) external view override returns(bool result){
-        result = _isActiveNode(nodeId);
-    }
-
     function getNodeId(address nodeAddress) external view override returns (NodeId nodeId) {
         // Getter for active node
         require(
@@ -338,7 +333,7 @@ contract Nodes is AccessManagedUpgradeable, INodes {
             AddressIsNotAssignedToAnyNode(nodeAddress)
         );
 
-        nodeId = NodeId.wrap(_activeNodesAddressToId.get(nodeAddress));
+        nodeId = _activeNodesAddressToId.get(nodeAddress);
     }
 
     function getPassiveNodeIds(address nodeAddress) external view override returns (uint256[] memory nodeIds) {
@@ -355,16 +350,16 @@ contract Nodes is AccessManagedUpgradeable, INodes {
         nodeIds = _activeNodeIds.values();
     }
 
-    function activeNodeExists(NodeId) external view override returns (bool result) {
-        revert NotImplemented();
+    function activeNodeExists(NodeId nodeId) external view override returns(bool result){
+        result = _isActiveNode(nodeId);
     }
 
     function _addPassiveNodeId(NodeId nodeId) private {
-        assert(_passiveNodeIds.add(NodeId.unwrap(nodeId)));
+        assert(_passiveNodeIds.add(nodeId));
     }
 
     function _addActiveNodeId(NodeId nodeId) private {
-        assert(_activeNodeIds.add(NodeId.unwrap(nodeId)));
+        assert(_activeNodeIds.add(nodeId));
     }
 
     function _setActiveNodeIdForAddress(address nodeAddress, NodeId nodeId) private {
@@ -373,7 +368,7 @@ contract Nodes is AccessManagedUpgradeable, INodes {
             AddressInUseByPassiveNodes(nodeAddress)
         );
         require(
-            _activeNodesAddressToId.set(nodeAddress, NodeId.unwrap(nodeId)),
+            _activeNodesAddressToId.set(nodeAddress, nodeId),
             AddressIsAlreadyAssignedToNode(nodeAddress)
         );
     }
@@ -385,7 +380,7 @@ contract Nodes is AccessManagedUpgradeable, INodes {
         );
 
         require(
-            _passiveNodeIdByAddress[nodeAddress].add(NodeId.unwrap(nodeId)),
+            _passiveNodeIdByAddress[nodeAddress].add(nodeId),
             PassiveNodeAlreadyExistsForAddress(nodeAddress, nodeId)
         );
 
@@ -395,11 +390,11 @@ contract Nodes is AccessManagedUpgradeable, INodes {
     }
 
     function _isActiveNode(NodeId nodeId) private view returns (bool result) {
-        result = _activeNodeIds.contains(NodeId.unwrap(nodeId));
+        result = _activeNodeIds.contains(nodeId);
     }
 
     function _isPassiveNode(NodeId nodeId) private view returns (bool result) {
-        result = _passiveNodeIds.contains(NodeId.unwrap(nodeId));
+        result = _passiveNodeIds.contains(nodeId);
     }
 
     function _isAddressOfPassiveNodes(address nodeAddress) private view returns (bool result) {

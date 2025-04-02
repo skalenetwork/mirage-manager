@@ -24,20 +24,19 @@ pragma solidity ^0.8.24;
 import {
     AccessManagedUpgradeable
 } from "@openzeppelin/contracts-upgradeable/access/manager/AccessManagedUpgradeable.sol";
-import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
-
 import { INodes, NodeId } from "@skalenetwork/playa-manager-interfaces/contracts/INodes.sol";
 import { Duration, IStatus } from "@skalenetwork/playa-manager-interfaces/contracts/IStatus.sol";
 
+import { TypedSet } from "./structs/typed/TypedSet.sol";
 
 
 contract Status is AccessManagedUpgradeable, IStatus {
 
-    using EnumerableSet for EnumerableSet.UintSet;
+    using TypedSet for TypedSet.NodeIdSet;
 
     Duration public heartbeatInterval;
-    mapping (NodeId id => Duration timestamp) public lastHeartbeatTimestamp;
-    EnumerableSet.UintSet private _whitelist;
+    mapping (NodeId id => uint256 timestamp) public lastHeartbeatTimestamp;
+    TypedSet.NodeIdSet private _whitelist;
 
     INodes public nodes;
 
@@ -58,18 +57,18 @@ contract Status is AccessManagedUpgradeable, IStatus {
         // Nodes.sol will revert if sender has no Active Node
         NodeId nodeId = nodes.getNodeId(msg.sender);
 
-        lastHeartbeatTimestamp[nodeId] = Duration.wrap(block.timestamp);
+        lastHeartbeatTimestamp[nodeId] = block.timestamp;
     }
     function setHeartbeatInterval(Duration interval) external override restricted {
         heartbeatInterval = interval;
     }
 
     function whitelistNode(NodeId nodeId) external override restricted nodeExists(nodeId) {
-        require(_whitelist.add(NodeId.unwrap(nodeId)), NodeAlreadyWhitelisted(nodeId));
+        require(_whitelist.add(nodeId), NodeAlreadyWhitelisted(nodeId));
     }
 
     function removeNodeFromWhitelist(NodeId nodeId) external override restricted {
-        require(_whitelist.remove(NodeId.unwrap(nodeId)), NodeNotWhitelisted(nodeId));
+        require(_whitelist.remove(nodeId), NodeNotWhitelisted(nodeId));
     }
 
     function isHealthy(NodeId nodeId) external view override returns (bool healthy) {
@@ -77,32 +76,27 @@ contract Status is AccessManagedUpgradeable, IStatus {
     }
 
     function getNodesEligibleForCommittee() external view override returns (NodeId[] memory nodeIds) {
-        // TODO: Select random subset ?
-        uint256[] memory ids = _whitelist.values();
-        NodeId[] memory temp = new NodeId[](ids.length);
-        uint256 count = 0;
-        uint256 idsLength = ids.length;
+        uint256[] memory whitelistedIds = _whitelist.values();
+        NodeId[] memory healthyNodeIds = new NodeId[](whitelistedIds.length);
+        uint256 eligibleCount = 0;
 
-        for (uint256 i = 0; i < idsLength; ++i) {
-            NodeId nodeId = NodeId.wrap(ids[i]);
-            if (!_isHealthy(nodeId)) {
-                continue;
-            }
-            // Node may not exist anymore in repository, but external call in a loop seems costly
-            // The other option would be to propagate node removals, but this introduces circular dependency
-            // Disabling for now
-            // slither-disable-next-line all
-            if (nodes.activeNodeExists(nodeId)) {
-                temp[count] = nodeId;
-                ++count;
+        uint256 whitelistedLength = whitelistedIds.length;
+        for (uint256 i = 0; i < whitelistedLength; ++i) {
+            NodeId nodeId = NodeId.wrap(whitelistedIds[i]);
+
+            // TODO: improve. It's simple enough while nodes can't be removed
+            if (_isHealthy(nodeId)) {
+                healthyNodeIds[eligibleCount] = nodeId;
+                ++eligibleCount;
             }
         }
 
-        nodeIds = new NodeId[](count);
-        for (uint256 i = 0; i < count; ++i) {
-            nodeIds[i] = temp[i];
+        nodeIds = new NodeId[](eligibleCount);
+        for (uint256 i = 0; i < eligibleCount; ++i) {
+            nodeIds[i] = healthyNodeIds[i];
         }
     }
+
 
     function getWhitelistedNodes() external view override returns (uint256[] memory nodeIds) {
         nodeIds = _whitelist.values();
@@ -110,10 +104,9 @@ contract Status is AccessManagedUpgradeable, IStatus {
 
     function _isHealthy(NodeId nodeId) private view returns (bool healthy) {
 
-        uint256 interval = block.timestamp - Duration.unwrap(lastHeartbeatTimestamp[nodeId]);
+        uint256 interval = block.timestamp - lastHeartbeatTimestamp[nodeId];
 
         // Disabling recommendation to not compare using block timestamps
-        // slither-disable-next-line all
         healthy = interval < Duration.unwrap(heartbeatInterval);
     }
 }
