@@ -24,7 +24,7 @@ pragma solidity ^0.8.24;
 import {
     AccessManagedUpgradeable
 } from "@openzeppelin/contracts-upgradeable/access/manager/AccessManagedUpgradeable.sol";
-import {NodeId} from "@skalenetwork/playa-manager-interfaces/contracts/INodes.sol";
+import {INodes, NodeId} from "@skalenetwork/playa-manager-interfaces/contracts/INodes.sol";
 import {
     Duration,
     IStatus
@@ -34,7 +34,7 @@ import {NotImplemented} from "./errors.sol";
 
 
 contract Status is AccessManagedUpgradeable, IStatus {
-    function initialize(address initialAuthority) public initializer {
+    function initialize(address initialAuthority, INodes) public initializer override {
         __AccessManaged_init(initialAuthority);
     }
     function alive() external override {
@@ -43,7 +43,19 @@ contract Status is AccessManagedUpgradeable, IStatus {
     function setHeartbeatInterval(Duration /*interval*/) external override {
         revert NotImplemented();
     }
+    function whitelistNode(NodeId) external override {
+        revert NotImplemented();
+    }
+    function removeNodeFromWhitelist(NodeId) external override {
+        revert NotImplemented();
+    }
     function isHealthy(NodeId /*nodeId*/) external view override returns (bool healthy) {
+        revert NotImplemented();
+    }
+    function getNodesEligibleForCommittee() external view override returns (NodeId[] memory nodeIds) {
+        revert NotImplemented();
+    }
+    function getWhitelistedNodes() external view override returns (uint256[] memory nodeIds) {
         revert NotImplemented();
     }
 }

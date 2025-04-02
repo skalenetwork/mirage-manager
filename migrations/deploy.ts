@@ -4,6 +4,7 @@ import {
     getVersion
 } from '@skalenetwork/upgrade-tools';
 import { Committee, DKG, Nodes, PlayaAccessManager, Staking, Status } from "../typechain-types";
+import { AddressLike } from "ethers";
 
 
 export const contracts = [
@@ -28,30 +29,27 @@ export const deploy = async (): Promise<DeployedContracts> => {
     const [deployer] = await ethers.getSigners();
     let deployedContracts: DeployedContracts = {} as DeployedContracts;
 
-    deployedContracts.PlayaAccessManager = await deployContract(
-        "PlayaAccessManager",
-        [await ethers.resolveAddress(deployer)]
-    ) as PlayaAccessManager;
-
-    deployedContracts.Committee = await deployContract(
-        "Committee",
-        [await ethers.resolveAddress(deployedContracts.PlayaAccessManager)]
-    ) as Committee;
-
+    deployedContracts.PlayaAccessManager = await deployPlayaAccessManager(deployer);
+    deployedContracts.Committee = await deployCommittee(deployedContracts.PlayaAccessManager);
     deployedContracts.Nodes = await deployNodes(
-        await ethers.resolveAddress(deployedContracts.PlayaAccessManager),
-        await ethers.resolveAddress(deployedContracts.Committee)
+        deployedContracts.PlayaAccessManager,
+        deployedContracts.Committee
     );
-    const deployed = new Set(["PlayaAccessManager", "Committee", "Nodes"]);
+    deployedContracts.DKG = await deployDkg(
+        deployedContracts.PlayaAccessManager,
+        deployedContracts.Committee,
+        deployedContracts.Nodes
+    );
+    const deployed = new Set(["PlayaAccessManager", "Committee", "Nodes", "DKG"]);
     const toDeploy = contracts.filter( c => !deployed.has(c));
     for (const contract of toDeploy) {
         const parameters = [];
 
         parameters.push(await ethers.resolveAddress(deployedContracts["PlayaAccessManager"]));
-        if (contract === "DKG") {
-            parameters.push(await ethers.resolveAddress(deployedContracts["Committee"]));
+        if (contract === "Status") {
             parameters.push(await ethers.resolveAddress(deployedContracts["Nodes"]));
         }
+
         const instance = await deployContract(contract, parameters);
         deployedContracts = {
             ...deployedContracts,
@@ -59,8 +57,9 @@ export const deploy = async (): Promise<DeployedContracts> => {
         }
     }
 
-    return deployedContracts as DeployedContracts;
+    return deployedContracts;
 }
+
 const deployContract = async (name: string, args: unknown[]) => {
     const factory = await ethers.getContractFactory(name);
     const instance = await upgrades.deployProxy(
@@ -70,14 +69,47 @@ const deployContract = async (name: string, args: unknown[]) => {
     await instance.waitForDeployment();
     return instance;
 }
+
+const deployPlayaAccessManager = async (
+    owner: AddressLike
+): Promise<PlayaAccessManager> => {
+    return await deployContract(
+        "PlayaAccessManager",
+        [await ethers.resolveAddress(owner)]
+    ) as PlayaAccessManager;
+}
+
+const deployCommittee = async (authority: PlayaAccessManager): Promise<Committee> => {
+    return await deployContract(
+        "Committee",
+        [
+            await ethers.resolveAddress(authority)
+        ]
+    ) as Committee;
+}
+
 const deployNodes = async (
-    accessManagerAddress: string,
-    committeeAddress: string,
+    accessManager: PlayaAccessManager,
+    committee: Committee,
 ): Promise<Nodes> => {
     return await deployContract(
         "Nodes",
-        [accessManagerAddress, committeeAddress]
+        [
+            await ethers.resolveAddress(accessManager),
+            await ethers.resolveAddress(committee)
+        ]
     ) as Nodes;
+}
+
+const deployDkg = async (authority: PlayaAccessManager, committee: Committee, nodes: Nodes): Promise<DKG> => {
+    return await deployContract(
+        "DKG",
+        [
+            await ethers.resolveAddress(authority),
+            await ethers.resolveAddress(committee),
+            await ethers.resolveAddress(nodes)
+        ]
+    ) as DKG;
 }
 
 const storeAddresses = async (deployedContracts: DeployedContracts, version: string) => {
