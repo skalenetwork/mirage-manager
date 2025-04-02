@@ -36,6 +36,9 @@ import { NotImplemented } from "./errors.sol";
 
 contract Committee is AccessManagedUpgradeable, ICommittee {
 
+    mapping (CommitteeIndex index => Committee committee) public committees;
+    CommitteeIndex public activeCommitteeIndex;
+
     function initialize(address initialAuthority) public initializer override {
         __AccessManaged_init(initialAuthority);
     }
@@ -64,7 +67,7 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
     }
 
     function getActiveCommitteeIndex() external view override returns (CommitteeIndex committeeIndex) {
-        revert NotImplemented();
+        return activeCommitteeIndex;
     }
 
     function isNodeInCurrentOrNextCommittee(NodeId /*node*/) external view override returns (bool result){
