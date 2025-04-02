@@ -34,7 +34,7 @@ import {NotImplemented} from "./errors.sol";
 
 
 contract Status is AccessManagedUpgradeable, IStatus {
-    function initialize(address initialAuthority) public initializer {
+    function initialize(address initialAuthority) public initializer override {
         __AccessManaged_init(initialAuthority);
     }
     function alive() external override {

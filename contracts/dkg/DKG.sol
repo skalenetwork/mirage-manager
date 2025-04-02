@@ -30,7 +30,6 @@ import {ICommittee} from "@skalenetwork/playa-manager-interfaces/contracts/IComm
 import {DkgId, IDkg} from "@skalenetwork/playa-manager-interfaces/contracts/IDkg.sol";
 import {INodes, NodeId} from "@skalenetwork/playa-manager-interfaces/contracts/INodes.sol";
 
-import {NotImplemented} from "../errors.sol";
 import {G2Operations} from "./fieldOperations/G2Operations.sol";
 
 

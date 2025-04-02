@@ -30,7 +30,7 @@ import {NotImplemented} from "./errors.sol";
 
 contract Staking is AccessManagedUpgradeable, IStaking {
 
-    function initialize(address initialAuthority) public initializer {
+    function initialize(address initialAuthority) public initializer override {
         __AccessManaged_init(initialAuthority);
     }
 
