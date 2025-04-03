@@ -1,3 +1,4 @@
 {
-    "filter_paths": "node_modules"
+    "filter_paths": "node_modules",
+    "detectors_to_exclude": "block-timestamp"
 }

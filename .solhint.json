@@ -2,7 +2,7 @@
   "extends": "solhint:all",
   "rules": {
     "foundry-test-functions": "off",
-
+    "not-rely-on-time": "off",
     "duplicated-imports": "error",
     "comprehensive-interface": "error",
     "explicit-types": "error",
