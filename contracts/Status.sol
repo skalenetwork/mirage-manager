@@ -76,13 +76,13 @@ contract Status is AccessManagedUpgradeable, IStatus {
     }
 
     function getNodesEligibleForCommittee() external view override returns (NodeId[] memory nodeIds) {
-        uint256[] memory whitelistedIds = _whitelist.values();
-        NodeId[] memory healthyNodeIds = new NodeId[](whitelistedIds.length);
+
+        uint256 whitelistedLength = _whitelist.length();
+        NodeId[] memory healthyNodeIds = new NodeId[](whitelistedLength);
         uint256 eligibleCount = 0;
 
-        uint256 whitelistedLength = whitelistedIds.length;
         for (uint256 i = 0; i < whitelistedLength; ++i) {
-            NodeId nodeId = NodeId.wrap(whitelistedIds[i]);
+            NodeId nodeId = _whitelist.at(i);
 
             // TODO: improve. It's simple enough while nodes can't be removed
             if (_isHealthy(nodeId)) {
@@ -97,7 +97,7 @@ contract Status is AccessManagedUpgradeable, IStatus {
         }
     }
 
-    function getWhitelistedNodes() external view override returns (uint256[] memory nodeIds) {
+    function getWhitelistedNodes() external view override returns (NodeId[] memory nodeIds) {
         nodeIds = _whitelist.values();
     }
 

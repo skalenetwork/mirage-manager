@@ -2497,10 +2497,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@skalenetwork/playa-manager-interfaces@git@github.com:skalenetwork/playa-manager-interfaces.git":
+"@skalenetwork/playa-manager-interfaces@git@github.com:skalenetwork/playa-manager-interfaces.git#0.1.0-develop.50":
   version: 0.1.0
-  resolution: "@skalenetwork/playa-manager-interfaces@git@github.com:skalenetwork/playa-manager-interfaces.git#commit=4241f23dab3d6b3ac621bc8c539b2aa16249aacb"
-  checksum: 10c0/2e9fcaed975c0ba0a2c6b3414d96aa0237e8c334bce57266f0db7d6af9de8b77fb01b2eabaaf2a50a6f85ecf17136f0a143af0f08e5915ecad62ddb96e4db8a7
+  resolution: "@skalenetwork/playa-manager-interfaces@git@github.com:skalenetwork/playa-manager-interfaces.git#commit=b1cbedbd76c4a4d97af9af9a060637b2c1839956"
+  checksum: 10c0/104943c16e952ae83f5b37e1aebb37b68a874228b69d01a77c86c15c34562253d9a6430506b7d3481435c4c8509582e43d2759850009a3b8b4684e19150bd200
   languageName: node
   linkType: hard
 
@@ -7565,7 +7565,7 @@ __metadata:
     "@openzeppelin/contracts-upgradeable": "npm:^5.2.0"
     "@openzeppelin/hardhat-upgrades": "npm:^3.9.0"
     "@openzeppelin/upgrades-core": "npm:^1.42.2"
-    "@skalenetwork/playa-manager-interfaces": "git@github.com:skalenetwork/playa-manager-interfaces.git"
+    "@skalenetwork/playa-manager-interfaces": "git@github.com:skalenetwork/playa-manager-interfaces.git#0.1.0-develop.50"
     "@skalenetwork/upgrade-tools": "npm:3.0.0-develop.42"
     "@typechain/ethers-v6": "npm:^0.5.0"
     "@typechain/hardhat": "npm:^9.0.0"

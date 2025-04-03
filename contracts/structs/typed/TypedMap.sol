@@ -23,12 +23,24 @@ pragma solidity ^0.8.24;
 import { EnumerableMap } from "@openzeppelin/contracts/utils/structs/EnumerableMap.sol";
 import { NodeId } from "@skalenetwork/playa-manager-interfaces/contracts/INodes.sol";
 
+import { TypedSet } from "./TypedSet.sol";
+
 library TypedMap {
+    using TypedSet for TypedSet.NodeIdSet;
 
     struct AddressToNodeIdMap {
         EnumerableMap.AddressToUintMap inner;
     }
 
+    struct AddressToNodeIdSetMap {
+        mapping(address => TypedSet.NodeIdSet) inner;
+    }
+
+    // ----------
+    //  Internal
+    // ----------
+
+    // AddressToNodeIdMap
     function set(AddressToNodeIdMap storage map, address key, NodeId value) internal returns (bool added) {
         added = EnumerableMap.set(map.inner, key, NodeId.unwrap(value));
     }
@@ -37,6 +49,21 @@ library TypedMap {
         removed = EnumerableMap.remove(map.inner, key);
     }
 
+    // AddressToNodeIdSetMap
+
+    function add(AddressToNodeIdSetMap storage map, address key, NodeId nodeId) internal returns (bool added) {
+        added = map.inner[key].add(nodeId);
+    }
+
+    function remove(AddressToNodeIdSetMap storage map, address key, NodeId nodeId) internal returns (bool removed) {
+        removed = map.inner[key].remove(nodeId);
+    }
+
+    // --------------
+    //  Internal Views
+    // --------------
+
+    // AddressToNodeIdMap
     function contains(AddressToNodeIdMap storage map, address key) internal view returns (bool result) {
         result = EnumerableMap.contains(map.inner, key);
     }
@@ -53,5 +80,18 @@ library TypedMap {
         uint256 raw;
         (success, raw) = EnumerableMap.tryGet(map.inner, key);
         nodeId = NodeId.wrap(raw);
+    }
+
+    // AddressToNodeIdMap
+    function lengthOf(AddressToNodeIdSetMap storage map, address key) internal view returns (uint256 len) {
+        len = map.inner[key].length();
+    }
+
+    function getValuesAt(AddressToNodeIdSetMap storage map, address key) internal view returns (NodeId[] memory ids) {
+        ids = map.inner[key].values();
+    }
+
+    function isSet(AddressToNodeIdSetMap storage map, address key, NodeId nodeId) internal view returns (bool result) {
+        result = map.inner[key].contains(nodeId);
     }
 }

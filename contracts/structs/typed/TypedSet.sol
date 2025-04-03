@@ -45,9 +45,12 @@ library TypedSet {
         len = EnumerableSet.length(set.inner);
     }
 
-    function values(NodeIdSet storage set) internal view returns (uint256[] memory nodeIds) {
-        // Returning as NodeIds will come at a price - loop and cast. Not worthed for now.
-        nodeIds = EnumerableSet.values(set.inner);
+    function values(NodeIdSet storage set) internal view returns (NodeId[] memory nodeIds) {
+        uint256 size = EnumerableSet.length(set.inner);
+        nodeIds = new NodeId[](size);
+        for (uint256 i = 0; i < size; ++i) {
+            nodeIds[i] = NodeId.wrap(EnumerableSet.at(set.inner, i));
+        }
     }
 
     function at(NodeIdSet storage set, uint256 index) internal view returns (NodeId nodeId) {
