@@ -34,14 +34,20 @@ import { INodes, NodeId } from "@skalenetwork/playa-manager-interfaces/contracts
 import { Duration, IStatus } from "@skalenetwork/playa-manager-interfaces/contracts/IStatus.sol";
 
 import { G2Operations } from "./dkg/fieldOperations/G2Operations.sol";
-import { NotImplemented } from "./errors.sol";
 import { IRandom, Random } from "./Random.sol";
+import { TypedSet } from "./structs/typed/TypedSet.sol";
 
 
 contract Committee is AccessManagedUpgradeable, ICommittee {
     using Random for IRandom.RandomGenerator;
+    using TypedSet for TypedSet.NodeIdSet;
+
+    struct CommitteeAuxiliary {
+        TypedSet.NodeIdSet nodes;
+    }
 
     mapping (CommitteeIndex index => Committee committee) public committees;
+    mapping (CommitteeIndex index => CommitteeAuxiliary committee) private _committeesAuxiliary;
     CommitteeIndex public lastCommitteeIndex;
     uint256 public committeeSize;
     Duration public transitionDelay;
@@ -56,6 +62,9 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
     );
     error SenderIsNotDkg(
         address sender
+    );
+    error CommitteeNotFound(
+        CommitteeIndex index
     );
 
     modifier onlyDkg() {
@@ -95,10 +104,6 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
         }
     }
 
-    function newNodeCreated(NodeId /*nodeId*/) external override {
-        assert(true);
-    }
-
     function setCommitteeSize(uint256 size) external override restricted {
         committeeSize = size;
     }
@@ -108,18 +113,33 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
     }
 
     function getCommittee(
-        CommitteeIndex /*committeeIndex*/
+        CommitteeIndex committeeIndex
     )
         external
         view
         override
         returns (Committee memory committee)
     {
-        revert NotImplemented();
+        require (_committeeExists(committeeIndex), CommitteeNotFound(committeeIndex));
+        return committees[committeeIndex];
     }
 
-    function isNodeInCurrentOrNextCommittee(NodeId /*node*/) external view override returns (bool result){
+    function isNodeInCurrentOrNextCommittee(NodeId node) external view override returns (bool result) {
+        for (
+            uint256 i = CommitteeIndex.unwrap(getActiveCommitteeIndex());
+            i < 1 + CommitteeIndex.unwrap(lastCommitteeIndex);
+            ++i
+        ) {
+            CommitteeIndex committeeIndex = CommitteeIndex.wrap(i);
+            if (_committeesAuxiliary[committeeIndex].nodes.contains(node)) {
+                return true;
+            }
+        }
         return false;
+    }
+
+    function newNodeCreated(NodeId) external pure override {
+        assert(true);
     }
 
     // Public
@@ -143,9 +163,11 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
             startingTimestamp: Timestamp.wrap(type(uint256).max)
         });
         committee = committees[committeeIndex];
+        CommitteeAuxiliary storage committeeAuxiliary = _committeesAuxiliary[committeeIndex];
         uint256 committeeSize_ = committeeSize;
         for (uint256 i = 0; i < committeeSize_; ++i) {
             committee.nodes.push(nodes_[i]);
+            committeeAuxiliary.nodes.add(nodes_[i]);
         }
     }
 
@@ -154,7 +176,7 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
     }
 
     function _getEligibleNodes() private view returns (NodeId[] memory candidates, uint256 length) {
-        candidates = _toNodeIds(nodes.getActiveNodesIds());
+        candidates = nodes.getActiveNodesIds();
         length = candidates.length;
         for (uint256 i = 0; i < length; ++i) {
             while ( length > 0 && !_isEligible(candidates[i])) {
@@ -186,12 +208,8 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
         }
     }
 
-    function _toNodeIds(uint256[] memory rawNodeIds) private pure returns (NodeId[] memory nodeIds) {
-        uint256 length = rawNodeIds.length;
-        nodeIds = new NodeId[](length);
-        for (uint256 i = 0; i < length; ++i) {
-            nodeIds[i] = NodeId.wrap(rawNodeIds[i]);
-        }
+    function _committeeExists(CommitteeIndex index) private view returns (bool exists) {
+        return !(CommitteeIndex.unwrap(lastCommitteeIndex) < CommitteeIndex.unwrap(index));
     }
 
     function _next(CommitteeIndex index) private pure returns (CommitteeIndex nextIndex) {
