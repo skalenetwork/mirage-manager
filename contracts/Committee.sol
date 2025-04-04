@@ -26,33 +26,85 @@ import {
 } from "@openzeppelin/contracts-upgradeable/access/manager/AccessManagedUpgradeable.sol";
 import {
     CommitteeIndex,
-    ICommittee
+    ICommittee,
+    Timestamp
 } from "@skalenetwork/playa-manager-interfaces/contracts/ICommittee.sol";
-import { DkgId } from "@skalenetwork/playa-manager-interfaces/contracts/IDkg.sol";
-import { NodeId } from "@skalenetwork/playa-manager-interfaces/contracts/INodes.sol";
+import { DkgId, IDkg } from "@skalenetwork/playa-manager-interfaces/contracts/IDkg.sol";
+import { INodes, NodeId } from "@skalenetwork/playa-manager-interfaces/contracts/INodes.sol";
+import { Duration, IStatus } from "@skalenetwork/playa-manager-interfaces/contracts/IStatus.sol";
 
+import { G2Operations } from "./dkg/fieldOperations/G2Operations.sol";
 import { NotImplemented } from "./errors.sol";
+import { IRandom, Random } from "./Random.sol";
 
 
 contract Committee is AccessManagedUpgradeable, ICommittee {
+    using Random for IRandom.RandomGenerator;
 
     mapping (CommitteeIndex index => Committee committee) public committees;
-    CommitteeIndex public activeCommitteeIndex;
+    CommitteeIndex public lastCommitteeIndex;
+    uint256 public committeeSize;
+    Duration public transitionDelay;
 
-    function initialize(address initialAuthority) public initializer override {
+    IDkg public dkg;
+    INodes public nodes;
+    IStatus public status;
+
+    error TooFewCandidates(
+        uint256 needed,
+        uint256 available
+    );
+    error SenderIsNotDkg(
+        address sender
+    );
+
+    modifier onlyDkg() {
+        require(msg.sender == address(dkg), SenderIsNotDkg(msg.sender));
+        _;
+    }
+
+    function initialize(
+        address initialAuthority,
+        IDkg dkgAddress,
+        INodes nodesAddress,
+        IStatus statusAddress
+    )
+        public
+        initializer
+        override
+    {
         __AccessManaged_init(initialAuthority);
+        dkg = dkgAddress;
+        nodes = nodesAddress;
+        status = statusAddress;
+        committeeSize = 22;
     }
 
     function select() external override {
-        revert NotImplemented();
+        (NodeId[] memory candidates, uint256 length) = _getEligibleNodes();
+        _buildRandomSubset(candidates, length, committeeSize);
+        Committee storage committee = _createCommittee(candidates);
+        committee.dkg = dkg.generate(committee.nodes);
     }
 
-    function processSuccessfulDkg(DkgId /*dkg*/) external override {
-        revert NotImplemented();
+    function processSuccessfulDkg(DkgId round) external onlyDkg override {
+        Committee storage committee = _getCommittee(lastCommitteeIndex);
+        if (committee.dkg == round) {
+            committee.commonPublicKey = dkg.getPublicKey(round);
+            committee.startingTimestamp = Timestamp.wrap(block.timestamp + Duration.unwrap(transitionDelay));
+        }
     }
 
     function newNodeCreated(NodeId /*nodeId*/) external override {
         assert(true);
+    }
+
+    function setCommitteeSize(uint256 size) external override restricted {
+        committeeSize = size;
+    }
+
+    function setTransitionDelay(Duration delay) external override restricted {
+        transitionDelay = delay;
     }
 
     function getCommittee(
@@ -66,13 +118,87 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
         revert NotImplemented();
     }
 
-    function getActiveCommitteeIndex() external view override returns (CommitteeIndex committeeIndex) {
-        return activeCommitteeIndex;
-    }
-
     function isNodeInCurrentOrNextCommittee(NodeId /*node*/) external view override returns (bool result){
         return false;
     }
 
+    // Public
 
+    function getActiveCommitteeIndex() public view override returns (CommitteeIndex committeeIndex) {
+        committeeIndex = lastCommitteeIndex;
+        while (_getCommittee(committeeIndex).startingTimestamp < Timestamp.wrap(block.timestamp)) {
+            committeeIndex = _previous(committeeIndex);
+        }
+    }
+
+    // Private
+
+    function _createCommittee(NodeId[] memory nodes_) private returns (Committee storage committee) {
+        CommitteeIndex committeeIndex = _next(getActiveCommitteeIndex());
+        lastCommitteeIndex = committeeIndex;
+        committees[committeeIndex] = Committee({
+            nodes: new NodeId[](0),
+            dkg: DkgId.wrap(0),
+            commonPublicKey: G2Operations.getG2Zero(),
+            startingTimestamp: Timestamp.wrap(type(uint256).max)
+        });
+        committee = committees[committeeIndex];
+        uint256 committeeSize_ = committeeSize;
+        for (uint256 i = 0; i < committeeSize_; ++i) {
+            committee.nodes.push(nodes_[i]);
+        }
+    }
+
+    function _isEligible(NodeId node) private view returns (bool eligible) {
+        return status.isHealthy(node) && status.isWhitelisted(node);
+    }
+
+    function _getEligibleNodes() private view returns (NodeId[] memory candidates, uint256 length) {
+        candidates = _toNodeIds(nodes.getActiveNodesIds());
+        length = candidates.length;
+        for (uint256 i = 0; i < length; ++i) {
+            while ( length > 0 && !_isEligible(candidates[i])) {
+                candidates[i] = candidates[length - 1];
+                --length;
+            }
+        }
+    }
+
+    function _getCommittee(CommitteeIndex index) private view returns (Committee storage committee) {
+        return committees[index];
+    }
+
+    function _buildRandomSubset(
+        NodeId[] memory candidates,
+        uint256 length,
+        uint256 subsetSize
+    )
+        private
+        view
+    {
+        require (!(length < subsetSize), TooFewCandidates(subsetSize, length));
+        IRandom.RandomGenerator memory generator = Random.create(uint256(blockhash(block.number)));
+        for (uint256 i = 0; i < subsetSize; ++i) {
+            uint256 index = generator.random(i, length);
+            if (index > i) {
+                (candidates[i], candidates[index]) = (candidates[index], candidates[i]);
+            }
+        }
+    }
+
+    function _toNodeIds(uint256[] memory rawNodeIds) private pure returns (NodeId[] memory nodeIds) {
+        uint256 length = rawNodeIds.length;
+        nodeIds = new NodeId[](length);
+        for (uint256 i = 0; i < length; ++i) {
+            nodeIds[i] = NodeId.wrap(rawNodeIds[i]);
+        }
+    }
+
+    function _next(CommitteeIndex index) private pure returns (CommitteeIndex nextIndex) {
+        return CommitteeIndex.wrap(CommitteeIndex.unwrap(index) + 1);
+    }
+
+    function _previous(CommitteeIndex index) private pure returns (CommitteeIndex nextIndex) {
+        return CommitteeIndex.wrap(CommitteeIndex.unwrap(index) - 1);
+    }
 }

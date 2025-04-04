@@ -78,6 +78,7 @@ contract DKG is AccessManagedUpgradeable, IDkg {
         DkgId dkg
     );
 
+    error DkgIsNotSuccessful(DkgId id);
     error DkgIsNotInBroadcastStage(DkgId id);
     error DkgIsNotInAlrightStage(DkgId id);
     error IncorrectVerificationsVectorQuantity(
@@ -170,6 +171,11 @@ contract DKG is AccessManagedUpgradeable, IDkg {
     function isNodeBroadcasted(DkgId dkg, NodeId node) external view override returns (bool broadcasted) {
         uint256 index = _getIndex(dkg, node);
         return _isNodeBroadcasted(dkg, index);
+    }
+
+    function getPublicKey(DkgId dkg) external view override returns (G2Point memory publicKey) {
+        require(rounds[dkg].status == Status.SUCCESS, DkgIsNotSuccessful(dkg));
+        return rounds[dkg].publicKey;
     }
 
     // Private
