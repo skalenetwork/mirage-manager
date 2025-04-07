@@ -1,5 +1,5 @@
 import { expect } from "chai";
-import { nodesRegistered } from "./fixtures";
+import { nodesRegisteredButNotWhitelisted } from "./fixtures";
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import { Nodes, Status } from "../typechain-types";
@@ -26,7 +26,7 @@ describe("Status", function () {
     let randomUser: HDNodeWallet;
 
     beforeEach(async () => {
-        const { nodes, status , nodesData } = await nodesRegistered();
+        const { nodes, status , nodesData } = await nodesRegisteredButNotWhitelisted();
         nodesContract = nodes;
         statusContract = status;
         user1 = nodesData[0].wallet;
@@ -84,7 +84,7 @@ describe("Status", function () {
 
     it("should allow only creator to set new heartbeat interval", async () => {
         await expect(statusContract.connect(user1).setHeartbeatInterval(1)).to.be.reverted;
-        expect(await statusContract.heartbeatInterval()).to.eql(0n);
+        expect(await statusContract.heartbeatInterval()).to.eql(5n * 60n);
         await statusContract.setHeartbeatInterval(1);
         expect(await statusContract.heartbeatInterval()).to.eql(1n);
     });

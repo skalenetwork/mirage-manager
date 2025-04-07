@@ -174,7 +174,7 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
         uint256 committeeSize_ = committeeSize;
         for (uint256 i = 0; i < committeeSize_; ++i) {
             committee.nodes.push(nodes_[i]);
-            committeeAuxiliary.nodes.add(nodes_[i]);
+            assert(committeeAuxiliary.nodes.add(nodes_[i]));
         }
     }
 
