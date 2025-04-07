@@ -42,7 +42,7 @@ const deploy = async () => {
 const registerNodes = async () => {
     const [owner] = await ethers.getSigners();
     const contracts = await loadFixture(deploy);
-    const {nodes} = contracts;
+    const {nodes, status} = contracts;
     const nodesData: NodeData[] = [];
     for (let nodeId = 1n; nodeId <= numberOfNodes; ++nodeId) {
         const wallet = Wallet.createRandom().connect(ethers.provider);
@@ -51,12 +51,22 @@ const registerNodes = async () => {
             value: nodeBalance
         });
         await nodes.connect(wallet).registerNode(getIp(nodeId), ethers.toBigInt("0xd2"));
+        await status.whitelistNode(nodeId);
         nodesData.push({wallet, id: nodeId});
     }
     return {...contracts, nodesData};
+}
+
+const registerNodesAndSendHeartbeat = async () => {
+    const registeredNodes = await nodesRegistered();
+    for (const node of registeredNodes.nodesData) {
+        await registeredNodes.status.connect(node.wallet).alive();
+    }
+    return {...registeredNodes};
 }
 
 // External functions
 
 export const cleanDeployment = async () => loadFixture(deploy);
 export const nodesRegistered = async () => loadFixture(registerNodes);
+export const nodesAreRegisteredAndHeartbeatIsSent = async () => loadFixture(registerNodesAndSendHeartbeat);

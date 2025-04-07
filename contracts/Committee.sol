@@ -81,9 +81,10 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
     {
         __AccessManaged_init(initialAuthority);
         committeeSize = 22;
+        transitionDelay = Duration.wrap(1 days);
     }
 
-    function select() external override {
+    function select() external override restricted {
         (NodeId[] memory candidates, uint256 length) = _getEligibleNodes();
         _buildRandomSubset(candidates, length, committeeSize);
         Committee storage committee = _createCommittee(candidates);
