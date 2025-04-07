@@ -42,4 +42,38 @@ describe("Committee", () => {
         await committee.connect(hacker).setDkg(hacker)
             .should.be.revertedWithCustomError(committee, "AccessManagedUnauthorized");
     });
+
+    it("should not allow anyone to set nodes contract", async () => {
+        const [, hacker] = await ethers.getSigners();
+        const {committee} = await cleanDeployment();
+        await committee.connect(hacker).setNodes(hacker)
+            .should.be.revertedWithCustomError(committee, "AccessManagedUnauthorized");
+    });
+
+    it("should not allow anyone to set status contract", async () => {
+        const [, hacker] = await ethers.getSigners();
+        const {committee} = await cleanDeployment();
+        await committee.connect(hacker).setStatus(hacker)
+            .should.be.revertedWithCustomError(committee, "AccessManagedUnauthorized");
+    });
+
+    it("should not allow anyone to call successful dkg", async () => {
+        const {committee} = await cleanDeployment();
+        await committee.processSuccessfulDkg(0xd2n)
+            .should.be.revertedWithCustomError(committee, "SenderIsNotDkg");
+    });
+
+    it("should not allow anyone to set committee", async () => {
+        const [, hacker] = await ethers.getSigners();
+        const {committee} = await cleanDeployment();
+        await committee.connect(hacker).setCommitteeSize(0xd2n)
+            .should.be.revertedWithCustomError(committee, "AccessManagedUnauthorized");
+    });
+
+    it("should not allow anyone to set transition delay", async () => {
+        const [, hacker] = await ethers.getSigners();
+        const {committee} = await cleanDeployment();
+        await committee.connect(hacker).setTransitionDelay(0xd2n)
+            .should.be.revertedWithCustomError(committee, "AccessManagedUnauthorized");
+    });
 });
