@@ -73,19 +73,13 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
     }
 
     function initialize(
-        address initialAuthority,
-        IDkg dkgAddress,
-        INodes nodesAddress,
-        IStatus statusAddress
+        address initialAuthority
     )
         public
         initializer
         override
     {
         __AccessManaged_init(initialAuthority);
-        dkg = dkgAddress;
-        nodes = nodesAddress;
-        status = statusAddress;
         committeeSize = 22;
     }
 
@@ -94,6 +88,18 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
         _buildRandomSubset(candidates, length, committeeSize);
         Committee storage committee = _createCommittee(candidates);
         committee.dkg = dkg.generate(committee.nodes);
+    }
+
+    function setDkg(IDkg dkgAddress) external override restricted {
+        dkg = dkgAddress;
+    }
+
+    function setNodes(INodes nodesAddress) external override restricted {
+        nodes = nodesAddress;
+    }
+
+    function setStatus(IStatus statusAddress) external override restricted {
+        status = statusAddress;
     }
 
     function processSuccessfulDkg(DkgId round) external onlyDkg override {
