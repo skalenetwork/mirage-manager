@@ -79,11 +79,14 @@ const deployPlayaAccessManager = async (
     ) as PlayaAccessManager;
 }
 
-const deployCommittee = async (authority: PlayaAccessManager): Promise<Committee> => {
+const deployCommittee = async (authority: PlayaAccessManager, dkg: DKG, nodes: Nodes, status: Status): Promise<Committee> => {
     return await deployContract(
         "Committee",
         [
-            await ethers.resolveAddress(authority)
+            await ethers.resolveAddress(authority),
+            await ethers.resolveAddress(dkg),
+            await ethers.resolveAddress(nodes),
+            await ethers.resolveAddress(status)
         ]
     ) as Committee;
 }
