@@ -152,7 +152,7 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
 
     function getActiveCommitteeIndex() public view override returns (CommitteeIndex committeeIndex) {
         committeeIndex = lastCommitteeIndex;
-        while (_getCommittee(committeeIndex).startingTimestamp < Timestamp.wrap(block.timestamp)) {
+        while (Timestamp.wrap(block.timestamp) < _getCommittee(committeeIndex).startingTimestamp) {
             committeeIndex = _previous(committeeIndex);
         }
     }
