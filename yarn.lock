@@ -3372,6 +3372,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/seedrandom@npm:^3":
+  version: 3.0.8
+  resolution: "@types/seedrandom@npm:3.0.8"
+  checksum: 10c0/6efdf3df34cd447ee235794946097c73b3d595a43d3afcf8a7edf08bf1111e32372f77edfe37478ba857d1d712361aff7022a5043c98a816dceb11a0e30e251c
+  languageName: node
+  linkType: hard
+
 "@typescript-eslint/eslint-plugin@npm:8.26.1":
   version: 8.26.1
   resolution: "@typescript-eslint/eslint-plugin@npm:8.26.1"
@@ -7575,6 +7582,7 @@ __metadata:
     "@types/lodash": "npm:^4"
     "@types/mocha": "npm:>=9.1.0"
     "@types/node": "npm:>=18.0.0"
+    "@types/seedrandom": "npm:^3"
     axios: "npm:^1.8.3"
     chai: "npm:^4.2.0"
     chai-as-promised: "npm:^7.1.1"
@@ -7587,6 +7595,7 @@ __metadata:
     hardhat-gas-reporter: "npm:^1.0.8"
     ip: "npm:2.0.1"
     lodash: "npm:^4.17.21"
+    seedrandom: "npm:^3.0.5"
     solhint: "npm:^5.0.5"
     solidity-coverage: "npm:^0.8.0"
     ts-node: "npm:>=8.0.0"
@@ -8107,6 +8116,13 @@ __metadata:
     node-gyp: "npm:latest"
     node-gyp-build: "npm:^4.2.0"
   checksum: 10c0/cf7a74343566d4774c64332c07fc2caf983c80507f63be5c653ff2205242143d6320c50ee4d793e2b714a56540a79e65a8f0056e343b25b0cdfed878bc473fd8
+  languageName: node
+  linkType: hard
+
+"seedrandom@npm:^3.0.5":
+  version: 3.0.5
+  resolution: "seedrandom@npm:3.0.5"
+  checksum: 10c0/929752ac098ff4990b3f8e0ac39136534916e72879d6eb625230141d20db26e2f44c4d03d153d457682e8cbaab0fb7d58a1e7267a157cf23fd8cf34e25044e88
   languageName: node
   linkType: hard
 

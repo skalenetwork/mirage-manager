@@ -1,5 +1,7 @@
+import _ from "lodash";
+import seedrandom from 'seedrandom';
 import chai, { assert, expect } from "chai";
-import { cleanDeployment, nodesAreRegisteredAndHeartbeatIsSent } from "./fixtures";
+import { cleanDeployment, nodesAreRegisteredAndHeartbeatIsSent, nodesRegistered, nodesRegisteredButNotWhitelisted } from "./fixtures";
 import { ethers } from "hardhat";
 import { runDkg } from "./dkg/DKG";
 import { skipTime } from "./tools/time";
@@ -144,6 +146,51 @@ describe("Committee", () => {
         for (const node of nodesData) {
             expect(await committee.isNodeInCurrentOrNextCommittee(node.id))
                 .to.be.equal(activeCommittee.nodes.includes(node.id) || nextCommittee.nodes.includes(node.id));
+        }
+    });
+
+    it("should select only whitelisted nodes to the committee", async () => {
+        seedrandom('d2-d2', { global: true });
+        const _lodash = _.runInContext();
+        const {committee, nodesData, status} = await nodesRegisteredButNotWhitelisted();
+        const whitelistedNodes = _lodash.sampleSize(nodesData, Number(await committee.committeeSize()));
+        for (const node of whitelistedNodes) {
+            await status.whitelistNode(node.id);
+        }
+        for (const node of nodesData) {
+            await status.connect(node.wallet).alive();
+        }
+
+        await committee.select();
+        const nextCommittee = await committee.getCommittee(await committee.getActiveCommitteeIndex() + 1n);
+
+        for (const node of nodesData) {
+            if (whitelistedNodes.includes(node)) {
+                expect(nextCommittee.nodes).to.include(node.id);
+            } else {
+                expect(nextCommittee.nodes).to.not.include(node.id);
+            }
+        }
+    });
+
+    it("should select only healthy nodes to the committee", async () => {
+        seedrandom('d2-d2', { global: true });
+        const _lodash = _.runInContext();
+        const {committee, nodesData, status} = await nodesRegistered();
+        const healthyNodes = _lodash.sampleSize(nodesData, Number(await committee.committeeSize()));
+        for (const node of healthyNodes) {
+            await status.connect(node.wallet).alive();
+        }
+
+        await committee.select();
+        const nextCommittee = await committee.getCommittee(await committee.getActiveCommitteeIndex() + 1n);
+
+        for (const node of nodesData) {
+            if (healthyNodes.includes(node)) {
+                expect(nextCommittee.nodes).to.include(node.id);
+            } else {
+                expect(nextCommittee.nodes).to.not.include(node.id);
+            }
         }
     });
 });

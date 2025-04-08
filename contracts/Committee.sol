@@ -186,7 +186,7 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
         candidates = nodes.getActiveNodesIds();
         length = candidates.length;
         for (uint256 i = 0; i < length; ++i) {
-            while ( length > 0 && !_isEligible(candidates[i])) {
+            while ( i < length && !_isEligible(candidates[i])) {
                 candidates[i] = candidates[length - 1];
                 --length;
             }
