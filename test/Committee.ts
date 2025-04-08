@@ -1,7 +1,8 @@
-import chai, { assert } from "chai";
+import chai, { assert, expect } from "chai";
 import { cleanDeployment, nodesAreRegisteredAndHeartbeatIsSent } from "./fixtures";
 import { ethers } from "hardhat";
 import { runDkg } from "./dkg/DKG";
+import { skipTime } from "./tools/time";
 
 chai.should();
 
@@ -99,6 +100,7 @@ describe("Committee", () => {
         const activeCommitteeIndex = await committee.getActiveCommitteeIndex();
         const nextCommitteeIndex = activeCommitteeIndex + 1n;
         const newTransitionDelay = 0xd2n;
+        await committee.setCommitteeSize(2); // to save resources
 
         await committee.setTransitionDelay(newTransitionDelay);
         await committee.select();
@@ -115,5 +117,33 @@ describe("Committee", () => {
         nextCommittee.startingTimestamp.should.be.equal(
             BigInt(lastTransactionTimestamp) + newTransitionDelay
         );
+    });
+
+    it("should check if a node in the committee or will be there soon", async () => {
+        const {committee, dkg, nodesData, status} = await nodesAreRegisteredAndHeartbeatIsSent();
+        await committee.setCommitteeSize(5);
+
+        await committee.select();
+        await runDkg(
+            dkg,
+            nodesData,
+            (await committee.getCommittee(await committee.getActiveCommitteeIndex() + 1n)).dkg
+        );
+        await skipTime(await committee.transitionDelay());
+        for (const node of nodesData) {
+            await status.connect(node.wallet).alive();
+        }
+        await committee.select();
+
+        const activeCommitteeIndex = await committee.getActiveCommitteeIndex();
+        const nextCommitteeIndex = activeCommitteeIndex + 1n;
+
+        const activeCommittee = await committee.getCommittee(activeCommitteeIndex);
+        const nextCommittee = await committee.getCommittee(nextCommitteeIndex);
+
+        for (const node of nodesData) {
+            expect(await committee.isNodeInCurrentOrNextCommittee(node.id))
+                .to.be.equal(activeCommittee.nodes.includes(node.id) || nextCommittee.nodes.includes(node.id));
+        }
     });
 });

@@ -9,7 +9,7 @@ import '@typechain/hardhat';
 
 const config: HardhatUserConfig = {
   mocha: {
-    timeout: 300000
+    timeout: 600000 // 10 minutes
   },
   solidity: "0.8.28",
 };

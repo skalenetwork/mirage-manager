@@ -206,7 +206,7 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
         view
     {
         require (!(length < subsetSize), TooFewCandidates(subsetSize, length));
-        IRandom.RandomGenerator memory generator = Random.create(uint256(blockhash(block.number)));
+        IRandom.RandomGenerator memory generator = Random.create(uint256(blockhash(block.number - 1)));
         for (uint256 i = 0; i < subsetSize; ++i) {
             uint256 index = generator.random(i, length);
             if (index > i) {

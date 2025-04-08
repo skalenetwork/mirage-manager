@@ -51,7 +51,7 @@
     "@openzeppelin/contracts-upgradeable": "^5.2.0",
     "@openzeppelin/hardhat-upgrades": "^3.9.0",
     "@openzeppelin/upgrades-core": "^1.42.2",
-    "@skalenetwork/playa-manager-interfaces": "git@github.com:skalenetwork/playa-manager-interfaces.git#committee",
+    "@skalenetwork/playa-manager-interfaces": "git@github.com:skalenetwork/playa-manager-interfaces.git",
     "@skalenetwork/upgrade-tools": "3.0.0-develop.42",
     "chalk": "^4"
   }
