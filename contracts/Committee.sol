@@ -169,6 +169,9 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
             commonPublicKey: G2Operations.getG2Zero(),
             startingTimestamp: Timestamp.wrap(type(uint256).max)
         });
+        // Clean all auxiliary fields because function may override existing committee
+        _committeesAuxiliary[committeeIndex].nodes.clear();
+
         committee = committees[committeeIndex];
         CommitteeAuxiliary storage committeeAuxiliary = _committeesAuxiliary[committeeIndex];
         uint256 committeeSize_ = committeeSize;

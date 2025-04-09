@@ -16,7 +16,8 @@ describe("Committee", () => {
             .should.be.revertedWithCustomError(committee, "AccessManagedUnauthorized");
     });
 
-    it("should select committee", async () => {
+    it("should select committee", async function () {
+        this.timeout(60000); // 10 minutes timeout. DKG requires a lot of time
         const {committee, dkg, nodesData} = await nodesAreRegisteredAndHeartbeatIsSent();
         const activeCommitteeIndex = await committee.getActiveCommitteeIndex();
         const nextCommitteeIndex = activeCommitteeIndex + 1n;
@@ -191,6 +192,27 @@ describe("Committee", () => {
             } else {
                 expect(nextCommittee.nodes).to.not.include(node.id);
             }
+        }
+    });
+
+    it("should restart committee selection", async () => {
+        const {committee, dkg, nodesData} = await nodesAreRegisteredAndHeartbeatIsSent();
+        await committee.setCommitteeSize(5);
+
+        await committee.select();
+        const badNextCommittee = await committee.getCommittee(await committee.getActiveCommitteeIndex() + 1n);
+
+        await committee.select();
+        const goodNextCommittee = await committee.getCommittee(await committee.getActiveCommitteeIndex() + 1n);
+
+        await runDkg(dkg, nodesData, badNextCommittee.dkg);
+        await runDkg(dkg, nodesData, goodNextCommittee.dkg);
+
+        await skipTime(await committee.transitionDelay());
+
+        for (const node of nodesData) {
+            expect(await committee.isNodeInCurrentOrNextCommittee(node.id))
+                .to.be.equal(goodNextCommittee.nodes.includes(node.id));
         }
     });
 });
