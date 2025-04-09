@@ -17,7 +17,7 @@ describe("Committee", () => {
     });
 
     it("should select committee", async function () {
-        this.timeout(60000); // 10 minutes timeout. DKG requires a lot of time
+        this.timeout(600000); // 10 minutes timeout. DKG requires a lot of time
         const {committee, dkg, nodesData} = await nodesAreRegisteredAndHeartbeatIsSent();
         const activeCommitteeIndex = await committee.getActiveCommitteeIndex();
         const nextCommitteeIndex = activeCommitteeIndex + 1n;
