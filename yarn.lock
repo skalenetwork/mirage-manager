@@ -2105,10 +2105,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@openzeppelin/contracts@npm:^5.2.0":
-  version: 5.2.0
-  resolution: "@openzeppelin/contracts@npm:5.2.0"
-  checksum: 10c0/6e2d8c6daaeb8e111d49a82c30997a6c5d4e512338b55500db7fd4340f29c1cbf35f9dcfa0dbc672e417bc84e99f5441a105cb585cd4680ad70cbcf9a24094fc
+"@openzeppelin/contracts@npm:^5.3.0":
+  version: 5.3.0
+  resolution: "@openzeppelin/contracts@npm:5.3.0"
+  checksum: 10c0/b8a2d97413c24635c92de4b2a1188fa58ab252515aff38eabce4fa66bd3d8ae1649010d17fccaeb4e266bf8314c8bd92757fedca97bf643b6b98e11dea3fa83d
   languageName: node
   linkType: hard
 
@@ -2497,10 +2497,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@skalenetwork/playa-manager-interfaces@git@github.com:skalenetwork/playa-manager-interfaces.git#0.1.0-develop.50":
+"@skalenetwork/playa-manager-interfaces@git@github.com:skalenetwork/playa-manager-interfaces.git":
   version: 0.1.0
-  resolution: "@skalenetwork/playa-manager-interfaces@git@github.com:skalenetwork/playa-manager-interfaces.git#commit=b1cbedbd76c4a4d97af9af9a060637b2c1839956"
-  checksum: 10c0/104943c16e952ae83f5b37e1aebb37b68a874228b69d01a77c86c15c34562253d9a6430506b7d3481435c4c8509582e43d2759850009a3b8b4684e19150bd200
+  resolution: "@skalenetwork/playa-manager-interfaces@git@github.com:skalenetwork/playa-manager-interfaces.git#commit=7524e3dfca0b358c7aa9c44857f1c1ac798ff21e"
+  checksum: 10c0/d5da8b3af6329cc161e8082d0e3bd1e9a1f6811d2f6956686c65c3c622f59bfa6810026c10944345768d23829ac625eb55662637d391c5fc636a36e79c186044
   languageName: node
   linkType: hard
 
@@ -3369,6 +3369,13 @@ __metadata:
   dependencies:
     "@types/node": "npm:*"
   checksum: 10c0/0e391316ae30c218779583b626382a56546ddbefb65f1ff9cf5e078af8a7118f67f3e66e30914399cc6f8710c424d0d8c3f34262ffb1f429c6ad911fd0d0bc26
+  languageName: node
+  linkType: hard
+
+"@types/seedrandom@npm:^3":
+  version: 3.0.8
+  resolution: "@types/seedrandom@npm:3.0.8"
+  checksum: 10c0/6efdf3df34cd447ee235794946097c73b3d595a43d3afcf8a7edf08bf1111e32372f77edfe37478ba857d1d712361aff7022a5043c98a816dceb11a0e30e251c
   languageName: node
   linkType: hard
 
@@ -7561,11 +7568,11 @@ __metadata:
     "@nomicfoundation/hardhat-ethers": "npm:^3.0.0"
     "@nomicfoundation/hardhat-network-helpers": "npm:^1.0.12"
     "@nomicfoundation/hardhat-verify": "npm:^2.0.0"
-    "@openzeppelin/contracts": "npm:^5.2.0"
+    "@openzeppelin/contracts": "npm:^5.3.0"
     "@openzeppelin/contracts-upgradeable": "npm:^5.2.0"
     "@openzeppelin/hardhat-upgrades": "npm:^3.9.0"
     "@openzeppelin/upgrades-core": "npm:^1.42.2"
-    "@skalenetwork/playa-manager-interfaces": "git@github.com:skalenetwork/playa-manager-interfaces.git#0.1.0-develop.50"
+    "@skalenetwork/playa-manager-interfaces": "git@github.com:skalenetwork/playa-manager-interfaces.git"
     "@skalenetwork/upgrade-tools": "npm:3.0.0-develop.42"
     "@typechain/ethers-v6": "npm:^0.5.0"
     "@typechain/hardhat": "npm:^9.0.0"
@@ -7575,6 +7582,7 @@ __metadata:
     "@types/lodash": "npm:^4"
     "@types/mocha": "npm:>=9.1.0"
     "@types/node": "npm:>=18.0.0"
+    "@types/seedrandom": "npm:^3"
     axios: "npm:^1.8.3"
     chai: "npm:^4.2.0"
     chai-as-promised: "npm:^7.1.1"
@@ -7587,6 +7595,7 @@ __metadata:
     hardhat-gas-reporter: "npm:^1.0.8"
     ip: "npm:2.0.1"
     lodash: "npm:^4.17.21"
+    seedrandom: "npm:^3.0.5"
     solhint: "npm:^5.0.5"
     solidity-coverage: "npm:^0.8.0"
     ts-node: "npm:>=8.0.0"
@@ -8107,6 +8116,13 @@ __metadata:
     node-gyp: "npm:latest"
     node-gyp-build: "npm:^4.2.0"
   checksum: 10c0/cf7a74343566d4774c64332c07fc2caf983c80507f63be5c653ff2205242143d6320c50ee4d793e2b714a56540a79e65a8f0056e343b25b0cdfed878bc473fd8
+  languageName: node
+  linkType: hard
+
+"seedrandom@npm:^3.0.5":
+  version: 3.0.5
+  resolution: "seedrandom@npm:3.0.5"
+  checksum: 10c0/929752ac098ff4990b3f8e0ac39136534916e72879d6eb625230141d20db26e2f44c4d03d153d457682e8cbaab0fb7d58a1e7267a157cf23fd8cf34e25044e88
   languageName: node
   linkType: hard
 

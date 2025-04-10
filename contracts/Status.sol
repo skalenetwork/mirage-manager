@@ -51,6 +51,7 @@ contract Status is AccessManagedUpgradeable, IStatus {
     function initialize(address initialAuthority, INodes nodesAddress) public override initializer {
         __AccessManaged_init(initialAuthority);
         nodes = nodesAddress;
+        heartbeatInterval = Duration.wrap(5 minutes);
     }
 
     function alive() external override {

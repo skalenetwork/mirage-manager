@@ -27,7 +27,7 @@ interface DeployedContracts {
 
 export const deploy = async (): Promise<DeployedContracts> => {
     const [deployer] = await ethers.getSigners();
-    let deployedContracts: DeployedContracts = {} as DeployedContracts;
+    const deployedContracts: DeployedContracts = {} as DeployedContracts;
 
     deployedContracts.PlayaAccessManager = await deployPlayaAccessManager(deployer);
     deployedContracts.Committee = await deployCommittee(deployedContracts.PlayaAccessManager);
@@ -44,18 +44,16 @@ export const deploy = async (): Promise<DeployedContracts> => {
         deployedContracts.PlayaAccessManager,
         deployedContracts.Nodes
     );
-    const deployed = new Set(["PlayaAccessManager", "Committee", "Nodes", "DKG", "Status"]);
-    const toDeploy = contracts.filter( c => !deployed.has(c));
-    for (const contract of toDeploy) {
-        const parameters = [];
-        parameters.push(await ethers.resolveAddress(deployedContracts["PlayaAccessManager"]));
+    deployedContracts.Staking = await deployStaking(
+        deployedContracts.PlayaAccessManager
+    );
 
-        const instance = await deployContract(contract, parameters);
-        deployedContracts = {
-            ...deployedContracts,
-            [contract]: instance
-        }
-    }
+    let response = await deployedContracts.Committee.setDkg(deployedContracts.DKG);
+    await response.wait();
+    response = await deployedContracts.Committee.setNodes(deployedContracts.Nodes);
+    await response.wait();
+    response = await deployedContracts.Committee.setStatus(deployedContracts.Status);
+    await response.wait();
 
     return deployedContracts;
 }
@@ -120,6 +118,15 @@ const deployStatus = async (authority: PlayaAccessManager, nodes: Nodes): Promis
             await ethers.resolveAddress(nodes)
         ]
     ) as Status;
+}
+
+const deployStaking = async (authority: PlayaAccessManager): Promise<Staking> => {
+    return await deployContract(
+        "Staking",
+        [
+            await ethers.resolveAddress(authority)
+        ]
+    ) as Staking;
 }
 
 const storeAddresses = async (deployedContracts: DeployedContracts, version: string) => {

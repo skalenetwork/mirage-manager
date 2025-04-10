@@ -56,7 +56,25 @@ const registerNodes = async () => {
     return {...contracts, nodesData};
 }
 
+const whitelistNodes = async () => {
+    const registeredNodes = await nodesRegisteredButNotWhitelisted();
+    for (const node of registeredNodes.nodesData) {
+        await registeredNodes.status.whitelistNode(node.id);
+    }
+    return {...registeredNodes};
+}
+
+const registerNodesAndSendHeartbeat = async () => {
+    const registeredNodes = await nodesRegistered();
+    for (const node of registeredNodes.nodesData) {
+        await registeredNodes.status.connect(node.wallet).alive();
+    }
+    return {...registeredNodes};
+}
+
 // External functions
 
 export const cleanDeployment = async () => loadFixture(deploy);
-export const nodesRegistered = async () => loadFixture(registerNodes);
+export const nodesRegisteredButNotWhitelisted = async () => loadFixture(registerNodes);
+export const nodesRegistered = async () => loadFixture(whitelistNodes);
+export const nodesAreRegisteredAndHeartbeatIsSent = async () => loadFixture(registerNodesAndSendHeartbeat);

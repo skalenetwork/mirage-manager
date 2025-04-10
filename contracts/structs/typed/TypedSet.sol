@@ -33,6 +33,10 @@ library TypedSet {
         added = EnumerableSet.add(set.inner, NodeId.unwrap(nodeId));
     }
 
+    function clear(NodeIdSet storage set) internal {
+        EnumerableSet.clear(set.inner);
+    }
+
     function remove(NodeIdSet storage set, NodeId nodeId) internal returns (bool removed) {
         removed = EnumerableSet.remove(set.inner, NodeId.unwrap(nodeId));
     }
