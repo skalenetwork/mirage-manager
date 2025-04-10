@@ -2105,10 +2105,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@openzeppelin/contracts@npm:^5.3.0-rc.0":
-  version: 5.3.0-rc.0
-  resolution: "@openzeppelin/contracts@npm:5.3.0-rc.0"
-  checksum: 10c0/f016c22522dd5dc8467ad431744f192ea0954ea0074cd26922ea55b1eaafebee1f8883b87824bc0e166a6bbf7d2e72694cf6bbed05bcc52aa652b759c0b3117e
+"@openzeppelin/contracts@npm:^5.3.0":
+  version: 5.3.0
+  resolution: "@openzeppelin/contracts@npm:5.3.0"
+  checksum: 10c0/b8a2d97413c24635c92de4b2a1188fa58ab252515aff38eabce4fa66bd3d8ae1649010d17fccaeb4e266bf8314c8bd92757fedca97bf643b6b98e11dea3fa83d
   languageName: node
   linkType: hard
 
@@ -7568,7 +7568,7 @@ __metadata:
     "@nomicfoundation/hardhat-ethers": "npm:^3.0.0"
     "@nomicfoundation/hardhat-network-helpers": "npm:^1.0.12"
     "@nomicfoundation/hardhat-verify": "npm:^2.0.0"
-    "@openzeppelin/contracts": "npm:^5.3.0-rc.0"
+    "@openzeppelin/contracts": "npm:^5.3.0"
     "@openzeppelin/contracts-upgradeable": "npm:^5.2.0"
     "@openzeppelin/hardhat-upgrades": "npm:^3.9.0"
     "@openzeppelin/upgrades-core": "npm:^1.42.2"
