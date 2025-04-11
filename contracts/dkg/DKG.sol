@@ -26,9 +26,9 @@ pragma solidity ^0.8.24;
 import {
     AccessManagedUpgradeable
 } from "@openzeppelin/contracts-upgradeable/access/manager/AccessManagedUpgradeable.sol";
-import {ICommittee} from "@skalenetwork/playa-manager-interfaces/contracts/ICommittee.sol";
-import {DkgId, IDkg} from "@skalenetwork/playa-manager-interfaces/contracts/IDkg.sol";
-import {INodes, NodeId} from "@skalenetwork/playa-manager-interfaces/contracts/INodes.sol";
+import {ICommittee} from "@skalenetwork/flugegeheimen-interfaces/ICommittee.sol";
+import {DkgId, IDkg} from "@skalenetwork/flugegeheimen-interfaces/IDkg.sol";
+import {INodes, NodeId} from "@skalenetwork/flugegeheimen-interfaces/INodes.sol";
 
 import {G2Operations} from "./fieldOperations/G2Operations.sol";
 

@@ -24,8 +24,8 @@ pragma solidity ^0.8.24;
 import {
     AccessManagedUpgradeable
 } from "@openzeppelin/contracts-upgradeable/access/manager/AccessManagedUpgradeable.sol";
-import { INodes, NodeId } from "@skalenetwork/playa-manager-interfaces/contracts/INodes.sol";
-import { Duration, IStatus } from "@skalenetwork/playa-manager-interfaces/contracts/IStatus.sol";
+import { INodes, NodeId } from "@skalenetwork/flugegeheimen-interfaces/INodes.sol";
+import { Duration, IStatus } from "@skalenetwork/flugegeheimen-interfaces/IStatus.sol";
 
 import { TypedSet } from "./structs/typed/TypedSet.sol";
 

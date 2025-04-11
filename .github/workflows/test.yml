@@ -26,15 +26,6 @@ jobs:
         node-version: ${{ matrix.node-version }}
         cache: 'yarn'
 
-    # TODO: remove when the interfaces package is published
-    - name: Update the reference to interfaces
-      env:
-        ACCESS_TOKEN: ${{ secrets.PLAYA_ACCESS_TOKEN }}
-        INTERFACES_DIR: "${{ runner.temp }}/interfaces/"
-      run: |
-        git clone "https://${ACCESS_TOKEN}@github.com/skalenetwork/playa-manager-interfaces.git" "$INTERFACES_DIR"
-        yarn add "@skalenetwork/playa-manager-interfaces@file:$INTERFACES_DIR"
-
     - name: Install project
       run: yarn install
 

@@ -2497,10 +2497,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@skalenetwork/playa-manager-interfaces@git@github.com:skalenetwork/playa-manager-interfaces.git":
-  version: 0.1.0
-  resolution: "@skalenetwork/playa-manager-interfaces@git@github.com:skalenetwork/playa-manager-interfaces.git#commit=7524e3dfca0b358c7aa9c44857f1c1ac798ff21e"
-  checksum: 10c0/d5da8b3af6329cc161e8082d0e3bd1e9a1f6811d2f6956686c65c3c622f59bfa6810026c10944345768d23829ac625eb55662637d391c5fc636a36e79c186044
+"@skalenetwork/flugegeheimen-interfaces@npm:^0.1.0-package.1":
+  version: 0.1.0-package.1
+  resolution: "@skalenetwork/flugegeheimen-interfaces@npm:0.1.0-package.1"
+  checksum: 10c0/a77f410f9a5feee68aa01893a276441687bb58bfbdde140998845d97b5328780940463bd114fc2ab1c80ee8d8027121e86fc65951735919629d63dc20551fef6
   languageName: node
   linkType: hard
 
@@ -7572,7 +7572,7 @@ __metadata:
     "@openzeppelin/contracts-upgradeable": "npm:^5.2.0"
     "@openzeppelin/hardhat-upgrades": "npm:^3.9.0"
     "@openzeppelin/upgrades-core": "npm:^1.42.2"
-    "@skalenetwork/playa-manager-interfaces": "git@github.com:skalenetwork/playa-manager-interfaces.git"
+    "@skalenetwork/flugegeheimen-interfaces": "npm:^0.1.0-package.1"
     "@skalenetwork/upgrade-tools": "npm:3.0.0-develop.42"
     "@typechain/ethers-v6": "npm:^0.5.0"
     "@typechain/hardhat": "npm:^9.0.0"

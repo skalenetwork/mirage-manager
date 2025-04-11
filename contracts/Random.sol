@@ -21,7 +21,7 @@
 
 pragma solidity ^0.8.24;
 
-import { IRandom } from "@skalenetwork/playa-manager-interfaces/contracts/IRandom.sol";
+import { IRandom } from "@skalenetwork/flugegeheimen-interfaces/IRandom.sol";
 
 /**
  * @title Random

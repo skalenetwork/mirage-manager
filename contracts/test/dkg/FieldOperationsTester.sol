@@ -21,7 +21,7 @@
 
 pragma solidity ^0.8.24;
 
-import {IDkg} from "@skalenetwork/playa-manager-interfaces/contracts/IDkg.sol";
+import {IDkg} from "@skalenetwork/flugegeheimen-interfaces/IDkg.sol";
 
 import { Fp2Operations } from "../../dkg/fieldOperations/Fp2Operations.sol";
 import { G2Operations } from "../../dkg/fieldOperations/G2Operations.sol";
