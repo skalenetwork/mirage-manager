@@ -89,11 +89,6 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
         _initializeGroup(commonPublicKey);
     }
 
-    function getCommonPublicKey() external view returns (IDkg.G2Point memory publicKey) {
-        Committee storage committee = _getCommittee(lastCommitteeIndex);
-        return committee.commonPublicKey;
-    }
-
     function select() external override restricted {
         (NodeId[] memory candidates, uint256 length) = _getEligibleNodes();
         _buildRandomSubset(candidates, length, committeeSize);
