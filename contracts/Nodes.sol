@@ -128,8 +128,12 @@ contract Nodes is AccessManagedUpgradeable, INodes {
         _;
     }
 
-    function initialize(address initialAuthority, ICommittee committeeAddress) public override initializer {
+    function initialize(address initialAuthority, Node[] calldata initialNodes) public override initializer {
         __AccessManaged_init(initialAuthority);
+        _initializeGroup(initialNodes);
+    }
+
+    function setCommittee(ICommittee committeeAddress) external override restricted {
         committeeContract = committeeAddress;
     }
 
@@ -403,5 +407,27 @@ contract Nodes is AccessManagedUpgradeable, INodes {
 
     function _isAddressOfActiveNode(address nodeAddress) private view returns (bool result) {
         result = _activeNodesAddressToId.contains(nodeAddress);
+    }
+
+    function _initializeGroup(Node[] calldata initialNodes) private {
+        for (uint i = 0; i < initialNodes.length; i++) {
+            Node memory node = initialNodes[i];
+            unchecked {
+                ++_nodeIdCounter;
+            }
+            NodeId nodeId = NodeId.wrap(_nodeIdCounter);
+            _addActiveNodeId(nodeId);
+            _setActiveNodeIdForAddress(node.nodeAddress, nodeId);
+            require(_usedIps.add(keccak256(node.ip)), IpIsNotAvailable(node.ip));
+
+            nodes[nodeId] = Node({
+                id: nodeId,
+                port: node.port,
+                nodeAddress: node.nodeAddress,
+                ip: node.ip,
+                domainName: node.domainName
+            });
+            emit NodeRegistered(nodeId, node.nodeAddress, node.ip, node.port);
+        }
     }
 }

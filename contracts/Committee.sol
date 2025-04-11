@@ -89,22 +89,6 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
         _initializeGroup(commonPublicKey);
     }
 
-    function _initializeGroup(
-        IDkg.G2Point memory commonPublicKey
-    ) private {
-        NodeId[] memory nodeIds = nodes.getActiveNodesIds();
-        committees[CommitteeIndex.wrap(0)] = Committee({
-            nodes: nodeIds,
-            dkg: DkgId.wrap(0),
-            commonPublicKey: commonPublicKey,
-            startingTimestamp: Timestamp.wrap(block.timestamp)
-        });
-        CommitteeAuxiliary storage committeeAuxiliary = _committeesAuxiliary[CommitteeIndex.wrap(0)];
-        for (uint256 i = 0; i < nodeIds.length; ++i) {
-            assert(committeeAuxiliary.nodes.add(nodeIds[i]));
-        }
-    }
-
     function getCommonPublicKey() external view returns (IDkg.G2Point memory publicKey) {
         Committee storage committee = _getCommittee(lastCommitteeIndex);
         return committee.commonPublicKey;
@@ -254,5 +238,21 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
 
     function _previous(CommitteeIndex index) private pure returns (CommitteeIndex nextIndex) {
         return CommitteeIndex.wrap(CommitteeIndex.unwrap(index) - 1);
+    }
+
+    function _initializeGroup(
+        IDkg.G2Point memory commonPublicKey
+    ) private {
+        NodeId[] memory nodeIds = nodes.getActiveNodesIds();
+        committees[CommitteeIndex.wrap(0)] = Committee({
+            nodes: nodeIds,
+            dkg: DkgId.wrap(0),
+            commonPublicKey: commonPublicKey,
+            startingTimestamp: Timestamp.wrap(block.timestamp)
+        });
+        CommitteeAuxiliary storage committeeAuxiliary = _committeesAuxiliary[CommitteeIndex.wrap(0)];
+        for (uint256 i = 0; i < nodeIds.length; ++i) {
+            assert(committeeAuxiliary.nodes.add(nodeIds[i]));
+        }
     }
 }
