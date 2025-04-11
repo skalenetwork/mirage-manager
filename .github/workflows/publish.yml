@@ -92,3 +92,22 @@ jobs:
           default_author: github_actions
           message: "Add ABI for version ${{ env.VERSION }}"
           add: "*-abi.json"
+
+  docker:
+    runs-on: ubuntu-latest
+
+    if: github.event_name != 'pull_request' || github.event.pull_request.merged == true
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Build and publish container
+      env:
+        DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+        DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+      run: |
+        export BRANCH=${GITHUB_REF##*/}
+        echo "Branch $BRANCH"
+        export VERSION=$(bash ./scripts/calculate_version.sh)
+        echo "Version $VERSION"
+        bash ./scripts/build_and_publish.sh

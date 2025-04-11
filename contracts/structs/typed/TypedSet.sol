@@ -21,7 +21,7 @@
 pragma solidity ^0.8.24;
 
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
-import { NodeId } from "@skalenetwork/playa-manager-interfaces/contracts/INodes.sol";
+import { NodeId } from "@skalenetwork/professional-interfaces/INodes.sol";
 
 library TypedSet {
 
