@@ -24,7 +24,7 @@
 
 pragma solidity ^0.8.24;
 
-import { IDkg } from "@skalenetwork/flugegeheimen-interfaces/IDkg.sol";
+import { IDkg } from "@skalenetwork/professional-interfaces/IDkg.sol";
 
 import { Fp2Operations } from "./Fp2Operations.sol";
 

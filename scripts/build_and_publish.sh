@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 
-# cSpell:words xargs flugegeheimen
+# cSpell:words xargs
 
 set -e
 
 : "${VERSION?Need to set VERSION}"
 : "${BRANCH?Need to set BRANCH}"
 
-NAME=flugegeheimen
+NAME=professional
 REPO_NAME=skalenetwork/$NAME
 IMAGE_NAME=$REPO_NAME:$VERSION
 LATEST_IMAGE_NAME=$REPO_NAME:$BRANCH-latest

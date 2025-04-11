@@ -18,8 +18,5 @@
         "slither.config.json",
         "coverage",
         "coverage.json"
-    ],
-    "words": [
-        "flugegeheimen"
     ]
 }

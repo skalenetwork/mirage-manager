@@ -21,7 +21,7 @@
 pragma solidity ^0.8.24;
 
 import { EnumerableMap } from "@openzeppelin/contracts/utils/structs/EnumerableMap.sol";
-import { NodeId } from "@skalenetwork/flugegeheimen-interfaces/INodes.sol";
+import { NodeId } from "@skalenetwork/professional-interfaces/INodes.sol";
 
 import { TypedSet } from "./TypedSet.sol";
 

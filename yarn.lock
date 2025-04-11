@@ -2497,10 +2497,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@skalenetwork/flugegeheimen-interfaces@npm:^0.1.0-package.1":
-  version: 0.1.0-package.1
-  resolution: "@skalenetwork/flugegeheimen-interfaces@npm:0.1.0-package.1"
-  checksum: 10c0/a77f410f9a5feee68aa01893a276441687bb58bfbdde140998845d97b5328780940463bd114fc2ab1c80ee8d8027121e86fc65951735919629d63dc20551fef6
+"@skalenetwork/professional-interfaces@npm:0.1.0-develop.66":
+  version: 0.1.0-develop.66
+  resolution: "@skalenetwork/professional-interfaces@npm:0.1.0-develop.66"
+  checksum: 10c0/a704aedf41b938df6f95eb6ae55823b2c0f7ea4ef574a0ae6f213348a47476183da3355321d9cf0862e614e0051d4b0224247863df96ff1804ebcab398121bde
   languageName: node
   linkType: hard
 
@@ -7572,7 +7572,7 @@ __metadata:
     "@openzeppelin/contracts-upgradeable": "npm:^5.2.0"
     "@openzeppelin/hardhat-upgrades": "npm:^3.9.0"
     "@openzeppelin/upgrades-core": "npm:^1.42.2"
-    "@skalenetwork/flugegeheimen-interfaces": "npm:^0.1.0-package.1"
+    "@skalenetwork/professional-interfaces": "npm:0.1.0-develop.66"
     "@skalenetwork/upgrade-tools": "npm:3.0.0-develop.42"
     "@typechain/ethers-v6": "npm:^0.5.0"
     "@typechain/hardhat": "npm:^9.0.0"
