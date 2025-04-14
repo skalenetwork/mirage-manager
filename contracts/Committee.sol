@@ -31,7 +31,9 @@ import {
 } from "@skalenetwork/professional-interfaces/ICommittee.sol";
 import { DkgId, IDkg } from "@skalenetwork/professional-interfaces/IDkg.sol";
 import { INodes, NodeId } from "@skalenetwork/professional-interfaces/INodes.sol";
+import { IStaking } from "@skalenetwork/professional-interfaces/IStaking.sol";
 import { Duration, IStatus } from "@skalenetwork/professional-interfaces/IStatus.sol";
+
 
 import { G2Operations } from "./dkg/fieldOperations/G2Operations.sol";
 import { IRandom, Random } from "./Random.sol";
@@ -55,6 +57,9 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
     IDkg public dkg;
     INodes public nodes;
     IStatus public status;
+    IStaking public staking;
+
+    string public version;
 
     error TooFewCandidates(
         uint256 needed,
@@ -101,6 +106,15 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
 
     function setStatus(IStatus statusAddress) external override restricted {
         status = statusAddress;
+    }
+
+    function setStaking(IStaking stakingAddress) external override restricted {
+        staking = stakingAddress;
+    }
+
+    function setVersion(string calldata newVersion) external override restricted {
+        emit VersionUpdated(version, newVersion);
+        version = newVersion;
     }
 
     function processSuccessfulDkg(DkgId round) external onlyDkg override {
