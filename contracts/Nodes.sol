@@ -24,11 +24,11 @@ import {
     AccessManagedUpgradeable
 } from "@openzeppelin/contracts-upgradeable/access/manager/AccessManagedUpgradeable.sol";
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
-import { ICommittee } from "@skalenetwork/playa-manager-interfaces/contracts/ICommittee.sol";
+import { ICommittee } from "@skalenetwork/professional-interfaces/ICommittee.sol";
 import {
     INodes,
     NodeId
-} from "@skalenetwork/playa-manager-interfaces/contracts/INodes.sol";
+} from "@skalenetwork/professional-interfaces/INodes.sol";
 
 import { TypedMap } from "./structs/typed/TypedMap.sol";
 import { TypedSet } from "./structs/typed/TypedSet.sol";

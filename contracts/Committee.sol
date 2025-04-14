@@ -28,10 +28,10 @@ import {
     CommitteeIndex,
     ICommittee,
     Timestamp
-} from "@skalenetwork/playa-manager-interfaces/contracts/ICommittee.sol";
-import { DkgId, IDkg } from "@skalenetwork/playa-manager-interfaces/contracts/IDkg.sol";
-import { INodes, NodeId } from "@skalenetwork/playa-manager-interfaces/contracts/INodes.sol";
-import { Duration, IStatus } from "@skalenetwork/playa-manager-interfaces/contracts/IStatus.sol";
+} from "@skalenetwork/professional-interfaces/ICommittee.sol";
+import { DkgId, IDkg } from "@skalenetwork/professional-interfaces/IDkg.sol";
+import { INodes, NodeId } from "@skalenetwork/professional-interfaces/INodes.sol";
+import { Duration, IStatus } from "@skalenetwork/professional-interfaces/IStatus.sol";
 
 import { G2Operations } from "./dkg/fieldOperations/G2Operations.sol";
 import { IRandom, Random } from "./Random.sol";

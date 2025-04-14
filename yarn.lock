@@ -2105,10 +2105,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@openzeppelin/contracts@npm:^5.3.0-rc.0":
-  version: 5.3.0-rc.0
-  resolution: "@openzeppelin/contracts@npm:5.3.0-rc.0"
-  checksum: 10c0/f016c22522dd5dc8467ad431744f192ea0954ea0074cd26922ea55b1eaafebee1f8883b87824bc0e166a6bbf7d2e72694cf6bbed05bcc52aa652b759c0b3117e
+"@openzeppelin/contracts@npm:^5.3.0":
+  version: 5.3.0
+  resolution: "@openzeppelin/contracts@npm:5.3.0"
+  checksum: 10c0/b8a2d97413c24635c92de4b2a1188fa58ab252515aff38eabce4fa66bd3d8ae1649010d17fccaeb4e266bf8314c8bd92757fedca97bf643b6b98e11dea3fa83d
   languageName: node
   linkType: hard
 
@@ -2497,10 +2497,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@skalenetwork/playa-manager-interfaces@git@github.com:skalenetwork/playa-manager-interfaces.git":
-  version: 0.1.0
-  resolution: "@skalenetwork/playa-manager-interfaces@git@github.com:skalenetwork/playa-manager-interfaces.git#commit=7524e3dfca0b358c7aa9c44857f1c1ac798ff21e"
-  checksum: 10c0/d5da8b3af6329cc161e8082d0e3bd1e9a1f6811d2f6956686c65c3c622f59bfa6810026c10944345768d23829ac625eb55662637d391c5fc636a36e79c186044
+"@skalenetwork/professional-interfaces@npm:0.1.0-develop.66":
+  version: 0.1.0-develop.66
+  resolution: "@skalenetwork/professional-interfaces@npm:0.1.0-develop.66"
+  checksum: 10c0/a704aedf41b938df6f95eb6ae55823b2c0f7ea4ef574a0ae6f213348a47476183da3355321d9cf0862e614e0051d4b0224247863df96ff1804ebcab398121bde
   languageName: node
   linkType: hard
 
@@ -7575,11 +7575,11 @@ __metadata:
     "@nomicfoundation/hardhat-ethers": "npm:^3.0.0"
     "@nomicfoundation/hardhat-network-helpers": "npm:^1.0.12"
     "@nomicfoundation/hardhat-verify": "npm:^2.0.0"
-    "@openzeppelin/contracts": "npm:^5.3.0-rc.0"
+    "@openzeppelin/contracts": "npm:^5.3.0"
     "@openzeppelin/contracts-upgradeable": "npm:^5.2.0"
     "@openzeppelin/hardhat-upgrades": "npm:^3.9.0"
     "@openzeppelin/upgrades-core": "npm:^1.42.2"
-    "@skalenetwork/playa-manager-interfaces": "git@github.com:skalenetwork/playa-manager-interfaces.git"
+    "@skalenetwork/professional-interfaces": "npm:0.1.0-develop.66"
     "@skalenetwork/skale-contracts-ethers-v6": "npm:^1.0.2-develop.61"
     "@skalenetwork/upgrade-tools": "npm:3.0.0-develop.42"
     "@typechain/ethers-v6": "npm:^0.5.0"
