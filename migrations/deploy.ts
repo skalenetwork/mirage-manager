@@ -27,7 +27,7 @@ interface DeployedContracts {
     Status: Status
 }
 
-interface CommonPubilicKey {
+interface CommonPublicKey {
     commonPublicKey: [string, string, string, string];
 }
 
@@ -90,7 +90,7 @@ async function fetchDkgCommonPublicKey() {
     }
     const skaleManagerInstance = await getSkaleManagerInstance();
     const dkg = await skaleManagerInstance.getContract("KeyStorage") as any;
-    const commonPublicKey: CommonPubilicKey = await dkg.getCommonPublicKey(process.env.PLAYA_CHAIN_HASH);
+    const commonPublicKey: CommonPublicKey = await dkg.getCommonPublicKey(process.env.PLAYA_CHAIN_HASH);
     return commonPublicKey;
 }
 
@@ -158,7 +158,7 @@ const deployPlayaAccessManager = async (
 const deployCommittee = async (
     authority: PlayaAccessManager,
     nodes: Nodes,
-    commonPubilicKey: CommonPubilicKey
+    commonPubilicKey: CommonPublicKey
 ): Promise<Committee> => {
     return await deployContract(
         "Committee",
