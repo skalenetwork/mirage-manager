@@ -51,7 +51,8 @@ const registerNodes = async () => {
             value: nodeBalance
         });
         await nodes.connect(wallet).registerNode(getIp(nodeId), ethers.toBigInt("0xd2"));
-        nodesData.push({wallet, id: nodeId});
+        const nodeId_ = await nodes.getNodeId(wallet.address);
+        nodesData.push({wallet, id: nodeId_});
     }
     return {...contracts, nodesData};
 }
