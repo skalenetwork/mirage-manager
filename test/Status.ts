@@ -3,7 +3,7 @@ import { nodesRegisteredButNotWhitelisted } from "./fixtures";
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import { Nodes, Status } from "../typechain-types";
-import { HDNodeWallet, Wallet } from "ethers";
+import { BigNumberish, HDNodeWallet, Wallet } from "ethers";
 import { ethers } from "hardhat";
 
 chai.should();
@@ -24,38 +24,43 @@ describe("Status", function () {
     let user5: HDNodeWallet;
     // does not own nodes
     let randomUser: HDNodeWallet;
+    let nodeIdForUser1: BigNumberish;
+    let nodeIdForUser2: BigNumberish;
+    let nodeIdForUser3: BigNumberish;
+    let nodeIdForUser4: BigNumberish;
+    let nodeIdForUser5: BigNumberish;
 
     beforeEach(async () => {
         const { nodes, status , nodesData } = await nodesRegisteredButNotWhitelisted();
         nodesContract = nodes;
         statusContract = status;
-        user1 = nodesData[0].wallet;
-        user2 = nodesData[1].wallet;
-        user3 = nodesData[2].wallet;
-        user4 = nodesData[3].wallet;
-        user5 = nodesData[4].wallet;
+        [user1, user2, user3, user4, user5] = nodesData.map(({ wallet }) => wallet);
+        [nodeIdForUser1, nodeIdForUser2, nodeIdForUser3, nodeIdForUser4, nodeIdForUser5] =
+            [user1, user2, user3, user4, user5].map(user =>
+                nodesData.find(node => node.wallet.address === user.address)!.id
+            );
         randomUser = Wallet.createRandom().connect(ethers.provider);
     });
 
     it("should allow only creator to whitelist nodes", async () => {
-        await expect(statusContract.connect(user1).whitelistNode(1)).to.be.reverted;
+        await expect(statusContract.connect(user1).whitelistNode(nodeIdForUser1)).to.be.reverted;
 
-        await statusContract.whitelistNode(1);
+        await statusContract.whitelistNode(nodeIdForUser1);
 
-        expect(await statusContract.getWhitelistedNodes()).to.eql([1n]);
-        expect(await statusContract.isWhitelisted(1)).to.eql(true);
+        expect(await statusContract.getWhitelistedNodes()).to.eql([nodeIdForUser1]);
+        expect(await statusContract.isWhitelisted(nodeIdForUser1)).to.eql(true);
     });
 
     it("should revert if node is already whitelisted", async () => {
-        await statusContract.whitelistNode(1);
-        expect(await statusContract.getWhitelistedNodes()).to.eql([1n]);
-        await expect(statusContract.whitelistNode(1))
+        await statusContract.whitelistNode(nodeIdForUser1);
+        expect(await statusContract.getWhitelistedNodes()).to.eql([nodeIdForUser1]);
+        await expect(statusContract.whitelistNode(nodeIdForUser1))
         .to.be.revertedWithCustomError(statusContract, "NodeAlreadyWhitelisted");
     });
 
     it("should revert if node does not exist", async () => {
-        // 50 nodes registered
-        await expect(statusContract.whitelistNode(51))
+        const nonExistentNodeId = 1000;
+        await expect(statusContract.whitelistNode(nonExistentNodeId))
         .to.be.revertedWithCustomError(nodesContract, "NodeDoesNotExist");
     });
 
@@ -65,14 +70,13 @@ describe("Status", function () {
     });
 
     it("should ensure alive() registers correctly", async () => {
-        expect(await statusContract.lastHeartbeatTimestamp(1)).to.eql(0n);
-
+        expect(await statusContract.lastHeartbeatTimestamp(nodeIdForUser1)).to.eql(0n);
         await statusContract.connect(user1).alive();
-        const firstTimestamp = await statusContract.lastHeartbeatTimestamp(1);
+        const firstTimestamp = await statusContract.lastHeartbeatTimestamp(nodeIdForUser1);
         expect(firstTimestamp).to.be.greaterThan(0n);
 
         await statusContract.connect(user1).alive();
-        const secondTimestamp = await statusContract.lastHeartbeatTimestamp(1);
+        const secondTimestamp = await statusContract.lastHeartbeatTimestamp(nodeIdForUser1);
 
         expect(secondTimestamp).to.be.greaterThan(firstTimestamp);
     });
@@ -90,12 +94,12 @@ describe("Status", function () {
     });
 
     it("should allow only creator to remove node from whitelist", async () => {
-        await statusContract.whitelistNode(1);
-        expect(await statusContract.getWhitelistedNodes()).to.eql([1n]);
+        await statusContract.whitelistNode(nodeIdForUser1);
+        expect(await statusContract.getWhitelistedNodes()).to.eql([nodeIdForUser1]);
 
         await expect(statusContract.connect(user1).removeNodeFromWhitelist(1)).to.be.reverted;
 
-        await statusContract.removeNodeFromWhitelist(1);
+        await statusContract.removeNodeFromWhitelist(nodeIdForUser1);
 
         expect(await statusContract.getWhitelistedNodes()).to.eql([]);
 
@@ -103,15 +107,15 @@ describe("Status", function () {
 
     it("should accurately change healthy status of node", async () => {
         await statusContract.setHeartbeatInterval(60);
-        expect(await statusContract.isHealthy(1)).to.eql(false);
+        expect(await statusContract.isHealthy(nodeIdForUser1)).to.eql(false);
 
         await statusContract.connect(user1).alive();
         // healthy for 60 seconds interval
-        expect(await statusContract.isHealthy(1)).to.eql(true);
+        expect(await statusContract.isHealthy(nodeIdForUser1)).to.eql(true);
 
         await statusContract.setHeartbeatInterval(1);
         // unhealthy for 1 second interval
-        expect(await statusContract.isHealthy(1)).to.eql(false);
+        expect(await statusContract.isHealthy(nodeIdForUser1)).to.eql(false);
 
     });
 
@@ -127,11 +131,11 @@ describe("Status", function () {
         // No nodes whitelisted
         expect(await statusContract.getNodesEligibleForCommittee()).to.eql([]);
 
-        await statusContract.whitelistNode(1);
-        await statusContract.whitelistNode(2);
-        await statusContract.whitelistNode(3);
-        await statusContract.whitelistNode(4);
-        await statusContract.whitelistNode(5);
+        await statusContract.whitelistNode(nodeIdForUser1);
+        await statusContract.whitelistNode(nodeIdForUser2);
+        await statusContract.whitelistNode(nodeIdForUser3);
+        await statusContract.whitelistNode(nodeIdForUser4);
+        await statusContract.whitelistNode(nodeIdForUser5);
 
         const healthy = await statusContract.getNodesEligibleForCommittee();
 
@@ -144,7 +148,7 @@ describe("Status", function () {
         await statusContract.connect(user1).alive();
 
         const healthyV2 = await statusContract.getNodesEligibleForCommittee();
-        expect(healthyV2).to.eql([1n]);
+        expect(healthyV2).to.eql([nodeIdForUser1]);
 
     });
 });
