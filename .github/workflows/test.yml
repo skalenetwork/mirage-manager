@@ -45,6 +45,10 @@ jobs:
         node-version: ${{ matrix.node-version }}
 
     - name: Test deployment
+      env:
+        TARGET: "production"
+        MAINNET_ENDPOINT: "https://eth.llamarpc.com"
+        PLAYA_CHAIN_HASH: "0x000003d28774d2845ee8b9f656cc77328199a7a69b03ce2b9578f230be679c9f"
       run: ./scripts/test_deploy.sh
 
     # - name: Test upgrade
