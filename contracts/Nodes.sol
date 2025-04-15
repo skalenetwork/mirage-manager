@@ -137,6 +137,37 @@ contract Nodes is AccessManagedUpgradeable, INodes {
         committeeContract = committeeAddress;
     }
 
+    function _createActiveNode(
+        address nodeAddress,
+        bytes memory ip,
+        uint16 port,
+        string memory domainName
+    )
+        internal
+        returns (NodeId nodeId)
+    {
+        unchecked {
+            ++_nodeIdCounter;
+        }
+        nodeId = NodeId.wrap(_nodeIdCounter);
+
+        _addActiveNodeId(nodeId);
+        _setActiveNodeIdForAddress(nodeAddress, nodeId);
+
+        require(_usedIps.add(keccak256(ip)), IpIsNotAvailable(ip));
+
+        nodes[nodeId] = Node({
+            id: nodeId,
+            port: port,
+            nodeAddress: nodeAddress,
+            ip: ip,
+            domainName: domainName
+        });
+
+        emit NodeRegistered(nodeId, nodeAddress, ip, port);
+        return nodeId;
+    }
+
     function registerNode(
         bytes calldata ip,
         uint16 port
@@ -146,30 +177,7 @@ contract Nodes is AccessManagedUpgradeable, INodes {
         validIp(ip)
         validPort(port)
     {
-
-        unchecked {
-            ++_nodeIdCounter;
-        }
-
-        NodeId nodeId = NodeId.wrap(_nodeIdCounter);
-
-        _addActiveNodeId(nodeId);
-
-        _setActiveNodeIdForAddress(msg.sender, nodeId);
-
-        require(_usedIps.add(keccak256(ip)), IpIsNotAvailable(ip));
-
-        nodes[nodeId] = Node({
-            id: nodeId,
-            port: port,
-            nodeAddress: msg.sender,
-            ip: ip,
-            domainName: ""
-        });
-
-        emit NodeRegistered(nodeId, msg.sender, ip, port);
-
-        // Notify Committee of new active nodeId
+        NodeId nodeId = _createActiveNode(msg.sender, ip, port, "");
         committeeContract.newNodeCreated(nodeId);
     }
 
@@ -393,6 +401,14 @@ contract Nodes is AccessManagedUpgradeable, INodes {
         }
     }
 
+    function _initializeGroup(Node[] calldata initialNodes) private {
+        uint256 length = initialNodes.length;
+        for (uint256 i; i < length; ++i) {
+            Node memory initNode = initialNodes[i];
+            _createActiveNode(initNode.nodeAddress, initNode.ip, initNode.port, initNode.domainName);
+        }
+    }
+
     function _isActiveNode(NodeId nodeId) private view returns (bool result) {
         result = _activeNodeIds.contains(nodeId);
     }
@@ -407,27 +423,5 @@ contract Nodes is AccessManagedUpgradeable, INodes {
 
     function _isAddressOfActiveNode(address nodeAddress) private view returns (bool result) {
         result = _activeNodesAddressToId.contains(nodeAddress);
-    }
-
-    function _initializeGroup(Node[] calldata initialNodes) private {
-        for (uint i = 0; i < initialNodes.length; i++) {
-            Node memory node = initialNodes[i];
-            unchecked {
-                ++_nodeIdCounter;
-            }
-            NodeId nodeId = NodeId.wrap(_nodeIdCounter);
-            _addActiveNodeId(nodeId);
-            _setActiveNodeIdForAddress(node.nodeAddress, nodeId);
-            require(_usedIps.add(keccak256(node.ip)), IpIsNotAvailable(node.ip));
-
-            nodes[nodeId] = Node({
-                id: nodeId,
-                port: node.port,
-                nodeAddress: node.nodeAddress,
-                ip: node.ip,
-                domainName: node.domainName
-            });
-            emit NodeRegistered(nodeId, node.nodeAddress, node.ip, node.port);
-        }
     }
 }
