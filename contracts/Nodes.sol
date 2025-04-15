@@ -137,37 +137,6 @@ contract Nodes is AccessManagedUpgradeable, INodes {
         committeeContract = committeeAddress;
     }
 
-    function _createActiveNode(
-        address nodeAddress,
-        bytes memory ip,
-        uint16 port,
-        string memory domainName
-    )
-        internal
-        returns (NodeId nodeId)
-    {
-        unchecked {
-            ++_nodeIdCounter;
-        }
-        nodeId = NodeId.wrap(_nodeIdCounter);
-
-        _addActiveNodeId(nodeId);
-        _setActiveNodeIdForAddress(nodeAddress, nodeId);
-
-        require(_usedIps.add(keccak256(ip)), IpIsNotAvailable(ip));
-
-        nodes[nodeId] = Node({
-            id: nodeId,
-            port: port,
-            nodeAddress: nodeAddress,
-            ip: ip,
-            domainName: domainName
-        });
-
-        emit NodeRegistered(nodeId, nodeAddress, ip, port);
-        return nodeId;
-    }
-
     function registerNode(
         bytes calldata ip,
         uint16 port
@@ -364,6 +333,37 @@ contract Nodes is AccessManagedUpgradeable, INodes {
 
     function activeNodeExists(NodeId nodeId) external view override returns(bool result){
         result = _isActiveNode(nodeId);
+    }
+
+    function _createActiveNode(
+        address nodeAddress,
+        bytes memory ip,
+        uint16 port,
+        string memory domainName
+    )
+        internal
+        returns (NodeId nodeId)
+    {
+        unchecked {
+            ++_nodeIdCounter;
+        }
+        nodeId = NodeId.wrap(_nodeIdCounter);
+
+        _addActiveNodeId(nodeId);
+        _setActiveNodeIdForAddress(nodeAddress, nodeId);
+
+        require(_usedIps.add(keccak256(ip)), IpIsNotAvailable(ip));
+
+        nodes[nodeId] = Node({
+            id: nodeId,
+            port: port,
+            nodeAddress: nodeAddress,
+            ip: ip,
+            domainName: domainName
+        });
+
+        emit NodeRegistered(nodeId, nodeAddress, ip, port);
+        return nodeId;
     }
 
     function _addPassiveNodeId(NodeId nodeId) private {
