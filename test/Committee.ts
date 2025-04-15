@@ -9,6 +9,16 @@ import { skipTime } from "./tools/time";
 chai.should();
 
 describe("Committee", () => {
+
+    it("should allow set version", async () => {
+        const {committee} = await cleanDeployment();
+        const version = await committee.version();
+        expect(version).to.be.eql("");
+        const newVersion = "playa-mock-version";
+        await committee.setVersion(newVersion);
+        expect(newVersion).to.be.eql(await committee.version())
+    });
+
     it("should not allow anyone to start committee rotation", async () => {
         const [, hacker] = await ethers.getSigners();
         const {committee} = await nodesAreRegisteredAndHeartbeatIsSent();

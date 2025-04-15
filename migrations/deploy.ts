@@ -150,7 +150,7 @@ const main = async () => {
 
     const deployedContracts = await deploy();
 
-    deployedContracts.Committee.setVersion(version);
+    await (await deployedContracts.Committee.setVersion(version)).wait();
 
     console.log("Store addresses")
 
