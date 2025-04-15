@@ -83,7 +83,7 @@ export const deploy = async (): Promise<DeployedContracts> => {
     const [deployer] = await ethers.getSigners();
     const deployedContracts: DeployedContracts = {} as DeployedContracts;
     const nodeList = await fetchNodes();
-    const commonPubilicKey = await fetchDkgCommonPublicKey();
+    const commonPublicKey = await fetchDkgCommonPublicKey();
 
     deployedContracts.PlayaAccessManager = await deployPlayaAccessManager(deployer);
     deployedContracts.Nodes = await deployNodes(
@@ -93,7 +93,7 @@ export const deploy = async (): Promise<DeployedContracts> => {
     deployedContracts.Committee = await deployCommittee(
         deployedContracts.PlayaAccessManager,
         deployedContracts.Nodes,
-        commonPubilicKey
+        commonPublicKey
     );
     deployedContracts.DKG = await deployDkg(
         deployedContracts.PlayaAccessManager,
@@ -142,14 +142,14 @@ const deployPlayaAccessManager = async (
 const deployCommittee = async (
     authority: PlayaAccessManager,
     nodes: Nodes,
-    commonPubilicKey: [string, string, string, string]
+    commonPublicKey: [string, string, string, string]
 ): Promise<Committee> => {
     return await deployContract(
         "Committee",
         [
             await ethers.resolveAddress(authority),
             await ethers.resolveAddress(nodes),
-            commonPubilicKey
+            commonPublicKey
         ]
     ) as Committee;
 }
