@@ -6,6 +6,9 @@ import "@nomicfoundation/hardhat-chai-matchers";
 import '@openzeppelin/hardhat-upgrades';
 import 'solidity-coverage'
 import '@typechain/hardhat';
+import * as dotenv from "dotenv"
+
+dotenv.config();
 
 const config: HardhatUserConfig = {
   networks: {

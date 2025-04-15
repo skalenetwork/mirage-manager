@@ -4861,6 +4861,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"dotenv@npm:^16.5.0":
+  version: 16.5.0
+  resolution: "dotenv@npm:16.5.0"
+  checksum: 10c0/5bc94c919fbd955bf0ba44d33922a1e93d1078e64a1db5c30faeded1d996e7a83c55332cb8ea4fae5a9ca4d0be44cbceb95c5811e70f9f095298df09d1997dd9
+  languageName: node
+  linkType: hard
+
 "dunder-proto@npm:^1.0.1":
   version: 1.0.1
   resolution: "dunder-proto@npm:1.0.1"
@@ -7597,6 +7604,7 @@ __metadata:
     chai-as-promised: "npm:^7.1.1"
     chalk: "npm:^4"
     cspell: "npm:^8.17.5"
+    dotenv: "npm:^16.5.0"
     eslint: "npm:^9.22.0"
     ethers: "npm:^6.4.0"
     globals: "npm:^16.0.0"
