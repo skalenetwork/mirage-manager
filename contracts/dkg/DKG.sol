@@ -236,26 +236,6 @@ contract DKG is AccessManagedUpgradeable, IDkg {
         pure
         returns (bytes32 hash)
     {
-        bytes memory data;
-        // TODO: optimize by replacing loop with abi.encodePacked
-        uint256 length = secretKeyContribution.length;
-        for (uint256 i = 0; i < length; ++i) {
-            data = abi.encodePacked(
-                data,
-                secretKeyContribution[i].publicKey,
-                secretKeyContribution[i].share
-            );
-        }
-        length = verificationVector.length;
-        for (uint256 i = 0; i < length; ++i) {
-            data = abi.encodePacked(
-                data,
-                verificationVector[i].x.a,
-                verificationVector[i].x.b,
-                verificationVector[i].y.a,
-                verificationVector[i].y.b
-            );
-        }
-        return keccak256(data);
+        return keccak256(abi.encode(secretKeyContribution, verificationVector));
     }
 }

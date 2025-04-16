@@ -194,14 +194,18 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
             assert(committeeAuxiliary.nodes.add(nodes_[i]));
         }
     }
-
+    // TODO: improve algorithm _getEligibleNodes
+    //slither-disable-start calls-loop
     function _isEligible(NodeId node) private view returns (bool eligible) {
         return status.isHealthy(node) && status.isWhitelisted(node);
     }
+    //slither-disable-end calls-loop
+
 
     function _getEligibleNodes() private view returns (NodeId[] memory candidates, uint256 length) {
         candidates = nodes.getActiveNodesIds();
         length = candidates.length;
+
         for (uint256 i = 0; i < length; ++i) {
             while ( i < length && !_isEligible(candidates[i])) {
                 candidates[i] = candidates[length - 1];
