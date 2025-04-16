@@ -207,14 +207,13 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
     }
 
     function _isEligible(NodeId node) private view returns (bool eligible) {
+        // slither-disable-next-line calls-loop
         return status.isHealthy(node) && status.isWhitelisted(node);
     }
 
     function _getEligibleNodes() private view returns (NodeId[] memory candidates, uint256 length) {
         candidates = nodes.getActiveNodesIds();
         length = candidates.length;
-        // TODO: improve algorithm
-        // slither-disable calls-inside-loop
         for (uint256 i = 0; i < length; ++i) {
             while ( i < length && !_isEligible(candidates[i])) {
                 candidates[i] = candidates[length - 1];
