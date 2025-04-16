@@ -4,7 +4,7 @@ import {
     loadFixture
 } from "@nomicfoundation/hardhat-network-helpers";
 import { deploy as productionDeploy } from "../migrations/deploy";
-import { BigNumberish, HDNodeWallet, Wallet } from "ethers";
+import { HDNodeWallet, Wallet } from "ethers";
 import { ethers } from "hardhat";
 
 // Parameters
@@ -19,12 +19,7 @@ export interface NodeData {
     id: bigint;
 }
 
-const getIp = (i: BigNumberish) => ethers.getBytes(
-    ethers.concat([
-        ethers.hexlify("0xd2d2d2"),
-        ethers.toBeHex(i)
-    ])
-);
+const getIp = (): Uint8Array => ethers.randomBytes(4);
 
 // Fixtures
 
@@ -44,15 +39,15 @@ const registerNodes = async () => {
     const contracts = await loadFixture(deploy);
     const {nodes} = contracts;
     const nodesData: NodeData[] = [];
-    for (let nodeId = 1n; nodeId <= numberOfNodes; ++nodeId) {
+    for (let iterator = 0; iterator < numberOfNodes; ++iterator) {
         const wallet = Wallet.createRandom().connect(ethers.provider);
         await owner.sendTransaction({
             to: wallet.address,
             value: nodeBalance
         });
-        await nodes.connect(wallet).registerNode(getIp(nodeId), ethers.toBigInt("0xd2"));
-        const nodeId_ = await nodes.getNodeId(wallet.address);
-        nodesData.push({wallet, id: nodeId_});
+        await nodes.connect(wallet).registerNode(getIp(), ethers.toBigInt("0xd2"));
+        const nodeId = await nodes.getNodeId(wallet.address);
+        nodesData.push({wallet, id: nodeId});
     }
     return {...contracts, nodesData};
 }
