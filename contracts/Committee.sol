@@ -1,22 +1,22 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 /**
- *   Committee.sol - playa-manager
+ *   Committee.sol - mirage-manager
  *   Copyright (C) 2025-Present SKALE Labs
  *   @author Dmytro Stebaiev
  *
- *   playa-manager is free software: you can redistribute it and/or modify
+ *   mirage-manager is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU Affero General Public License as published
  *   by the Free Software Foundation, either version 3 of the License, or
  *   (at your option) any later version.
  *
- *   playa-manager is distributed in the hope that it will be useful,
+ *   mirage-manager is distributed in the hope that it will be useful,
  *   but WITHOUT ANY WARRANTY; without even the implied warranty of
  *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *   GNU Affero General Public License for more details.
  *
  *   You should have received a copy of the GNU Affero General Public License
- *   along with playa-manager.  If not, see <https://www.gnu.org/licenses/>.
+ *   along with mirage-manager.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 pragma solidity ^0.8.24;
@@ -31,7 +31,9 @@ import {
 } from "@skalenetwork/professional-interfaces/ICommittee.sol";
 import { DkgId, IDkg } from "@skalenetwork/professional-interfaces/IDkg.sol";
 import { INodes, NodeId } from "@skalenetwork/professional-interfaces/INodes.sol";
+import { IStaking } from "@skalenetwork/professional-interfaces/IStaking.sol";
 import { Duration, IStatus } from "@skalenetwork/professional-interfaces/IStatus.sol";
+
 
 import { G2Operations } from "./dkg/fieldOperations/G2Operations.sol";
 import { IRandom, Random } from "./Random.sol";
@@ -55,6 +57,9 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
     IDkg public dkg;
     INodes public nodes;
     IStatus public status;
+    IStaking public staking;
+
+    string public version;
 
     error TooFewCandidates(
         uint256 needed,
@@ -101,6 +106,15 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
 
     function setStatus(IStatus statusAddress) external override restricted {
         status = statusAddress;
+    }
+
+    function setStaking(IStaking stakingAddress) external override restricted {
+        staking = stakingAddress;
+    }
+
+    function setVersion(string calldata newVersion) external override restricted {
+        emit VersionUpdated(version, newVersion);
+        version = newVersion;
     }
 
     function processSuccessfulDkg(DkgId round) external onlyDkg override {
@@ -180,14 +194,18 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
             assert(committeeAuxiliary.nodes.add(nodes_[i]));
         }
     }
-
+    // TODO: improve algorithm _getEligibleNodes
+    //slither-disable-start calls-loop
     function _isEligible(NodeId node) private view returns (bool eligible) {
         return status.isHealthy(node) && status.isWhitelisted(node);
     }
+    //slither-disable-end calls-loop
+
 
     function _getEligibleNodes() private view returns (NodeId[] memory candidates, uint256 length) {
         candidates = nodes.getActiveNodesIds();
         length = candidates.length;
+
         for (uint256 i = 0; i < length; ++i) {
             while ( i < length && !_isEligible(candidates[i])) {
                 candidates[i] = candidates[length - 1];

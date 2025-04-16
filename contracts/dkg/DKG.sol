@@ -1,22 +1,22 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 /**
- *   DKG.sol - playa-manager
+ *   DKG.sol - mirage-manager
  *   Copyright (C) 2025-Present SKALE Labs
  *   @author Dmytro Stebaiev
  *
- *   playa-manager is free software: you can redistribute it and/or modify
+ *   mirage-manager is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU Affero General Public License as published
  *   by the Free Software Foundation, either version 3 of the License, or
  *   (at your option) any later version.
  *
- *   playa-manager is distributed in the hope that it will be useful,
+ *   mirage-manager is distributed in the hope that it will be useful,
  *   but WITHOUT ANY WARRANTY; without even the implied warranty of
  *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *   GNU Affero General Public License for more details.
  *
  *   You should have received a copy of the GNU Affero General Public License
- *   along with playa-manager.  If not, see <https://www.gnu.org/licenses/>.
+ *   along with mirage-manager.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 // cspell:words Initializable
@@ -236,26 +236,6 @@ contract DKG is AccessManagedUpgradeable, IDkg {
         pure
         returns (bytes32 hash)
     {
-        bytes memory data;
-        // TODO: optimize by replacing loop with abi.encodePacked
-        uint256 length = secretKeyContribution.length;
-        for (uint256 i = 0; i < length; ++i) {
-            data = abi.encodePacked(
-                data,
-                secretKeyContribution[i].publicKey,
-                secretKeyContribution[i].share
-            );
-        }
-        length = verificationVector.length;
-        for (uint256 i = 0; i < length; ++i) {
-            data = abi.encodePacked(
-                data,
-                verificationVector[i].x.a,
-                verificationVector[i].x.b,
-                verificationVector[i].y.a,
-                verificationVector[i].y.b
-            );
-        }
-        return keccak256(data);
+        return keccak256(abi.encode(secretKeyContribution, verificationVector));
     }
 }

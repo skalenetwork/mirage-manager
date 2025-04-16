@@ -9,6 +9,22 @@ import { skipTime } from "./tools/time";
 chai.should();
 
 describe("Committee", () => {
+
+    it("should allow contract owner to set version", async () => {
+        const {committee} = await cleanDeployment();
+        const version = await committee.version();
+        expect(version).to.not.be.eql("");
+        const newVersion = "mirage-mock-version";
+        await committee.setVersion(newVersion);
+        expect(newVersion).to.be.eql(await committee.version());
+        const [, hacker] = await ethers.getSigners();
+
+        await committee.connect(hacker).setVersion("I hacked you")
+            .should.be.revertedWithCustomError(committee, "AccessManagedUnauthorized");
+
+        expect(newVersion).to.be.eql(await committee.version());
+    });
+
     it("should not allow anyone to start committee rotation", async () => {
         const [, hacker] = await ethers.getSigners();
         const {committee} = await nodesAreRegisteredAndHeartbeatIsSent();
