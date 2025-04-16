@@ -10,13 +10,19 @@ chai.should();
 
 describe("Committee", () => {
 
-    it("should allow set version", async () => {
+    it("should allow contract owner to set version", async () => {
         const {committee} = await cleanDeployment();
         const version = await committee.version();
-        expect(version).to.be.eql("");
+        expect(version).to.not.be.eql("");
         const newVersion = "playa-mock-version";
         await committee.setVersion(newVersion);
-        expect(newVersion).to.be.eql(await committee.version())
+        expect(newVersion).to.be.eql(await committee.version());
+        const [, hacker] = await ethers.getSigners();
+
+        await committee.connect(hacker).setVersion("I hacked you")
+            .should.be.revertedWithCustomError(committee, "AccessManagedUnauthorized");
+
+        expect(newVersion).to.be.eql(await committee.version());
     });
 
     it("should not allow anyone to start committee rotation", async () => {

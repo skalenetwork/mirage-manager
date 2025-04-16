@@ -57,6 +57,8 @@ export const deploy = async (): Promise<DeployedContracts> => {
     response = await deployedContracts.Committee.setStaking(deployedContracts.Staking);
     await response.wait();
 
+    await (await deployedContracts.Committee.setVersion(await getVersion())).wait();
+
     return deployedContracts;
 }
 
@@ -149,8 +151,6 @@ const main = async () => {
     console.log("Deploy contracts");
 
     const deployedContracts = await deploy();
-
-    await (await deployedContracts.Committee.setVersion(version)).wait();
 
     console.log("Store addresses")
 
