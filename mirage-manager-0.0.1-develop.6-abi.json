@@ -1,0 +1,3511 @@
+{
+    "Committee": [
+        {
+            "type": "error",
+            "name": "AccessManagedInvalidAuthority",
+            "inputs": [
+                {
+                    "type": "address",
+                    "name": "authority"
+                }
+            ]
+        },
+        {
+            "type": "error",
+            "name": "AccessManagedRequiredDelay",
+            "inputs": [
+                {
+                    "type": "address",
+                    "name": "caller"
+                },
+                {
+                    "type": "uint32",
+                    "name": "delay"
+                }
+            ]
+        },
+        {
+            "type": "error",
+            "name": "AccessManagedUnauthorized",
+            "inputs": [
+                {
+                    "type": "address",
+                    "name": "caller"
+                }
+            ]
+        },
+        {
+            "type": "error",
+            "name": "CommitteeNotFound",
+            "inputs": [
+                {
+                    "type": "uint256",
+                    "name": "index"
+                }
+            ]
+        },
+        {
+            "type": "error",
+            "name": "InvalidInitialization",
+            "inputs": []
+        },
+        {
+            "type": "error",
+            "name": "NotInitializing",
+            "inputs": []
+        },
+        {
+            "type": "error",
+            "name": "SenderIsNotDkg",
+            "inputs": [
+                {
+                    "type": "address",
+                    "name": "sender"
+                }
+            ]
+        },
+        {
+            "type": "error",
+            "name": "TooFewCandidates",
+            "inputs": [
+                {
+                    "type": "uint256",
+                    "name": "needed"
+                },
+                {
+                    "type": "uint256",
+                    "name": "available"
+                }
+            ]
+        },
+        {
+            "type": "event",
+            "anonymous": false,
+            "name": "AuthorityUpdated",
+            "inputs": [
+                {
+                    "type": "address",
+                    "name": "authority",
+                    "indexed": false
+                }
+            ]
+        },
+        {
+            "type": "event",
+            "anonymous": false,
+            "name": "Initialized",
+            "inputs": [
+                {
+                    "type": "uint64",
+                    "name": "version",
+                    "indexed": false
+                }
+            ]
+        },
+        {
+            "type": "event",
+            "anonymous": false,
+            "name": "VersionUpdated",
+            "inputs": [
+                {
+                    "type": "string",
+                    "name": "version",
+                    "indexed": false
+                },
+                {
+                    "type": "string",
+                    "name": "newVersion",
+                    "indexed": false
+                }
+            ]
+        },
+        {
+            "type": "function",
+            "name": "authority",
+            "constant": true,
+            "stateMutability": "view",
+            "payable": false,
+            "inputs": [],
+            "outputs": [
+                {
+                    "type": "address",
+                    "name": ""
+                }
+            ]
+        },
+        {
+            "type": "function",
+            "name": "committeeSize",
+            "constant": true,
+            "stateMutability": "view",
+            "payable": false,
+            "inputs": [],
+            "outputs": [
+                {
+                    "type": "uint256",
+                    "name": ""
+                }
+            ]
+        },
+        {
+            "type": "function",
+            "name": "committees",
+            "constant": true,
+            "stateMutability": "view",
+            "payable": false,
+            "inputs": [
+                {
+                    "type": "uint256",
+                    "name": "index"
+                }
+            ],
+            "outputs": [
+                {
+                    "type": "uint256",
+                    "name": "dkg"
+                },
+                {
+                    "type": "tuple",
+                    "name": "commonPublicKey",
+                    "components": [
+                        {
+                            "type": "tuple",
+                            "name": "x",
+                            "components": [
+                                {
+                                    "type": "uint256",
+                                    "name": "a"
+                                },
+                                {
+                                    "type": "uint256",
+                                    "name": "b"
+                                }
+                            ]
+                        },
+                        {
+                            "type": "tuple",
+                            "name": "y",
+                            "components": [
+                                {
+                                    "type": "uint256",
+                                    "name": "a"
+                                },
+                                {
+                                    "type": "uint256",
+                                    "name": "b"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "type": "uint256",
+                    "name": "startingTimestamp"
+                }
+            ]
+        },
+        {
+            "type": "function",
+            "name": "dkg",
+            "constant": true,
+            "stateMutability": "view",
+            "payable": false,
+            "inputs": [],
+            "outputs": [
+                {
+                    "type": "address",
+                    "name": ""
+                }
+            ]
+        },
+        {
+            "type": "function",
+            "name": "getActiveCommitteeIndex",
+            "constant": true,
+            "stateMutability": "view",
+            "payable": false,
+            "inputs": [],
+            "outputs": [
+                {
+                    "type": "uint256",
+                    "name": "committeeIndex"
+                }
+            ]
+        },
+        {
+            "type": "function",
+            "name": "getCommittee",
+            "constant": true,
+            "stateMutability": "view",
+            "payable": false,
+            "inputs": [
+                {
+                    "type": "uint256",
+                    "name": "committeeIndex"
+                }
+            ],
+            "outputs": [
+                {
+                    "type": "tuple",
+                    "name": "committee",
+                    "components": [
+                        {
+                            "type": "uint256[]",
+                            "name": "nodes"
+                        },
+                        {
+                            "type": "uint256",
+                            "name": "dkg"
+                        },
+                        {
+                            "type": "tuple",
+                            "name": "commonPublicKey",
+                            "components": [
+                                {
+                                    "type": "tuple",
+                                    "name": "x",
+                                    "components": [
+                                        {
+                                            "type": "uint256",
+                                            "name": "a"
+                                        },
+                                        {
+                                            "type": "uint256",
+                                            "name": "b"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "type": "tuple",
+                                    "name": "y",
+                                    "components": [
+                                        {
+                                            "type": "uint256",
+                                            "name": "a"
+                                        },
+                                        {
+                                            "type": "uint256",
+                                            "name": "b"
+                                        }
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            "type": "uint256",
+                            "name": "startingTimestamp"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "function",
+            "name": "initialize",
+            "constant": false,
+            "payable": false,
+            "inputs": [
+                {
+                    "type": "address",
+                    "name": "initialAuthority"
+                }
+            ],
+            "outputs": []
+        },
+        {
+            "type": "function",
+            "name": "isConsumingScheduledOp",
+            "constant": true,
+            "stateMutability": "view",
+            "payable": false,
+            "inputs": [],
+            "outputs": [
+                {
+                    "type": "bytes4",
+                    "name": ""
+                }
+            ]
+        },
+        {
+            "type": "function",
+            "name": "isNodeInCurrentOrNextCommittee",
+            "constant": true,
+            "stateMutability": "view",
+            "payable": false,
+            "inputs": [
+                {
+                    "type": "uint256",
+                    "name": "node"
+                }
+            ],
+            "outputs": [
+                {
+                    "type": "bool",
+                    "name": "result"
+                }
+            ]
+        },
+        {
+            "type": "function",
+            "name": "lastCommitteeIndex",
+            "constant": true,
+            "stateMutability": "view",
+            "payable": false,
+            "inputs": [],
+            "outputs": [
+                {
+                    "type": "uint256",
+                    "name": ""
+                }
+            ]
+        },
+        {
+            "type": "function",
+            "name": "newNodeCreated",
+            "constant": true,
+            "stateMutability": "pure",
+            "payable": false,
+            "inputs": [
+                {
+                    "type": "uint256",
+                    "name": ""
+                }
+            ],
+            "outputs": []
+        },
+        {
+            "type": "function",
+            "name": "nodes",
+            "constant": true,
+            "stateMutability": "view",
+            "payable": false,
+            "inputs": [],
+            "outputs": [
+                {
+                    "type": "address",
+                    "name": ""
+                }
+            ]
+        },
+        {
+            "type": "function",
+            "name": "processSuccessfulDkg",
+            "constant": false,
+            "payable": false,
+            "inputs": [
+                {
+                    "type": "uint256",
+                    "name": "round"
+                }
+            ],
+            "outputs": []
+        },
+        {
+            "type": "function",
+            "name": "select",
+            "constant": false,
+            "payable": false,
+            "inputs": [],
+            "outputs": []
+        },
+        {
+            "type": "function",
+            "name": "setAuthority",
+            "constant": false,
+            "payable": false,
+            "inputs": [
+                {
+                    "type": "address",
+                    "name": "newAuthority"
+                }
+            ],
+            "outputs": []
+        },
+        {
+            "type": "function",
+            "name": "setCommitteeSize",
+            "constant": false,
+            "payable": false,
+            "inputs": [
+                {
+                    "type": "uint256",
+                    "name": "size"
+                }
+            ],
+            "outputs": []
+        },
+        {
+            "type": "function",
+            "name": "setDkg",
+            "constant": false,
+            "payable": false,
+            "inputs": [
+                {
+                    "type": "address",
+                    "name": "dkgAddress"
+                }
+            ],
+            "outputs": []
+        },
+        {
+            "type": "function",
+            "name": "setNodes",
+            "constant": false,
+            "payable": false,
+            "inputs": [
+                {
+                    "type": "address",
+                    "name": "nodesAddress"
+                }
+            ],
+            "outputs": []
+        },
+        {
+            "type": "function",
+            "name": "setStaking",
+            "constant": false,
+            "payable": false,
+            "inputs": [
+                {
+                    "type": "address",
+                    "name": "stakingAddress"
+                }
+            ],
+            "outputs": []
+        },
+        {
+            "type": "function",
+            "name": "setStatus",
+            "constant": false,
+            "payable": false,
+            "inputs": [
+                {
+                    "type": "address",
+                    "name": "statusAddress"
+                }
+            ],
+            "outputs": []
+        },
+        {
+            "type": "function",
+            "name": "setTransitionDelay",
+            "constant": false,
+            "payable": false,
+            "inputs": [
+                {
+                    "type": "uint256",
+                    "name": "delay"
+                }
+            ],
+            "outputs": []
+        },
+        {
+            "type": "function",
+            "name": "setVersion",
+            "constant": false,
+            "payable": false,
+            "inputs": [
+                {
+                    "type": "string",
+                    "name": "newVersion"
+                }
+            ],
+            "outputs": []
+        },
+        {
+            "type": "function",
+            "name": "staking",
+            "constant": true,
+            "stateMutability": "view",
+            "payable": false,
+            "inputs": [],
+            "outputs": [
+                {
+                    "type": "address",
+                    "name": ""
+                }
+            ]
+        },
+        {
+            "type": "function",
+            "name": "status",
+            "constant": true,
+            "stateMutability": "view",
+            "payable": false,
+            "inputs": [],
+            "outputs": [
+                {
+                    "type": "address",
+                    "name": ""
+                }
+            ]
+        },
+        {
+            "type": "function",
+            "name": "transitionDelay",
+            "constant": true,
+            "stateMutability": "view",
+            "payable": false,
+            "inputs": [],
+            "outputs": [
+                {
+                    "type": "uint256",
+                    "name": ""
+                }
+            ]
+        },
+        {
+            "type": "function",
+            "name": "version",
+            "constant": true,
+            "stateMutability": "view",
+            "payable": false,
+            "inputs": [],
+            "outputs": [
+                {
+                    "type": "string",
+                    "name": ""
+                }
+            ]
+        }
+    ],
+    "DKG": [
+        {
+            "type": "error",
+            "name": "AccessManagedInvalidAuthority",
+            "inputs": [
+                {
+                    "type": "address",
+                    "name": "authority"
+                }
+            ]
+        },
+        {
+            "type": "error",
+            "name": "AccessManagedRequiredDelay",
+            "inputs": [
+                {
+                    "type": "address",
+                    "name": "caller"
+                },
+                {
+                    "type": "uint32",
+                    "name": "delay"
+                }
+            ]
+        },
+        {
+            "type": "error",
+            "name": "AccessManagedUnauthorized",
+            "inputs": [
+                {
+                    "type": "address",
+                    "name": "caller"
+                }
+            ]
+        },
+        {
+            "type": "error",
+            "name": "DkgIsNotInAlrightStage",
+            "inputs": [
+                {
+                    "type": "uint256",
+                    "name": "id"
+                }
+            ]
+        },
+        {
+            "type": "error",
+            "name": "DkgIsNotInBroadcastStage",
+            "inputs": [
+                {
+                    "type": "uint256",
+                    "name": "id"
+                }
+            ]
+        },
+        {
+            "type": "error",
+            "name": "DkgIsNotSuccessful",
+            "inputs": [
+                {
+                    "type": "uint256",
+                    "name": "id"
+                }
+            ]
+        },
+        {
+            "type": "error",
+            "name": "IncorrectG2Point",
+            "inputs": [
+                {
+                    "type": "tuple",
+                    "name": "value",
+                    "components": [
+                        {
+                            "type": "tuple",
+                            "name": "x",
+                            "components": [
+                                {
+                                    "type": "uint256",
+                                    "name": "a"
+                                },
+                                {
+                                    "type": "uint256",
+                                    "name": "b"
+                                }
+                            ]
+                        },
+                        {
+                            "type": "tuple",
+                            "name": "y",
+                            "components": [
+                                {
+                                    "type": "uint256",
+                                    "name": "a"
+                                },
+                                {
+                                    "type": "uint256",
+                                    "name": "b"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "error",
+            "name": "IncorrectSecretKeyContributionQuantity",
+            "inputs": [
+                {
+                    "type": "uint256",
+                    "name": "actual"
+                },
+                {
+                    "type": "uint256",
+                    "name": "expected"
+                }
+            ]
+        },
+        {
+            "type": "error",
+            "name": "IncorrectVerificationsVectorQuantity",
+            "inputs": [
+                {
+                    "type": "uint256",
+                    "name": "actual"
+                },
+                {
+                    "type": "uint256",
+                    "name": "expected"
+                }
+            ]
+        },
+        {
+            "type": "error",
+            "name": "InvalidInitialization",
+            "inputs": []
+        },
+        {
+            "type": "error",
+            "name": "NodeAlreadyBroadcasted",
+            "inputs": [
+                {
+                    "type": "uint256",
+                    "name": "node"
+                }
+            ]
+        },
+        {
+            "type": "error",
+            "name": "NodeDoesNotParticipateInDkg",
+            "inputs": [
+                {
+                    "type": "uint256",
+                    "name": "node"
+                }
+            ]
+        },
+        {
+            "type": "error",
+            "name": "NodeIsAlreadyAlright",
+            "inputs": [
+                {
+                    "type": "uint256",
+                    "name": "node"
+                }
+            ]
+        },
+        {
+            "type": "error",
+            "name": "NotInitializing",
+            "inputs": []
+        },
+        {
+            "type": "error",
+            "name": "PrecompiledCallFailed",
+            "inputs": [
+                {
+                    "type": "address",
+                    "name": "precompiledContract"
+                }
+            ]
+        },
+        {
+            "type": "event",
+            "anonymous": false,
+            "name": "AllDataReceived",
+            "inputs": [
+                {
+                    "type": "uint256",
+                    "name": "dkg",
+                    "indexed": false
+                },
+                {
+                    "type": "uint256",
+                    "name": "node",
+                    "indexed": true
+                },
+                {
+                    "type": "uint256",
+                    "name": "nodeIndex",
+                    "indexed": false
+                }
+            ]
+        },
+        {
+            "type": "event",
+            "anonymous": false,
+            "name": "AuthorityUpdated",
+            "inputs": [
+                {
+                    "type": "address",
+                    "name": "authority",
+                    "indexed": false
+                }
+            ]
+        },
+        {
+            "type": "event",
+            "anonymous": false,
+            "name": "BroadcastAndKeyShare",
+            "inputs": [
+                {
+                    "type": "uint256",
+                    "name": "dkg",
+                    "indexed": false
+                },
+                {
+                    "type": "uint256",
+                    "name": "node",
+                    "indexed": true
+                },
+                {
+                    "type": "tuple[]",
+                    "name": "verificationVector",
+                    "components": [
+                        {
+                            "type": "tuple",
+                            "name": "x",
+                            "components": [
+                                {
+                                    "type": "uint256",
+                                    "name": "a"
+                                },
+                                {
+                                    "type": "uint256",
+                                    "name": "b"
+                                }
+                            ]
+                        },
+                        {
+                            "type": "tuple",
+                            "name": "y",
+                            "components": [
+                                {
+                                    "type": "uint256",
+                                    "name": "a"
+                                },
+                                {
+                                    "type": "uint256",
+                                    "name": "b"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "type": "tuple[]",
+                    "name": "secretKeyContribution",
+                    "components": [
+                        {
+                            "type": "bytes32[2]",
+                            "name": "publicKey"
+                        },
+                        {
+                            "type": "bytes32",
+                            "name": "share"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "event",
+            "anonymous": false,
+            "name": "Initialized",
+            "inputs": [
+                {
+                    "type": "uint64",
+                    "name": "version",
+                    "indexed": false
+                }
+            ]
+        },
+        {
+            "type": "event",
+            "anonymous": false,
+            "name": "SuccessfulDkg",
+            "inputs": [
+                {
+                    "type": "uint256",
+                    "name": "dkg",
+                    "indexed": false
+                }
+            ]
+        },
+        {
+            "type": "function",
+            "name": "alright",
+            "constant": false,
+            "payable": false,
+            "inputs": [
+                {
+                    "type": "uint256",
+                    "name": "dkg"
+                }
+            ],
+            "outputs": []
+        },
+        {
+            "type": "function",
+            "name": "authority",
+            "constant": true,
+            "stateMutability": "view",
+            "payable": false,
+            "inputs": [],
+            "outputs": [
+                {
+                    "type": "address",
+                    "name": ""
+                }
+            ]
+        },
+        {
+            "type": "function",
+            "name": "broadcast",
+            "constant": false,
+            "payable": false,
+            "inputs": [
+                {
+                    "type": "uint256",
+                    "name": "dkg"
+                },
+                {
+                    "type": "tuple[]",
+                    "name": "verificationVector",
+                    "components": [
+                        {
+                            "type": "tuple",
+                            "name": "x",
+                            "components": [
+                                {
+                                    "type": "uint256",
+                                    "name": "a"
+                                },
+                                {
+                                    "type": "uint256",
+                                    "name": "b"
+                                }
+                            ]
+                        },
+                        {
+                            "type": "tuple",
+                            "name": "y",
+                            "components": [
+                                {
+                                    "type": "uint256",
+                                    "name": "a"
+                                },
+                                {
+                                    "type": "uint256",
+                                    "name": "b"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "type": "tuple[]",
+                    "name": "secretKeyContribution",
+                    "components": [
+                        {
+                            "type": "bytes32[2]",
+                            "name": "publicKey"
+                        },
+                        {
+                            "type": "bytes32",
+                            "name": "share"
+                        }
+                    ]
+                }
+            ],
+            "outputs": []
+        },
+        {
+            "type": "function",
+            "name": "committee",
+            "constant": true,
+            "stateMutability": "view",
+            "payable": false,
+            "inputs": [],
+            "outputs": [
+                {
+                    "type": "address",
+                    "name": ""
+                }
+            ]
+        },
+        {
+            "type": "function",
+            "name": "generate",
+            "constant": false,
+            "payable": false,
+            "inputs": [
+                {
+                    "type": "uint256[]",
+                    "name": "participants"
+                }
+            ],
+            "outputs": [
+                {
+                    "type": "uint256",
+                    "name": "dkg"
+                }
+            ]
+        },
+        {
+            "type": "function",
+            "name": "getParticipants",
+            "constant": true,
+            "stateMutability": "view",
+            "payable": false,
+            "inputs": [
+                {
+                    "type": "uint256",
+                    "name": "dkg"
+                }
+            ],
+            "outputs": [
+                {
+                    "type": "uint256[]",
+                    "name": "participants"
+                }
+            ]
+        },
+        {
+            "type": "function",
+            "name": "getPublicKey",
+            "constant": true,
+            "stateMutability": "view",
+            "payable": false,
+            "inputs": [
+                {
+                    "type": "uint256",
+                    "name": "dkg"
+                }
+            ],
+            "outputs": [
+                {
+                    "type": "tuple",
+                    "name": "publicKey",
+                    "components": [
+                        {
+                            "type": "tuple",
+                            "name": "x",
+                            "components": [
+                                {
+                                    "type": "uint256",
+                                    "name": "a"
+                                },
+                                {
+                                    "type": "uint256",
+                                    "name": "b"
+                                }
+                            ]
+                        },
+                        {
+                            "type": "tuple",
+                            "name": "y",
+                            "components": [
+                                {
+                                    "type": "uint256",
+                                    "name": "a"
+                                },
+                                {
+                                    "type": "uint256",
+                                    "name": "b"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "function",
+            "name": "initialize",
+            "constant": false,
+            "payable": false,
+            "inputs": [
+                {
+                    "type": "address",
+                    "name": "initialAuthority"
+                },
+                {
+                    "type": "address",
+                    "name": "committeeAddress"
+                },
+                {
+                    "type": "address",
+                    "name": "nodesAddress"
+                }
+            ],
+            "outputs": []
+        },
+        {
+            "type": "function",
+            "name": "isConsumingScheduledOp",
+            "constant": true,
+            "stateMutability": "view",
+            "payable": false,
+            "inputs": [],
+            "outputs": [
+                {
+                    "type": "bytes4",
+                    "name": ""
+                }
+            ]
+        },
+        {
+            "type": "function",
+            "name": "isNodeBroadcasted",
+            "constant": true,
+            "stateMutability": "view",
+            "payable": false,
+            "inputs": [
+                {
+                    "type": "uint256",
+                    "name": "dkg"
+                },
+                {
+                    "type": "uint256",
+                    "name": "node"
+                }
+            ],
+            "outputs": [
+                {
+                    "type": "bool",
+                    "name": "broadcasted"
+                }
+            ]
+        },
+        {
+            "type": "function",
+            "name": "lastDkgId",
+            "constant": true,
+            "stateMutability": "view",
+            "payable": false,
+            "inputs": [],
+            "outputs": [
+                {
+                    "type": "uint256",
+                    "name": ""
+                }
+            ]
+        },
+        {
+            "type": "function",
+            "name": "nodes",
+            "constant": true,
+            "stateMutability": "view",
+            "payable": false,
+            "inputs": [],
+            "outputs": [
+                {
+                    "type": "address",
+                    "name": ""
+                }
+            ]
+        },
+        {
+            "type": "function",
+            "name": "rounds",
+            "constant": true,
+            "stateMutability": "view",
+            "payable": false,
+            "inputs": [
+                {
+                    "type": "uint256",
+                    "name": "dkg"
+                }
+            ],
+            "outputs": [
+                {
+                    "type": "uint256",
+                    "name": "id"
+                },
+                {
+                    "type": "uint8",
+                    "name": "status"
+                },
+                {
+                    "type": "tuple",
+                    "name": "publicKey",
+                    "components": [
+                        {
+                            "type": "tuple",
+                            "name": "x",
+                            "components": [
+                                {
+                                    "type": "uint256",
+                                    "name": "a"
+                                },
+                                {
+                                    "type": "uint256",
+                                    "name": "b"
+                                }
+                            ]
+                        },
+                        {
+                            "type": "tuple",
+                            "name": "y",
+                            "components": [
+                                {
+                                    "type": "uint256",
+                                    "name": "a"
+                                },
+                                {
+                                    "type": "uint256",
+                                    "name": "b"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "type": "uint256",
+                    "name": "numberOfBroadcasted"
+                },
+                {
+                    "type": "uint256",
+                    "name": "numberOfCompleted"
+                }
+            ]
+        },
+        {
+            "type": "function",
+            "name": "setAuthority",
+            "constant": false,
+            "payable": false,
+            "inputs": [
+                {
+                    "type": "address",
+                    "name": "newAuthority"
+                }
+            ],
+            "outputs": []
+        }
+    ],
+    "Nodes": [
+        {
+            "type": "error",
+            "name": "AccessManagedInvalidAuthority",
+            "inputs": [
+                {
+                    "type": "address",
+                    "name": "authority"
+                }
+            ]
+        },
+        {
+            "type": "error",
+            "name": "AccessManagedRequiredDelay",
+            "inputs": [
+                {
+                    "type": "address",
+                    "name": "caller"
+                },
+                {
+                    "type": "uint32",
+                    "name": "delay"
+                }
+            ]
+        },
+        {
+            "type": "error",
+            "name": "AccessManagedUnauthorized",
+            "inputs": [
+                {
+                    "type": "address",
+                    "name": "caller"
+                }
+            ]
+        },
+        {
+            "type": "error",
+            "name": "AddressInUseByPassiveNodes",
+            "inputs": [
+                {
+                    "type": "address",
+                    "name": "nodeAddress"
+                }
+            ]
+        },
+        {
+            "type": "error",
+            "name": "AddressIsAlreadyAssignedToNode",
+            "inputs": [
+                {
+                    "type": "address",
+                    "name": "nodeAddress"
+                }
+            ]
+        },
+        {
+            "type": "error",
+            "name": "AddressIsNotAssignedToAnyNode",
+            "inputs": [
+                {
+                    "type": "address",
+                    "name": "nodeAddress"
+                }
+            ]
+        },
+        {
+            "type": "error",
+            "name": "DomainNameAlreadyTaken",
+            "inputs": [
+                {
+                    "type": "string",
+                    "name": "domainName"
+                }
+            ]
+        },
+        {
+            "type": "error",
+            "name": "EnumerableMapNonexistentKey",
+            "inputs": [
+                {
+                    "type": "bytes32",
+                    "name": "key"
+                }
+            ]
+        },
+        {
+            "type": "error",
+            "name": "InvalidInitialization",
+            "inputs": []
+        },
+        {
+            "type": "error",
+            "name": "InvalidIp",
+            "inputs": [
+                {
+                    "type": "bytes",
+                    "name": "ip"
+                }
+            ]
+        },
+        {
+            "type": "error",
+            "name": "InvalidPortNumber",
+            "inputs": [
+                {
+                    "type": "uint16",
+                    "name": "port"
+                }
+            ]
+        },
+        {
+            "type": "error",
+            "name": "IpIsNotAvailable",
+            "inputs": [
+                {
+                    "type": "bytes",
+                    "name": "ip"
+                }
+            ]
+        },
+        {
+            "type": "error",
+            "name": "NodeDoesNotExist",
+            "inputs": [
+                {
+                    "type": "uint256",
+                    "name": "nodeId"
+                }
+            ]
+        },
+        {
+            "type": "error",
+            "name": "NodeIsInCommittee",
+            "inputs": [
+                {
+                    "type": "uint256",
+                    "name": "nodeId"
+                }
+            ]
+        },
+        {
+            "type": "error",
+            "name": "NotInitializing",
+            "inputs": []
+        },
+        {
+            "type": "error",
+            "name": "PassiveNodeAlreadyExistsForAddress",
+            "inputs": [
+                {
+                    "type": "address",
+                    "name": "nodeAddress"
+                },
+                {
+                    "type": "uint256",
+                    "name": "nodeId"
+                }
+            ]
+        },
+        {
+            "type": "error",
+            "name": "PortShouldNotBeZero",
+            "inputs": []
+        },
+        {
+            "type": "error",
+            "name": "SenderIsNotNewNodeOwner",
+            "inputs": []
+        },
+        {
+            "type": "error",
+            "name": "SenderIsNotNodeOwner",
+            "inputs": []
+        },
+        {
+            "type": "event",
+            "anonymous": false,
+            "name": "AuthorityUpdated",
+            "inputs": [
+                {
+                    "type": "address",
+                    "name": "authority",
+                    "indexed": false
+                }
+            ]
+        },
+        {
+            "type": "event",
+            "anonymous": false,
+            "name": "Initialized",
+            "inputs": [
+                {
+                    "type": "uint64",
+                    "name": "version",
+                    "indexed": false
+                }
+            ]
+        },
+        {
+            "type": "event",
+            "anonymous": false,
+            "name": "NodeAddressChanged",
+            "inputs": [
+                {
+                    "type": "uint256",
+                    "name": "nodeId",
+                    "indexed": true
+                },
+                {
+                    "type": "address",
+                    "name": "oldAddress",
+                    "indexed": true
+                },
+                {
+                    "type": "address",
+                    "name": "newAddress",
+                    "indexed": true
+                }
+            ]
+        },
+        {
+            "type": "event",
+            "anonymous": false,
+            "name": "NodeDomainNameChanged",
+            "inputs": [
+                {
+                    "type": "uint256",
+                    "name": "nodeId",
+                    "indexed": true
+                },
+                {
+                    "type": "address",
+                    "name": "nodeAddress",
+                    "indexed": true
+                },
+                {
+                    "type": "string",
+                    "name": "newName",
+                    "indexed": false
+                }
+            ]
+        },
+        {
+            "type": "event",
+            "anonymous": false,
+            "name": "NodeIpChanged",
+            "inputs": [
+                {
+                    "type": "uint256",
+                    "name": "nodeId",
+                    "indexed": true
+                },
+                {
+                    "type": "address",
+                    "name": "nodeAddress",
+                    "indexed": true
+                },
+                {
+                    "type": "bytes",
+                    "name": "ip",
+                    "indexed": false
+                },
+                {
+                    "type": "uint16",
+                    "name": "port",
+                    "indexed": false
+                }
+            ]
+        },
+        {
+            "type": "event",
+            "anonymous": false,
+            "name": "NodeRegistered",
+            "inputs": [
+                {
+                    "type": "uint256",
+                    "name": "nodeId",
+                    "indexed": true
+                },
+                {
+                    "type": "address",
+                    "name": "nodeAddress",
+                    "indexed": true
+                },
+                {
+                    "type": "bytes",
+                    "name": "ip",
+                    "indexed": false
+                },
+                {
+                    "type": "uint16",
+                    "name": "port",
+                    "indexed": false
+                }
+            ]
+        },
+        {
+            "type": "function",
+            "name": "ZERO_IPV4",
+            "constant": true,
+            "stateMutability": "view",
+            "payable": false,
+            "inputs": [],
+            "outputs": [
+                {
+                    "type": "bytes4",
+                    "name": ""
+                }
+            ]
+        },
+        {
+            "type": "function",
+            "name": "ZERO_IPV6",
+            "constant": true,
+            "stateMutability": "view",
+            "payable": false,
+            "inputs": [],
+            "outputs": [
+                {
+                    "type": "bytes16",
+                    "name": ""
+                }
+            ]
+        },
+        {
+            "type": "function",
+            "name": "activeNodeExists",
+            "constant": true,
+            "stateMutability": "view",
+            "payable": false,
+            "inputs": [
+                {
+                    "type": "uint256",
+                    "name": "nodeId"
+                }
+            ],
+            "outputs": [
+                {
+                    "type": "bool",
+                    "name": "result"
+                }
+            ]
+        },
+        {
+            "type": "function",
+            "name": "addressChangeRequests",
+            "constant": true,
+            "stateMutability": "view",
+            "payable": false,
+            "inputs": [
+                {
+                    "type": "uint256",
+                    "name": "nodeId"
+                }
+            ],
+            "outputs": [
+                {
+                    "type": "address",
+                    "name": "newNodeAddress"
+                }
+            ]
+        },
+        {
+            "type": "function",
+            "name": "authority",
+            "constant": true,
+            "stateMutability": "view",
+            "payable": false,
+            "inputs": [],
+            "outputs": [
+                {
+                    "type": "address",
+                    "name": ""
+                }
+            ]
+        },
+        {
+            "type": "function",
+            "name": "committeeContract",
+            "constant": true,
+            "stateMutability": "view",
+            "payable": false,
+            "inputs": [],
+            "outputs": [
+                {
+                    "type": "address",
+                    "name": ""
+                }
+            ]
+        },
+        {
+            "type": "function",
+            "name": "confirmAddressChange",
+            "constant": false,
+            "payable": false,
+            "inputs": [
+                {
+                    "type": "uint256",
+                    "name": "nodeId"
+                }
+            ],
+            "outputs": []
+        },
+        {
+            "type": "function",
+            "name": "getActiveNodesIds",
+            "constant": true,
+            "stateMutability": "view",
+            "payable": false,
+            "inputs": [],
+            "outputs": [
+                {
+                    "type": "uint256[]",
+                    "name": "nodeIds"
+                }
+            ]
+        },
+        {
+            "type": "function",
+            "name": "getNode",
+            "constant": true,
+            "stateMutability": "view",
+            "payable": false,
+            "inputs": [
+                {
+                    "type": "uint256",
+                    "name": "nodeId"
+                }
+            ],
+            "outputs": [
+                {
+                    "type": "tuple",
+                    "name": "node",
+                    "components": [
+                        {
+                            "type": "uint256",
+                            "name": "id"
+                        },
+                        {
+                            "type": "bytes",
+                            "name": "ip"
+                        },
+                        {
+                            "type": "string",
+                            "name": "domainName"
+                        },
+                        {
+                            "type": "address",
+                            "name": "nodeAddress"
+                        },
+                        {
+                            "type": "uint16",
+                            "name": "port"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "function",
+            "name": "getNodeId",
+            "constant": true,
+            "stateMutability": "view",
+            "payable": false,
+            "inputs": [
+                {
+                    "type": "address",
+                    "name": "nodeAddress"
+                }
+            ],
+            "outputs": [
+                {
+                    "type": "uint256",
+                    "name": "nodeId"
+                }
+            ]
+        },
+        {
+            "type": "function",
+            "name": "getPassiveNodeIds",
+            "constant": true,
+            "stateMutability": "view",
+            "payable": false,
+            "inputs": [
+                {
+                    "type": "address",
+                    "name": "nodeAddress"
+                }
+            ],
+            "outputs": [
+                {
+                    "type": "uint256[]",
+                    "name": "nodeIds"
+                }
+            ]
+        },
+        {
+            "type": "function",
+            "name": "initialize",
+            "constant": false,
+            "payable": false,
+            "inputs": [
+                {
+                    "type": "address",
+                    "name": "initialAuthority"
+                },
+                {
+                    "type": "address",
+                    "name": "committeeAddress"
+                }
+            ],
+            "outputs": []
+        },
+        {
+            "type": "function",
+            "name": "isConsumingScheduledOp",
+            "constant": true,
+            "stateMutability": "view",
+            "payable": false,
+            "inputs": [],
+            "outputs": [
+                {
+                    "type": "bytes4",
+                    "name": ""
+                }
+            ]
+        },
+        {
+            "type": "function",
+            "name": "nodes",
+            "constant": true,
+            "stateMutability": "view",
+            "payable": false,
+            "inputs": [
+                {
+                    "type": "uint256",
+                    "name": "nodeId"
+                }
+            ],
+            "outputs": [
+                {
+                    "type": "uint256",
+                    "name": "id"
+                },
+                {
+                    "type": "bytes",
+                    "name": "ip"
+                },
+                {
+                    "type": "string",
+                    "name": "domainName"
+                },
+                {
+                    "type": "address",
+                    "name": "nodeAddress"
+                },
+                {
+                    "type": "uint16",
+                    "name": "port"
+                }
+            ]
+        },
+        {
+            "type": "function",
+            "name": "registerNode",
+            "constant": false,
+            "payable": false,
+            "inputs": [
+                {
+                    "type": "bytes",
+                    "name": "ip"
+                },
+                {
+                    "type": "uint16",
+                    "name": "port"
+                }
+            ],
+            "outputs": []
+        },
+        {
+            "type": "function",
+            "name": "registerPassiveNode",
+            "constant": false,
+            "payable": false,
+            "inputs": [
+                {
+                    "type": "bytes",
+                    "name": "ip"
+                },
+                {
+                    "type": "uint16",
+                    "name": "port"
+                }
+            ],
+            "outputs": []
+        },
+        {
+            "type": "function",
+            "name": "requestChangeAddress",
+            "constant": false,
+            "payable": false,
+            "inputs": [
+                {
+                    "type": "uint256",
+                    "name": "nodeId"
+                },
+                {
+                    "type": "address",
+                    "name": "newAddress"
+                }
+            ],
+            "outputs": []
+        },
+        {
+            "type": "function",
+            "name": "setAuthority",
+            "constant": false,
+            "payable": false,
+            "inputs": [
+                {
+                    "type": "address",
+                    "name": "newAuthority"
+                }
+            ],
+            "outputs": []
+        },
+        {
+            "type": "function",
+            "name": "setDomainName",
+            "constant": false,
+            "payable": false,
+            "inputs": [
+                {
+                    "type": "uint256",
+                    "name": "nodeId"
+                },
+                {
+                    "type": "string",
+                    "name": "name"
+                }
+            ],
+            "outputs": []
+        },
+        {
+            "type": "function",
+            "name": "setIpAddress",
+            "constant": false,
+            "payable": false,
+            "inputs": [
+                {
+                    "type": "uint256",
+                    "name": "nodeId"
+                },
+                {
+                    "type": "bytes",
+                    "name": "ip"
+                },
+                {
+                    "type": "uint16",
+                    "name": "port"
+                }
+            ],
+            "outputs": []
+        }
+    ],
+    "MirageAccessManager": [
+        {
+            "type": "error",
+            "name": "AccessManagerAlreadyScheduled",
+            "inputs": [
+                {
+                    "type": "bytes32",
+                    "name": "operationId"
+                }
+            ]
+        },
+        {
+            "type": "error",
+            "name": "AccessManagerBadConfirmation",
+            "inputs": []
+        },
+        {
+            "type": "error",
+            "name": "AccessManagerExpired",
+            "inputs": [
+                {
+                    "type": "bytes32",
+                    "name": "operationId"
+                }
+            ]
+        },
+        {
+            "type": "error",
+            "name": "AccessManagerInvalidInitialAdmin",
+            "inputs": [
+                {
+                    "type": "address",
+                    "name": "initialAdmin"
+                }
+            ]
+        },
+        {
+            "type": "error",
+            "name": "AccessManagerLockedRole",
+            "inputs": [
+                {
+                    "type": "uint64",
+                    "name": "roleId"
+                }
+            ]
+        },
+        {
+            "type": "error",
+            "name": "AccessManagerNotReady",
+            "inputs": [
+                {
+                    "type": "bytes32",
+                    "name": "operationId"
+                }
+            ]
+        },
+        {
+            "type": "error",
+            "name": "AccessManagerNotScheduled",
+            "inputs": [
+                {
+                    "type": "bytes32",
+                    "name": "operationId"
+                }
+            ]
+        },
+        {
+            "type": "error",
+            "name": "AccessManagerUnauthorizedAccount",
+            "inputs": [
+                {
+                    "type": "address",
+                    "name": "msgsender"
+                },
+                {
+                    "type": "uint64",
+                    "name": "roleId"
+                }
+            ]
+        },
+        {
+            "type": "error",
+            "name": "AccessManagerUnauthorizedCall",
+            "inputs": [
+                {
+                    "type": "address",
+                    "name": "caller"
+                },
+                {
+                    "type": "address",
+                    "name": "target"
+                },
+                {
+                    "type": "bytes4",
+                    "name": "selector"
+                }
+            ]
+        },
+        {
+            "type": "error",
+            "name": "AccessManagerUnauthorizedCancel",
+            "inputs": [
+                {
+                    "type": "address",
+                    "name": "msgsender"
+                },
+                {
+                    "type": "address",
+                    "name": "caller"
+                },
+                {
+                    "type": "address",
+                    "name": "target"
+                },
+                {
+                    "type": "bytes4",
+                    "name": "selector"
+                }
+            ]
+        },
+        {
+            "type": "error",
+            "name": "AccessManagerUnauthorizedConsume",
+            "inputs": [
+                {
+                    "type": "address",
+                    "name": "target"
+                }
+            ]
+        },
+        {
+            "type": "error",
+            "name": "AddressEmptyCode",
+            "inputs": [
+                {
+                    "type": "address",
+                    "name": "target"
+                }
+            ]
+        },
+        {
+            "type": "error",
+            "name": "FailedCall",
+            "inputs": []
+        },
+        {
+            "type": "error",
+            "name": "InsufficientBalance",
+            "inputs": [
+                {
+                    "type": "uint256",
+                    "name": "balance"
+                },
+                {
+                    "type": "uint256",
+                    "name": "needed"
+                }
+            ]
+        },
+        {
+            "type": "error",
+            "name": "InvalidInitialization",
+            "inputs": []
+        },
+        {
+            "type": "error",
+            "name": "NotInitializing",
+            "inputs": []
+        },
+        {
+            "type": "error",
+            "name": "SafeCastOverflowedUintDowncast",
+            "inputs": [
+                {
+                    "type": "uint8",
+                    "name": "bits"
+                },
+                {
+                    "type": "uint256",
+                    "name": "value"
+                }
+            ]
+        },
+        {
+            "type": "event",
+            "anonymous": false,
+            "name": "Initialized",
+            "inputs": [
+                {
+                    "type": "uint64",
+                    "name": "version",
+                    "indexed": false
+                }
+            ]
+        },
+        {
+            "type": "event",
+            "anonymous": false,
+            "name": "OperationCanceled",
+            "inputs": [
+                {
+                    "type": "bytes32",
+                    "name": "operationId",
+                    "indexed": true
+                },
+                {
+                    "type": "uint32",
+                    "name": "nonce",
+                    "indexed": true
+                }
+            ]
+        },
+        {
+            "type": "event",
+            "anonymous": false,
+            "name": "OperationExecuted",
+            "inputs": [
+                {
+                    "type": "bytes32",
+                    "name": "operationId",
+                    "indexed": true
+                },
+                {
+                    "type": "uint32",
+                    "name": "nonce",
+                    "indexed": true
+                }
+            ]
+        },
+        {
+            "type": "event",
+            "anonymous": false,
+            "name": "OperationScheduled",
+            "inputs": [
+                {
+                    "type": "bytes32",
+                    "name": "operationId",
+                    "indexed": true
+                },
+                {
+                    "type": "uint32",
+                    "name": "nonce",
+                    "indexed": true
+                },
+                {
+                    "type": "uint48",
+                    "name": "schedule",
+                    "indexed": false
+                },
+                {
+                    "type": "address",
+                    "name": "caller",
+                    "indexed": false
+                },
+                {
+                    "type": "address",
+                    "name": "target",
+                    "indexed": false
+                },
+                {
+                    "type": "bytes",
+                    "name": "data",
+                    "indexed": false
+                }
+            ]
+        },
+        {
+            "type": "event",
+            "anonymous": false,
+            "name": "RoleAdminChanged",
+            "inputs": [
+                {
+                    "type": "uint64",
+                    "name": "roleId",
+                    "indexed": true
+                },
+                {
+                    "type": "uint64",
+                    "name": "admin",
+                    "indexed": true
+                }
+            ]
+        },
+        {
+            "type": "event",
+            "anonymous": false,
+            "name": "RoleGrantDelayChanged",
+            "inputs": [
+                {
+                    "type": "uint64",
+                    "name": "roleId",
+                    "indexed": true
+                },
+                {
+                    "type": "uint32",
+                    "name": "delay",
+                    "indexed": false
+                },
+                {
+                    "type": "uint48",
+                    "name": "since",
+                    "indexed": false
+                }
+            ]
+        },
+        {
+            "type": "event",
+            "anonymous": false,
+            "name": "RoleGranted",
+            "inputs": [
+                {
+                    "type": "uint64",
+                    "name": "roleId",
+                    "indexed": true
+                },
+                {
+                    "type": "address",
+                    "name": "account",
+                    "indexed": true
+                },
+                {
+                    "type": "uint32",
+                    "name": "delay",
+                    "indexed": false
+                },
+                {
+                    "type": "uint48",
+                    "name": "since",
+                    "indexed": false
+                },
+                {
+                    "type": "bool",
+                    "name": "newMember",
+                    "indexed": false
+                }
+            ]
+        },
+        {
+            "type": "event",
+            "anonymous": false,
+            "name": "RoleGuardianChanged",
+            "inputs": [
+                {
+                    "type": "uint64",
+                    "name": "roleId",
+                    "indexed": true
+                },
+                {
+                    "type": "uint64",
+                    "name": "guardian",
+                    "indexed": true
+                }
+            ]
+        },
+        {
+            "type": "event",
+            "anonymous": false,
+            "name": "RoleLabel",
+            "inputs": [
+                {
+                    "type": "uint64",
+                    "name": "roleId",
+                    "indexed": true
+                },
+                {
+                    "type": "string",
+                    "name": "label",
+                    "indexed": false
+                }
+            ]
+        },
+        {
+            "type": "event",
+            "anonymous": false,
+            "name": "RoleRevoked",
+            "inputs": [
+                {
+                    "type": "uint64",
+                    "name": "roleId",
+                    "indexed": true
+                },
+                {
+                    "type": "address",
+                    "name": "account",
+                    "indexed": true
+                }
+            ]
+        },
+        {
+            "type": "event",
+            "anonymous": false,
+            "name": "TargetAdminDelayUpdated",
+            "inputs": [
+                {
+                    "type": "address",
+                    "name": "target",
+                    "indexed": true
+                },
+                {
+                    "type": "uint32",
+                    "name": "delay",
+                    "indexed": false
+                },
+                {
+                    "type": "uint48",
+                    "name": "since",
+                    "indexed": false
+                }
+            ]
+        },
+        {
+            "type": "event",
+            "anonymous": false,
+            "name": "TargetClosed",
+            "inputs": [
+                {
+                    "type": "address",
+                    "name": "target",
+                    "indexed": true
+                },
+                {
+                    "type": "bool",
+                    "name": "closed",
+                    "indexed": false
+                }
+            ]
+        },
+        {
+            "type": "event",
+            "anonymous": false,
+            "name": "TargetFunctionRoleUpdated",
+            "inputs": [
+                {
+                    "type": "address",
+                    "name": "target",
+                    "indexed": true
+                },
+                {
+                    "type": "bytes4",
+                    "name": "selector",
+                    "indexed": false
+                },
+                {
+                    "type": "uint64",
+                    "name": "roleId",
+                    "indexed": true
+                }
+            ]
+        },
+        {
+            "type": "function",
+            "name": "ADMIN_ROLE",
+            "constant": true,
+            "stateMutability": "view",
+            "payable": false,
+            "inputs": [],
+            "outputs": [
+                {
+                    "type": "uint64",
+                    "name": ""
+                }
+            ]
+        },
+        {
+            "type": "function",
+            "name": "PUBLIC_ROLE",
+            "constant": true,
+            "stateMutability": "view",
+            "payable": false,
+            "inputs": [],
+            "outputs": [
+                {
+                    "type": "uint64",
+                    "name": ""
+                }
+            ]
+        },
+        {
+            "type": "function",
+            "name": "canCall",
+            "constant": true,
+            "stateMutability": "view",
+            "payable": false,
+            "inputs": [
+                {
+                    "type": "address",
+                    "name": "caller"
+                },
+                {
+                    "type": "address",
+                    "name": "target"
+                },
+                {
+                    "type": "bytes4",
+                    "name": "selector"
+                }
+            ],
+            "outputs": [
+                {
+                    "type": "bool",
+                    "name": "immediate"
+                },
+                {
+                    "type": "uint32",
+                    "name": "delay"
+                }
+            ]
+        },
+        {
+            "type": "function",
+            "name": "cancel",
+            "constant": false,
+            "payable": false,
+            "inputs": [
+                {
+                    "type": "address",
+                    "name": "caller"
+                },
+                {
+                    "type": "address",
+                    "name": "target"
+                },
+                {
+                    "type": "bytes",
+                    "name": "data"
+                }
+            ],
+            "outputs": [
+                {
+                    "type": "uint32",
+                    "name": ""
+                }
+            ]
+        },
+        {
+            "type": "function",
+            "name": "consumeScheduledOp",
+            "constant": false,
+            "payable": false,
+            "inputs": [
+                {
+                    "type": "address",
+                    "name": "caller"
+                },
+                {
+                    "type": "bytes",
+                    "name": "data"
+                }
+            ],
+            "outputs": []
+        },
+        {
+            "type": "function",
+            "name": "execute",
+            "constant": false,
+            "stateMutability": "payable",
+            "payable": true,
+            "inputs": [
+                {
+                    "type": "address",
+                    "name": "target"
+                },
+                {
+                    "type": "bytes",
+                    "name": "data"
+                }
+            ],
+            "outputs": [
+                {
+                    "type": "uint32",
+                    "name": ""
+                }
+            ]
+        },
+        {
+            "type": "function",
+            "name": "expiration",
+            "constant": true,
+            "stateMutability": "view",
+            "payable": false,
+            "inputs": [],
+            "outputs": [
+                {
+                    "type": "uint32",
+                    "name": ""
+                }
+            ]
+        },
+        {
+            "type": "function",
+            "name": "getAccess",
+            "constant": true,
+            "stateMutability": "view",
+            "payable": false,
+            "inputs": [
+                {
+                    "type": "uint64",
+                    "name": "roleId"
+                },
+                {
+                    "type": "address",
+                    "name": "account"
+                }
+            ],
+            "outputs": [
+                {
+                    "type": "uint48",
+                    "name": "since"
+                },
+                {
+                    "type": "uint32",
+                    "name": "currentDelay"
+                },
+                {
+                    "type": "uint32",
+                    "name": "pendingDelay"
+                },
+                {
+                    "type": "uint48",
+                    "name": "effect"
+                }
+            ]
+        },
+        {
+            "type": "function",
+            "name": "getNonce",
+            "constant": true,
+            "stateMutability": "view",
+            "payable": false,
+            "inputs": [
+                {
+                    "type": "bytes32",
+                    "name": "id"
+                }
+            ],
+            "outputs": [
+                {
+                    "type": "uint32",
+                    "name": ""
+                }
+            ]
+        },
+        {
+            "type": "function",
+            "name": "getRoleAdmin",
+            "constant": true,
+            "stateMutability": "view",
+            "payable": false,
+            "inputs": [
+                {
+                    "type": "uint64",
+                    "name": "roleId"
+                }
+            ],
+            "outputs": [
+                {
+                    "type": "uint64",
+                    "name": ""
+                }
+            ]
+        },
+        {
+            "type": "function",
+            "name": "getRoleGrantDelay",
+            "constant": true,
+            "stateMutability": "view",
+            "payable": false,
+            "inputs": [
+                {
+                    "type": "uint64",
+                    "name": "roleId"
+                }
+            ],
+            "outputs": [
+                {
+                    "type": "uint32",
+                    "name": ""
+                }
+            ]
+        },
+        {
+            "type": "function",
+            "name": "getRoleGuardian",
+            "constant": true,
+            "stateMutability": "view",
+            "payable": false,
+            "inputs": [
+                {
+                    "type": "uint64",
+                    "name": "roleId"
+                }
+            ],
+            "outputs": [
+                {
+                    "type": "uint64",
+                    "name": ""
+                }
+            ]
+        },
+        {
+            "type": "function",
+            "name": "getSchedule",
+            "constant": true,
+            "stateMutability": "view",
+            "payable": false,
+            "inputs": [
+                {
+                    "type": "bytes32",
+                    "name": "id"
+                }
+            ],
+            "outputs": [
+                {
+                    "type": "uint48",
+                    "name": ""
+                }
+            ]
+        },
+        {
+            "type": "function",
+            "name": "getTargetAdminDelay",
+            "constant": true,
+            "stateMutability": "view",
+            "payable": false,
+            "inputs": [
+                {
+                    "type": "address",
+                    "name": "target"
+                }
+            ],
+            "outputs": [
+                {
+                    "type": "uint32",
+                    "name": ""
+                }
+            ]
+        },
+        {
+            "type": "function",
+            "name": "getTargetFunctionRole",
+            "constant": true,
+            "stateMutability": "view",
+            "payable": false,
+            "inputs": [
+                {
+                    "type": "address",
+                    "name": "target"
+                },
+                {
+                    "type": "bytes4",
+                    "name": "selector"
+                }
+            ],
+            "outputs": [
+                {
+                    "type": "uint64",
+                    "name": ""
+                }
+            ]
+        },
+        {
+            "type": "function",
+            "name": "grantRole",
+            "constant": false,
+            "payable": false,
+            "inputs": [
+                {
+                    "type": "uint64",
+                    "name": "roleId"
+                },
+                {
+                    "type": "address",
+                    "name": "account"
+                },
+                {
+                    "type": "uint32",
+                    "name": "executionDelay"
+                }
+            ],
+            "outputs": []
+        },
+        {
+            "type": "function",
+            "name": "hasRole",
+            "constant": true,
+            "stateMutability": "view",
+            "payable": false,
+            "inputs": [
+                {
+                    "type": "uint64",
+                    "name": "roleId"
+                },
+                {
+                    "type": "address",
+                    "name": "account"
+                }
+            ],
+            "outputs": [
+                {
+                    "type": "bool",
+                    "name": "isMember"
+                },
+                {
+                    "type": "uint32",
+                    "name": "executionDelay"
+                }
+            ]
+        },
+        {
+            "type": "function",
+            "name": "hashOperation",
+            "constant": true,
+            "stateMutability": "view",
+            "payable": false,
+            "inputs": [
+                {
+                    "type": "address",
+                    "name": "caller"
+                },
+                {
+                    "type": "address",
+                    "name": "target"
+                },
+                {
+                    "type": "bytes",
+                    "name": "data"
+                }
+            ],
+            "outputs": [
+                {
+                    "type": "bytes32",
+                    "name": ""
+                }
+            ]
+        },
+        {
+            "type": "function",
+            "name": "initialize",
+            "constant": false,
+            "payable": false,
+            "inputs": [
+                {
+                    "type": "address",
+                    "name": "initialAdmin"
+                }
+            ],
+            "outputs": []
+        },
+        {
+            "type": "function",
+            "name": "isTargetClosed",
+            "constant": true,
+            "stateMutability": "view",
+            "payable": false,
+            "inputs": [
+                {
+                    "type": "address",
+                    "name": "target"
+                }
+            ],
+            "outputs": [
+                {
+                    "type": "bool",
+                    "name": ""
+                }
+            ]
+        },
+        {
+            "type": "function",
+            "name": "labelRole",
+            "constant": false,
+            "payable": false,
+            "inputs": [
+                {
+                    "type": "uint64",
+                    "name": "roleId"
+                },
+                {
+                    "type": "string",
+                    "name": "label"
+                }
+            ],
+            "outputs": []
+        },
+        {
+            "type": "function",
+            "name": "minSetback",
+            "constant": true,
+            "stateMutability": "view",
+            "payable": false,
+            "inputs": [],
+            "outputs": [
+                {
+                    "type": "uint32",
+                    "name": ""
+                }
+            ]
+        },
+        {
+            "type": "function",
+            "name": "multicall",
+            "constant": false,
+            "payable": false,
+            "inputs": [
+                {
+                    "type": "bytes[]",
+                    "name": "data"
+                }
+            ],
+            "outputs": [
+                {
+                    "type": "bytes[]",
+                    "name": "results"
+                }
+            ]
+        },
+        {
+            "type": "function",
+            "name": "renounceRole",
+            "constant": false,
+            "payable": false,
+            "inputs": [
+                {
+                    "type": "uint64",
+                    "name": "roleId"
+                },
+                {
+                    "type": "address",
+                    "name": "callerConfirmation"
+                }
+            ],
+            "outputs": []
+        },
+        {
+            "type": "function",
+            "name": "revokeRole",
+            "constant": false,
+            "payable": false,
+            "inputs": [
+                {
+                    "type": "uint64",
+                    "name": "roleId"
+                },
+                {
+                    "type": "address",
+                    "name": "account"
+                }
+            ],
+            "outputs": []
+        },
+        {
+            "type": "function",
+            "name": "schedule",
+            "constant": false,
+            "payable": false,
+            "inputs": [
+                {
+                    "type": "address",
+                    "name": "target"
+                },
+                {
+                    "type": "bytes",
+                    "name": "data"
+                },
+                {
+                    "type": "uint48",
+                    "name": "when"
+                }
+            ],
+            "outputs": [
+                {
+                    "type": "bytes32",
+                    "name": "operationId"
+                },
+                {
+                    "type": "uint32",
+                    "name": "nonce"
+                }
+            ]
+        },
+        {
+            "type": "function",
+            "name": "setGrantDelay",
+            "constant": false,
+            "payable": false,
+            "inputs": [
+                {
+                    "type": "uint64",
+                    "name": "roleId"
+                },
+                {
+                    "type": "uint32",
+                    "name": "newDelay"
+                }
+            ],
+            "outputs": []
+        },
+        {
+            "type": "function",
+            "name": "setRoleAdmin",
+            "constant": false,
+            "payable": false,
+            "inputs": [
+                {
+                    "type": "uint64",
+                    "name": "roleId"
+                },
+                {
+                    "type": "uint64",
+                    "name": "admin"
+                }
+            ],
+            "outputs": []
+        },
+        {
+            "type": "function",
+            "name": "setRoleGuardian",
+            "constant": false,
+            "payable": false,
+            "inputs": [
+                {
+                    "type": "uint64",
+                    "name": "roleId"
+                },
+                {
+                    "type": "uint64",
+                    "name": "guardian"
+                }
+            ],
+            "outputs": []
+        },
+        {
+            "type": "function",
+            "name": "setTargetAdminDelay",
+            "constant": false,
+            "payable": false,
+            "inputs": [
+                {
+                    "type": "address",
+                    "name": "target"
+                },
+                {
+                    "type": "uint32",
+                    "name": "newDelay"
+                }
+            ],
+            "outputs": []
+        },
+        {
+            "type": "function",
+            "name": "setTargetClosed",
+            "constant": false,
+            "payable": false,
+            "inputs": [
+                {
+                    "type": "address",
+                    "name": "target"
+                },
+                {
+                    "type": "bool",
+                    "name": "closed"
+                }
+            ],
+            "outputs": []
+        },
+        {
+            "type": "function",
+            "name": "setTargetFunctionRole",
+            "constant": false,
+            "payable": false,
+            "inputs": [
+                {
+                    "type": "address",
+                    "name": "target"
+                },
+                {
+                    "type": "bytes4[]",
+                    "name": "selectors"
+                },
+                {
+                    "type": "uint64",
+                    "name": "roleId"
+                }
+            ],
+            "outputs": []
+        },
+        {
+            "type": "function",
+            "name": "updateAuthority",
+            "constant": false,
+            "payable": false,
+            "inputs": [
+                {
+                    "type": "address",
+                    "name": "target"
+                },
+                {
+                    "type": "address",
+                    "name": "newAuthority"
+                }
+            ],
+            "outputs": []
+        }
+    ],
+    "Status": [
+        {
+            "type": "error",
+            "name": "AccessManagedInvalidAuthority",
+            "inputs": [
+                {
+                    "type": "address",
+                    "name": "authority"
+                }
+            ]
+        },
+        {
+            "type": "error",
+            "name": "AccessManagedRequiredDelay",
+            "inputs": [
+                {
+                    "type": "address",
+                    "name": "caller"
+                },
+                {
+                    "type": "uint32",
+                    "name": "delay"
+                }
+            ]
+        },
+        {
+            "type": "error",
+            "name": "AccessManagedUnauthorized",
+            "inputs": [
+                {
+                    "type": "address",
+                    "name": "caller"
+                }
+            ]
+        },
+        {
+            "type": "error",
+            "name": "InvalidInitialization",
+            "inputs": []
+        },
+        {
+            "type": "error",
+            "name": "NodeAlreadyWhitelisted",
+            "inputs": [
+                {
+                    "type": "uint256",
+                    "name": "nodeId"
+                }
+            ]
+        },
+        {
+            "type": "error",
+            "name": "NodeDoesNotExist",
+            "inputs": [
+                {
+                    "type": "uint256",
+                    "name": "nodeId"
+                }
+            ]
+        },
+        {
+            "type": "error",
+            "name": "NodeNotWhitelisted",
+            "inputs": [
+                {
+                    "type": "uint256",
+                    "name": "nodeId"
+                }
+            ]
+        },
+        {
+            "type": "error",
+            "name": "NotInitializing",
+            "inputs": []
+        },
+        {
+            "type": "event",
+            "anonymous": false,
+            "name": "AuthorityUpdated",
+            "inputs": [
+                {
+                    "type": "address",
+                    "name": "authority",
+                    "indexed": false
+                }
+            ]
+        },
+        {
+            "type": "event",
+            "anonymous": false,
+            "name": "HeartbeatIntervalChanged",
+            "inputs": [
+                {
+                    "type": "uint256",
+                    "name": "interval",
+                    "indexed": false
+                }
+            ]
+        },
+        {
+            "type": "event",
+            "anonymous": false,
+            "name": "HeartbeatSignal",
+            "inputs": [
+                {
+                    "type": "uint256",
+                    "name": "nodeId",
+                    "indexed": true
+                },
+                {
+                    "type": "uint256",
+                    "name": "timestamp",
+                    "indexed": false
+                }
+            ]
+        },
+        {
+            "type": "event",
+            "anonymous": false,
+            "name": "Initialized",
+            "inputs": [
+                {
+                    "type": "uint64",
+                    "name": "version",
+                    "indexed": false
+                }
+            ]
+        },
+        {
+            "type": "function",
+            "name": "alive",
+            "constant": false,
+            "payable": false,
+            "inputs": [],
+            "outputs": []
+        },
+        {
+            "type": "function",
+            "name": "authority",
+            "constant": true,
+            "stateMutability": "view",
+            "payable": false,
+            "inputs": [],
+            "outputs": [
+                {
+                    "type": "address",
+                    "name": ""
+                }
+            ]
+        },
+        {
+            "type": "function",
+            "name": "getNodesEligibleForCommittee",
+            "constant": true,
+            "stateMutability": "view",
+            "payable": false,
+            "inputs": [],
+            "outputs": [
+                {
+                    "type": "uint256[]",
+                    "name": "nodeIds"
+                }
+            ]
+        },
+        {
+            "type": "function",
+            "name": "getWhitelistedNodes",
+            "constant": true,
+            "stateMutability": "view",
+            "payable": false,
+            "inputs": [],
+            "outputs": [
+                {
+                    "type": "uint256[]",
+                    "name": "nodeIds"
+                }
+            ]
+        },
+        {
+            "type": "function",
+            "name": "heartbeatInterval",
+            "constant": true,
+            "stateMutability": "view",
+            "payable": false,
+            "inputs": [],
+            "outputs": [
+                {
+                    "type": "uint256",
+                    "name": ""
+                }
+            ]
+        },
+        {
+            "type": "function",
+            "name": "initialize",
+            "constant": false,
+            "payable": false,
+            "inputs": [
+                {
+                    "type": "address",
+                    "name": "initialAuthority"
+                },
+                {
+                    "type": "address",
+                    "name": "nodesAddress"
+                }
+            ],
+            "outputs": []
+        },
+        {
+            "type": "function",
+            "name": "isConsumingScheduledOp",
+            "constant": true,
+            "stateMutability": "view",
+            "payable": false,
+            "inputs": [],
+            "outputs": [
+                {
+                    "type": "bytes4",
+                    "name": ""
+                }
+            ]
+        },
+        {
+            "type": "function",
+            "name": "isHealthy",
+            "constant": true,
+            "stateMutability": "view",
+            "payable": false,
+            "inputs": [
+                {
+                    "type": "uint256",
+                    "name": "nodeId"
+                }
+            ],
+            "outputs": [
+                {
+                    "type": "bool",
+                    "name": "healthy"
+                }
+            ]
+        },
+        {
+            "type": "function",
+            "name": "isWhitelisted",
+            "constant": true,
+            "stateMutability": "view",
+            "payable": false,
+            "inputs": [
+                {
+                    "type": "uint256",
+                    "name": "nodeId"
+                }
+            ],
+            "outputs": [
+                {
+                    "type": "bool",
+                    "name": "whitelisted"
+                }
+            ]
+        },
+        {
+            "type": "function",
+            "name": "lastHeartbeatTimestamp",
+            "constant": true,
+            "stateMutability": "view",
+            "payable": false,
+            "inputs": [
+                {
+                    "type": "uint256",
+                    "name": "id"
+                }
+            ],
+            "outputs": [
+                {
+                    "type": "uint256",
+                    "name": "timestamp"
+                }
+            ]
+        },
+        {
+            "type": "function",
+            "name": "nodes",
+            "constant": true,
+            "stateMutability": "view",
+            "payable": false,
+            "inputs": [],
+            "outputs": [
+                {
+                    "type": "address",
+                    "name": ""
+                }
+            ]
+        },
+        {
+            "type": "function",
+            "name": "removeNodeFromWhitelist",
+            "constant": false,
+            "payable": false,
+            "inputs": [
+                {
+                    "type": "uint256",
+                    "name": "nodeId"
+                }
+            ],
+            "outputs": []
+        },
+        {
+            "type": "function",
+            "name": "setAuthority",
+            "constant": false,
+            "payable": false,
+            "inputs": [
+                {
+                    "type": "address",
+                    "name": "newAuthority"
+                }
+            ],
+            "outputs": []
+        },
+        {
+            "type": "function",
+            "name": "setHeartbeatInterval",
+            "constant": false,
+            "payable": false,
+            "inputs": [
+                {
+                    "type": "uint256",
+                    "name": "interval"
+                }
+            ],
+            "outputs": []
+        },
+        {
+            "type": "function",
+            "name": "whitelistNode",
+            "constant": false,
+            "payable": false,
+            "inputs": [
+                {
+                    "type": "uint256",
+                    "name": "nodeId"
+                }
+            ],
+            "outputs": []
+        }
+    ],
+    "Staking": [
+        {
+            "type": "error",
+            "name": "AccessManagedInvalidAuthority",
+            "inputs": [
+                {
+                    "type": "address",
+                    "name": "authority"
+                }
+            ]
+        },
+        {
+            "type": "error",
+            "name": "AccessManagedRequiredDelay",
+            "inputs": [
+                {
+                    "type": "address",
+                    "name": "caller"
+                },
+                {
+                    "type": "uint32",
+                    "name": "delay"
+                }
+            ]
+        },
+        {
+            "type": "error",
+            "name": "AccessManagedUnauthorized",
+            "inputs": [
+                {
+                    "type": "address",
+                    "name": "caller"
+                }
+            ]
+        },
+        {
+            "type": "error",
+            "name": "InvalidInitialization",
+            "inputs": []
+        },
+        {
+            "type": "error",
+            "name": "NotImplemented",
+            "inputs": []
+        },
+        {
+            "type": "error",
+            "name": "NotInitializing",
+            "inputs": []
+        },
+        {
+            "type": "event",
+            "anonymous": false,
+            "name": "AuthorityUpdated",
+            "inputs": [
+                {
+                    "type": "address",
+                    "name": "authority",
+                    "indexed": false
+                }
+            ]
+        },
+        {
+            "type": "event",
+            "anonymous": false,
+            "name": "Initialized",
+            "inputs": [
+                {
+                    "type": "uint64",
+                    "name": "version",
+                    "indexed": false
+                }
+            ]
+        },
+        {
+            "type": "function",
+            "name": "authority",
+            "constant": true,
+            "stateMutability": "view",
+            "payable": false,
+            "inputs": [],
+            "outputs": [
+                {
+                    "type": "address",
+                    "name": ""
+                }
+            ]
+        },
+        {
+            "type": "function",
+            "name": "getStakedAmount",
+            "constant": true,
+            "stateMutability": "view",
+            "payable": false,
+            "inputs": [],
+            "outputs": [
+                {
+                    "type": "uint256",
+                    "name": "amount"
+                }
+            ]
+        },
+        {
+            "type": "function",
+            "name": "initialize",
+            "constant": false,
+            "payable": false,
+            "inputs": [
+                {
+                    "type": "address",
+                    "name": "initialAuthority"
+                }
+            ],
+            "outputs": []
+        },
+        {
+            "type": "function",
+            "name": "isConsumingScheduledOp",
+            "constant": true,
+            "stateMutability": "view",
+            "payable": false,
+            "inputs": [],
+            "outputs": [
+                {
+                    "type": "bytes4",
+                    "name": ""
+                }
+            ]
+        },
+        {
+            "type": "function",
+            "name": "retrieve",
+            "constant": false,
+            "payable": false,
+            "inputs": [
+                {
+                    "type": "uint256",
+                    "name": ""
+                }
+            ],
+            "outputs": []
+        },
+        {
+            "type": "function",
+            "name": "setAuthority",
+            "constant": false,
+            "payable": false,
+            "inputs": [
+                {
+                    "type": "address",
+                    "name": "newAuthority"
+                }
+            ],
+            "outputs": []
+        },
+        {
+            "type": "function",
+            "name": "stake",
+            "constant": false,
+            "payable": false,
+            "inputs": [],
+            "outputs": []
+        }
+    ]
+}
