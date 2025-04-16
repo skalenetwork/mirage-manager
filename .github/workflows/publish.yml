@@ -65,7 +65,7 @@ jobs:
         commit: ${{ github.sha }}
         tag: ${{ env.VERSION }}
         prerelease: ${{ env.PRERELEASE }}
-        artifacts: "data/playa-manager-*-abi.json"
+        artifacts: "data/mirage-manager-*-abi.json"
 
   abi:
     runs-on: ubuntu-latest
