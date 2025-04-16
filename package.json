@@ -1,5 +1,5 @@
 {
-  "name": "playa-manager",
+  "name": "mirage-manager",
   "packageManager": "yarn@4.7.0",
   "devDependencies": {
     "@eslint/js": "^9.22.0",
@@ -44,7 +44,7 @@
     "hooks": "git config core.hooksPath .githooks",
     "lint": "yarn solhint 'contracts/**/*.sol'",
     "no-hooks": "git config core.hooksPath .git/hooks",
-    "slither": "yarn compile && slither --hardhat-ignore-compile .",
+    "slither": "yarn cleanCompile && slither --hardhat-ignore-compile .",
     "test": "yarn tsc && npx hardhat test",
     "tsc": "yarn exec tsc --noEmit"
   },
