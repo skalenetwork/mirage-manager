@@ -2525,6 +2525,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@skalenetwork/skale-manager-interfaces@npm:3.2.0-develop.3":
+  version: 3.2.0-develop.3
+  resolution: "@skalenetwork/skale-manager-interfaces@npm:3.2.0-develop.3"
+  checksum: 10c0/6da6e9c48ceaf3f73efc7d9b781af51d954e670b760672e420bbc0b890d8d92c0f259bb948447414ebdcd4dba37b6323b068104ee32c9aec10942d8b3d0a7eb0
+  languageName: node
+  linkType: hard
+
 "@skalenetwork/upgrade-tools@npm:3.0.0-develop.42":
   version: 3.0.0-develop.42
   resolution: "@skalenetwork/upgrade-tools@npm:3.0.0-develop.42"
@@ -6027,6 +6034,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"hardhat-dependency-compiler@npm:^1.2.1":
+  version: 1.2.1
+  resolution: "hardhat-dependency-compiler@npm:1.2.1"
+  peerDependencies:
+    hardhat: ^2.0.0
+  checksum: 10c0/d4373422849fe8851d06f1151f51fe17d00fb9f3425cc77cce53bd2d0c9f325d4f1520f2aa8eae305b3a0d012b9841b398d57c3f2d5e7a3d29b6dd4aaebc1f6e
+  languageName: node
+  linkType: hard
+
 "hardhat-gas-reporter@npm:^1.0.8":
   version: 1.0.10
   resolution: "hardhat-gas-reporter@npm:1.0.10"
@@ -7590,6 +7606,7 @@ __metadata:
     "@openzeppelin/upgrades-core": "npm:^1.42.2"
     "@skalenetwork/professional-interfaces": "npm:0.1.0-initialize-node-and-committee.0"
     "@skalenetwork/skale-contracts-ethers-v6": "npm:^1.0.2-develop.61"
+    "@skalenetwork/skale-manager-interfaces": "npm:3.2.0-develop.3"
     "@skalenetwork/upgrade-tools": "npm:3.0.0-develop.42"
     "@typechain/ethers-v6": "npm:^0.5.0"
     "@typechain/hardhat": "npm:^9.0.0"
@@ -7610,6 +7627,7 @@ __metadata:
     ethers: "npm:^6.4.0"
     globals: "npm:^16.0.0"
     hardhat: "npm:^2.22.19"
+    hardhat-dependency-compiler: "npm:^1.2.1"
     hardhat-gas-reporter: "npm:^1.0.8"
     ip: "npm:2.0.1"
     lodash: "npm:^4.17.21"

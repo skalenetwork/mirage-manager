@@ -4,10 +4,23 @@ import { promises as fs } from 'fs';
 import {
     getVersion
 } from '@skalenetwork/upgrade-tools';
-import { Committee, DKG, INodes, Nodes, PlayaAccessManager, Staking, Status } from "../typechain-types";
+import {
+    Committee,
+    DKG,
+    IDkg,
+    INodes,
+    Nodes,
+    PlayaAccessManager,
+    Staking,
+    Status
+} from "../typechain-types";
 import { AddressLike } from "ethers";
 import { skaleContracts } from "@skalenetwork/skale-contracts-ethers-v6";
-import { SchainsInternalContract, NodesContract, KeyStorageContract } from "./types/contracts";
+import {
+    IKeyStorage,
+    INodes as INodesInSkaleManager,
+    ISchainsInternal,
+} from "../typechain-types/@skalenetwork/skale-manager-interfaces";
 
 
 export const contracts = [
@@ -28,18 +41,18 @@ interface DeployedContracts {
     Status: Status
 }
 
-function getEnvVar(name: string, errorMessage: string): string {
+function getEnvVar(name: string): string {
     const value = process.env[name];
     if (!value) {
-        console.log(chalk.red(errorMessage));
+        console.log(chalk.red(`Set ${name} environment variable.`));
         process.exit(1);
     }
     return value;
 }
 
 async function getSkaleManagerInstance() {
-    const target = getEnvVar("TARGET", "Specify desired skale-manager instance. Set 'TARGET' env var.");
-    const mainnetEndpoint = getEnvVar("MAINNET_ENDPOINT", "Set 'MAINNET_ENDPOINT' environment variable.");
+    const target = getEnvVar("TARGET");
+    const mainnetEndpoint = getEnvVar("MAINNET_ENDPOINT");
     const mainnetProvider = new ethers.JsonRpcProvider(mainnetEndpoint);
     const network = await skaleContracts.getNetworkByProvider(mainnetProvider);
     const project = network.getProject("skale-manager");
@@ -47,10 +60,10 @@ async function getSkaleManagerInstance() {
 }
 
 async function fetchNodes() {
-    const playaChainHash = getEnvVar("CHAIN_HASH", "Set 'CHAIN_HASH' environment variable.");
+    const playaChainHash = getEnvVar("CHAIN_HASH");
     const skaleManagerInstance = await getSkaleManagerInstance();
-    const nodes = await skaleManagerInstance.getContract("Nodes") as NodesContract;
-    const schainsInternal = await skaleManagerInstance.getContract("SchainsInternal") as SchainsInternalContract;
+    const nodes = await skaleManagerInstance.getContract("Nodes") as unknown as INodesInSkaleManager;
+    const schainsInternal = await skaleManagerInstance.getContract("SchainsInternal") as unknown as ISchainsInternal;
     const nodesInGroup = await schainsInternal.getNodesInGroup(playaChainHash);
     const nodeList: INodes.NodeStruct[] = [];
     for (const nodeId of nodesInGroup) {
@@ -72,9 +85,9 @@ async function fetchNodes() {
 }
 
 async function fetchDkgCommonPublicKey() {
-    const playaChainHash = getEnvVar("CHAIN_HASH", "Set 'CHAIN_HASH' environment variable.");
+    const playaChainHash = getEnvVar("CHAIN_HASH");
     const skaleManagerInstance = await getSkaleManagerInstance();
-    const dkg = await skaleManagerInstance.getContract("KeyStorage") as KeyStorageContract;
+    const dkg = await skaleManagerInstance.getContract("KeyStorage") as unknown as IKeyStorage;
     const commonPublicKey = await dkg.getCommonPublicKey(playaChainHash);
     return commonPublicKey;
 }
@@ -142,7 +155,7 @@ const deployPlayaAccessManager = async (
 const deployCommittee = async (
     authority: PlayaAccessManager,
     nodes: Nodes,
-    commonPublicKey: [string, string, string, string]
+    commonPublicKey: IDkg.G2PointStruct
 ): Promise<Committee> => {
     return await deployContract(
         "Committee",

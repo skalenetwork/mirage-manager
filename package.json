@@ -55,8 +55,10 @@
     "@openzeppelin/upgrades-core": "^1.42.2",
     "@skalenetwork/professional-interfaces": "0.1.0-initialize-node-and-committee.0",
     "@skalenetwork/skale-contracts-ethers-v6": "^1.0.2-develop.61",
+    "@skalenetwork/skale-manager-interfaces": "3.2.0-develop.3",
     "@skalenetwork/upgrade-tools": "3.0.0-develop.42",
     "chalk": "^4",
-    "dotenv": "^16.5.0"
+    "dotenv": "^16.5.0",
+    "hardhat-dependency-compiler": "^1.2.1"
   }
 }
