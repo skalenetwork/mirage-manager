@@ -47,7 +47,7 @@ async function getSkaleManagerInstance() {
 }
 
 async function fetchNodes() {
-    const playaChainHash = getEnvVar("PLAYA_CHAIN_HASH", "Set 'PLAYA_CHAIN_HASH' environment variable.");
+    const playaChainHash = getEnvVar("CHAIN_HASH", "Set 'CHAIN_HASH' environment variable.");
     const skaleManagerInstance = await getSkaleManagerInstance();
     const nodes = await skaleManagerInstance.getContract("Nodes") as NodesContract;
     const schainsInternal = await skaleManagerInstance.getContract("SchainsInternal") as SchainsInternalContract;
@@ -72,7 +72,7 @@ async function fetchNodes() {
 }
 
 async function fetchDkgCommonPublicKey() {
-    const playaChainHash = getEnvVar("PLAYA_CHAIN_HASH", "Set 'PLAYA_CHAIN_HASH' environment variable.");
+    const playaChainHash = getEnvVar("CHAIN_HASH", "Set 'CHAIN_HASH' environment variable.");
     const skaleManagerInstance = await getSkaleManagerInstance();
     const dkg = await skaleManagerInstance.getContract("KeyStorage") as KeyStorageContract;
     const commonPublicKey = await dkg.getCommonPublicKey(playaChainHash);
