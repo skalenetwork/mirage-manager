@@ -60,11 +60,11 @@ async function getSkaleManagerInstance() {
 }
 
 async function fetchNodes() {
-    const playaChainHash = getEnvVar("CHAIN_HASH");
+    const mirageChainHash = getEnvVar("CHAIN_HASH");
     const skaleManagerInstance = await getSkaleManagerInstance();
     const nodes = await skaleManagerInstance.getContract("Nodes") as unknown as INodesInSkaleManager;
     const schainsInternal = await skaleManagerInstance.getContract("SchainsInternal") as unknown as ISchainsInternal;
-    const nodesInGroup = await schainsInternal.getNodesInGroup(playaChainHash);
+    const nodesInGroup = await schainsInternal.getNodesInGroup(mirageChainHash);
     const nodeList: INodes.NodeStruct[] = [];
     for (const nodeId of nodesInGroup) {
         const [ip, domainName ,nodeAddress, port] = await Promise.all([
@@ -85,10 +85,10 @@ async function fetchNodes() {
 }
 
 async function fetchDkgCommonPublicKey() {
-    const playaChainHash = getEnvVar("CHAIN_HASH");
+    const mirageChainHash = getEnvVar("CHAIN_HASH");
     const skaleManagerInstance = await getSkaleManagerInstance();
     const dkg = await skaleManagerInstance.getContract("KeyStorage") as unknown as IKeyStorage;
-    const commonPublicKey = await dkg.getCommonPublicKey(playaChainHash);
+    const commonPublicKey = await dkg.getCommonPublicKey(mirageChainHash);
     return commonPublicKey;
 }
 
