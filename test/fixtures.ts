@@ -35,7 +35,8 @@ const getIp = (): Uint8Array => ethers.randomBytes(4);
 // Fixtures
 
 const deploy = async () => {
-    const nodeList = await generateRandomNodes();
+    const initialNumberOfNodes = 22;
+    const nodeList = await generateRandomNodes(initialNumberOfNodes);
     const contracts = await productionDeploy(nodeList, commonPublicKey);
     return {
         committee: contracts.Committee,
