@@ -10,7 +10,7 @@ import {
     IDkg,
     INodes,
     Nodes,
-    PlayaAccessManager,
+    MirageAccessManager,
     Staking,
     Status
 } from "../typechain-types";
@@ -27,7 +27,7 @@ export const contracts = [
     "Committee",
     "DKG",
     "Nodes",
-    "PlayaAccessManager",
+    "MirageAccessManager",
     "Status",
     "Staking"
 ];
@@ -36,7 +36,7 @@ interface DeployedContracts {
     Committee: Committee,
     DKG: DKG,
     Nodes: Nodes,
-    PlayaAccessManager: PlayaAccessManager,
+    MirageAccessManager: MirageAccessManager,
     Staking: Staking,
     Status: Status
 }
@@ -98,27 +98,27 @@ export const deploy = async (nodeList?: INodes.NodeStruct[], commonPublicKey?: I
     nodeList = nodeList || await fetchNodes();
     commonPublicKey = commonPublicKey ||  await fetchDkgCommonPublicKey();
 
-    deployedContracts.PlayaAccessManager = await deployPlayaAccessManager(deployer);
+    deployedContracts.MirageAccessManager = await deployMirageAccessManager(deployer);
     deployedContracts.Nodes = await deployNodes(
-        deployedContracts.PlayaAccessManager,
+        deployedContracts.MirageAccessManager,
         nodeList
     );
     deployedContracts.Committee = await deployCommittee(
-        deployedContracts.PlayaAccessManager,
+        deployedContracts.MirageAccessManager,
         deployedContracts.Nodes,
         commonPublicKey
     );
     deployedContracts.DKG = await deployDkg(
-        deployedContracts.PlayaAccessManager,
+        deployedContracts.MirageAccessManager,
         deployedContracts.Committee,
         deployedContracts.Nodes
     );
     deployedContracts.Status = await deployStatus(
-        deployedContracts.PlayaAccessManager,
+        deployedContracts.MirageAccessManager,
         deployedContracts.Nodes
     );
     deployedContracts.Staking = await deployStaking(
-        deployedContracts.PlayaAccessManager
+        deployedContracts.MirageAccessManager
     );
 
     let response = await deployedContracts.Committee.setDkg(deployedContracts.DKG);
@@ -129,6 +129,10 @@ export const deploy = async (nodeList?: INodes.NodeStruct[], commonPublicKey?: I
     await response.wait();
     response = await deployedContracts.Nodes.setCommittee(deployedContracts.Committee);
     await response.wait();
+    response = await deployedContracts.Committee.setStaking(deployedContracts.Staking);
+    await response.wait();
+
+    await (await deployedContracts.Committee.setVersion(await getVersion())).wait();
 
     return deployedContracts;
 }
@@ -143,17 +147,17 @@ const deployContract = async (name: string, args: unknown[]) => {
     return instance;
 }
 
-const deployPlayaAccessManager = async (
+const deployMirageAccessManager = async (
     owner: AddressLike
-): Promise<PlayaAccessManager> => {
+): Promise<MirageAccessManager> => {
     return await deployContract(
-        "PlayaAccessManager",
+        "MirageAccessManager",
         [await ethers.resolveAddress(owner)]
-    ) as PlayaAccessManager;
+    ) as MirageAccessManager;
 }
 
 const deployCommittee = async (
-    authority: PlayaAccessManager,
+    authority: MirageAccessManager,
     nodes: Nodes,
     commonPublicKey: IDkg.G2PointStruct
 ): Promise<Committee> => {
@@ -167,7 +171,7 @@ const deployCommittee = async (
     ) as Committee;
 }
 
-const deployNodes = async (accessManager: PlayaAccessManager, nodeList: INodes.NodeStruct[]): Promise<Nodes> => {
+const deployNodes = async (accessManager: MirageAccessManager, nodeList: INodes.NodeStruct[]): Promise<Nodes> => {
     return await deployContract(
         "Nodes",
         [
@@ -177,7 +181,7 @@ const deployNodes = async (accessManager: PlayaAccessManager, nodeList: INodes.N
     ) as Nodes;
 }
 
-const deployDkg = async (authority: PlayaAccessManager, committee: Committee, nodes: Nodes): Promise<DKG> => {
+const deployDkg = async (authority: MirageAccessManager, committee: Committee, nodes: Nodes): Promise<DKG> => {
     return await deployContract(
         "DKG",
         [
@@ -188,7 +192,7 @@ const deployDkg = async (authority: PlayaAccessManager, committee: Committee, no
     ) as DKG;
 }
 
-const deployStatus = async (authority: PlayaAccessManager, nodes: Nodes): Promise<Status> => {
+const deployStatus = async (authority: MirageAccessManager, nodes: Nodes): Promise<Status> => {
     return await deployContract(
         "Status",
         [
@@ -198,7 +202,7 @@ const deployStatus = async (authority: PlayaAccessManager, nodes: Nodes): Promis
     ) as Status;
 }
 
-const deployStaking = async (authority: PlayaAccessManager): Promise<Staking> => {
+const deployStaking = async (authority: MirageAccessManager): Promise<Staking> => {
     return await deployContract(
         "Staking",
         [
@@ -215,7 +219,7 @@ const storeAddresses = async (deployedContracts: DeployedContracts, version: str
         console.log(`${contract}: ${addresses[contract]}`);
     }
     await fs.writeFile(
-        `data/playa-manager-${version}-${network.name}-contracts.json`,
+        `data/mirage-manager-${version}-${network.name}-contracts.json`,
         JSON.stringify(addresses, null, 4));
 }
 
