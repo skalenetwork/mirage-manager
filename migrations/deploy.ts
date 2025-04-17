@@ -92,11 +92,11 @@ async function fetchDkgCommonPublicKey() {
     return commonPublicKey;
 }
 
-export const deploy = async (): Promise<DeployedContracts> => {
+export const deploy = async (nodeList?: INodes.NodeStruct[], commonPublicKey?: IDkg.G2PointStruct): Promise<DeployedContracts> => {
     const [deployer] = await ethers.getSigners();
     const deployedContracts: DeployedContracts = {} as DeployedContracts;
-    const nodeList = await fetchNodes();
-    const commonPublicKey = await fetchDkgCommonPublicKey();
+    nodeList = nodeList || await fetchNodes();
+    commonPublicKey = commonPublicKey ||  await fetchDkgCommonPublicKey();
 
     deployedContracts.PlayaAccessManager = await deployPlayaAccessManager(deployer);
     deployedContracts.Nodes = await deployNodes(
