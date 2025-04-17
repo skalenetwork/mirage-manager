@@ -24,7 +24,8 @@ const config: HardhatUserConfig = {
       '@skalenetwork/skale-manager-interfaces/INodes.sol',
       '@skalenetwork/skale-manager-interfaces/ISchainsInternal.sol',
       '@skalenetwork/skale-manager-interfaces/IKeyStorage.sol'
-    ]
+    ],
+    keep: true
   }
 };
 
