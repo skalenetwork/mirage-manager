@@ -2504,6 +2504,16 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@skalenetwork/skale-contracts-ethers-v6@npm:^1.0.2-develop.30":
+  version: 1.0.2-merge.1
+  resolution: "@skalenetwork/skale-contracts-ethers-v6@npm:1.0.2-merge.1"
+  dependencies:
+    "@skalenetwork/skale-contracts": "npm:1.0.2-merge.1"
+    ethers: "npm:^6.13.5"
+  checksum: 10c0/36eff6f1e796d0274e06fcebf9b2e0f6b51222fd688c2ce08275ccb2490596223fbcf35608f34c62c70e5e68911b1d3cd7efe4f39c411b882963b14276881470
+  languageName: node
+  linkType: hard
+
 "@skalenetwork/skale-contracts-ethers-v6@npm:^1.0.2-develop.61":
   version: 1.0.2-develop.61
   resolution: "@skalenetwork/skale-contracts-ethers-v6@npm:1.0.2-develop.61"
@@ -2525,6 +2535,17 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@skalenetwork/skale-contracts@npm:1.0.2-merge.1":
+  version: 1.0.2-merge.1
+  resolution: "@skalenetwork/skale-contracts@npm:1.0.2-merge.1"
+  dependencies:
+    "@renovatebot/pep440": "npm:^3.0.20"
+    axios: "npm:^1.4.0"
+    semver: "npm:^7.6.0"
+  checksum: 10c0/ef113de2dd60fb48ad2ba7ae555972c004fa9edcf7d0d99983ba428ac307c999a4e98dbe3ac17714940eff743d4661edb7dc68e5fc014bcfb8721ea08013317b
+  languageName: node
+  linkType: hard
+
 "@skalenetwork/skale-manager-interfaces@npm:3.2.0-develop.3":
   version: 3.2.0-develop.3
   resolution: "@skalenetwork/skale-manager-interfaces@npm:3.2.0-develop.3"
@@ -2532,26 +2553,26 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@skalenetwork/upgrade-tools@npm:3.0.0-develop.42":
-  version: 3.0.0-develop.42
-  resolution: "@skalenetwork/upgrade-tools@npm:3.0.0-develop.42"
+"@skalenetwork/upgrade-tools@npm:3.0.0-326-upgrade-script-failed-to-submit-transactions-to-gnosis-safe.0":
+  version: 3.0.0-326-upgrade-script-failed-to-submit-transactions-to-gnosis-safe.0
+  resolution: "@skalenetwork/upgrade-tools@npm:3.0.0-326-upgrade-script-failed-to-submit-transactions-to-gnosis-safe.0"
   dependencies:
     "@safe-global/api-kit": "npm:^2.4.1"
     "@safe-global/protocol-kit": "npm:^5.0.1"
     "@safe-global/safe-core-sdk-types": "npm:^5.0.1"
-    "@skalenetwork/skale-contracts-ethers-v6": "npm:^1.0.2-develop.61"
+    "@skalenetwork/skale-contracts-ethers-v6": "npm:^1.0.2-develop.30"
     axios: "npm:^1.4.0"
     ethereumjs-util: "npm:^7.1.4"
     semaphore-async-await: "npm:^1.5.1"
   peerDependencies:
     "@nomicfoundation/hardhat-ethers": ^3.0.0
-    "@nomicfoundation/hardhat-verify": ^2.0.0
+    "@nomicfoundation/hardhat-verify": ^1.1.1
     "@openzeppelin/hardhat-upgrades": ^3.1.1
     "@openzeppelin/upgrades-core": ^1.27.1
     "@types/mocha": ^9.1.0
-    ethers: ^6.13.4
+    ethers: ^6.7.1
     hardhat: ^2.9.9
-  checksum: 10c0/222e1bf68586c4e5eb5429386cb4ebfb803ba3d1b29a3f720faf668a3c317c7f3e1220ac3e38c3887287e0601ef67823f7a321eec04c3327aa166ae247a6ab78
+  checksum: 10c0/fcba8c98e92445cfdb98de040b97431b9fa7e412a863df27813471ec243f729d244d291c2bda43e138845524fc1957b87636179bebcc7c132d04f73c280e759d
   languageName: node
   linkType: hard
 
@@ -7103,7 +7124,7 @@ __metadata:
     "@skalenetwork/professional-interfaces": "npm:0.1.0-develop.68"
     "@skalenetwork/skale-contracts-ethers-v6": "npm:^1.0.2-develop.61"
     "@skalenetwork/skale-manager-interfaces": "npm:3.2.0-develop.3"
-    "@skalenetwork/upgrade-tools": "npm:3.0.0-develop.42"
+    "@skalenetwork/upgrade-tools": "npm:3.0.0-326-upgrade-script-failed-to-submit-transactions-to-gnosis-safe.0"
     "@typechain/ethers-v6": "npm:^0.5.0"
     "@typechain/hardhat": "npm:^9.0.0"
     "@types/chai": "npm:^4.2.0"
