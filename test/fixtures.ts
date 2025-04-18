@@ -11,6 +11,7 @@ import { INodes, IDkg } from "../typechain-types";
 // Parameters
 
 const numberOfNodes = 50;
+const initialNumberOfNodes = 22;
 const nodeBalance = ethers.parseEther("1");
 export const commonPublicKey: IDkg.G2PointStruct = {
     x: {
@@ -35,7 +36,6 @@ const getIp = (): Uint8Array => ethers.randomBytes(4);
 // Fixtures
 
 const deploy = async () => {
-    const initialNumberOfNodes = 22;
     const nodeList = await generateRandomNodes(initialNumberOfNodes);
     const contracts = await productionDeploy(nodeList, commonPublicKey);
     return {
