@@ -128,8 +128,12 @@ contract Nodes is AccessManagedUpgradeable, INodes {
         _;
     }
 
-    function initialize(address initialAuthority, ICommittee committeeAddress) public override initializer {
+    function initialize(address initialAuthority, Node[] calldata initialNodes) public override initializer {
         __AccessManaged_init(initialAuthority);
+        _initializeGroup(initialNodes);
+    }
+
+    function setCommittee(ICommittee committeeAddress) external override restricted {
         committeeContract = committeeAddress;
     }
 
@@ -142,30 +146,7 @@ contract Nodes is AccessManagedUpgradeable, INodes {
         validIp(ip)
         validPort(port)
     {
-
-        unchecked {
-            ++_nodeIdCounter;
-        }
-
-        NodeId nodeId = NodeId.wrap(_nodeIdCounter);
-
-        _addActiveNodeId(nodeId);
-
-        _setActiveNodeIdForAddress(msg.sender, nodeId);
-
-        require(_usedIps.add(keccak256(ip)), IpIsNotAvailable(ip));
-
-        nodes[nodeId] = Node({
-            id: nodeId,
-            port: port,
-            nodeAddress: msg.sender,
-            ip: ip,
-            domainName: ""
-        });
-
-        emit NodeRegistered(nodeId, msg.sender, ip, port);
-
-        // Notify Committee of new active nodeId
+        NodeId nodeId = _createActiveNode(msg.sender, ip, port, "");
         committeeContract.newNodeCreated(nodeId);
     }
 
@@ -354,6 +335,37 @@ contract Nodes is AccessManagedUpgradeable, INodes {
         result = _isActiveNode(nodeId);
     }
 
+    function _createActiveNode(
+        address nodeAddress,
+        bytes memory ip,
+        uint16 port,
+        string memory domainName
+    )
+        internal
+        returns (NodeId nodeId)
+    {
+        unchecked {
+            ++_nodeIdCounter;
+        }
+        nodeId = NodeId.wrap(_nodeIdCounter);
+
+        _addActiveNodeId(nodeId);
+        _setActiveNodeIdForAddress(nodeAddress, nodeId);
+
+        require(_usedIps.add(keccak256(ip)), IpIsNotAvailable(ip));
+
+        nodes[nodeId] = Node({
+            id: nodeId,
+            port: port,
+            nodeAddress: nodeAddress,
+            ip: ip,
+            domainName: domainName
+        });
+
+        emit NodeRegistered(nodeId, nodeAddress, ip, port);
+        return nodeId;
+    }
+
     function _addPassiveNodeId(NodeId nodeId) private {
         assert(_passiveNodeIds.add(nodeId));
     }
@@ -386,6 +398,14 @@ contract Nodes is AccessManagedUpgradeable, INodes {
 
         if (!_isAddressOfPassiveNodes(nodeAddress)) {
             assert(_passiveNodeAddresses.add(nodeAddress));
+        }
+    }
+
+    function _initializeGroup(Node[] calldata initialNodes) private {
+        uint256 length = initialNodes.length;
+        for (uint256 i; i < length; ++i) {
+            Node memory initNode = initialNodes[i];
+            _createActiveNode(initNode.nodeAddress, initNode.ip, initNode.port, initNode.domainName);
         }
     }
 

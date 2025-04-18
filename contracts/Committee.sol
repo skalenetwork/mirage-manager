@@ -39,7 +39,6 @@ import { G2Operations } from "./dkg/fieldOperations/G2Operations.sol";
 import { IRandom, Random } from "./Random.sol";
 import { TypedSet } from "./structs/typed/TypedSet.sol";
 
-
 contract Committee is AccessManagedUpgradeable, ICommittee {
     using Random for IRandom.RandomGenerator;
     using TypedSet for TypedSet.NodeIdSet;
@@ -78,7 +77,9 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
     }
 
     function initialize(
-        address initialAuthority
+        address initialAuthority,
+        INodes nodesAddress,
+        IDkg.G2Point memory commonPublicKey
     )
         public
         initializer
@@ -87,12 +88,15 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
         __AccessManaged_init(initialAuthority);
         committeeSize = 22;
         transitionDelay = Duration.wrap(1 days);
+        nodes = nodesAddress;
+
+        _initializeGroup(commonPublicKey);
     }
 
     function select() external override restricted {
         (NodeId[] memory candidates, uint256 length) = _getEligibleNodes();
         _buildRandomSubset(candidates, length, committeeSize);
-        Committee storage committee = _createCommittee(candidates);
+        Committee storage committee = _createSuccessorCommittee(candidates);
         committee.dkg = dkg.generate(committee.nodes);
     }
 
@@ -174,29 +178,51 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
 
     // Private
 
-    function _createCommittee(NodeId[] memory nodes_) private returns (Committee storage committee) {
-        CommitteeIndex committeeIndex = _next(getActiveCommitteeIndex());
-        lastCommitteeIndex = committeeIndex;
-        committees[committeeIndex] = Committee({
+    function _createCommittee(NodeId[] memory nodes_, CommitteeIndex index)
+        private
+        returns (Committee storage committee)
+    {
+        lastCommitteeIndex = index;
+        committees[index] = Committee({
             nodes: new NodeId[](0),
             dkg: DkgId.wrap(0),
             commonPublicKey: G2Operations.getG2Zero(),
             startingTimestamp: Timestamp.wrap(type(uint256).max)
         });
         // Clean all auxiliary fields because function may override existing committee
-        _committeesAuxiliary[committeeIndex].nodes.clear();
+        _committeesAuxiliary[index].nodes.clear();
 
-        committee = committees[committeeIndex];
-        CommitteeAuxiliary storage committeeAuxiliary = _committeesAuxiliary[committeeIndex];
+        committee = committees[index];
+        CommitteeAuxiliary storage committeeAuxiliary = _committeesAuxiliary[index];
         uint256 committeeSize_ = committeeSize;
         for (uint256 i = 0; i < committeeSize_; ++i) {
             committee.nodes.push(nodes_[i]);
             assert(committeeAuxiliary.nodes.add(nodes_[i]));
         }
+        return committee;
+    }
+
+    function _createSuccessorCommittee(NodeId[] memory nodes_)
+        private
+        returns (Committee storage committee)
+    {
+        return _createCommittee(nodes_, _next(getActiveCommitteeIndex()));
+    }
+
+    function _initializeGroup(
+        IDkg.G2Point memory commonPublicKey
+    ) private {
+        NodeId[] memory nodeIds = nodes.getActiveNodesIds();
+        committeeSize = nodeIds.length;
+        Committee storage initialCommittee =
+            _createCommittee(nodeIds, CommitteeIndex.wrap(0));
+        initialCommittee.commonPublicKey = commonPublicKey;
+        initialCommittee.startingTimestamp = Timestamp.wrap(block.timestamp);
     }
     // TODO: improve algorithm _getEligibleNodes
     //slither-disable-start calls-loop
     function _isEligible(NodeId node) private view returns (bool eligible) {
+        // slither-disable-next-line calls-loop
         return status.isHealthy(node) && status.isWhitelisted(node);
     }
     //slither-disable-end calls-loop

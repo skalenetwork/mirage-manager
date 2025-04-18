@@ -45,6 +45,8 @@ jobs:
         node-version: ${{ matrix.node-version }}
 
     - name: Test deployment
+      env:
+        INFURA_API_TOKEN: ${{ secrets.INFURA_API_TOKEN }}
       run: ./scripts/test_deploy.sh
 
     # - name: Test upgrade

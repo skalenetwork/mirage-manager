@@ -1,10 +1,26 @@
+import chalk from "chalk";
 import { ethers, network, upgrades } from "hardhat";
 import { promises as fs } from 'fs';
 import {
     getVersion
 } from '@skalenetwork/upgrade-tools';
-import { Committee, DKG, Nodes, MirageAccessManager, Staking, Status } from "../typechain-types";
+import {
+    Committee,
+    DKG,
+    IDkg,
+    INodes,
+    Nodes,
+    MirageAccessManager,
+    Staking,
+    Status
+} from "../typechain-types";
 import { AddressLike } from "ethers";
+import { skaleContracts } from "@skalenetwork/skale-contracts-ethers-v6";
+import {
+    IKeyStorage,
+    INodes as INodesInSkaleManager,
+    ISchainsInternal,
+} from "../typechain-types/@skalenetwork/skale-manager-interfaces";
 
 
 export const contracts = [
@@ -25,15 +41,80 @@ interface DeployedContracts {
     Status: Status
 }
 
-export const deploy = async (): Promise<DeployedContracts> => {
+function getEnvVar(name: string): string {
+    const value = process.env[name];
+    if (!value) {
+        console.log(chalk.red(`Set ${name} environment variable.`));
+        process.exit(1);
+    }
+    return value;
+}
+
+async function getSkaleManagerInstance() {
+    const target = getEnvVar("TARGET");
+    const mainnetEndpoint = getEnvVar("MAINNET_ENDPOINT");
+    const mainnetProvider = new ethers.JsonRpcProvider(mainnetEndpoint);
+    const network = await skaleContracts.getNetworkByProvider(mainnetProvider);
+    const project = network.getProject("skale-manager");
+    return await project.getInstance(target);
+}
+
+async function fetchNodes() {
+    const mirageChainName = getEnvVar("CHAIN_NAME");
+    const mirageChainHash = ethers.solidityPackedKeccak256(
+        ["string"],
+        [mirageChainName]
+    );
+    const skaleManagerInstance = await getSkaleManagerInstance();
+    const nodes = await skaleManagerInstance.getContract("Nodes") as unknown as INodesInSkaleManager;
+    const schainsInternal = await skaleManagerInstance.getContract("SchainsInternal") as unknown as ISchainsInternal;
+    const nodesInGroup = await schainsInternal.getNodesInGroup(mirageChainHash);
+    const nodeList: INodes.NodeStruct[] = [];
+    for (const nodeId of nodesInGroup) {
+        const [ip, domainName ,nodeAddress, port] = await Promise.all([
+            nodes.getNodeIP(nodeId),
+            nodes.getNodeDomainName(nodeId),
+            nodes.getNodeAddress(nodeId),
+            nodes.getNodePort(nodeId)
+        ]);
+        nodeList.push({
+            id: 0,
+            ip,
+            domainName,
+            nodeAddress,
+            port
+        });
+    }
+    return nodeList;
+}
+
+async function fetchDkgCommonPublicKey() {
+    const mirageChainName = getEnvVar("CHAIN_NAME");
+    const mirageChainHash = ethers.solidityPackedKeccak256(
+        ["string"],
+        [mirageChainName]
+    );
+    const skaleManagerInstance = await getSkaleManagerInstance();
+    const dkg = await skaleManagerInstance.getContract("KeyStorage") as unknown as IKeyStorage;
+    const commonPublicKey = await dkg.getCommonPublicKey(mirageChainHash);
+    return commonPublicKey;
+}
+
+export const deploy = async (nodeList?: INodes.NodeStruct[], commonPublicKey?: IDkg.G2PointStruct): Promise<DeployedContracts> => {
     const [deployer] = await ethers.getSigners();
     const deployedContracts: DeployedContracts = {} as DeployedContracts;
+    nodeList = nodeList || await fetchNodes();
+    commonPublicKey = commonPublicKey ||  await fetchDkgCommonPublicKey();
 
     deployedContracts.MirageAccessManager = await deployMirageAccessManager(deployer);
-    deployedContracts.Committee = await deployCommittee(deployedContracts.MirageAccessManager);
     deployedContracts.Nodes = await deployNodes(
         deployedContracts.MirageAccessManager,
-        deployedContracts.Committee
+        nodeList
+    );
+    deployedContracts.Committee = await deployCommittee(
+        deployedContracts.MirageAccessManager,
+        deployedContracts.Nodes,
+        commonPublicKey
     );
     deployedContracts.DKG = await deployDkg(
         deployedContracts.MirageAccessManager,
@@ -53,6 +134,8 @@ export const deploy = async (): Promise<DeployedContracts> => {
     response = await deployedContracts.Committee.setNodes(deployedContracts.Nodes);
     await response.wait();
     response = await deployedContracts.Committee.setStatus(deployedContracts.Status);
+    await response.wait();
+    response = await deployedContracts.Nodes.setCommittee(deployedContracts.Committee);
     await response.wait();
     response = await deployedContracts.Committee.setStaking(deployedContracts.Staking);
     await response.wait();
@@ -81,24 +164,27 @@ const deployMirageAccessManager = async (
     ) as MirageAccessManager;
 }
 
-const deployCommittee = async (authority: MirageAccessManager): Promise<Committee> => {
+const deployCommittee = async (
+    authority: MirageAccessManager,
+    nodes: Nodes,
+    commonPublicKey: IDkg.G2PointStruct
+): Promise<Committee> => {
     return await deployContract(
         "Committee",
         [
-            await ethers.resolveAddress(authority)
+            await ethers.resolveAddress(authority),
+            await ethers.resolveAddress(nodes),
+            commonPublicKey
         ]
     ) as Committee;
 }
 
-const deployNodes = async (
-    accessManager: MirageAccessManager,
-    committee: Committee,
-): Promise<Nodes> => {
+const deployNodes = async (accessManager: MirageAccessManager, nodeList: INodes.NodeStruct[]): Promise<Nodes> => {
     return await deployContract(
         "Nodes",
         [
             await ethers.resolveAddress(accessManager),
-            await ethers.resolveAddress(committee)
+            nodeList
         ]
     ) as Nodes;
 }
