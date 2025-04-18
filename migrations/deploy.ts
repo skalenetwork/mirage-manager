@@ -60,7 +60,11 @@ async function getSkaleManagerInstance() {
 }
 
 async function fetchNodes() {
-    const mirageChainHash = getEnvVar("CHAIN_HASH");
+    const mirageChainName = getEnvVar("CHAIN_NAME");
+    const mirageChainHash = ethers.solidityPackedKeccak256(
+        ["string"],
+        [mirageChainName]
+    );
     const skaleManagerInstance = await getSkaleManagerInstance();
     const nodes = await skaleManagerInstance.getContract("Nodes") as unknown as INodesInSkaleManager;
     const schainsInternal = await skaleManagerInstance.getContract("SchainsInternal") as unknown as ISchainsInternal;
@@ -85,7 +89,11 @@ async function fetchNodes() {
 }
 
 async function fetchDkgCommonPublicKey() {
-    const mirageChainHash = getEnvVar("CHAIN_HASH");
+    const mirageChainName = getEnvVar("CHAIN_NAME");
+    const mirageChainHash = ethers.solidityPackedKeccak256(
+        ["string"],
+        [mirageChainName]
+    );
     const skaleManagerInstance = await getSkaleManagerInstance();
     const dkg = await skaleManagerInstance.getContract("KeyStorage") as unknown as IKeyStorage;
     const commonPublicKey = await dkg.getCommonPublicKey(mirageChainHash);
