@@ -34,10 +34,10 @@ import { INodes, NodeId } from "@skalenetwork/professional-interfaces/INodes.sol
 import { IStaking } from "@skalenetwork/professional-interfaces/IStaking.sol";
 import { Duration, IStatus } from "@skalenetwork/professional-interfaces/IStatus.sol";
 
-
-import { G2Operations } from "./dkg/fieldOperations/G2Operations.sol";
-import { IRandom, Random } from "./Random.sol";
 import { TypedSet } from "./structs/typed/TypedSet.sol";
+import { G2Operations } from "./utils/fieldOperations/G2Operations.sol";
+import { IRandom, Random } from "./utils/Random.sol";
+
 
 contract Committee is AccessManagedUpgradeable, ICommittee {
     using Random for IRandom.RandomGenerator;

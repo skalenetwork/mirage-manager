@@ -2,7 +2,7 @@ import {
     loadFixture
 } from "@nomicfoundation/hardhat-network-helpers";
 import { ethers } from "hardhat";
-import { FieldOperationsTester } from "../typechain-types";
+import { FieldOperationsTester } from "../../typechain-types";
 
 const deployFieldOperationsTester = async () => {
     const factory = await ethers.getContractFactory("FieldOperationsTester");

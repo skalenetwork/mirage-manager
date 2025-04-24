@@ -3,10 +3,10 @@
 import {
     loadFixture
 } from "@nomicfoundation/hardhat-network-helpers";
-import { deploy as productionDeploy } from "../migrations/deploy";
+import { deploy as productionDeploy } from "../../migrations/deploy";
 import { HDNodeWallet, Wallet } from "ethers";
 import { ethers } from "hardhat";
-import { INodes, IDkg } from "../typechain-types";
+import { INodes, IDkg } from "../../typechain-types";
 
 // Parameters
 

@@ -1,9 +1,9 @@
 import _ from "lodash";
 import seedrandom from 'seedrandom';
 import chai, { assert, expect } from "chai";
-import { cleanDeployment, nodesAreRegisteredAndHeartbeatIsSent, nodesRegistered, nodesRegisteredButNotWhitelisted } from "./fixtures";
+import { cleanDeployment, nodesAreRegisteredAndHeartbeatIsSent, nodesRegistered, nodesRegisteredButNotWhitelisted } from "./tools/fixtures";
 import { ethers } from "hardhat";
-import { runDkg } from "./dkg/DKG";
+import { runDkg } from "./tools/dkg";
 import { skipTime } from "./tools/time";
 
 chai.should();
