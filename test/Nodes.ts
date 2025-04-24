@@ -1,6 +1,6 @@
 import { ethers } from "hardhat";
 import { expect } from "chai";
-import { cleanDeployment } from "./fixtures";
+import { cleanDeployment } from "./tools/fixtures";
 import { Nodes } from "../typechain-types";
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";

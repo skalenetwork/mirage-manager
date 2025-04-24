@@ -25,7 +25,7 @@ import {
     AccessManagedUpgradeable
 } from "@openzeppelin/contracts-upgradeable/access/manager/AccessManagedUpgradeable.sol";
 import {IStaking} from "@skalenetwork/professional-interfaces/IStaking.sol";
-import {NotImplemented} from "./errors.sol";
+import {NotImplemented} from "./utils/errors.sol";
 
 
 contract Staking is AccessManagedUpgradeable, IStaking {

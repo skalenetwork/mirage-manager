@@ -1,5 +1,5 @@
 import { expect } from "chai";
-import { nodesRegisteredButNotWhitelisted } from "./fixtures";
+import { nodesRegisteredButNotWhitelisted } from "./tools/fixtures";
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import { Nodes, Status } from "../typechain-types";

@@ -23,8 +23,8 @@ pragma solidity ^0.8.24;
 
 import {IDkg} from "@skalenetwork/professional-interfaces/IDkg.sol";
 
-import { Fp2Operations } from "../../dkg/fieldOperations/Fp2Operations.sol";
-import { G2Operations } from "../../dkg/fieldOperations/G2Operations.sol";
+import { Fp2Operations } from "../../utils/fieldOperations/Fp2Operations.sol";
+import { G2Operations } from "../../utils/fieldOperations/G2Operations.sol";
 
 
 interface IFiedOperationsTester {

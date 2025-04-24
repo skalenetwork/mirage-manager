@@ -1,4 +1,4 @@
-import {fieldOperationsTester} from "../testingFixtures";
+import {fieldOperationsTester} from "../tools/testingFixtures";
 import chai from "chai";
 
 chai.should();

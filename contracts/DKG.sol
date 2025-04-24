@@ -30,7 +30,7 @@ import {ICommittee} from "@skalenetwork/professional-interfaces/ICommittee.sol";
 import {DkgId, IDkg} from "@skalenetwork/professional-interfaces/IDkg.sol";
 import {INodes, NodeId} from "@skalenetwork/professional-interfaces/INodes.sol";
 
-import {G2Operations} from "./fieldOperations/G2Operations.sol";
+import {G2Operations} from "./utils/fieldOperations/G2Operations.sol";
 
 
 contract DKG is AccessManagedUpgradeable, IDkg {
