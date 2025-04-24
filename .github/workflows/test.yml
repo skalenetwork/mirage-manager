@@ -39,7 +39,7 @@ jobs:
       run: yarn fullCheck
 
     - name: Slither
-      uses: crytic/slither-action@v0.4.0
+      uses: crytic/slither-action@v0.4.1
       with:
         ignore-compile: true
         node-version: ${{ matrix.node-version }}
