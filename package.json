@@ -53,7 +53,7 @@
     "@openzeppelin/contracts-upgradeable": "^5.2.0",
     "@openzeppelin/hardhat-upgrades": "^3.9.0",
     "@openzeppelin/upgrades-core": "^1.42.2",
-    "@skalenetwork/professional-interfaces": "0.1.0-develop.69",
+    "@skalenetwork/professional-interfaces": "^0.1.0-rotation.4",
     "@skalenetwork/skale-contracts-ethers-v6": "^1.0.2-develop.61",
     "@skalenetwork/skale-manager-interfaces": "3.2.0-develop.3",
     "@skalenetwork/upgrade-tools": "3.0.0-develop.42",

@@ -36,10 +36,12 @@ import { Duration, IStatus } from "@skalenetwork/professional-interfaces/IStatus
 
 import { TypedSet } from "./structs/typed/TypedSet.sol";
 import { G2Operations } from "./utils/fieldOperations/G2Operations.sol";
+import { PoolLibrary } from "./utils/Pool.sol";
 import { IRandom, Random } from "./utils/Random.sol";
 
 
 contract Committee is AccessManagedUpgradeable, ICommittee {
+    using PoolLibrary for PoolLibrary.Pool;
     using Random for IRandom.RandomGenerator;
     using TypedSet for TypedSet.NodeIdSet;
 
@@ -47,18 +49,19 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
         TypedSet.NodeIdSet nodes;
     }
 
-    mapping (CommitteeIndex index => Committee committee) public committees;
-    mapping (CommitteeIndex index => CommitteeAuxiliary committee) private _committeesAuxiliary;
-    CommitteeIndex public lastCommitteeIndex;
-    uint256 public committeeSize;
-    Duration public transitionDelay;
-
     IDkg public dkg;
     INodes public nodes;
     IStatus public status;
     IStaking public staking;
 
+    mapping (CommitteeIndex index => Committee committee) public committees;
+    mapping (CommitteeIndex index => CommitteeAuxiliary committee) private _committeesAuxiliary;
+    CommitteeIndex public lastCommitteeIndex;
+    uint256 public committeeSize;
+    Duration public transitionDelay;
     string public version;
+
+    PoolLibrary.Pool private _pool;
 
     error TooFewCandidates(
         uint256 needed,
@@ -137,6 +140,24 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
         transitionDelay = delay;
     }
 
+    function nodeCreated(NodeId node) external override restricted {
+        if (status.isWhitelisted(node)) {
+            _pool.add(node);
+        }
+    }
+
+    function nodeRemoved(NodeId node) external override restricted {
+        _pool.remove(node);
+    }
+
+    function nodeWhitelisted(NodeId node) external override restricted {
+        _pool.add(node);
+    }
+
+    function nodeBlacklisted(NodeId node) external override restricted {
+        _pool.remove(node);
+    }
+
     function getCommittee(
         CommitteeIndex committeeIndex
     )
@@ -161,10 +182,6 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
             }
         }
         return false;
-    }
-
-    function newNodeCreated(NodeId) external pure override {
-        assert(true);
     }
 
     // Public
@@ -226,7 +243,6 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
         return status.isHealthy(node) && status.isWhitelisted(node);
     }
     //slither-disable-end calls-loop
-
 
     function _getEligibleNodes() private view returns (NodeId[] memory candidates, uint256 length) {
         candidates = nodes.getActiveNodesIds();
