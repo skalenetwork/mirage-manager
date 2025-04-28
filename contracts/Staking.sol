@@ -34,15 +34,15 @@ contract Staking is AccessManagedUpgradeable, IStaking {
         __AccessManaged_init(initialAuthority);
     }
 
-    function stake() external override {
+    function stake() external pure override {
         revert NotImplemented();
     }
 
-    function retrieve(uint256 /*value*/) external override {
+    function retrieve(uint256 /*value*/) external pure override {
         revert NotImplemented();
     }
 
-    function getStakedAmount() external view override returns (uint256 amount) {
+    function getStakedAmount() external pure override returns (uint256 amount) {
         revert NotImplemented();
     }
 }

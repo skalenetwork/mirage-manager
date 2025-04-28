@@ -154,11 +154,11 @@ library SplayTree {
         uint256 parentAndGammaWeight = nodes[parent].totalWeight - node.totalWeight;
 
         node.parent = NULL;
-        node.left = parent;
+        node.right = parent;
         node.totalWeight = nodes[parent].totalWeight;
 
         nodes[parent].parent = node.id;
-        nodes[parent].right = beta;
+        nodes[parent].left = beta;
         nodes[parent].totalWeight = parentAndGammaWeight + nodes[beta].totalWeight;
 
         nodes[beta].parent = parent;
@@ -169,11 +169,11 @@ library SplayTree {
         uint256 parentAndAlphaWeight = nodes[parent].totalWeight - node.totalWeight;
 
         node.parent = NULL;
-        node.right = parent;
+        node.left = parent;
         node.totalWeight = nodes[parent].totalWeight;
 
         nodes[parent].parent = node.id;
-        nodes[parent].left = beta;
+        nodes[parent].right = beta;
         nodes[parent].totalWeight = parentAndAlphaWeight + nodes[beta].totalWeight;
 
         nodes[beta].parent = parent;
@@ -241,16 +241,16 @@ library SplayTree {
         node.totalWeight = nodes[grandParent].totalWeight;
 
         nodes[parent].parent = node.id;
-        nodes[parent].right = beta;
+        nodes[parent].right = gamma;
         nodes[parent].left = grandParent;
         nodes[parent].totalWeight = parentAndBetaWeight + grandParentAndAlphaWeight + nodes[gamma].totalWeight;
 
         nodes[grandParent].parent = parent;
-        nodes[grandParent].right = gamma;
+        nodes[grandParent].right = beta;
         nodes[grandParent].totalWeight = grandParentAndAlphaWeight + nodes[beta].totalWeight;
 
-        nodes[beta].parent = parent;
-        nodes[gamma].parent = grandParent;
+        nodes[beta].parent = grandParent;
+        nodes[gamma].parent = parent;
     }
 
     function _leftZigZag(
