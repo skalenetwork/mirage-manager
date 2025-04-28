@@ -142,6 +142,8 @@ export const deploy = async (nodeList?: INodes.NodeStruct[], commonPublicKey?: I
 
     await (await deployedContracts.Committee.setVersion(await getVersion())).wait();
 
+    await setupRoles(deployedContracts);
+
     return deployedContracts;
 }
 
@@ -229,6 +231,20 @@ const storeAddresses = async (deployedContracts: DeployedContracts, version: str
     await fs.writeFile(
         `data/mirage-manager-${version}-${network.name}-contracts.json`,
         JSON.stringify(addresses, null, 4));
+}
+
+const setupRoles = async (deployedContracts: DeployedContracts) => {
+    const { Committee: committee, MirageAccessManager: accessManager, Nodes: nodes} = deployedContracts;
+
+    let response = await accessManager.setTargetFunctionRole(
+        await ethers.resolveAddress(committee),
+        [committee.interface.getFunction("nodeCreated").selector],
+        await accessManager.NODES_ROLE()
+    );
+    await response.wait();
+
+    response = await accessManager.grantRole(await accessManager.NODES_ROLE(), await ethers.resolveAddress(nodes), 0n);
+    await response.wait();
 }
 
 const main = async () => {
