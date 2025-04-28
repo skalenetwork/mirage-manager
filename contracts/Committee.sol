@@ -158,6 +158,10 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
         _pool.remove(node);
     }
 
+    function processHeartbeat(NodeId node) external override restricted {
+        _pool.moveToFront(node);
+    }
+
     function getCommittee(
         CommitteeIndex committeeIndex
     )

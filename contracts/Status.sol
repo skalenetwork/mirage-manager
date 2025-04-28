@@ -70,6 +70,10 @@ contract Status is AccessManagedUpgradeable, IStatus {
         NodeId nodeId = nodes.getNodeId(msg.sender);
 
         lastHeartbeatTimestamp[nodeId] = block.timestamp;
+
+        if (isWhitelisted(nodeId)) {
+            committee.processHeartbeat(nodeId);
+        }
     }
     function setHeartbeatInterval(Duration interval) external override restricted {
         heartbeatInterval = interval;
@@ -85,10 +89,6 @@ contract Status is AccessManagedUpgradeable, IStatus {
         committee.nodeBlacklisted(nodeId);
     }
 
-    function isHealthy(NodeId nodeId) external view override returns (bool healthy) {
-        healthy = _isHealthy(nodeId);
-    }
-
     function getNodesEligibleForCommittee() external view override returns (NodeId[] memory nodeIds) {
 
         uint256 whitelistedLength = _whitelist.length();
@@ -99,7 +99,7 @@ contract Status is AccessManagedUpgradeable, IStatus {
             NodeId nodeId = _whitelist.at(i);
 
             // TODO: improve. It's simple enough while nodes can't be removed
-            if (_isHealthy(nodeId)) {
+            if (isHealthy(nodeId)) {
                 healthyNodeIds[eligibleCount] = nodeId;
                 ++eligibleCount;
             }
@@ -115,11 +115,11 @@ contract Status is AccessManagedUpgradeable, IStatus {
         nodeIds = _whitelist.values();
     }
 
-    function isWhitelisted(NodeId nodeId) external view override returns (bool whitelisted) {
+    function isWhitelisted(NodeId nodeId) public view override returns (bool whitelisted) {
         whitelisted = _whitelist.contains(nodeId);
     }
 
-    function _isHealthy(NodeId nodeId) private view returns (bool healthy) {
+    function isHealthy(NodeId nodeId) public view override returns (bool healthy) {
         uint256 interval = block.timestamp - lastHeartbeatTimestamp[nodeId];
         healthy = interval < Duration.unwrap(heartbeatInterval);
     }

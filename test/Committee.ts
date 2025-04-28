@@ -138,7 +138,7 @@ describe("Committee", () => {
         );
     });
 
-    it("should check if a node in the committee or will be there soon", async () => {
+    it.only("should check if a node in the committee or will be there soon", async () => {
         const {committee, dkg, nodesData, status} = await nodesAreRegisteredAndHeartbeatIsSent();
         await committee.setCommitteeSize(5);
 

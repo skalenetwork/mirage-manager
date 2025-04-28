@@ -58,13 +58,20 @@ library PoolLibrary {
     function sample(Pool storage pool, IRandom.RandomGenerator memory generator) internal returns (NodeId node) {
         NodeId lastHealthy = _findLastHealthyNode(pool);
         pool.tree.splay(lastHealthy);
-        pool.root = lastHealthy;
         uint256 totalWeight = pool.tree[lastHealthy].totalWeight - pool.tree[pool.tree[lastHealthy].right].totalWeight;
         uint256 randomValue = generator.random(totalWeight);
         NodeId choice = pool.tree.findByWeight(lastHealthy, randomValue);
-        pool.root = pool.tree.remove(choice);
+        remove(pool, choice);
         add(pool, choice);
         return choice;
+    }
+
+    function moveToFront(Pool storage pool, NodeId node) internal {
+        remove(pool, node);
+        assert(pool.presentNodes.add(node));
+        // TODO: call staking after it is implemented
+        uint256 stake = 1;
+        pool.root = pool.tree.insertSmallest(pool.root, node, stake);
     }
 
     // private

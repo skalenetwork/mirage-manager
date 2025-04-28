@@ -254,6 +254,13 @@ const setupRoles = async (deployedContracts: DeployedContracts) => {
 
     response = await accessManager.setTargetFunctionRole(
         await ethers.resolveAddress(committee),
+        [committee.interface.getFunction("nodeBlacklisted").selector],
+        await accessManager.STATUS_ROLE()
+    );
+    await response.wait();
+
+    response = await accessManager.setTargetFunctionRole(
+        await ethers.resolveAddress(committee),
         [committee.interface.getFunction("nodeWhitelisted").selector],
         await accessManager.STATUS_ROLE()
     );
@@ -261,7 +268,7 @@ const setupRoles = async (deployedContracts: DeployedContracts) => {
 
     response = await accessManager.setTargetFunctionRole(
         await ethers.resolveAddress(committee),
-        [committee.interface.getFunction("nodeBlacklisted").selector],
+        [committee.interface.getFunction("processHeartbeat").selector],
         await accessManager.STATUS_ROLE()
     );
     await response.wait();
