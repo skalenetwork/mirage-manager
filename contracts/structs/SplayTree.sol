@@ -35,6 +35,8 @@ library SplayTree {
 
     NodeId constant public NULL = NodeId.wrap(0);
 
+    error NotFound();
+
     function addSmallest(mapping(NodeId => Node) storage nodes, NodeId root, NodeId newNode, uint256 weight) internal {
         createNode(nodes, newNode, weight + nodes[root].totalWeight);
         nodes[newNode].right = root;
@@ -69,6 +71,35 @@ library SplayTree {
             }
         }
         delete nodes[id];
+    }
+
+    function findByWeight(
+        mapping(NodeId => Node) storage nodes,
+        NodeId root,
+        uint256 weight
+    )
+        internal
+        returns (NodeId newRoot)
+    {
+        newRoot = SplayTree.NULL;
+        NodeId node = root;
+        while (node != SplayTree.NULL) {
+            NodeId left = nodes[node].left;
+            if (weight < nodes[left].totalWeight) {
+                node = left;
+            } else {
+                NodeId right = nodes[node].right;
+                uint256 leftAndNodeWeight = nodes[node].totalWeight - nodes[right].totalWeight;
+                if (weight < leftAndNodeWeight) {
+                    splay(nodes, node);
+                    return node;
+                } else {
+                    weight -= leftAndNodeWeight;
+                    node = right;
+                }
+            }
+        }
+        revert NotFound();
     }
 
     function splay(mapping(NodeId => Node) storage nodes, NodeId id) internal {

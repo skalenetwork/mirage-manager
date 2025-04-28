@@ -22,13 +22,15 @@
 pragma solidity ^0.8.24;
 
 import { NodeId } from "@skalenetwork/professional-interfaces/INodes.sol";
-import {SplayTree} from "../structs/SplayTree.sol";
-import {TypedSet} from "../structs/typed/TypedSet.sol";
-import {NotImplemented} from "./errors.sol";
+import { IStatus } from "@skalenetwork/professional-interfaces/IStatus.sol";
+import { SplayTree } from "../structs/SplayTree.sol";
+import { TypedSet } from "../structs/typed/TypedSet.sol";
+import { IRandom, Random } from "./Random.sol";
 
 
 library PoolLibrary {
-    using SplayTree for SplayTree.Node;
+    using Random for IRandom.RandomGenerator;
+    using SplayTree for mapping(NodeId => SplayTree.Node);
     using TypedSet for TypedSet.NodeIdSet;
 
     struct Pool {
@@ -36,6 +38,7 @@ library PoolLibrary {
         NodeId root;
         TypedSet.NodeIdSet presentNodes;
         TypedSet.NodeIdSet incomingNodes;
+        IStatus status;
     }
 
     error NodeIsMissing(NodeId id);
@@ -46,9 +49,37 @@ library PoolLibrary {
 
     function remove(Pool storage pool, NodeId node) internal {
         if (pool.presentNodes.remove(node)) {
-            revert NotImplemented();
+            pool.root = pool.tree.remove(node);
         } else {
             require(pool.incomingNodes.remove(node), NodeIsMissing(node));
+        }
+    }
+
+    function sample(Pool storage pool, IRandom.RandomGenerator memory generator) internal returns (NodeId node) {
+        NodeId lastHealthy = _findLastHealthyNode(pool);
+        pool.tree.splay(lastHealthy);
+        pool.root = lastHealthy;
+        uint256 totalWeight = pool.tree[lastHealthy].totalWeight - pool.tree[pool.tree[lastHealthy].right].totalWeight;
+        uint256 randomValue = generator.random(totalWeight);
+        NodeId choice = pool.tree.findByWeight(lastHealthy, randomValue);
+        pool.root = pool.tree.remove(choice);
+        add(pool, choice);
+        return choice;
+    }
+
+    // private
+
+    function _findLastHealthyNode(Pool storage pool) private view returns (NodeId lastHealthy) {
+        lastHealthy = SplayTree.NULL;
+        NodeId node = pool.root;
+        IStatus status = pool.status;
+        while (node != SplayTree.NULL) {
+            if (status.isHealthy(node)) {
+                lastHealthy = node;
+                node = pool.tree[node].right;
+            } else {
+                node = pool.tree[node].left;
+            }
         }
     }
 }
