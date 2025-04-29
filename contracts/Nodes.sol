@@ -319,9 +319,12 @@ contract Nodes is AccessManagedUpgradeable, INodes {
 
     function getPassiveNodesIdsForAddress(
         address nodeAddress
-    ) external view override returns (NodeId[] memory nodeIds) {
-        // Getter for passive nodes
-        // Casting uint256[] to NodeId[] will come at a price if some other contract uses this function
+    )
+        external
+        view
+        override
+        returns (NodeId[] memory nodeIds)
+    {
         require(
             _isAddressOfPassiveNodes(nodeAddress),
             AddressIsNotAssignedToAnyNode(nodeAddress)
