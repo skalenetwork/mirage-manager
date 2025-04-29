@@ -74,6 +74,10 @@ library PoolLibrary {
         pool.root = pool.tree.insertSmallest(pool.root, node, stake);
     }
 
+    function length(Pool storage pool) internal view returns (uint256 poolSize) {
+        return pool.presentNodes.length() + pool.incomingNodes.length();
+    }
+
     // private
 
     function _findLastHealthyNode(Pool storage pool) private view returns (NodeId lastHealthy) {

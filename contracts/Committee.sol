@@ -93,13 +93,17 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
         transitionDelay = Duration.wrap(1 days);
         nodes = nodesAddress;
 
-        _initializeGroup(commonPublicKey);
+        _initializeCommittee(commonPublicKey);
     }
 
     function select() external override restricted {
-        (NodeId[] memory candidates, uint256 length) = _getEligibleNodes();
-        _buildRandomSubset(candidates, length, committeeSize);
-        Committee storage committee = _createSuccessorCommittee(candidates);
+        uint256 committeeSize_ = committeeSize;
+        NodeId[] memory members = new NodeId[](committeeSize_);
+        IRandom.RandomGenerator memory generator = Random.create(uint256(blockhash(block.number - 1)));
+        for (uint256 i = 0; i < committeeSize_; ++i) {
+            members[i] = _pool.sample(generator);
+        }
+        Committee storage committee = _createSuccessorCommittee(members);
         committee.dkg = dkg.generate(committee.nodes);
     }
 
@@ -230,7 +234,7 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
         return _createCommittee(nodes_, _next(getActiveCommitteeIndex()));
     }
 
-    function _initializeGroup(
+    function _initializeCommittee(
         IDkg.G2Point memory commonPublicKey
     ) private {
         NodeId[] memory nodeIds = nodes.getActiveNodesIds();
@@ -240,46 +244,9 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
         initialCommittee.commonPublicKey = commonPublicKey;
         initialCommittee.startingTimestamp = Timestamp.wrap(block.timestamp);
     }
-    // TODO: improve algorithm _getEligibleNodes
-    //slither-disable-start calls-loop
-    function _isEligible(NodeId node) private view returns (bool eligible) {
-        // slither-disable-next-line calls-loop
-        return status.isHealthy(node) && status.isWhitelisted(node);
-    }
-    //slither-disable-end calls-loop
-
-    function _getEligibleNodes() private view returns (NodeId[] memory candidates, uint256 length) {
-        candidates = nodes.getActiveNodesIds();
-        length = candidates.length;
-
-        for (uint256 i = 0; i < length; ++i) {
-            while ( i < length && !_isEligible(candidates[i])) {
-                candidates[i] = candidates[length - 1];
-                --length;
-            }
-        }
-    }
 
     function _getCommittee(CommitteeIndex index) private view returns (Committee storage committee) {
         return committees[index];
-    }
-
-    function _buildRandomSubset(
-        NodeId[] memory candidates,
-        uint256 length,
-        uint256 subsetSize
-    )
-        private
-        view
-    {
-        require (!(length < subsetSize), TooFewCandidates(subsetSize, length));
-        IRandom.RandomGenerator memory generator = Random.create(uint256(blockhash(block.number - 1)));
-        for (uint256 i = 0; i < subsetSize; ++i) {
-            uint256 index = generator.random(i, length);
-            if (index > i) {
-                (candidates[i], candidates[index]) = (candidates[index], candidates[i]);
-            }
-        }
     }
 
     function _committeeExists(CommitteeIndex index) private view returns (bool exists) {
