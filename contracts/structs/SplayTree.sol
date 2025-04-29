@@ -337,7 +337,7 @@ library SplayTree {
     {
         biggestChild = vertex;
         while (nodes[biggestChild].right != NULL) {
-            biggestChild = nodes[vertex].right;
+            biggestChild = nodes[biggestChild].right;
         }
     }
 
