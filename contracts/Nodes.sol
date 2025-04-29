@@ -317,7 +317,9 @@ contract Nodes is AccessManagedUpgradeable, INodes {
         nodeId = _activeNodesAddressToId.get(nodeAddress);
     }
 
-    function getPassiveNodesIdsForAddress(address nodeAddress) external view override returns (NodeId[] memory nodeIds) {
+    function getPassiveNodesIdsForAddress(
+        address nodeAddress
+    ) external view override returns (NodeId[] memory nodeIds) {
         // Getter for passive nodes
         // Casting uint256[] to NodeId[] will come at a price if some other contract uses this function
         require(
