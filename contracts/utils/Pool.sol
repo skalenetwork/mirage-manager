@@ -71,7 +71,7 @@ library PoolLibrary {
         for (uint256 i = 0; i < size; ++i) {
             NodeId lastHealthy = _findLastHealthyNode(pool);
             require(lastHealthy != SplayTree.NULL, TooFewCandidates(size, i));
-            pool.tree.splay(lastHealthy);
+            pool.root = pool.tree.splay(lastHealthy);
             uint256 totalWeight = pool.tree[lastHealthy].totalWeight
                 - pool.tree[pool.tree[lastHealthy].right].totalWeight;
             uint256 randomValue = generator.random(totalWeight);
