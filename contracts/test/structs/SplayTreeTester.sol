@@ -27,6 +27,7 @@ import {SplayTree} from "../../structs/SplayTree.sol";
 
 interface ISplayTreeTester {
     function insertSmallest(NodeId node, uint256 weight) external;
+    function remove(NodeId node) external;
     function splay(NodeId node) external;
 }
 
@@ -42,5 +43,9 @@ contract SplayTreeTester is ISplayTreeTester {
 
     function splay(NodeId node) external override {
         root = tree.splay(node);
+    }
+
+    function remove(NodeId node) external override {
+        root = tree.remove(node);
     }
 }

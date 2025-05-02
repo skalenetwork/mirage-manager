@@ -66,10 +66,13 @@ library SplayTree {
         splay(nodes, id);
         if (hasLeft(nodes, id)) {
             NodeId left = nodes[id].left;
+            NodeId right = nodes[id].right;
             nodes[left].parent = NULL;
             NodeId biggestChild = getBiggestChild(nodes, left);
             splay(nodes, biggestChild);
-            nodes[biggestChild].right = nodes[id].right;
+            nodes[biggestChild].right = right;
+            nodes[right].parent = biggestChild;
+            nodes[biggestChild].totalWeight += nodes[right].totalWeight;
             newRoot = biggestChild;
         } else {
             if (hasRight(nodes, id)) {

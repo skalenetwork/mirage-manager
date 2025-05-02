@@ -42,6 +42,10 @@ library PoolLibrary {
     }
 
     error NodeIsMissing(NodeId id);
+    error TooFewCandidates(
+        uint256 needed,
+        uint256 available
+    );
 
     function add(Pool storage pool, NodeId id) internal {
         assert(pool.incomingNodes.add(id));
@@ -55,15 +59,27 @@ library PoolLibrary {
         }
     }
 
-    function sample(Pool storage pool, IRandom.RandomGenerator memory generator) internal returns (NodeId node) {
-        NodeId lastHealthy = _findLastHealthyNode(pool);
-        pool.tree.splay(lastHealthy);
-        uint256 totalWeight = pool.tree[lastHealthy].totalWeight - pool.tree[pool.tree[lastHealthy].right].totalWeight;
-        uint256 randomValue = generator.random(totalWeight);
-        NodeId choice = pool.tree.findByWeight(lastHealthy, randomValue);
-        remove(pool, choice);
-        add(pool, choice);
-        return choice;
+    function sample(
+        Pool storage pool,
+        uint256 size,
+        IRandom.RandomGenerator memory generator
+    )
+        internal
+        returns (NodeId[] memory nodesSample)
+    {
+        nodesSample = new NodeId[](size);
+        for (uint256 i = 0; i < size; ++i) {
+            NodeId lastHealthy = _findLastHealthyNode(pool);
+            require(lastHealthy != SplayTree.NULL, TooFewCandidates(size, i));
+            pool.tree.splay(lastHealthy);
+            uint256 totalWeight = pool.tree[lastHealthy].totalWeight
+                - pool.tree[pool.tree[lastHealthy].right].totalWeight;
+            uint256 randomValue = generator.random(totalWeight);
+            NodeId choice = pool.tree.findByWeight(lastHealthy, randomValue);
+            remove(pool, choice);
+            add(pool, choice);
+            nodesSample[i] = choice;
+        }
     }
 
     function moveToFront(Pool storage pool, NodeId node) internal {

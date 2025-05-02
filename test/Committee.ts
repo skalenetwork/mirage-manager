@@ -32,7 +32,7 @@ describe("Committee", () => {
             .should.be.revertedWithCustomError(committee, "AccessManagedUnauthorized");
     });
 
-    it.only("should select committee", async function () {
+    it("should select committee", async function () {
         this.timeout(600000); // 10 minutes timeout. DKG requires a lot of time
         const {committee, dkg, nodesData} = await nodesAreRegisteredAndHeartbeatIsSent();
         const activeCommitteeIndex = await committee.getActiveCommitteeIndex();
@@ -161,8 +161,11 @@ describe("Committee", () => {
         const nextCommittee = await committee.getCommittee(nextCommitteeIndex);
 
         for (const node of nodesData) {
-            expect(await committee.isNodeInCurrentOrNextCommittee(node.id))
-                .to.be.equal(activeCommittee.nodes.includes(node.id) || nextCommittee.nodes.includes(node.id));
+            expect((await committee.isNodeInCurrentOrNextCommittee(node.id)))
+                .to.be.equal(
+                    activeCommittee.nodes.includes(BigInt(node.id))
+                    || nextCommittee.nodes.includes(BigInt(node.id))
+                );
         }
     });
 
@@ -228,7 +231,7 @@ describe("Committee", () => {
 
         for (const node of nodesData) {
             expect(await committee.isNodeInCurrentOrNextCommittee(node.id))
-                .to.be.equal(goodNextCommittee.nodes.includes(node.id));
+                .to.be.equal(goodNextCommittee.nodes.includes(BigInt(node.id)));
         }
     });
 });

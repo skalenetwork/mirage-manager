@@ -26,9 +26,8 @@ export const commonPublicKey: IDkg.G2PointStruct = {
 
 // Auxiliary functions
 
-export interface NodeData {
+export interface NodeData extends INodes.NodeStruct {
     wallet: HDNodeWallet;
-    id: bigint;
 }
 
 const getIp = (): Uint8Array => ethers.randomBytes(4);
@@ -36,54 +35,54 @@ const getIp = (): Uint8Array => ethers.randomBytes(4);
 // Fixtures
 
 const deploy = async () => {
-    const nodeList = await generateRandomNodes(initialNumberOfNodes);
-    const contracts = await productionDeploy(nodeList, commonPublicKey);
+    const nodesData = await generateRandomNodes(initialNumberOfNodes);
+    const contracts = await productionDeploy(nodesData, commonPublicKey);
+    for (const node of nodesData) {
+        node.id = await contracts.Nodes.getNodeId(node.wallet.address);
+    };
     return {
         committee: contracts.Committee,
         dkg: contracts.DKG,
         nodes: contracts.Nodes,
         staking: contracts.Staking,
-        status: contracts.Status
+        status: contracts.Status,
+        nodesData
     }
 }
 
 const generateRandomNodes = async (initialNumberOfNodes?: number) => {
-    initialNumberOfNodes = initialNumberOfNodes || numberOfNodes;
-    const nodeList: INodes.NodeStruct[] = [];
-    for (let i = 0; i < initialNumberOfNodes; ++i) {
-        const wallet = Wallet.createRandom().connect(ethers.provider) as HDNodeWallet;
-        const ip = getIp();
-        const domainName = "d2" + i + ".skale";
-        const port = "8000";
-        nodeList.push({
-            id: 0,
-            ip,
-            domainName,
-            nodeAddress: wallet.address,
-            port
-        });
-    }
-    return nodeList;
-}
-
-const registerNodes = async () => {
     const [owner] = await ethers.getSigners();
-    const contracts = await loadFixture(deploy);
-    const { nodes } = contracts;
+    initialNumberOfNodes = initialNumberOfNodes || numberOfNodes;
     const nodesData: NodeData[] = [];
-    const nodeList = await generateRandomNodes();
-
-    for (const node of nodeList) {
+    for (let i = 0; i < initialNumberOfNodes; ++i) {
         const wallet = Wallet.createRandom().connect(ethers.provider) as HDNodeWallet;
         await owner.sendTransaction({
             to: wallet.address,
             value: nodeBalance
         });
-        await nodes.connect(wallet).registerNode(node.ip, node.port);
-        const nodeId = await nodes.getNodeId(wallet.address);
-        nodesData.push({ wallet, id: nodeId });
+        nodesData.push({
+            id: 0,
+            ip: getIp(),
+            domainName: `d2-${i}.skale`,
+            nodeAddress: wallet.address,
+            port: 8000,
+            wallet
+        });
     }
-    return { ...contracts, nodesData };
+    return nodesData;
+}
+
+const registerNodes = async () => {
+    const contracts = await loadFixture(deploy);
+    const { nodes } = contracts;
+    const nodesData = await generateRandomNodes(numberOfNodes - initialNumberOfNodes);
+
+    for (const node of nodesData) {
+        await nodes.connect(node.wallet).registerNode(node.ip, node.port);
+        const nodeId = await nodes.getNodeId(node.wallet.address);
+        node.id = nodeId;
+    }
+    return { ...contracts, nodesData:[...contracts.nodesData, ...nodesData] };
 }
 
 const whitelistNodes = async () => {

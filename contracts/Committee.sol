@@ -63,10 +63,6 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
 
     PoolLibrary.Pool private _pool;
 
-    error TooFewCandidates(
-        uint256 needed,
-        uint256 available
-    );
     error SenderIsNotDkg(
         address sender
     );
@@ -97,12 +93,8 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
     }
 
     function select() external override restricted {
-        uint256 committeeSize_ = committeeSize;
-        NodeId[] memory members = new NodeId[](committeeSize_);
         IRandom.RandomGenerator memory generator = Random.create(uint256(blockhash(block.number - 1)));
-        for (uint256 i = 0; i < committeeSize_; ++i) {
-            members[i] = _pool.sample(generator);
-        }
+        NodeId[] memory members = _pool.sample(committeeSize, generator);
         Committee storage committee = _createSuccessorCommittee(members);
         committee.dkg = dkg.generate(committee.nodes);
     }
@@ -117,6 +109,7 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
 
     function setStatus(IStatus statusAddress) external override restricted {
         status = statusAddress;
+        _pool.status = statusAddress;
     }
 
     function setStaking(IStaking stakingAddress) external override restricted {
