@@ -13,7 +13,8 @@ export default [
     "ignores": [
       ".pnp.cjs",
       "coverage/",
-      "typechain-types/"
+      "typechain-types/",
+      "venv/"
     ],
   }
 ];

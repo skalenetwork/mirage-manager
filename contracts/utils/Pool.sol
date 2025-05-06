@@ -68,17 +68,21 @@ library PoolLibrary {
         returns (NodeId[] memory nodesSample)
     {
         nodesSample = new NodeId[](size);
-        for (uint256 i = 0; i < size; ++i) {
-            NodeId lastHealthy = _findLastHealthyNode(pool);
-            require(lastHealthy != SplayTree.NULL, TooFewCandidates(size, i));
-            pool.root = pool.tree.splay(lastHealthy);
-            uint256 totalWeight = pool.tree[lastHealthy].totalWeight
+        NodeId lastHealthy = _findLastHealthyNode(pool);
+        pool.root = pool.tree.splay(lastHealthy);
+        uint256 totalWeight = pool.tree[lastHealthy].totalWeight
                 - pool.tree[pool.tree[lastHealthy].right].totalWeight;
+        for (uint256 i = 0; i < size; ++i) {
+            require(totalWeight > 0, TooFewCandidates(size, i));
             uint256 randomValue = generator.random(totalWeight);
-            NodeId choice = pool.tree.findByWeight(lastHealthy, randomValue);
+            NodeId choice = pool.tree.findByWeight(pool.root, randomValue);
+            // findByWeight did splay
+            uint256 weight = pool.tree[choice].totalWeight -
+                (pool.tree[pool.tree[choice].left].totalWeight + pool.tree[pool.tree[choice].right].totalWeight);
             remove(pool, choice);
             add(pool, choice);
             nodesSample[i] = choice;
+            totalWeight -= weight;
         }
     }
 
