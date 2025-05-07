@@ -123,7 +123,8 @@ export const deploy = async (nodeList?: INodes.NodeStruct[], commonPublicKey?: I
     );
     deployedContracts.Status = await deployStatus(
         deployedContracts.MirageAccessManager,
-        deployedContracts.Nodes
+        deployedContracts.Nodes,
+        deployedContracts.Committee
     );
     deployedContracts.Staking = await deployStaking(
         deployedContracts.MirageAccessManager
@@ -141,6 +142,8 @@ export const deploy = async (nodeList?: INodes.NodeStruct[], commonPublicKey?: I
     await response.wait();
 
     await (await deployedContracts.Committee.setVersion(await getVersion())).wait();
+
+    await setupRoles(deployedContracts);
 
     return deployedContracts;
 }
@@ -200,12 +203,13 @@ const deployDkg = async (authority: MirageAccessManager, committee: Committee, n
     ) as DKG;
 }
 
-const deployStatus = async (authority: MirageAccessManager, nodes: Nodes): Promise<Status> => {
+const deployStatus = async (authority: MirageAccessManager, nodes: Nodes, committee: Committee): Promise<Status> => {
     return await deployContract(
         "Status",
         [
             await ethers.resolveAddress(authority),
-            await ethers.resolveAddress(nodes)
+            await ethers.resolveAddress(nodes),
+            await ethers.resolveAddress(committee)
         ]
     ) as Status;
 }
@@ -229,6 +233,53 @@ const storeAddresses = async (deployedContracts: DeployedContracts, version: str
     await fs.writeFile(
         `data/mirage-manager-${version}-${network.name}-contracts.json`,
         JSON.stringify(addresses, null, 4));
+}
+
+const setupRoles = async (deployedContracts: DeployedContracts) => {
+    const {
+        Committee: committee,
+        MirageAccessManager: accessManager,
+        Nodes: nodes,
+        Status: status
+    } = deployedContracts;
+
+    // set up roles
+
+    let response = await accessManager.setTargetFunctionRole(
+        await ethers.resolveAddress(committee),
+        [committee.interface.getFunction("nodeCreated").selector],
+        await accessManager.NODES_ROLE()
+    );
+    await response.wait();
+
+    response = await accessManager.setTargetFunctionRole(
+        await ethers.resolveAddress(committee),
+        [committee.interface.getFunction("nodeBlacklisted").selector],
+        await accessManager.STATUS_ROLE()
+    );
+    await response.wait();
+
+    response = await accessManager.setTargetFunctionRole(
+        await ethers.resolveAddress(committee),
+        [committee.interface.getFunction("nodeWhitelisted").selector],
+        await accessManager.STATUS_ROLE()
+    );
+    await response.wait();
+
+    response = await accessManager.setTargetFunctionRole(
+        await ethers.resolveAddress(committee),
+        [committee.interface.getFunction("processHeartbeat").selector],
+        await accessManager.STATUS_ROLE()
+    );
+    await response.wait();
+
+    // grant roles
+
+    response = await accessManager.grantRole(await accessManager.NODES_ROLE(), await ethers.resolveAddress(nodes), 0n);
+    await response.wait();
+
+    response = await accessManager.grantRole(await accessManager.STATUS_ROLE(), await ethers.resolveAddress(status), 0n);
+    await response.wait();
 }
 
 const main = async () => {

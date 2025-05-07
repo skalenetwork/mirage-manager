@@ -138,7 +138,10 @@ describe("Committee", () => {
         );
     });
 
-    it("should check if a node in the committee or will be there soon", async () => {
+    it("should check if a node in the committee or will be there soon", async function () {
+        // TODO: this test does not fit standard timelimit with old nodejs
+        // remove this line after stop using nodejs 20
+        this.timeout(50000); // slightly increase timeout for older nodejs
         const {committee, dkg, nodesData, status} = await nodesAreRegisteredAndHeartbeatIsSent();
         await committee.setCommitteeSize(5);
 
@@ -161,8 +164,11 @@ describe("Committee", () => {
         const nextCommittee = await committee.getCommittee(nextCommitteeIndex);
 
         for (const node of nodesData) {
-            expect(await committee.isNodeInCurrentOrNextCommittee(node.id))
-                .to.be.equal(activeCommittee.nodes.includes(node.id) || nextCommittee.nodes.includes(node.id));
+            expect((await committee.isNodeInCurrentOrNextCommittee(node.id)))
+                .to.be.equal(
+                    activeCommittee.nodes.includes(BigInt(node.id))
+                    || nextCommittee.nodes.includes(BigInt(node.id))
+                );
         }
     });
 
@@ -228,7 +234,7 @@ describe("Committee", () => {
 
         for (const node of nodesData) {
             expect(await committee.isNodeInCurrentOrNextCommittee(node.id))
-                .to.be.equal(goodNextCommittee.nodes.includes(node.id));
+                .to.be.equal(goodNextCommittee.nodes.includes(BigInt(node.id)));
         }
     });
 });

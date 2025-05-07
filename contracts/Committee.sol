@@ -36,10 +36,12 @@ import { Duration, IStatus } from "@skalenetwork/professional-interfaces/IStatus
 
 import { TypedSet } from "./structs/typed/TypedSet.sol";
 import { G2Operations } from "./utils/fieldOperations/G2Operations.sol";
+import { PoolLibrary } from "./utils/Pool.sol";
 import { IRandom, Random } from "./utils/Random.sol";
 
 
 contract Committee is AccessManagedUpgradeable, ICommittee {
+    using PoolLibrary for PoolLibrary.Pool;
     using Random for IRandom.RandomGenerator;
     using TypedSet for TypedSet.NodeIdSet;
 
@@ -47,23 +49,20 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
         TypedSet.NodeIdSet nodes;
     }
 
-    mapping (CommitteeIndex index => Committee committee) public committees;
-    mapping (CommitteeIndex index => CommitteeAuxiliary committee) private _committeesAuxiliary;
-    CommitteeIndex public lastCommitteeIndex;
-    uint256 public committeeSize;
-    Duration public transitionDelay;
-
     IDkg public dkg;
     INodes public nodes;
     IStatus public status;
     IStaking public staking;
 
+    mapping (CommitteeIndex index => Committee committee) public committees;
+    mapping (CommitteeIndex index => CommitteeAuxiliary committee) private _committeesAuxiliary;
+    CommitteeIndex public lastCommitteeIndex;
+    uint256 public committeeSize;
+    Duration public transitionDelay;
     string public version;
 
-    error TooFewCandidates(
-        uint256 needed,
-        uint256 available
-    );
+    PoolLibrary.Pool private _pool;
+
     error SenderIsNotDkg(
         address sender
     );
@@ -90,13 +89,13 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
         transitionDelay = Duration.wrap(1 days);
         nodes = nodesAddress;
 
-        _initializeGroup(commonPublicKey);
+        _initializeCommittee(commonPublicKey);
     }
 
     function select() external override restricted {
-        (NodeId[] memory candidates, uint256 length) = _getEligibleNodes();
-        _buildRandomSubset(candidates, length, committeeSize);
-        Committee storage committee = _createSuccessorCommittee(candidates);
+        IRandom.RandomGenerator memory generator = Random.create(uint256(blockhash(block.number - 1)));
+        NodeId[] memory members = _pool.sample(committeeSize, generator);
+        Committee storage committee = _createSuccessorCommittee(members);
         committee.dkg = dkg.generate(committee.nodes);
     }
 
@@ -110,6 +109,7 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
 
     function setStatus(IStatus statusAddress) external override restricted {
         status = statusAddress;
+        _pool.status = statusAddress;
     }
 
     function setStaking(IStaking stakingAddress) external override restricted {
@@ -137,6 +137,28 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
         transitionDelay = delay;
     }
 
+    function nodeCreated(NodeId node) external override restricted {
+        if (status.isWhitelisted(node)) {
+            _pool.add(node);
+        }
+    }
+
+    function nodeRemoved(NodeId node) external override restricted {
+        _pool.remove(node);
+    }
+
+    function nodeWhitelisted(NodeId node) external override restricted {
+        _pool.add(node);
+    }
+
+    function nodeBlacklisted(NodeId node) external override restricted {
+        _pool.remove(node);
+    }
+
+    function processHeartbeat(NodeId node) external override restricted {
+        _pool.moveToFront(node);
+    }
+
     function getCommittee(
         CommitteeIndex committeeIndex
     )
@@ -161,10 +183,6 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
             }
         }
         return false;
-    }
-
-    function newNodeCreated(NodeId) external pure override {
-        assert(true);
     }
 
     // Public
@@ -209,7 +227,7 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
         return _createCommittee(nodes_, _next(getActiveCommitteeIndex()));
     }
 
-    function _initializeGroup(
+    function _initializeCommittee(
         IDkg.G2Point memory commonPublicKey
     ) private {
         NodeId[] memory nodeIds = nodes.getActiveNodesIds();
@@ -219,47 +237,9 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
         initialCommittee.commonPublicKey = commonPublicKey;
         initialCommittee.startingTimestamp = Timestamp.wrap(block.timestamp);
     }
-    // TODO: improve algorithm _getEligibleNodes
-    //slither-disable-start calls-loop
-    function _isEligible(NodeId node) private view returns (bool eligible) {
-        // slither-disable-next-line calls-loop
-        return status.isHealthy(node) && status.isWhitelisted(node);
-    }
-    //slither-disable-end calls-loop
-
-
-    function _getEligibleNodes() private view returns (NodeId[] memory candidates, uint256 length) {
-        candidates = nodes.getActiveNodesIds();
-        length = candidates.length;
-
-        for (uint256 i = 0; i < length; ++i) {
-            while ( i < length && !_isEligible(candidates[i])) {
-                candidates[i] = candidates[length - 1];
-                --length;
-            }
-        }
-    }
 
     function _getCommittee(CommitteeIndex index) private view returns (Committee storage committee) {
         return committees[index];
-    }
-
-    function _buildRandomSubset(
-        NodeId[] memory candidates,
-        uint256 length,
-        uint256 subsetSize
-    )
-        private
-        view
-    {
-        require (!(length < subsetSize), TooFewCandidates(subsetSize, length));
-        IRandom.RandomGenerator memory generator = Random.create(uint256(blockhash(block.number - 1)));
-        for (uint256 i = 0; i < subsetSize; ++i) {
-            uint256 index = generator.random(i, length);
-            if (index > i) {
-                (candidates[i], candidates[index]) = (candidates[index], candidates[i]);
-            }
-        }
     }
 
     function _committeeExists(CommitteeIndex index) private view returns (bool exists) {

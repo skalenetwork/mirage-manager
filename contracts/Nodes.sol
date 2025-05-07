@@ -147,7 +147,7 @@ contract Nodes is AccessManagedUpgradeable, INodes {
         validPort(port)
     {
         NodeId nodeId = _createActiveNode(msg.sender, ip, port, "");
-        committeeContract.newNodeCreated(nodeId);
+        committeeContract.nodeCreated(nodeId);
     }
 
     function requestChangeAddress(

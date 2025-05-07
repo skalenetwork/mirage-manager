@@ -24,6 +24,7 @@ pragma solidity ^0.8.24;
 import {
     AccessManagedUpgradeable
 } from "@openzeppelin/contracts-upgradeable/access/manager/AccessManagedUpgradeable.sol";
+import { ICommittee } from "@skalenetwork/professional-interfaces/ICommittee.sol";
 import { INodes, NodeId } from "@skalenetwork/professional-interfaces/INodes.sol";
 import { Duration, IStatus } from "@skalenetwork/professional-interfaces/IStatus.sol";
 
@@ -38,6 +39,7 @@ contract Status is AccessManagedUpgradeable, IStatus {
     mapping (NodeId id => uint256 timestamp) public lastHeartbeatTimestamp;
     TypedSet.NodeIdSet private _whitelist;
 
+    ICommittee public committee;
     INodes public nodes;
 
     error NodeAlreadyWhitelisted(NodeId nodeId);
@@ -48,9 +50,18 @@ contract Status is AccessManagedUpgradeable, IStatus {
         require(nodes.activeNodeExists(nodeId), NodeDoesNotExist(nodeId));
         _;
     }
-    function initialize(address initialAuthority, INodes nodesAddress) public override initializer {
+    function initialize(
+        address initialAuthority,
+        INodes nodesAddress,
+        ICommittee committeeAddress
+    )
+        public
+        override
+        initializer
+    {
         __AccessManaged_init(initialAuthority);
         nodes = nodesAddress;
+        committee = committeeAddress;
         heartbeatInterval = Duration.wrap(5 minutes);
     }
 
@@ -59,6 +70,10 @@ contract Status is AccessManagedUpgradeable, IStatus {
         NodeId nodeId = nodes.getNodeId(msg.sender);
 
         lastHeartbeatTimestamp[nodeId] = block.timestamp;
+
+        if (isWhitelisted(nodeId)) {
+            committee.processHeartbeat(nodeId);
+        }
     }
     function setHeartbeatInterval(Duration interval) external override restricted {
         heartbeatInterval = interval;
@@ -66,14 +81,12 @@ contract Status is AccessManagedUpgradeable, IStatus {
 
     function whitelistNode(NodeId nodeId) external override restricted nodeExists(nodeId) {
         require(_whitelist.add(nodeId), NodeAlreadyWhitelisted(nodeId));
+        committee.nodeWhitelisted(nodeId);
     }
 
     function removeNodeFromWhitelist(NodeId nodeId) external override restricted {
         require(_whitelist.remove(nodeId), NodeNotWhitelisted(nodeId));
-    }
-
-    function isHealthy(NodeId nodeId) external view override returns (bool healthy) {
-        healthy = _isHealthy(nodeId);
+        committee.nodeBlacklisted(nodeId);
     }
 
     function getNodesEligibleForCommittee() external view override returns (NodeId[] memory nodeIds) {
@@ -86,7 +99,7 @@ contract Status is AccessManagedUpgradeable, IStatus {
             NodeId nodeId = _whitelist.at(i);
 
             // TODO: improve. It's simple enough while nodes can't be removed
-            if (_isHealthy(nodeId)) {
+            if (isHealthy(nodeId)) {
                 healthyNodeIds[eligibleCount] = nodeId;
                 ++eligibleCount;
             }
@@ -102,11 +115,11 @@ contract Status is AccessManagedUpgradeable, IStatus {
         nodeIds = _whitelist.values();
     }
 
-    function isWhitelisted(NodeId nodeId) external view override returns (bool whitelisted) {
+    function isWhitelisted(NodeId nodeId) public view override returns (bool whitelisted) {
         whitelisted = _whitelist.contains(nodeId);
     }
 
-    function _isHealthy(NodeId nodeId) private view returns (bool healthy) {
+    function isHealthy(NodeId nodeId) public view override returns (bool healthy) {
         uint256 interval = block.timestamp - lastHeartbeatTimestamp[nodeId];
         healthy = interval < Duration.unwrap(heartbeatInterval);
     }

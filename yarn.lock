@@ -2326,10 +2326,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@skalenetwork/professional-interfaces@npm:0.1.0-develop.69":
-  version: 0.1.0-develop.69
-  resolution: "@skalenetwork/professional-interfaces@npm:0.1.0-develop.69"
-  checksum: 10c0/2a49f2ed7c45536d2f547bbaae4f09feda61a1f12b3c67472db18b29d4ccf357101728ca637b6b6aa92afb5cc34a76eede5c34e87fdb8afabca0224ece7a9436
+"@skalenetwork/professional-interfaces@npm:0.1.0-develop.70":
+  version: 0.1.0-develop.70
+  resolution: "@skalenetwork/professional-interfaces@npm:0.1.0-develop.70"
+  checksum: 10c0/0857d5535de38a40e2af689da415a0811c42dfce3b2119632fadd1758aa311917962e8bb82175c212c17952c889b803a590249964a67c4ce253864aa4348fd0b
   languageName: node
   linkType: hard
 
@@ -6174,6 +6174,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"js-combinatorics@npm:^2.1.2":
+  version: 2.1.2
+  resolution: "js-combinatorics@npm:2.1.2"
+  checksum: 10c0/32f3935612d0410a4149179c23a8d4e19f89de1062fb4505193b5dc5a3fbde57eea76f909daa25f1bfdc1fc6c741ca6ba0c8ccfff562ff92261ef89117f828d4
+  languageName: node
+  linkType: hard
+
 "js-cookie@npm:^2.2.1":
   version: 2.2.1
   resolution: "js-cookie@npm:2.2.1"
@@ -6706,7 +6713,7 @@ __metadata:
     "@openzeppelin/contracts-upgradeable": "npm:^5.2.0"
     "@openzeppelin/hardhat-upgrades": "npm:^3.9.0"
     "@openzeppelin/upgrades-core": "npm:^1.42.2"
-    "@skalenetwork/professional-interfaces": "npm:0.1.0-develop.69"
+    "@skalenetwork/professional-interfaces": "npm:0.1.0-develop.70"
     "@skalenetwork/skale-contracts-ethers-v6": "npm:^1.0.2-develop.61"
     "@skalenetwork/skale-manager-interfaces": "npm:3.2.0-develop.3"
     "@skalenetwork/upgrade-tools": "npm:3.0.0-develop.42"
@@ -6732,6 +6739,7 @@ __metadata:
     hardhat-dependency-compiler: "npm:^1.2.1"
     hardhat-gas-reporter: "npm:^2.2.3"
     ip: "npm:2.0.1"
+    js-combinatorics: "npm:^2.1.2"
     lodash: "npm:^4.17.21"
     seedrandom: "npm:^3.0.5"
     solhint: "npm:^5.0.5"
