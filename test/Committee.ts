@@ -138,7 +138,10 @@ describe("Committee", () => {
         );
     });
 
-    it("should check if a node in the committee or will be there soon", async () => {
+    it("should check if a node in the committee or will be there soon", async function () {
+        // TODO: this test does not fit standard timelimit with old nodejs
+        // remove this line after stop using nodejs 20
+        this.timeout(50000); // slightly increase timeout for older nodejs
         const {committee, dkg, nodesData, status} = await nodesAreRegisteredAndHeartbeatIsSent();
         await committee.setCommitteeSize(5);
 
