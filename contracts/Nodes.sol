@@ -146,7 +146,7 @@ contract Nodes is AccessManagedUpgradeable, INodes {
 
     function registerNode(
         bytes calldata ip,
-        bytes32[2] memory publicKey,
+        bytes32[2] calldata publicKey,
         uint16 port
     )
         external
@@ -483,7 +483,7 @@ contract Nodes is AccessManagedUpgradeable, INodes {
     {
         bytes32 hash = keccak256(abi.encodePacked(pubKey[0], pubKey[1]));
         bytes20 addr;
-        for (uint8 i = 12; i < 32; i++) {
+        for (uint8 i = 12; i < 32; ++i) {
             addr |= bytes20(hash[i] & 0xFF) >> ((i - 12) * 8);
         }
         return address(addr);
