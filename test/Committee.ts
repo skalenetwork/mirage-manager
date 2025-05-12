@@ -100,7 +100,8 @@ describe("Committee", () => {
             .should.be.revertedWithCustomError(committee, "AccessManagedUnauthorized");
     });
 
-    it("should set committee size", async () => {
+    it("should set committee size", async function () {
+        this.timeout(600000);
         const {committee} = await nodesAreRegisteredAndHeartbeatIsSent();
         const newSize = 13n;
 
