@@ -49,7 +49,7 @@ describe("Nodes", function () {
         [deployer, user1, user2] = await ethers.getSigners();
 
         [deployerPubKey, user1PubKey, user2PubKey] = await Promise.all(
-            [deployer, user1, user2].map((wallet) => getPublicKey(wallet))
+            [deployer, user1, user2].map((user) => getPublicKey(user))
         );
     });
 
