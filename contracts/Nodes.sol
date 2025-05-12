@@ -96,7 +96,6 @@ contract Nodes is AccessManagedUpgradeable, INodes {
             !committeeContract.isNodeInCurrentOrNextCommittee(nodeId),
             NodeIsInCommittee(nodeId)
         );
-
         _;
     }
 
@@ -105,7 +104,6 @@ contract Nodes is AccessManagedUpgradeable, INodes {
             _isActiveNode(nodeId) || _isPassiveNode(nodeId),
             NodeDoesNotExist(nodeId)
         );
-
         _;
     }
     modifier validIp(bytes calldata ip) {
@@ -155,9 +153,10 @@ contract Nodes is AccessManagedUpgradeable, INodes {
         validPort(port)
         validPubKey(publicKey)
     {
+        address nodeAddress = _publicKeyToAddress(publicKey);
         require(
-            msg.sender == _publicKeyToAddress(publicKey),
-            InvalidPublicKeyForSender(publicKey, _publicKeyToAddress(publicKey), msg.sender)
+            msg.sender == nodeAddress,
+            InvalidPublicKeyForSender(publicKey, nodeAddress, msg.sender)
         );
 
         NodeId nodeId = _createActiveNode({
@@ -242,19 +241,13 @@ contract Nodes is AccessManagedUpgradeable, INodes {
 
     function registerPassiveNode(
         bytes calldata ip,
-        bytes32[2] calldata publicKey,
         uint16 port
     )
         external
         override
         validIp(ip)
         validPort(port)
-        validPubKey(publicKey)
     {
-        require(
-            msg.sender == _publicKeyToAddress(publicKey),
-            InvalidPublicKeyForSender(publicKey, _publicKeyToAddress(publicKey), msg.sender)
-        );
         unchecked {
             ++_nodeIdCounter;
         }
@@ -269,7 +262,7 @@ contract Nodes is AccessManagedUpgradeable, INodes {
 
         nodes[nodeId] = Node({
             id: nodeId,
-            publicKey: publicKey,
+            publicKey: [bytes32(0),bytes32(0)],
             port: port,
             nodeAddress: msg.sender,
             ip: ip,
@@ -482,10 +475,6 @@ contract Nodes is AccessManagedUpgradeable, INodes {
         returns (address nodeAddress)
     {
         bytes32 hash = keccak256(abi.encodePacked(pubKey[0], pubKey[1]));
-        bytes20 addr = bytes20(0);
-        for (uint8 i = 12; i < 32; ++i) {
-            addr |= bytes20(hash[i] & 0xFF) >> ((i - 12) * 8);
-        }
-        return address(addr);
+        return address(uint160(uint256(hash)));
     }
 }

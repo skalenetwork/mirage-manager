@@ -2326,10 +2326,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@skalenetwork/professional-interfaces@npm:0.1.0-add-nodes-pk.1":
-  version: 0.1.0-add-nodes-pk.1
-  resolution: "@skalenetwork/professional-interfaces@npm:0.1.0-add-nodes-pk.1"
-  checksum: 10c0/bdc69c444b1f71a11762a23256946cd53947c6b9da7cf138047a9014d5d6dffc44e8762ab2ab356b2df7a895612449b5f3f25888b63bb171f76d07d17994b6e9
+"@skalenetwork/professional-interfaces@npm:0.1.0-add-nodes-pk.2":
+  version: 0.1.0-add-nodes-pk.2
+  resolution: "@skalenetwork/professional-interfaces@npm:0.1.0-add-nodes-pk.2"
+  checksum: 10c0/905744c62122ef5151e169a31bf53229e9ead0e84bd8e2ca0ee5dcf4b6ce7de46bdcba279d797218d62085a4a2180d146c8bd0646ada9597f49264aaa8cb624b
   languageName: node
   linkType: hard
 
@@ -2999,21 +2999,21 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/bn.js@npm:*, @types/bn.js@npm:^5.1.0":
-  version: 5.1.6
-  resolution: "@types/bn.js@npm:5.1.6"
-  dependencies:
-    "@types/node": "npm:*"
-  checksum: 10c0/073d383d87afea513a8183ce34af7bc0a7a798d057c7ae651982b7f30dd7d93f33247323bca3ba39f1f6af146b564aff547b15467bdf9fc922796c17e8426bf6
-  languageName: node
-  linkType: hard
-
 "@types/bn.js@npm:^4.11.3":
   version: 4.11.6
   resolution: "@types/bn.js@npm:4.11.6"
   dependencies:
     "@types/node": "npm:*"
   checksum: 10c0/a5a19dafc106b1b2ab35c2024ca37b9d0938dced11cb1cca7d119de5a0dd5f54db525c82cb1392843fc921677452efcbbdce3aa96ecc1457d3de6e266915ebd0
+  languageName: node
+  linkType: hard
+
+"@types/bn.js@npm:^5.1.0":
+  version: 5.1.6
+  resolution: "@types/bn.js@npm:5.1.6"
+  dependencies:
+    "@types/node": "npm:*"
+  checksum: 10c0/073d383d87afea513a8183ce34af7bc0a7a798d057c7ae651982b7f30dd7d93f33247323bca3ba39f1f6af146b564aff547b15467bdf9fc922796c17e8426bf6
   languageName: node
   linkType: hard
 
@@ -3046,15 +3046,6 @@ __metadata:
   version: 4.0.2
   resolution: "@types/deep-eql@npm:4.0.2"
   checksum: 10c0/bf3f811843117900d7084b9d0c852da9a044d12eb40e6de73b552598a6843c21291a8a381b0532644574beecd5e3491c5ff3a0365ab86b15d59862c025384844
-  languageName: node
-  linkType: hard
-
-"@types/elliptic@npm:^6.4.18":
-  version: 6.4.18
-  resolution: "@types/elliptic@npm:6.4.18"
-  dependencies:
-    "@types/bn.js": "npm:*"
-  checksum: 10c0/0c438130b9a16b6ff566f47319dbac39979172ead7748cfbe8a782232506c2e64b03c8c3cfcc221f727ecc7036f5749623567cf66946b0478f217d5b5930c22b
   languageName: node
   linkType: hard
 
@@ -4608,7 +4599,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"elliptic@npm:6.6.1, elliptic@npm:^6.5.2, elliptic@npm:^6.5.7, elliptic@npm:^6.6.1":
+"elliptic@npm:6.6.1, elliptic@npm:^6.5.2, elliptic@npm:^6.5.7":
   version: 6.6.1
   resolution: "elliptic@npm:6.6.1"
   dependencies:
@@ -6722,7 +6713,7 @@ __metadata:
     "@openzeppelin/contracts-upgradeable": "npm:^5.2.0"
     "@openzeppelin/hardhat-upgrades": "npm:^3.9.0"
     "@openzeppelin/upgrades-core": "npm:^1.42.2"
-    "@skalenetwork/professional-interfaces": "npm:0.1.0-add-nodes-pk.1"
+    "@skalenetwork/professional-interfaces": "npm:0.1.0-add-nodes-pk.2"
     "@skalenetwork/skale-contracts-ethers-v6": "npm:^1.0.2-develop.61"
     "@skalenetwork/skale-manager-interfaces": "npm:3.2.0-develop.3"
     "@skalenetwork/upgrade-tools": "npm:3.0.0-develop.42"
@@ -6730,7 +6721,6 @@ __metadata:
     "@typechain/hardhat": "npm:^9.0.0"
     "@types/chai": "npm:^4.2.0"
     "@types/chai-as-promised": "npm:^7.1.6"
-    "@types/elliptic": "npm:^6.4.18"
     "@types/ip": "npm:^1.1.3"
     "@types/lodash": "npm:^4"
     "@types/mocha": "npm:>=9.1.0"
@@ -6742,7 +6732,6 @@ __metadata:
     chalk: "npm:^4"
     cspell: "npm:^8.19.2"
     dotenv: "npm:^16.5.0"
-    elliptic: "npm:^6.6.1"
     eslint: "npm:^9.22.0"
     ethers: "npm:^6.4.0"
     globals: "npm:^16.0.0"

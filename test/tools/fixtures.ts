@@ -68,7 +68,7 @@ const generateRandomNodes = async (initialNumberOfNodes?: number) => {
             nodeAddress: wallet.address,
             port: 8000,
             wallet: wallet,
-            publicKey: getPublicKey(wallet)
+            publicKey: await getPublicKey(wallet)
         });
     }
     return nodesData;

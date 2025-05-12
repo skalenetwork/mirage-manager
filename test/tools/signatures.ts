@@ -1,13 +1,14 @@
-import { BaseWallet, BytesLike, ethers } from "ethers";
-import {ec} from "elliptic";
+import { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers";
+import { BytesLike, ethers, dataSlice, SigningKey, HDNodeWallet, hashMessage } from "ethers";
 
-const secp256k1EC = new ec("secp256k1");
-
-// cspell:words hexlify
-
-export function getPublicKey(wallet: BaseWallet): [BytesLike, BytesLike] {
-    const publicKey = secp256k1EC.keyFromPrivate(wallet.privateKey.slice(2)).getPublic();
-    const pubA = ethers.zeroPadValue(ethers.hexlify(publicKey.getX().toBuffer()), 32);
-    const pubB = ethers.zeroPadValue(ethers.hexlify(publicKey.getY().toBuffer()), 32);
+export async function getPublicKey(signer: HDNodeWallet | HardhatEthersSigner): Promise<[BytesLike, BytesLike]> {
+    const digest = hashMessage("random");
+    const pubKey = SigningKey.recoverPublicKey(
+        digest,
+        await signer.signMessage("random")
+    );
+    const pubA = ethers.zeroPadValue(dataSlice(pubKey, 1, 33), 32);
+    const pubB = ethers.zeroPadValue(dataSlice(pubKey, 33), 32);
+    //console.log(pubKey, pubA, pubB);
     return [pubA, pubB];
 }
