@@ -8,12 +8,40 @@ import 'solidity-coverage'
 import '@typechain/hardhat';
 import 'hardhat-dependency-compiler';
 import * as dotenv from "dotenv"
+import { parseEther, Wallet } from "ethers";
+import { HardhatNetworkAccountUserConfig } from "hardhat/types";
 
 dotenv.config();
+
+export const DEPLOYER_PHRASE = "test test test test test test test test test test test junk";
+
+
+function getAccounts() {
+  const accounts: HardhatNetworkAccountUserConfig[] = [];
+  const defaultBalance = parseEther("2000000").toString();
+
+  // First account with known mnemonic
+  accounts.push({
+    privateKey: Wallet.fromPhrase(DEPLOYER_PHRASE).privateKey,
+    balance: defaultBalance,
+  })
+  const n = 10;
+  for (let i = 0; i < n; ++i) {
+    accounts.push({
+      privateKey: Wallet.createRandom().privateKey,
+      balance: defaultBalance
+    })
+  }
+
+  return accounts;
+}
 
 const config: HardhatUserConfig = {
   solidity: "0.8.28",
   networks: {
+    hardhat:{
+      accounts: getAccounts()
+    },
     custom: {
       url: process.env.ENDPOINT || "http://localhost:8545",
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],

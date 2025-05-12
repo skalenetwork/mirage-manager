@@ -71,18 +71,20 @@ async function fetchNodes() {
     const nodesInGroup = await schainsInternal.getNodesInGroup(mirageChainHash);
     const nodeList: INodes.NodeStruct[] = [];
     for (const nodeId of nodesInGroup) {
-        const [ip, domainName ,nodeAddress, port] = await Promise.all([
+        const [ip, domainName ,nodeAddress, port, publicKey] = await Promise.all([
             nodes.getNodeIP(nodeId),
             nodes.getNodeDomainName(nodeId),
             nodes.getNodeAddress(nodeId),
-            nodes.getNodePort(nodeId)
+            nodes.getNodePort(nodeId),
+            nodes.getNodePublicKey(nodeId)
         ]);
         nodeList.push({
             id: 0,
             ip,
             domainName,
             nodeAddress,
-            port
+            port,
+            publicKey
         });
     }
     return nodeList;
