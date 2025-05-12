@@ -7,6 +7,7 @@ import { deploy as productionDeploy } from "../../migrations/deploy";
 import { HDNodeWallet, Wallet } from "ethers";
 import { ethers } from "hardhat";
 import { INodes, IDkg } from "../../typechain-types";
+import { getPublicKey } from "./signatures";
 
 // Parameters
 
@@ -66,7 +67,8 @@ const generateRandomNodes = async (initialNumberOfNodes?: number) => {
             domainName: `d2-${i}.skale`,
             nodeAddress: wallet.address,
             port: 8000,
-            wallet
+            wallet: wallet,
+            publicKey: await getPublicKey(wallet)
         });
     }
     return nodesData;
@@ -78,7 +80,7 @@ const registerNodes = async () => {
     const nodesData = await generateRandomNodes(numberOfNodes - initialNumberOfNodes);
 
     for (const node of nodesData) {
-        await nodes.connect(node.wallet).registerNode(node.ip, node.port);
+        await nodes.connect(node.wallet).registerNode(node.ip, node.publicKey, node.port);
         const nodeId = await nodes.getNodeId(node.wallet.address);
         node.id = nodeId;
     }

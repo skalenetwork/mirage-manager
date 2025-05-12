@@ -47,8 +47,8 @@ contract Nodes is AccessManagedUpgradeable, INodes {
     // Mapping from node ID to Node struct
     mapping(NodeId nodeId => Node node) public nodes;
 
-    // Stores requests to change address before committing changes
-    mapping(NodeId nodeId => address newNodeAddress) public addressChangeRequests;
+    // Stores requests to change owner before committing changes
+    mapping(NodeId nodeId => bytes32[2] newNodeOwner) public ownerChangeRequests;
 
     ICommittee public committeeContract;
 
@@ -81,6 +81,8 @@ contract Nodes is AccessManagedUpgradeable, INodes {
     error PassiveNodeAlreadyExistsForAddress(address nodeAddress, NodeId nodeId);
     error AddressInUseByPassiveNodes(address nodeAddress);
     error InvalidPortNumber(uint16 port);
+    error InvalidPublicKey(bytes32[2] publicKey);
+    error InvalidPublicKeyForSender(bytes32[2] publicKey, address expected, address sender);
     error InvalidIp(bytes ip);
     error IpIsNotAvailable(bytes ip);
     error DomainNameAlreadyTaken(string domainName);
@@ -94,7 +96,6 @@ contract Nodes is AccessManagedUpgradeable, INodes {
             !committeeContract.isNodeInCurrentOrNextCommittee(nodeId),
             NodeIsInCommittee(nodeId)
         );
-
         _;
     }
 
@@ -103,7 +104,6 @@ contract Nodes is AccessManagedUpgradeable, INodes {
             _isActiveNode(nodeId) || _isPassiveNode(nodeId),
             NodeDoesNotExist(nodeId)
         );
-
         _;
     }
     modifier validIp(bytes calldata ip) {
@@ -123,6 +123,11 @@ contract Nodes is AccessManagedUpgradeable, INodes {
         _;
     }
 
+    modifier validPubKey(bytes32[2] memory publicKey){
+        require(publicKey[0] != bytes32(0) && publicKey[1] != bytes32(0), InvalidPublicKey(publicKey));
+        _;
+    }
+
     modifier onlyNodeOwner(NodeId nodeId){
         require(msg.sender == nodes[nodeId].nodeAddress, SenderIsNotNodeOwner());
         _;
@@ -139,32 +144,48 @@ contract Nodes is AccessManagedUpgradeable, INodes {
 
     function registerNode(
         bytes calldata ip,
+        bytes32[2] calldata publicKey,
         uint16 port
     )
         external
         override
         validIp(ip)
         validPort(port)
+        validPubKey(publicKey)
     {
-        NodeId nodeId = _createActiveNode(msg.sender, ip, port, "");
+        address nodeAddress = _publicKeyToAddress(publicKey);
+        require(
+            msg.sender == nodeAddress,
+            InvalidPublicKeyForSender(publicKey, nodeAddress, msg.sender)
+        );
+
+        NodeId nodeId = _createActiveNode({
+            nodeAddress: msg.sender,
+            ip: ip,
+            port: port,
+            domainName: "",
+            publicKey: publicKey
+        });
         committeeContract.nodeCreated(nodeId);
     }
 
-    function requestChangeAddress(
+    function requestChangeOwner(
         NodeId nodeId,
-        address newAddress
+        bytes32[2] calldata newPublicKey
     )
         external
         override
         nodeExists(nodeId)
         onlyNodeOwner(nodeId)
+        validPubKey(newPublicKey)
     {
+        address newAddress = _publicKeyToAddress(newPublicKey);
         if (_isPassiveNode(nodeId)) {
             require(
                 !_isAddressOfActiveNode(newAddress),
                 AddressIsAlreadyAssignedToNode(newAddress)
             );
-            addressChangeRequests[nodeId] = newAddress;
+            ownerChangeRequests[nodeId] = newPublicKey;
             return;
         }
 
@@ -177,10 +198,10 @@ contract Nodes is AccessManagedUpgradeable, INodes {
             !_isAddressOfActiveNode(newAddress),
             AddressIsAlreadyAssignedToNode(newAddress)
         );
-        addressChangeRequests[nodeId] = newAddress;
+        ownerChangeRequests[nodeId] = newPublicKey;
     }
 
-    function confirmAddressChange(
+    function confirmOwnerChange(
         NodeId nodeId
     )
         external
@@ -188,20 +209,17 @@ contract Nodes is AccessManagedUpgradeable, INodes {
         nodeExists(nodeId)
         nodeNotInCurrentOrNextCommittee(nodeId)
     {
-        address newOwner = addressChangeRequests[nodeId];
+        address newOwner = _publicKeyToAddress(ownerChangeRequests[nodeId]);
 
         require(msg.sender == newOwner, SenderIsNotNewNodeOwner());
 
         address oldOwner = nodes[nodeId].nodeAddress;
-        // Remove old address
-        delete addressChangeRequests[nodeId];
 
         if (_isActiveNode(nodeId)) {
             assert(_activeNodesAddressToId.remove(oldOwner));
 
             // Register new address
             _setActiveNodeIdForAddress(newOwner, nodeId);
-            nodes[nodeId].nodeAddress = newOwner;
         }
         if (_isPassiveNode(nodeId)) {
 
@@ -212,8 +230,10 @@ contract Nodes is AccessManagedUpgradeable, INodes {
             if (_passiveNodeIdByAddress.lengthOf(oldOwner) == 0) {
                 assert(_passiveNodeAddresses.remove(oldOwner));
             }
-            nodes[nodeId].nodeAddress = newOwner;
         }
+        nodes[nodeId].nodeAddress = newOwner;
+        nodes[nodeId].publicKey = ownerChangeRequests[nodeId];
+        delete ownerChangeRequests[nodeId];
 
         emit NodeAddressChanged(nodeId, oldOwner, newOwner);
 
@@ -228,7 +248,6 @@ contract Nodes is AccessManagedUpgradeable, INodes {
         validIp(ip)
         validPort(port)
     {
-
         unchecked {
             ++_nodeIdCounter;
         }
@@ -243,6 +262,7 @@ contract Nodes is AccessManagedUpgradeable, INodes {
 
         nodes[nodeId] = Node({
             id: nodeId,
+            publicKey: [bytes32(0),bytes32(0)],
             port: port,
             nodeAddress: msg.sender,
             ip: ip,
@@ -344,11 +364,16 @@ contract Nodes is AccessManagedUpgradeable, INodes {
         result = _isActiveNode(nodeId);
     }
 
+    function getOwnerChangeRequest(NodeId nodeId) external view override returns(bytes32[2] memory publicKey){
+        return ownerChangeRequests[nodeId];
+    }
+
     function _createActiveNode(
         address nodeAddress,
-        bytes memory ip,
+        bytes calldata ip,
         uint16 port,
-        string memory domainName
+        string memory domainName,
+        bytes32[2] memory publicKey
     )
         internal
         returns (NodeId nodeId)
@@ -365,6 +390,7 @@ contract Nodes is AccessManagedUpgradeable, INodes {
 
         nodes[nodeId] = Node({
             id: nodeId,
+            publicKey: publicKey,
             port: port,
             nodeAddress: nodeAddress,
             ip: ip,
@@ -413,8 +439,15 @@ contract Nodes is AccessManagedUpgradeable, INodes {
     function _initializeGroup(Node[] calldata initialNodes) private {
         uint256 length = initialNodes.length;
         for (uint256 i; i < length; ++i) {
-            Node memory initNode = initialNodes[i];
-            _createActiveNode(initNode.nodeAddress, initNode.ip, initNode.port, initNode.domainName);
+            Node calldata initNode = initialNodes[i];
+
+            _createActiveNode({
+                nodeAddress: initNode.nodeAddress,
+                ip: initNode.ip,
+                port: initNode.port,
+                domainName: initNode.domainName,
+                publicKey: initNode.publicKey
+            });
         }
     }
 
@@ -432,5 +465,16 @@ contract Nodes is AccessManagedUpgradeable, INodes {
 
     function _isAddressOfActiveNode(address nodeAddress) private view returns (bool result) {
         result = _activeNodesAddressToId.contains(nodeAddress);
+    }
+
+    function _publicKeyToAddress(
+        bytes32[2] memory pubKey
+    )
+        private
+        pure
+        returns (address nodeAddress)
+    {
+        bytes32 hash = keccak256(abi.encodePacked(pubKey[0], pubKey[1]));
+        return address(uint160(uint256(hash)));
     }
 }

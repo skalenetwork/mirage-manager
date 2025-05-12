@@ -7,7 +7,7 @@ import '@openzeppelin/hardhat-upgrades';
 import 'solidity-coverage'
 import '@typechain/hardhat';
 import 'hardhat-dependency-compiler';
-import * as dotenv from "dotenv"
+import * as dotenv from "dotenv";
 
 dotenv.config();
 
