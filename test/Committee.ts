@@ -25,7 +25,7 @@ describe("Committee", () => {
         expect(newVersion).to.be.eql(await committee.version());
     });
 
-    it("should not allow anyone to start committee rotation", async function () {
+    it("should not allow anyone to start committee rotation", async () => {
         const [, hacker] = await ethers.getSigners();
         const {committee} = await nodesAreRegisteredAndHeartbeatIsSent();
         await committee.connect(hacker).select()
@@ -100,7 +100,7 @@ describe("Committee", () => {
             .should.be.revertedWithCustomError(committee, "AccessManagedUnauthorized");
     });
 
-    it("should set committee size", async function () {
+    it("should set committee size", async () => {
         const {committee} = await nodesAreRegisteredAndHeartbeatIsSent();
         const newSize = 13n;
 
