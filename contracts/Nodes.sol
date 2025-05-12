@@ -482,7 +482,7 @@ contract Nodes is AccessManagedUpgradeable, INodes {
         returns (address nodeAddress)
     {
         bytes32 hash = keccak256(abi.encodePacked(pubKey[0], pubKey[1]));
-        bytes20 addr;
+        bytes20 addr = bytes20(0);
         for (uint8 i = 12; i < 32; ++i) {
             addr |= bytes20(hash[i] & 0xFF) >> ((i - 12) * 8);
         }
