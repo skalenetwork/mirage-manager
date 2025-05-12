@@ -131,7 +131,7 @@ contract Nodes is AccessManagedUpgradeable, INodes {
     }
 
     modifier onlyNodeOwner(NodeId nodeId){
-        require(_addressesMatch(msg.sender, nodes[nodeId].nodeAddress), SenderIsNotNodeOwner());
+        require(msg.sender == nodes[nodeId].nodeAddress, SenderIsNotNodeOwner());
         _;
     }
 
@@ -156,7 +156,7 @@ contract Nodes is AccessManagedUpgradeable, INodes {
         validPubKey(publicKey)
     {
         require(
-            _addressesMatch(msg.sender, _publicKeyToAddress(publicKey)),
+            msg.sender == _publicKeyToAddress(publicKey),
             InvalidPublicKeyForSender(publicKey, _publicKeyToAddress(publicKey), msg.sender)
         );
 
@@ -252,7 +252,7 @@ contract Nodes is AccessManagedUpgradeable, INodes {
         validPubKey(publicKey)
     {
         require(
-            _addressesMatch(msg.sender, _publicKeyToAddress(publicKey)),
+            msg.sender == _publicKeyToAddress(publicKey),
             InvalidPublicKeyForSender(publicKey, _publicKeyToAddress(publicKey), msg.sender)
         );
         unchecked {
@@ -487,9 +487,5 @@ contract Nodes is AccessManagedUpgradeable, INodes {
             addr |= bytes20(hash[i] & 0xFF) >> ((i - 12) * 8);
         }
         return address(addr);
-    }
-
-    function _addressesMatch(address addr1, address addr2) private pure returns (bool result){
-        return addr1 == addr2;
     }
 }
