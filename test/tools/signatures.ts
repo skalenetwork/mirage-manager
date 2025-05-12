@@ -9,6 +9,5 @@ export async function getPublicKey(signer: HDNodeWallet | HardhatEthersSigner): 
     );
     const pubA = ethers.zeroPadValue(dataSlice(pubKey, 1, 33), 32);
     const pubB = ethers.zeroPadValue(dataSlice(pubKey, 33), 32);
-    //console.log(pubKey, pubA, pubB);
     return [pubA, pubB];
 }

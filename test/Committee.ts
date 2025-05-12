@@ -26,7 +26,6 @@ describe("Committee", () => {
     });
 
     it("should not allow anyone to start committee rotation", async function () {
-        this.timeout(120000); // 2 minute registering and heartbeat
         const [, hacker] = await ethers.getSigners();
         const {committee} = await nodesAreRegisteredAndHeartbeatIsSent();
         await committee.connect(hacker).select()
@@ -102,7 +101,6 @@ describe("Committee", () => {
     });
 
     it("should set committee size", async function () {
-        this.timeout(120000); // 2 minutes for smaller committee
         const {committee} = await nodesAreRegisteredAndHeartbeatIsSent();
         const newSize = 13n;
 
