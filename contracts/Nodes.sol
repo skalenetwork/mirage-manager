@@ -187,7 +187,6 @@ contract Nodes is AccessManagedUpgradeable, INodes {
         );
 
         ownerChangeRequests[nodeId] = newOwner;
-        return;
     }
 
     function confirmOwnerChange(
