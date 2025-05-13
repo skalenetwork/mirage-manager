@@ -2343,6 +2343,16 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@skalenetwork/skale-contracts-ethers-v6@npm:^1.0.2-merge.1":
+  version: 1.0.2-merge.1
+  resolution: "@skalenetwork/skale-contracts-ethers-v6@npm:1.0.2-merge.1"
+  dependencies:
+    "@skalenetwork/skale-contracts": "npm:1.0.2-merge.1"
+    ethers: "npm:^6.13.5"
+  checksum: 10c0/36eff6f1e796d0274e06fcebf9b2e0f6b51222fd688c2ce08275ccb2490596223fbcf35608f34c62c70e5e68911b1d3cd7efe4f39c411b882963b14276881470
+  languageName: node
+  linkType: hard
+
 "@skalenetwork/skale-contracts@npm:1.0.2-develop.61":
   version: 1.0.2-develop.61
   resolution: "@skalenetwork/skale-contracts@npm:1.0.2-develop.61"
@@ -2351,6 +2361,17 @@ __metadata:
     axios: "npm:^1.4.0"
     semver: "npm:^7.6.0"
   checksum: 10c0/987e5b281da97e7a1c233643ea96200ac249c7c024b1febd96ba5b2c067ecf2800845073bd4baa403704aaa904811094dc784bccbc560d114b8dd63951360224
+  languageName: node
+  linkType: hard
+
+"@skalenetwork/skale-contracts@npm:1.0.2-merge.1":
+  version: 1.0.2-merge.1
+  resolution: "@skalenetwork/skale-contracts@npm:1.0.2-merge.1"
+  dependencies:
+    "@renovatebot/pep440": "npm:^3.0.20"
+    axios: "npm:^1.4.0"
+    semver: "npm:^7.6.0"
+  checksum: 10c0/ef113de2dd60fb48ad2ba7ae555972c004fa9edcf7d0d99983ba428ac307c999a4e98dbe3ac17714940eff743d4661edb7dc68e5fc014bcfb8721ea08013317b
   languageName: node
   linkType: hard
 
@@ -6714,7 +6735,7 @@ __metadata:
     "@openzeppelin/hardhat-upgrades": "npm:^3.9.0"
     "@openzeppelin/upgrades-core": "npm:^1.42.2"
     "@skalenetwork/professional-interfaces": "npm:0.1.0-develop.72"
-    "@skalenetwork/skale-contracts-ethers-v6": "npm:^1.0.2-develop.61"
+    "@skalenetwork/skale-contracts-ethers-v6": "npm:^1.0.2-merge.1"
     "@skalenetwork/skale-manager-interfaces": "npm:3.2.0-develop.3"
     "@skalenetwork/upgrade-tools": "npm:3.0.0-develop.42"
     "@typechain/ethers-v6": "npm:^0.5.0"
