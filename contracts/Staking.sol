@@ -24,21 +24,45 @@ pragma solidity ^0.8.24;
 import {
     AccessManagedUpgradeable
 } from "@openzeppelin/contracts-upgradeable/access/manager/AccessManagedUpgradeable.sol";
+import {ICommittee} from "@skalenetwork/professional-interfaces/ICommittee.sol";
+import {INodes, NodeId} from "@skalenetwork/professional-interfaces/INodes.sol";
 import {IStaking} from "@skalenetwork/professional-interfaces/IStaking.sol";
+import {Nodes} from "./Nodes.sol";
 import {NotImplemented} from "./utils/errors.sol";
+import {FundLibrary, Playa} from "./utils/Fund.sol";
 
 
 contract Staking is AccessManagedUpgradeable, IStaking {
+    using FundLibrary for FundLibrary.Fund;
 
-    function initialize(address initialAuthority) public initializer override {
+    ICommittee public committee;
+    INodes public nodes;
+    FundLibrary.Fund private _rootFund;
+    mapping (NodeId node => FundLibrary.Fund nodeFund) private _nodesFunds;
+
+    function initialize(address initialAuthority, ICommittee committee_, INodes nodes_) public initializer override {
         __AccessManaged_init(initialAuthority);
+        committee = committee_;
+        nodes = nodes_;
     }
 
-    function stake() external pure override {
-        revert NotImplemented();
+    function stake(NodeId node) external payable override {
+        require(nodes.activeNodeExists(node), Nodes.NodeDoesNotExist(node));
+        Playa balance = Playa.wrap(address(this).balance - msg.value);
+        Playa amount = Playa.wrap(msg.value);
+        _rootFund.supply(
+            balance,
+            FundLibrary.nodeToHolder(node),
+            amount
+        );
+        _nodesFunds[node].supply(
+            _rootFund.getBalance(balance, FundLibrary.nodeToHolder(node)),
+            FundLibrary.addressToHolder(msg.sender),
+            amount
+        );
     }
 
-    function retrieve(uint256 /*value*/) external pure override {
+    function retrieve(NodeId /*node*/, uint256 /*value*/) external pure override {
         revert NotImplemented();
     }
 

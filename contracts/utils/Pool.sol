@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 /*
-    Random.sol - mirage-manager
+    Pool.sol - mirage-manager
     Copyright (C) 2025-Present SKALE Labs
     @author Dmytro Stebaiev
 
