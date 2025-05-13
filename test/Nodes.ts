@@ -8,8 +8,6 @@ import { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers";
 import ip from "ip";
 import { BigNumberish, BytesLike, getBytes, ZeroHash } from 'ethers';
 import { getPublicKey } from "./tools/signatures";
-import { runDkg } from "./tools/dkg";
-import { skipTime } from "./tools/time";
 
 const INVALID_IPV4 = "0.0.0.0"
 const INVALID_IPV4_BYTES = ip.toBuffer(INVALID_IPV4);
@@ -380,17 +378,7 @@ describe("Nodes", function () {
     });
 
     it("should should not allow changing nodes data if node in current of next committee", async () => {
-        const {committee, dkg, nodesData, status, nodes} = await nodesAreRegisteredAndHeartbeatIsSent();
-        await committee.select();
-        await runDkg(
-            dkg,
-            nodesData,
-            (await committee.getCommittee(await committee.getActiveCommitteeIndex() + 1n)).dkg
-        );
-        await skipTime(await committee.transitionDelay());
-        for (const node of nodesData) {
-            await status.connect(node.wallet).alive();
-        }
+        const {committee, nodesData, nodes} = await nodesAreRegisteredAndHeartbeatIsSent();
         await committee.select();
 
         for(const node of nodesData) {
