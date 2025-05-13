@@ -323,7 +323,7 @@ describe("Nodes", function () {
         expect(node.nodeAddress).to.equal(deployer.address);
     });
 
-    it("should not allow to confirm an inexistant change request (address(0))", async () => {
+    it("should not allow to confirm an inexistent change request (address(0))", async () => {
         await nodesContract.registerNode(MOCK_IP_0_BYTES, deployerPubKey, 8000);
         const nodeId = await nodesContract.getNodeId(deployer.address) as BigNumberish;
 
