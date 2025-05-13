@@ -1,6 +1,6 @@
 import { ethers } from "hardhat";
 import { expect } from "chai";
-import { cleanDeployment } from "./tools/fixtures";
+import { cleanDeployment, nodesAreRegisteredAndHeartbeatIsSent } from "./tools/fixtures";
 import { Nodes } from "../typechain-types";
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
@@ -236,21 +236,28 @@ describe("Nodes", function () {
 
     it("should not allow submit address change requests for not existent nodes", async () => {
         const nonExistentNodeId = 9999;
-        await expect(nodesContract.requestChangeOwner(nonExistentNodeId, deployerPubKey))
+        await expect(nodesContract.requestChangeOwner(nonExistentNodeId, deployer.address))
         .to.be.reverted;
     });
 
-    it("should allow only Node owner to request Node address change", async () => {
+    it("should not allow active nodes to change owner", async () => {
         await nodesContract.registerNode(MOCK_IP_0_BYTES, deployerPubKey, 8000);
-        const nodeId = await nodesContract.getNodeId(deployer.address) as BigNumberish;
+        const nodeId = await nodesContract.getNodeId(deployer.address);
 
-        await expect(nodesContract.connect(user1).requestChangeOwner(nodeId, user1PubKey))
+        expect(nodesContract.requestChangeOwner(nodeId, user1.address))
+        .to.be.revertedWithCustomError(nodesContract, "ActiveNodesCannotChangeOwnership");
+    })
+
+    it("should allow only Node owner to request Node address change", async () => {
+        await nodesContract.registerPassiveNode(MOCK_IP_0_BYTES, 8000);
+        const [nodeId] = await nodesContract.getPassiveNodesIdsForAddress(deployer.address);
+
+        await expect(nodesContract.connect(user1).requestChangeOwner(nodeId, user1.address))
         .to.be.reverted;
 
-        await nodesContract.requestChangeOwner(nodeId, user1PubKey);
+        await nodesContract.requestChangeOwner(nodeId, user1.address);
 
-        expect(await nodesContract.getOwnerChangeRequest(nodeId)).to.eql(user1PubKey);
-
+        expect(await nodesContract.ownerChangeRequests(nodeId)).to.eql(user1.address);
     });
 
     it("should not allow passive nodes to request active node's addresses", async () => {
@@ -259,38 +266,15 @@ describe("Nodes", function () {
 
         await nodesContract.connect(user1).registerNode(MOCK_IP_1_BYTES, user1PubKey, 8000);
 
-        await expect(nodesContract.requestChangeOwner(firstNodeId, user1PubKey))
+        await expect(nodesContract.requestChangeOwner(firstNodeId, user1.address))
         .to.be.revertedWithCustomError(nodesContract, "AddressIsAlreadyAssignedToNode");
-
-    });
-
-    it("should not allow active nodes to request passive node's addresses", async () => {
-        await nodesContract.registerPassiveNode(MOCK_IP_0_BYTES, 8000);
-
-        await nodesContract.connect(user1).registerNode(MOCK_IP_1_BYTES, user1PubKey, 8000);
-        const userOneNodeId = await nodesContract.getNodeId(user1.address);
-
-        await expect(nodesContract.connect(user1).requestChangeOwner(userOneNodeId, deployerPubKey))
-        .to.be.revertedWithCustomError(nodesContract, "AddressInUseByPassiveNodes");
-
-    });
-
-    it("should not allow active nodes to request active node's addresses", async () => {
-        await nodesContract.registerNode(MOCK_IP_0_BYTES, deployerPubKey, 8000);
-
-        await nodesContract.connect(user1).registerNode(MOCK_IP_1_BYTES, user1PubKey, 8000);
-        const userOneNodeId = await nodesContract.getNodeId(user1.address);
-
-        await expect(nodesContract.connect(user1).requestChangeOwner(userOneNodeId, deployerPubKey))
-        .to.be.revertedWithCustomError(nodesContract, "AddressIsAlreadyAssignedToNode");
-
     });
 
     it("should allow only new Node owner to submit Node address change", async () => {
-        await nodesContract.registerNode(MOCK_IP_0_BYTES, deployerPubKey, 8000);
-        const nodeId = await nodesContract.getNodeId(deployer.address) as BigNumberish;
+        await nodesContract.registerPassiveNode(MOCK_IP_0_BYTES, 8000);
+        const [nodeId] = await nodesContract.getPassiveNodesIdsForAddress(deployer.address);
 
-        await nodesContract.requestChangeOwner(nodeId, user1PubKey);
+        await nodesContract.requestChangeOwner(nodeId, user1.address);
 
         await expect(nodesContract.confirmOwnerChange(nodeId))
         .to.be.reverted;
@@ -300,21 +284,21 @@ describe("Nodes", function () {
         expect(node.nodeAddress).to.equal(user1.address);
     });
 
-    it("should free old address after change is successful", async () => {
-        await nodesContract.registerNode(MOCK_IP_0_BYTES, deployerPubKey, 8000);
-        const nodeId = await nodesContract.getNodeId(deployer.address) as BigNumberish;
+    it("should free an address after no passive node has it", async () => {
+        await nodesContract.registerPassiveNode(MOCK_IP_0_BYTES, 8000);
+        const [nodeId] = await nodesContract.getPassiveNodesIdsForAddress(deployer.address);
 
-        await nodesContract.requestChangeOwner(nodeId, user1PubKey);
+        await nodesContract.requestChangeOwner(nodeId, user1.address);
 
-        // Fails, request not made yet
+        // Fails, passive node is still owned by deployer
         await expect(nodesContract.registerNode(MOCK_IP_1_BYTES, deployerPubKey, 8000))
-        .to.be.revertedWithCustomError(nodesContract, "AddressIsAlreadyAssignedToNode");
+        .to.be.revertedWithCustomError(nodesContract, "AddressInUseByPassiveNodes");
 
         await nodesContract.connect(user1).confirmOwnerChange(nodeId);
         const node = await nodesContract.getNode(nodeId);
         expect(node.nodeAddress).to.equal(user1.address);
 
-        // Now it should work
+        // Now it should work, deployer does not own any nodes
         await nodesContract.registerNode(MOCK_IP_1_BYTES, deployerPubKey, 8000);
         const newlyRegisteredNodeId = await nodesContract.getNodeId(deployer.address);
         await nodesContract.getNode(nodeId);
@@ -323,10 +307,10 @@ describe("Nodes", function () {
     });
 
     it("should block address change confirmation if address is taken", async () => {
-        await nodesContract.registerNode(MOCK_IP_0_BYTES, deployerPubKey, 8000);
-        const nodeId = await nodesContract.getNodeId(deployer.address) as BigNumberish;
+        await nodesContract.registerPassiveNode(MOCK_IP_0_BYTES, 8000);
+        const [nodeId] = await nodesContract.getPassiveNodesIdsForAddress(deployer.address);
 
-        await nodesContract.requestChangeOwner(nodeId, user1PubKey);
+        await nodesContract.requestChangeOwner(nodeId, user1.address);
 
         await nodesContract.connect(user1).registerNode(MOCK_IP_1_BYTES, user1PubKey, 8000);
 
@@ -335,10 +319,9 @@ describe("Nodes", function () {
 
         const node = await nodesContract.getNode(nodeId);
         expect(node.nodeAddress).to.equal(deployer.address);
-
     });
 
-    it("should not allow address(0)", async () => {
+    it("should not allow to confirm an inexistent change request (address(0))", async () => {
         await nodesContract.registerNode(MOCK_IP_0_BYTES, deployerPubKey, 8000);
         const nodeId = await nodesContract.getNodeId(deployer.address) as BigNumberish;
 
@@ -361,7 +344,7 @@ describe("Nodes", function () {
         .to.be.revertedWithCustomError(nodesContract, "AddressInUseByPassiveNodes");
 
 
-        await nodesContract.requestChangeOwner(firstNodeId, user1PubKey);
+        await nodesContract.requestChangeOwner(firstNodeId, user1.address);
         await nodesContract.connect(user1).confirmOwnerChange(firstNodeId);
         const node = await nodesContract.getNode(firstNodeId);
         expect(node.nodeAddress).to.equal(user1.address);
@@ -370,12 +353,10 @@ describe("Nodes", function () {
         await expect(nodesContract.registerNode(MOCK_IP_2_BYTES, deployerPubKey, 8000))
         .to.be.revertedWithCustomError(nodesContract, "AddressInUseByPassiveNodes");
 
-        await nodesContract.requestChangeOwner(secondNodeId, user2PubKey);
+        await nodesContract.requestChangeOwner(secondNodeId, user2.address);
         await nodesContract.connect(user2).confirmOwnerChange(secondNodeId);
         const node2 = await nodesContract.getNode(secondNodeId);
         expect(node2.nodeAddress).to.equal(user2.address);
-        expect(node2.publicKey).to.eql(user2PubKey);
-
 
         // Now deployer should be free
         await nodesContract.registerNode(MOCK_IP_2_BYTES, deployerPubKey, 8000);
@@ -386,44 +367,33 @@ describe("Nodes", function () {
 
     });
 
-    it("should not allow two nodes to request the same address and then confirm it", async () => {
-        await nodesContract.registerNode(MOCK_IP_0_BYTES, deployerPubKey, 8000);
-        const nodeId = await nodesContract.getNodeId(deployer.address) as BigNumberish;
-
-        await nodesContract.connect(user1).registerNode(MOCK_IP_1_BYTES, user1PubKey, 8000);
-        const userOneNodeId = await nodesContract.getNodeId(user1.address);
-
-        await nodesContract.requestChangeOwner(nodeId, user2PubKey);
-
-        await nodesContract.connect(user1).requestChangeOwner(userOneNodeId, user2PubKey);
-
-        const owner1 = await nodesContract.getOwnerChangeRequest(nodeId);
-        const owner2 = await nodesContract.getOwnerChangeRequest(userOneNodeId);
-        // two nodes requested the same owner
-        expect(owner1).to.eql(owner2);
-
-        // Node 1 gets new address successfully
-        await nodesContract.connect(user2).confirmOwnerChange(nodeId);
-
-        // Should fail to confirm the next change
-        await expect(nodesContract.connect(user2).confirmOwnerChange(userOneNodeId))
-        .to.be.revertedWithCustomError(nodesContract, "AddressIsAlreadyAssignedToNode");
-
-    });
-
     it("should revert when passive node was already assigned to the new address", async () => {
         await nodesContract.registerPassiveNode(MOCK_IP_0_BYTES, 8000);
         const [firstNodeId] = await nodesContract.getPassiveNodesIdsForAddress(deployer.address);
 
-        await nodesContract.requestChangeOwner(firstNodeId, deployerPubKey);
+        await nodesContract.requestChangeOwner(firstNodeId, deployer.address);
 
         await expect(nodesContract.confirmOwnerChange(firstNodeId))
         .to.be.revertedWithCustomError(nodesContract, "PassiveNodeAlreadyExistsForAddress");
-
     });
 
-    it("should should not allow changing nodes if node in committee", async () => {
-        //TODO: depends on committee implementation
+    it("should should not allow changing nodes data if node in current of next committee", async () => {
+        const {committee, nodesData, nodes} = await nodesAreRegisteredAndHeartbeatIsSent();
+        await committee.select();
+
+        for(const node of nodesData) {
+            const newIp = ethers.randomBytes(4);
+            const nodeBlocked = await committee.isNodeInCurrentOrNextCommittee(node.id);
+            if (nodeBlocked) {
+                expect(nodes.connect(node.wallet).setIpAddress(node.id, newIp, 8000))
+                .to.be.revertedWithCustomError(nodes, "NodeIsInCommittee");
+            }
+            else {
+                await nodes.connect(node.wallet).setIpAddress(node.id, newIp, 8000);
+                expect(Buffer.from(getBytes((await nodes.getNode(node.id)).ip))).to.eql(newIp);
+            }
+        }
+
     });
 
 });

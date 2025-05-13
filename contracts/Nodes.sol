@@ -48,7 +48,7 @@ contract Nodes is AccessManagedUpgradeable, INodes {
     mapping(NodeId nodeId => Node node) public nodes;
 
     // Stores requests to change owner before committing changes
-    mapping(NodeId nodeId => bytes32[2] newNodeOwner) public ownerChangeRequests;
+    mapping(NodeId nodeId => address newNodeOwner) public ownerChangeRequests;
 
     ICommittee public committeeContract;
 
@@ -83,6 +83,7 @@ contract Nodes is AccessManagedUpgradeable, INodes {
     error InvalidPortNumber(uint16 port);
     error InvalidPublicKey(bytes32[2] publicKey);
     error InvalidPublicKeyForSender(bytes32[2] publicKey, address expected, address sender);
+    error ActiveNodesCannotChangeOwnership();
     error InvalidIp(bytes ip);
     error IpIsNotAvailable(bytes ip);
     error DomainNameAlreadyTaken(string domainName);
@@ -106,6 +107,7 @@ contract Nodes is AccessManagedUpgradeable, INodes {
         );
         _;
     }
+
     modifier validIp(bytes calldata ip) {
         // Check if IPv4 or IPv6
         if (ip.length == 4) {
@@ -171,34 +173,20 @@ contract Nodes is AccessManagedUpgradeable, INodes {
 
     function requestChangeOwner(
         NodeId nodeId,
-        bytes32[2] calldata newPublicKey
+        address newOwner
     )
         external
         override
         nodeExists(nodeId)
         onlyNodeOwner(nodeId)
-        validPubKey(newPublicKey)
     {
-        address newAddress = _publicKeyToAddress(newPublicKey);
-        if (_isPassiveNode(nodeId)) {
-            require(
-                !_isAddressOfActiveNode(newAddress),
-                AddressIsAlreadyAssignedToNode(newAddress)
-            );
-            ownerChangeRequests[nodeId] = newPublicKey;
-            return;
-        }
+        require(_isPassiveNode(nodeId), ActiveNodesCannotChangeOwnership());
+        require(
+            !_isAddressOfActiveNode(newOwner),
+            AddressIsAlreadyAssignedToNode(newOwner)
+        );
 
-        // Is active
-        require(
-            !_isAddressOfPassiveNodes(newAddress),
-            AddressInUseByPassiveNodes(newAddress)
-        );
-        require(
-            !_isAddressOfActiveNode(newAddress),
-            AddressIsAlreadyAssignedToNode(newAddress)
-        );
-        ownerChangeRequests[nodeId] = newPublicKey;
+        ownerChangeRequests[nodeId] = newOwner;
     }
 
     function confirmOwnerChange(
@@ -207,36 +195,26 @@ contract Nodes is AccessManagedUpgradeable, INodes {
         external
         override
         nodeExists(nodeId)
-        nodeNotInCurrentOrNextCommittee(nodeId)
     {
-        address newOwner = _publicKeyToAddress(ownerChangeRequests[nodeId]);
+        require(_isPassiveNode(nodeId), ActiveNodesCannotChangeOwnership());
+        address newOwner = ownerChangeRequests[nodeId];
 
         require(msg.sender == newOwner, SenderIsNotNewNodeOwner());
 
         address oldOwner = nodes[nodeId].nodeAddress;
 
-        if (_isActiveNode(nodeId)) {
-            assert(_activeNodesAddressToId.remove(oldOwner));
+        // Register new address
+        _setPassiveNodeIdForAddress(newOwner, nodeId);
 
-            // Register new address
-            _setActiveNodeIdForAddress(newOwner, nodeId);
+        assert(_passiveNodeIdByAddress.remove(oldOwner, nodeId));
+        if (_passiveNodeIdByAddress.lengthOf(oldOwner) == 0) {
+            assert(_passiveNodeAddresses.remove(oldOwner));
         }
-        if (_isPassiveNode(nodeId)) {
 
-            // Register new address
-            _setPassiveNodeIdForAddress(newOwner, nodeId);
-
-            assert(_passiveNodeIdByAddress.remove(oldOwner, nodeId));
-            if (_passiveNodeIdByAddress.lengthOf(oldOwner) == 0) {
-                assert(_passiveNodeAddresses.remove(oldOwner));
-            }
-        }
         nodes[nodeId].nodeAddress = newOwner;
-        nodes[nodeId].publicKey = ownerChangeRequests[nodeId];
         delete ownerChangeRequests[nodeId];
 
-        emit NodeAddressChanged(nodeId, oldOwner, newOwner);
-
+        emit NodeOwnerChanged(nodeId, oldOwner, newOwner);
     }
 
     function registerPassiveNode(
@@ -362,10 +340,6 @@ contract Nodes is AccessManagedUpgradeable, INodes {
 
     function activeNodeExists(NodeId nodeId) external view override returns(bool result){
         result = _isActiveNode(nodeId);
-    }
-
-    function getOwnerChangeRequest(NodeId nodeId) external view override returns(bytes32[2] memory publicKey){
-        return ownerChangeRequests[nodeId];
     }
 
     function _createActiveNode(
