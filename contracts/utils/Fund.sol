@@ -36,10 +36,10 @@ using {
 } for Holder global;
 
 using {
-    _playaSub as -,
-    _playaGreater as >
+    _playaEqual as ==,
+    _playaGreater as >,
+    _playaSub as -
 } for Playa global;
-
 
 
 library FundLibrary {
@@ -53,6 +53,7 @@ library FundLibrary {
     }
 
     Holder public constant NULL = Holder.wrap(0);
+    Playa public constant ZERO = Playa.wrap(0);
 
     function supply(
         Fund storage fund,
@@ -112,6 +113,9 @@ library FundLibrary {
     }
 
     function _toCredits(Fund storage fund, Playa balance, Playa amount) private view returns (Credit credits) {
+        if (balance == ZERO) {
+            return Credit.wrap(Playa.unwrap(amount));
+        }
         return Credit.wrap(
             Playa.unwrap(amount) * Credit.unwrap(fund.totalCredits) / Playa.unwrap(balance)
         );
@@ -120,18 +124,28 @@ library FundLibrary {
 
 // operators
 
-function _playaSub(Playa a, Playa b) pure returns (Playa subtraction) {
-    return Playa.wrap(Playa.unwrap(a) - Playa.unwrap(b));
+// Credit
+
+function _creditAdd(Credit a, Credit b) pure returns (Credit sum) {
+    return Credit.wrap(Credit.unwrap(a) + Credit.unwrap(b));
+}
+
+// Holder
+
+function _holderNotEqual(Holder a, Holder b) pure returns (bool notEqual) {
+    return Holder.unwrap(a) != Holder.unwrap(b);
+}
+
+// Playa
+
+function _playaEqual(Playa a, Playa b) pure returns (bool equal) {
+    return Playa.unwrap(a) == Playa.unwrap(b);
 }
 
 function _playaGreater(Playa a, Playa b) pure returns (bool greater) {
     return Playa.unwrap(a) > Playa.unwrap(b);
 }
 
-function _creditAdd(Credit a, Credit b) pure returns (Credit sum) {
-    return Credit.wrap(Credit.unwrap(a) + Credit.unwrap(b));
-}
-
-function _holderNotEqual(Holder a, Holder b) pure returns (bool notEqual) {
-    return Holder.unwrap(a) != Holder.unwrap(b);
+function _playaSub(Playa a, Playa b) pure returns (Playa subtraction) {
+    return Playa.wrap(Playa.unwrap(a) - Playa.unwrap(b));
 }
