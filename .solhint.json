@@ -13,6 +13,7 @@
     "gas-strict-inequalities": "error",
     "imports-order": "error",
     "immutable-vars-naming": "error",
+    "gas-indexed-events": "error",
     "gas-named-return-values": "error",
     "max-line-length": "error",
     "named-parameters-mapping": "error",

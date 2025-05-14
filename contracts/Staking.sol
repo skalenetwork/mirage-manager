@@ -43,6 +43,8 @@ contract Staking is AccessManagedUpgradeable, IStaking {
     mapping (NodeId node => FundLibrary.Fund nodeFund) private _nodesFunds;
     mapping (address holder => TypedSet.NodeIdSet nodeIds) private _stakedNodes;
 
+    event RewardReceived(address indexed sender, uint256 indexed amount);
+
     error ZeroStakeAmount();
 
     function initialize(address initialAuthority, ICommittee committee_, INodes nodes_) public initializer override {
@@ -51,44 +53,64 @@ contract Staking is AccessManagedUpgradeable, IStaking {
         nodes = nodes_;
     }
 
+    receive() external override payable {
+        emit RewardReceived(msg.sender, msg.value);
+    }
+
     function stake(NodeId node) external payable override {
         require(msg.value > 0, ZeroStakeAmount());
         require(nodes.activeNodeExists(node), Nodes.NodeDoesNotExist(node));
-        Playa balance = _getTotalBalance() - Playa.wrap(msg.value);
         Playa amount = Playa.wrap(msg.value);
-        _rootFund.supply(
-            balance,
-            FundLibrary.nodeToHolder(node),
-            amount
-        );
+        Playa balance = _getTotalBalance() - amount;
         _nodesFunds[node].supply(
             _rootFund.getBalance(balance, FundLibrary.nodeToHolder(node)),
             FundLibrary.addressToHolder(msg.sender),
             amount
         );
+        _rootFund.supply(
+            balance,
+            FundLibrary.nodeToHolder(node),
+            amount
+        );
         _stakedNodes[msg.sender].add(node);
     }
 
-    function getStakedAmount() external view override returns (uint256 amount) {
+    function getStakedAmount() external view override returns (Playa amount) {
         return getStakedAmountFor(msg.sender);
     }
 
-    function retrieve(NodeId /*node*/, uint256 /*value*/) external pure override {
+    function getStakedToNodeAmount(NodeId node) external view override returns (Playa amount) {
+        return getStakedToNodeAmountFor(node, msg.sender);
+    }
+
+    function getStakedNodes() external view override returns (NodeId[] memory stakedNodes) {
+        return getStakedNodesFor(msg.sender);
+    }
+
+    function retrieve(NodeId /*node*/, Playa /*value*/) external pure override {
         revert NotImplemented();
     }
 
     // Public
 
-    function getStakedAmountFor(address holder) public view override returns (uint256 amount) {
+    function getStakedAmountFor(address holder) public view override returns (Playa amount) {
         uint256 nodesCount = _stakedNodes[holder].length();
         for (uint256 nodeIndex; nodeIndex < nodesCount; ++nodeIndex) {
             NodeId node = _stakedNodes[holder].at(nodeIndex);
-            Playa nodeBalance = _rootFund.getBalance(_getTotalBalance(), FundLibrary.nodeToHolder(node));
-            amount += Playa.unwrap( _nodesFunds[node].getBalance(
-                nodeBalance,
-                FundLibrary.addressToHolder(holder)
-            ));
+            amount = amount + getStakedToNodeAmountFor(node, holder);
         }
+    }
+
+    function getStakedNodesFor(address holder) public view override returns (NodeId[] memory stakedNodes) {
+        return _stakedNodes[holder].values();
+    }
+
+    function getStakedToNodeAmountFor(NodeId node, address holder) public view override returns (Playa amount) {
+        Playa nodeBalance = _rootFund.getBalance(_getTotalBalance(), FundLibrary.nodeToHolder(node));
+        return _nodesFunds[node].getBalance(
+            nodeBalance,
+            FundLibrary.addressToHolder(holder)
+        );
     }
 
     // Private

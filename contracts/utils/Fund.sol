@@ -22,24 +22,19 @@
 pragma solidity ^0.8.24;
 
 import { NodeId } from "@skalenetwork/professional-interfaces/INodes.sol";
+import { Playa } from "@skalenetwork/professional-interfaces/units.sol";
 
 type Credit is uint256;
 type Holder is uint256;
-type Playa is uint256;
 
 using {
-    _creditAdd as +
+    _creditAdd as +,
+    _creditEqual as ==
 } for Credit global;
 
 using {
     _holderNotEqual as !=
 } for Holder global;
-
-using {
-    _playaEqual as ==,
-    _playaGreater as >,
-    _playaSub as -
-} for Playa global;
 
 
 library FundLibrary {
@@ -54,6 +49,7 @@ library FundLibrary {
 
     Holder public constant NULL = Holder.wrap(0);
     Playa public constant ZERO = Playa.wrap(0);
+    Credit public constant ZERO_CREDIT = Credit.wrap(0);
 
     function supply(
         Fund storage fund,
@@ -79,6 +75,9 @@ library FundLibrary {
         view
         returns (Playa amount)
     {
+        if (fund.totalCredits == ZERO_CREDIT) {
+            return ZERO;
+        }
         return Playa.wrap(
             Playa.unwrap(balance) * Credit.unwrap(fund.credits[holder]) / Credit.unwrap(fund.totalCredits)
         );
@@ -130,22 +129,12 @@ function _creditAdd(Credit a, Credit b) pure returns (Credit sum) {
     return Credit.wrap(Credit.unwrap(a) + Credit.unwrap(b));
 }
 
+function _creditEqual(Credit a, Credit b) pure returns (bool equal) {
+    return Credit.unwrap(a) == Credit.unwrap(b);
+}
+
 // Holder
 
 function _holderNotEqual(Holder a, Holder b) pure returns (bool notEqual) {
     return Holder.unwrap(a) != Holder.unwrap(b);
-}
-
-// Playa
-
-function _playaEqual(Playa a, Playa b) pure returns (bool equal) {
-    return Playa.unwrap(a) == Playa.unwrap(b);
-}
-
-function _playaGreater(Playa a, Playa b) pure returns (bool greater) {
-    return Playa.unwrap(a) > Playa.unwrap(b);
-}
-
-function _playaSub(Playa a, Playa b) pure returns (Playa subtraction) {
-    return Playa.wrap(Playa.unwrap(a) - Playa.unwrap(b));
 }
