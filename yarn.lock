@@ -2326,10 +2326,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@skalenetwork/professional-interfaces@npm:^0.1.0-staking.2":
-  version: 0.1.0-staking.2
-  resolution: "@skalenetwork/professional-interfaces@npm:0.1.0-staking.2"
-  checksum: 10c0/4e1fb0e506d5aeab089a11144e14216c440856eac0299aae73cc01323579b40588f9f70a14dac972daec64e11134477b32ebc9e7e71091172272ea3ab815ce81
+"@skalenetwork/professional-interfaces@npm:^0.1.0-staking.3":
+  version: 0.1.0-staking.3
+  resolution: "@skalenetwork/professional-interfaces@npm:0.1.0-staking.3"
+  checksum: 10c0/fc69981b59d6f5a9935d6aeb7257f73c8aff4ba9bd6bf97e37ec92920d3afa30e5e87f3b7da47f7805d00e565672bdb8a70efab65138cce5f35a9f6caa15375c
   languageName: node
   linkType: hard
 
@@ -6713,7 +6713,7 @@ __metadata:
     "@openzeppelin/contracts-upgradeable": "npm:^5.2.0"
     "@openzeppelin/hardhat-upgrades": "npm:^3.9.0"
     "@openzeppelin/upgrades-core": "npm:^1.42.2"
-    "@skalenetwork/professional-interfaces": "npm:^0.1.0-staking.2"
+    "@skalenetwork/professional-interfaces": "npm:^0.1.0-staking.3"
     "@skalenetwork/skale-contracts-ethers-v6": "npm:^1.0.2-develop.61"
     "@skalenetwork/skale-manager-interfaces": "npm:3.2.0-develop.3"
     "@skalenetwork/upgrade-tools": "npm:3.0.0-develop.42"
