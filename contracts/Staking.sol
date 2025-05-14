@@ -44,6 +44,8 @@ contract Staking is AccessManagedUpgradeable, IStaking {
     mapping (address holder => TypedSet.NodeIdSet nodeIds) private _stakedNodes;
 
     event RewardReceived(address indexed sender, uint256 indexed amount);
+    event Staked(address indexed sender, NodeId indexed node, uint256 indexed amount);
+    event StakedToNewNode(address indexed sender, NodeId indexed node);
 
     error ZeroStakeAmount();
 
@@ -72,7 +74,10 @@ contract Staking is AccessManagedUpgradeable, IStaking {
             FundLibrary.nodeToHolder(node),
             amount
         );
-        _stakedNodes[msg.sender].add(node);
+        if(_stakedNodes[msg.sender].add(node)) {
+            emit StakedToNewNode(msg.sender, node);
+        }
+        emit Staked(msg.sender, node, msg.value);
     }
 
     function getStakedAmount() external view override returns (Playa amount) {
