@@ -53,4 +53,20 @@ describe("Staking", () => {
         (await staking.connect(user).getStakedToNodeAmount(node2))
             .should.be.equal(amount2);
     });
+
+    it("should be possible to retrieve", async () => {
+        const {staking, nodesData } = await nodesRegisteredButNotWhitelisted();
+        const [,user] = await ethers.getSigners();
+        const initialAmount = ethers.parseEther("3");
+        const amount = ethers.parseEther("1");
+        const node = nodesData[0].id;
+
+        await staking.connect(user).stake(node, {value: initialAmount});
+        (await staking.connect(user).getStakedAmount())
+            .should.be.equal(initialAmount);
+        await staking.connect(user).retrieve(node, amount)
+            .should.changeEtherBalance(user, amount);
+        (await staking.connect(user).getStakedAmount())
+            .should.be.equal(initialAmount - amount);
+    });
 });

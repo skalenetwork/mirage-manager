@@ -24,16 +24,20 @@ pragma solidity ^0.8.24;
 import {
     AccessManagedUpgradeable
 } from "@openzeppelin/contracts-upgradeable/access/manager/AccessManagedUpgradeable.sol";
+import {
+    Address
+} from "@openzeppelin/contracts/utils/Address.sol";
 import {ICommittee} from "@skalenetwork/professional-interfaces/ICommittee.sol";
 import {INodes, NodeId} from "@skalenetwork/professional-interfaces/INodes.sol";
 import {IStaking} from "@skalenetwork/professional-interfaces/IStaking.sol";
+
 import {Nodes} from "./Nodes.sol";
 import {TypedSet} from "./structs/typed/TypedSet.sol";
-import {NotImplemented} from "./utils/errors.sol";
 import {FundLibrary, Playa} from "./utils/Fund.sol";
 
 
 contract Staking is AccessManagedUpgradeable, IStaking {
+    using Address for address payable;
     using FundLibrary for FundLibrary.Fund;
     using TypedSet for TypedSet.NodeIdSet;
 
@@ -43,11 +47,14 @@ contract Staking is AccessManagedUpgradeable, IStaking {
     mapping (NodeId node => FundLibrary.Fund nodeFund) private _nodesFunds;
     mapping (address holder => TypedSet.NodeIdSet nodeIds) private _stakedNodes;
 
+    event Retrieved(address indexed sender, NodeId indexed node, Playa indexed amount);
     event RewardReceived(address indexed sender, uint256 indexed amount);
-    event Staked(address indexed sender, NodeId indexed node, uint256 indexed amount);
+    event Staked(address indexed sender, NodeId indexed node, Playa indexed amount);
     event StakedToNewNode(address indexed sender, NodeId indexed node);
+    event StoppedStaking(address indexed sender, NodeId indexed node);
 
-    error ZeroStakeAmount();
+    error ZeroAmount();
+    error ZeroStakeToNode(NodeId node);
 
     function initialize(address initialAuthority, ICommittee committee_, INodes nodes_) public initializer override {
         __AccessManaged_init(initialAuthority);
@@ -59,8 +66,34 @@ contract Staking is AccessManagedUpgradeable, IStaking {
         emit RewardReceived(msg.sender, msg.value);
     }
 
+    function retrieve(NodeId node, Playa value) external override {
+        require(value > FundLibrary.ZERO_PLAYA, ZeroAmount());
+        require(nodes.activeNodeExists(node), Nodes.NodeDoesNotExist(node));
+        require(_stakedNodes[msg.sender].contains(node), ZeroStakeToNode(node));
+
+        Playa balance = _getTotalBalance();
+        _nodesFunds[node].remove(
+            _rootFund.getBalance(balance, FundLibrary.nodeToHolder(node)),
+            FundLibrary.addressToHolder(msg.sender),
+            value
+        );
+        _rootFund.supply(
+            balance,
+            FundLibrary.nodeToHolder(node),
+            value
+        );
+
+        if (_nodesFunds[node].credits[FundLibrary.addressToHolder(msg.sender)] == FundLibrary.ZERO_CREDIT) {
+            assert(_stakedNodes[msg.sender].remove(node));
+            emit StoppedStaking(msg.sender, node);
+        }
+        emit Retrieved(msg.sender, node, value);
+
+        payable(msg.sender).sendValue(Playa.unwrap(value));
+    }
+
     function stake(NodeId node) external payable override {
-        require(msg.value > 0, ZeroStakeAmount());
+        require(msg.value > 0, ZeroAmount());
         require(nodes.activeNodeExists(node), Nodes.NodeDoesNotExist(node));
         Playa amount = Playa.wrap(msg.value);
         Playa balance = _getTotalBalance() - amount;
@@ -77,7 +110,7 @@ contract Staking is AccessManagedUpgradeable, IStaking {
         if(_stakedNodes[msg.sender].add(node)) {
             emit StakedToNewNode(msg.sender, node);
         }
-        emit Staked(msg.sender, node, msg.value);
+        emit Staked(msg.sender, node, amount);
     }
 
     function getStakedAmount() external view override returns (Playa amount) {
@@ -90,10 +123,6 @@ contract Staking is AccessManagedUpgradeable, IStaking {
 
     function getStakedNodes() external view override returns (NodeId[] memory stakedNodes) {
         return getStakedNodesFor(msg.sender);
-    }
-
-    function retrieve(NodeId /*node*/, Playa /*value*/) external pure override {
-        revert NotImplemented();
     }
 
     // Public

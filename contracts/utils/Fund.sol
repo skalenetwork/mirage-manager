@@ -29,7 +29,9 @@ type Holder is uint256;
 
 using {
     _creditAdd as +,
-    _creditEqual as ==
+    _creditEqual as ==,
+    _creditLess as <,
+    _creditSubtract as -
 } for Credit global;
 
 using {
@@ -48,22 +50,42 @@ library FundLibrary {
     }
 
     Holder public constant NULL = Holder.wrap(0);
-    Playa public constant ZERO = Playa.wrap(0);
+    Playa public constant ZERO_PLAYA = Playa.wrap(0);
     Credit public constant ZERO_CREDIT = Credit.wrap(0);
 
-    function supply(
+    error NotEnoughStaked(Playa staked);
+
+    function remove(
         Fund storage fund,
-        Playa balance,
+        Playa balanceBeforeRemove,
         Holder holder,
         Playa amount
     )
         internal
     {
-        _processBalanceChange(fund, balance);
-        Credit credits = _toCredits(fund, balance, amount);
+        _processBalanceChange(fund, balanceBeforeRemove);
+        Credit credits = _toCredits(fund, balanceBeforeRemove, amount);
+        if (fund.credits[holder] < credits) {
+            revert NotEnoughStaked(_toPlaya(fund, balanceBeforeRemove, fund.credits[holder]));
+        }
+        fund.credits[holder] = fund.credits[holder] - credits;
+        fund.totalCredits = fund.totalCredits - credits;
+        fund.lastBalance = balanceBeforeRemove - amount;
+    }
+
+    function supply(
+        Fund storage fund,
+        Playa balanceBeforeSupply,
+        Holder holder,
+        Playa amount
+    )
+        internal
+    {
+        _processBalanceChange(fund, balanceBeforeSupply);
+        Credit credits = _toCredits(fund, balanceBeforeSupply, amount);
         fund.credits[holder] = fund.credits[holder] + credits;
         fund.totalCredits = fund.totalCredits + credits;
-        fund.lastBalance = balance;
+        fund.lastBalance = balanceBeforeSupply + amount;
     }
 
     function getBalance(
@@ -76,7 +98,7 @@ library FundLibrary {
         returns (Playa amount)
     {
         if (fund.totalCredits == ZERO_CREDIT) {
-            return ZERO;
+            return ZERO_PLAYA;
         }
         return Playa.wrap(
             Playa.unwrap(balance) * Credit.unwrap(fund.credits[holder]) / Credit.unwrap(fund.totalCredits)
@@ -112,11 +134,20 @@ library FundLibrary {
     }
 
     function _toCredits(Fund storage fund, Playa balance, Playa amount) private view returns (Credit credits) {
-        if (balance == ZERO) {
+        if (balance == ZERO_PLAYA) {
             return Credit.wrap(Playa.unwrap(amount));
         }
         return Credit.wrap(
             Playa.unwrap(amount) * Credit.unwrap(fund.totalCredits) / Playa.unwrap(balance)
+        );
+    }
+
+    function _toPlaya(Fund storage fund, Playa balance, Credit amount) private view returns (Playa playa) {
+        if (fund.totalCredits == ZERO_CREDIT) {
+            return ZERO_PLAYA;
+        }
+        return Playa.wrap(
+            Playa.unwrap(balance) * Credit.unwrap(amount) / Credit.unwrap(fund.totalCredits)
         );
     }
 }
@@ -131,6 +162,14 @@ function _creditAdd(Credit a, Credit b) pure returns (Credit sum) {
 
 function _creditEqual(Credit a, Credit b) pure returns (bool equal) {
     return Credit.unwrap(a) == Credit.unwrap(b);
+}
+
+function _creditLess(Credit a, Credit b) pure returns (bool less) {
+    return Credit.unwrap(a) < Credit.unwrap(b);
+}
+
+function _creditSubtract(Credit a, Credit b) pure returns (Credit diff) {
+    return Credit.wrap(Credit.unwrap(a) - Credit.unwrap(b));
 }
 
 // Holder
