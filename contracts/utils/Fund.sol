@@ -34,10 +34,6 @@ using {
     _creditSubtract as -
 } for Credit global;
 
-using {
-    _holderNotEqual as !=
-} for Holder global;
-
 
 library FundLibrary {
 
@@ -241,10 +237,4 @@ function _creditLess(Credit a, Credit b) pure returns (bool less) {
 
 function _creditSubtract(Credit a, Credit b) pure returns (Credit diff) {
     return Credit.wrap(Credit.unwrap(a) - Credit.unwrap(b));
-}
-
-// Holder
-
-function _holderNotEqual(Holder a, Holder b) pure returns (bool notEqual) {
-    return Holder.unwrap(a) != Holder.unwrap(b);
 }
