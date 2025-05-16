@@ -69,4 +69,32 @@ describe("Staking", () => {
         (await staking.connect(user).getStakedAmount())
             .should.be.equal(initialAmount - amount);
     });
+
+    it("should apply validator fee on rewards", async () => {
+        const {staking, nodesData } = await nodesRegisteredButNotWhitelisted();
+        const [owner,user] = await ethers.getSigners();
+        const amount = ethers.parseEther("1");
+        const reward = ethers.parseEther("2");
+        const feeRate = 500; // Yes, Eddie, half
+        const {id: node, wallet: nodeWallet} = nodesData[0];
+
+        await staking.connect(nodeWallet).setFeeRate(feeRate);
+        await staking.connect(user).stake(node, {value: amount});
+        await owner.sendTransaction({to: staking, value: reward});
+
+        (await staking.getEarnedFeeAmount(node))
+            .should.be.equal(reward / 2n);
+        (await staking.getStakedAmountFor(user))
+            .should.be.equal(amount + reward / 2n);
+
+        await staking.connect(nodeWallet).claimAllFee(nodeWallet)
+            .should.changeEtherBalance(nodeWallet, reward / 2n);
+        await staking.connect(user).retrieve(node, amount + reward / 2n)
+            .should.changeEtherBalance(user, amount + reward / 2n);
+
+        (await staking.getEarnedFeeAmount(node))
+            .should.be.equal(0n);
+        (await staking.getStakedAmountFor(user))
+            .should.be.equal(0n);
+    });
 });

@@ -45,7 +45,7 @@ library FundLibrary {
         Playa lastBalance;
         Credit totalCredits;
         mapping (Holder holder => Credit share) credits;
-        Holder owner;
+        Credit ownerCredits;
         uint16 feeRate; // 0 - 1000‰
     }
 
@@ -54,6 +54,26 @@ library FundLibrary {
     Credit public constant ZERO_CREDIT = Credit.wrap(0);
 
     error NotEnoughStaked(Playa staked);
+    error NotEnoughFee(Playa earnedFee);
+
+    function claimFee(
+        Fund storage fund,
+        Playa balanceBeforeClaim,
+        Playa amount
+    )
+        internal
+    {
+        _processBalanceChange(fund, balanceBeforeClaim);
+        if (fund.feeRate > 0) {
+            Credit credits = _toCredits(fund, balanceBeforeClaim, amount);
+            if (fund.ownerCredits < credits) {
+                revert NotEnoughFee(_toPlaya(fund, balanceBeforeClaim, ZERO_CREDIT, fund.ownerCredits));
+            }
+            fund.ownerCredits = fund.ownerCredits - credits;
+            fund.totalCredits = fund.totalCredits - credits;
+            fund.lastBalance = balanceBeforeClaim - amount;
+        }
+    }
 
     function remove(
         Fund storage fund,
@@ -66,11 +86,22 @@ library FundLibrary {
         _processBalanceChange(fund, balanceBeforeRemove);
         Credit credits = _toCredits(fund, balanceBeforeRemove, amount);
         if (fund.credits[holder] < credits) {
-            revert NotEnoughStaked(_toPlaya(fund, balanceBeforeRemove, fund.credits[holder]));
+            revert NotEnoughStaked(_toPlaya(fund, balanceBeforeRemove, ZERO_CREDIT, fund.credits[holder]));
         }
         fund.credits[holder] = fund.credits[holder] - credits;
         fund.totalCredits = fund.totalCredits - credits;
         fund.lastBalance = balanceBeforeRemove - amount;
+    }
+
+    function setFeeRate(
+        Fund storage fund,
+        Playa balanceBefore,
+        uint16 feeRate
+    )
+        internal
+    {
+        _processBalanceChange(fund, balanceBefore);
+        fund.feeRate = feeRate;
     }
 
     function supply(
@@ -101,9 +132,26 @@ library FundLibrary {
             return ZERO_PLAYA;
         }
         return Playa.wrap(
-            Playa.unwrap(balance) * Credit.unwrap(fund.credits[holder]) / Credit.unwrap(fund.totalCredits)
+            Playa.unwrap(balance)
+            * Credit.unwrap(fund.credits[holder])
+            / Credit.unwrap(fund.totalCredits + _getUncountedFeeCredits(fund, balance))
         );
     }
+
+    function getEarnedFee(
+        Fund storage fund,
+        Playa balance
+    )
+        internal
+        view
+        returns (Playa amount)
+    {
+        if (fund.feeRate > 0) {
+            Credit uncountedFee = _getUncountedFeeCredits(fund, balance);
+            return _toPlaya(fund, balance, uncountedFee, fund.ownerCredits + uncountedFee);
+        }
+    }
+
 
     function addressToHolder(address holder) internal pure returns (Holder typedHolder) {
         return Holder.wrap(uint256(uint160(holder)));
@@ -121,16 +169,30 @@ library FundLibrary {
     )
         private
     {
-        if (balance > fund.lastBalance) {
-            Playa balanceChange = balance - fund.lastBalance;
+        if (fund.feeRate > 0 && balance > fund.lastBalance) {
+            Credit credits = _getUncountedFeeCredits(fund, balance);
+            fund.ownerCredits = fund.ownerCredits + credits;
+            fund.totalCredits = fund.totalCredits + credits;
             fund.lastBalance = balance;
-            if (fund.owner != NULL) {
-                Playa fee = Playa.wrap(
-                    Playa.unwrap(balanceChange) * fund.feeRate / 1000
-                );
-                supply(fund, balance, fund.owner, fee);
-            }
         }
+    }
+
+    function _getUncountedFeeCredits(
+        Fund storage fund,
+        Playa balance
+    )
+        private
+        view
+        returns (Credit fee)
+    {
+        if (fund.feeRate > 0) {
+            Playa balanceChange = balance - fund.lastBalance;
+            Playa feeInPlaya = Playa.wrap(
+                Playa.unwrap(balanceChange) * fund.feeRate / 1000
+            );
+            return _toCredits(fund, balance - feeInPlaya, feeInPlaya);
+        }
+        return ZERO_CREDIT;
     }
 
     function _toCredits(Fund storage fund, Playa balance, Playa amount) private view returns (Credit credits) {
@@ -142,12 +204,21 @@ library FundLibrary {
         );
     }
 
-    function _toPlaya(Fund storage fund, Playa balance, Credit amount) private view returns (Playa playa) {
+    function _toPlaya(
+        Fund storage fund,
+        Playa balance,
+        Credit uncountedFee,
+        Credit amount
+    )
+        private
+        view
+        returns (Playa playa)
+    {
         if (fund.totalCredits == ZERO_CREDIT) {
             return ZERO_PLAYA;
         }
         return Playa.wrap(
-            Playa.unwrap(balance) * Credit.unwrap(amount) / Credit.unwrap(fund.totalCredits)
+            Playa.unwrap(balance) * Credit.unwrap(amount) / Credit.unwrap(fund.totalCredits + uncountedFee)
         );
     }
 }

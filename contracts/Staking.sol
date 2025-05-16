@@ -47,12 +47,15 @@ contract Staking is AccessManagedUpgradeable, IStaking {
     mapping (NodeId node => FundLibrary.Fund nodeFund) private _nodesFunds;
     mapping (address holder => TypedSet.NodeIdSet nodeIds) private _stakedNodes;
 
+    event FeeClaimed(NodeId indexed node, address indexed to, Playa indexed amount);
     event Retrieved(address indexed sender, NodeId indexed node, Playa indexed amount);
     event RewardReceived(address indexed sender, uint256 indexed amount);
     event Staked(address indexed sender, NodeId indexed node, Playa indexed amount);
     event StakedToNewNode(address indexed sender, NodeId indexed node);
     event StoppedStaking(address indexed sender, NodeId indexed node);
 
+    error FeeRateIsIncorrect(uint16 feeRate);
+    error OnlyFeeReductionIsAllowed(uint16 currentRate, uint16 newRate);
     error ZeroAmount();
     error ZeroStakeToNode(NodeId node);
 
@@ -64,6 +67,10 @@ contract Staking is AccessManagedUpgradeable, IStaking {
 
     receive() external override payable {
         emit RewardReceived(msg.sender, msg.value);
+    }
+
+    function claimAllFee(address payable to) external override {
+        claimFee(to, getEarnedFeeAmount(nodes.getNodeId(msg.sender)));
     }
 
     function retrieve(NodeId node, Playa value) external override {
@@ -90,6 +97,21 @@ contract Staking is AccessManagedUpgradeable, IStaking {
         emit Retrieved(msg.sender, node, value);
 
         payable(msg.sender).sendValue(Playa.unwrap(value));
+    }
+
+    function setFeeRate(uint16 feeRate) external override {
+        require(!(1000 < feeRate), FeeRateIsIncorrect(feeRate));
+        NodeId node = nodes.getNodeId(msg.sender);
+        uint16 currentFeeRate = _nodesFunds[node].feeRate;
+        require(
+            _nodesFunds[node].totalCredits == FundLibrary.ZERO_CREDIT || feeRate < currentFeeRate,
+            OnlyFeeReductionIsAllowed(currentFeeRate, feeRate)
+        );
+
+        _nodesFunds[node].setFeeRate(
+            _rootFund.getBalance(_getTotalBalance(), FundLibrary.nodeToHolder(node)),
+            feeRate
+        );
     }
 
     function stake(NodeId node) external payable override {
@@ -126,6 +148,22 @@ contract Staking is AccessManagedUpgradeable, IStaking {
     }
 
     // Public
+
+    function claimFee(address payable to, Playa amount) public override {
+        NodeId node = nodes.getNodeId(msg.sender);
+        _nodesFunds[node].claimFee(
+            _rootFund.getBalance(_getTotalBalance(), FundLibrary.nodeToHolder(node)),
+            amount
+        );
+        emit FeeClaimed(node, to, amount);
+        to.sendValue(Playa.unwrap(amount));
+    }
+
+    function getEarnedFeeAmount(NodeId node) public view override returns (Playa amount) {
+        return _nodesFunds[node].getEarnedFee(
+            _rootFund.getBalance(_getTotalBalance(), FundLibrary.nodeToHolder(node))
+        );
+    }
 
     function getStakedAmountFor(address holder) public view override returns (Playa amount) {
         uint256 nodesCount = _stakedNodes[holder].length();
