@@ -129,7 +129,9 @@ export const deploy = async (nodeList?: INodes.NodeStruct[], commonPublicKey?: I
         deployedContracts.Committee
     );
     deployedContracts.Staking = await deployStaking(
-        deployedContracts.MirageAccessManager
+        deployedContracts.MirageAccessManager,
+        deployedContracts.Committee,
+        deployedContracts.Nodes
     );
 
     let response = await deployedContracts.Committee.setDkg(deployedContracts.DKG);
@@ -216,11 +218,13 @@ const deployStatus = async (authority: MirageAccessManager, nodes: Nodes, commit
     ) as Status;
 }
 
-const deployStaking = async (authority: MirageAccessManager): Promise<Staking> => {
+const deployStaking = async (authority: MirageAccessManager, committee: Committee, nodes: Nodes): Promise<Staking> => {
     return await deployContract(
         "Staking",
         [
-            await ethers.resolveAddress(authority)
+            await ethers.resolveAddress(authority),
+            await ethers.resolveAddress(committee),
+            await ethers.resolveAddress(nodes)
         ]
     ) as Staking;
 }
