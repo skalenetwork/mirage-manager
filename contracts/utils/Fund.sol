@@ -21,6 +21,7 @@
 
 pragma solidity ^0.8.24;
 
+import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
 import { NodeId } from "@skalenetwork/professional-interfaces/INodes.sol";
 import { Playa } from "@skalenetwork/professional-interfaces/units.sol";
 
@@ -61,9 +62,9 @@ library FundLibrary {
     {
         _processBalanceChange(fund, balanceBeforeClaim);
         if (fund.feeRate > 0) {
-            Credit credits = _toCredits(fund, balanceBeforeClaim, amount);
+            Credit credits = _toCreditsRoundedUp(fund, balanceBeforeClaim, amount);
             if (fund.ownerCredits < credits) {
-                revert NotEnoughFee(_toPlaya(fund, balanceBeforeClaim, ZERO_CREDIT, fund.ownerCredits));
+                revert NotEnoughFee(_toPlayaRoundedDown(fund, balanceBeforeClaim, ZERO_CREDIT, fund.ownerCredits));
             }
             fund.ownerCredits = fund.ownerCredits - credits;
             fund.totalCredits = fund.totalCredits - credits;
@@ -80,9 +81,9 @@ library FundLibrary {
         internal
     {
         _processBalanceChange(fund, balanceBeforeRemove);
-        Credit credits = _toCredits(fund, balanceBeforeRemove, amount);
+        Credit credits = _toCreditsRoundedUp(fund, balanceBeforeRemove, amount);
         if (fund.credits[holder] < credits) {
-            revert NotEnoughStaked(_toPlaya(fund, balanceBeforeRemove, ZERO_CREDIT, fund.credits[holder]));
+            revert NotEnoughStaked(_toPlayaRoundedDown(fund, balanceBeforeRemove, ZERO_CREDIT, fund.credits[holder]));
         }
         fund.credits[holder] = fund.credits[holder] - credits;
         fund.totalCredits = fund.totalCredits - credits;
@@ -109,7 +110,7 @@ library FundLibrary {
         internal
     {
         _processBalanceChange(fund, balanceBeforeSupply);
-        Credit credits = _toCredits(fund, balanceBeforeSupply, amount);
+        Credit credits = _toCreditsRoundedDown(fund, balanceBeforeSupply, amount);
         fund.credits[holder] = fund.credits[holder] + credits;
         fund.totalCredits = fund.totalCredits + credits;
         fund.lastBalance = balanceBeforeSupply + amount;
@@ -144,7 +145,7 @@ library FundLibrary {
     {
         if (fund.feeRate > 0) {
             Credit uncountedFee = _getUncountedFeeCredits(fund, balance);
-            return _toPlaya(fund, balance, uncountedFee, fund.ownerCredits + uncountedFee);
+            return _toPlayaRoundedDown(fund, balance, uncountedFee, fund.ownerCredits + uncountedFee);
         }
     }
 
@@ -181,17 +182,25 @@ library FundLibrary {
         view
         returns (Credit fee)
     {
-        if (fund.feeRate > 0) {
+        if (fund.feeRate > 0 && balance > fund.lastBalance) {
             Playa balanceChange = balance - fund.lastBalance;
             Playa feeInPlaya = Playa.wrap(
                 Playa.unwrap(balanceChange) * fund.feeRate / 1000
             );
-            return _toCredits(fund, balance - feeInPlaya, feeInPlaya);
+            return _toCreditsRoundedDown(fund, balance - feeInPlaya, feeInPlaya);
         }
         return ZERO_CREDIT;
     }
 
-    function _toCredits(Fund storage fund, Playa balance, Playa amount) private view returns (Credit credits) {
+    function _toCreditsRoundedDown(
+        Fund storage fund,
+        Playa balance,
+        Playa amount
+    )
+        private
+        view
+        returns (Credit credits)
+    {
         if (balance == ZERO_PLAYA) {
             return Credit.wrap(Playa.unwrap(amount));
         }
@@ -200,7 +209,27 @@ library FundLibrary {
         );
     }
 
-    function _toPlaya(
+    function _toCreditsRoundedUp(
+        Fund storage fund,
+        Playa balance,
+        Playa amount
+    )
+        private
+        view
+        returns (Credit credits)
+    {
+        if (balance == ZERO_PLAYA) {
+            return Credit.wrap(Playa.unwrap(amount));
+        }
+        return Credit.wrap(
+            Math.ceilDiv(
+                Playa.unwrap(amount) * Credit.unwrap(fund.totalCredits),
+                Playa.unwrap(balance)
+            )
+        );
+    }
+
+    function _toPlayaRoundedDown(
         Fund storage fund,
         Playa balance,
         Credit uncountedFee,

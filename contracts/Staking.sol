@@ -84,7 +84,7 @@ contract Staking is AccessManagedUpgradeable, IStaking {
             FundLibrary.addressToHolder(msg.sender),
             value
         );
-        _rootFund.supply(
+        _rootFund.remove(
             balance,
             FundLibrary.nodeToHolder(node),
             value
@@ -151,8 +151,14 @@ contract Staking is AccessManagedUpgradeable, IStaking {
 
     function claimFee(address payable to, Playa amount) public override {
         NodeId node = nodes.getNodeId(msg.sender);
+        Playa balance = _getTotalBalance();
         _nodesFunds[node].claimFee(
-            _rootFund.getBalance(_getTotalBalance(), FundLibrary.nodeToHolder(node)),
+            _rootFund.getBalance(balance, FundLibrary.nodeToHolder(node)),
+            amount
+        );
+        _rootFund.remove(
+            balance,
+            FundLibrary.nodeToHolder(node),
             amount
         );
         emit FeeClaimed(node, to, amount);

@@ -97,4 +97,120 @@ describe("Staking", () => {
         (await staking.getStakedAmountFor(user))
             .should.be.equal(0n);
     });
+
+    it("should apply validator fee on rewards when there are multiple nodes", async () => {
+        const {staking, nodesData } = await nodesRegisteredButNotWhitelisted();
+        const [owner,user] = await ethers.getSigners();
+        const amount1 = ethers.parseEther("2");
+        const amount2 = ethers.parseEther("3");
+        const reward = ethers.parseEther("10");
+        const roundingError = 1n;
+        const feeRate = 500; // Yes, Eddie, half
+        const [{id: node1, wallet: node1Wallet}, {id: node2}] = nodesData;
+
+        await staking.connect(node1Wallet).setFeeRate(feeRate);
+        // root pool:
+        //     total: 0 Playa, 0 credits
+        //     node 1 pool:  0 Playa, 0 credits
+        //     node 2 pool:  0 Playa, 0 credits
+        // node 1 pool:
+        //     total:   0 Playa, 0 node 1 credits
+        //     node 1:  0 Playa, 0 node 1 credits
+        // node 2 pool:
+        //     total:   0 Playa, 0 node 2 credits
+        //     node 2:  0 Playa, 0 node 2 credits
+        await staking.connect(user).stake(node1, {value: amount1});
+        // root pool:
+        //     total: 2 Playa, 2 credits
+        //     node 1 pool:  2 Playa, 2 credits
+        //     node 2 pool:  0 Playa, 0 credits
+        // node 1 pool:
+        //     total:   2 Playa, 2 node 1 credits
+        //     node 1:  0 Playa, 0 node 1 credits
+        //     user:    2 Playa, 2 node 1 credits
+        // node 2 pool:
+        //     total:   0 Playa, 0 node 2 credits
+        //     node 2:  0 Playa, 0 node 2 credits
+        await staking.connect(user).stake(node2, {value: amount2});
+        // root pool:
+        //     total: 5 Playa, 5 credits
+        //     node 1 pool:  2 Playa, 2 credits
+        //     node 2 pool:  3 Playa, 3 credits
+        // node 1 pool:
+        //     total:   2 Playa, 2 node 1 credits
+        //     node 1:  0 Playa, 0 node 1 credits
+        //     user:    2 Playa, 2 node 1 credits
+        // node 2 pool:
+        //     total:   3 Playa, 3 node 2 credits
+        //     node 2:  0 Playa, 0 node 2 credits
+        //     user:    3 Playa, 3 node 1 credits
+        await owner.sendTransaction({to: staking, value: reward});
+        // root pool:
+        //     total: 15 Playa, 5 credits
+        //     node 1 pool:  6 Playa, 2 credits
+        //     node 2 pool:  9 Playa, 3 credits
+        // node 1 pool:
+        //     total:   6 Playa, 3 node 1 credits
+        //     node 1:  2 Playa, 1 node 1 credits
+        //     user:    4 Playa, 2 node 1 credits
+        // node 2 pool:
+        //     total:   6 Playa, 3 node 2 credits
+        //     node 2:  0 Playa, 0 node 2 credits
+        //     user:    6 Playa, 3 node 1 credits
+
+        const node1Reward = reward * amount1 / (amount1 + amount2);
+        const node2Reward = reward * amount2 / (amount1 + amount2);
+        const node1Fee = node1Reward / 2n;
+        const stakedToNode1 = amount1 + node1Reward / 2n;
+        (await staking.getEarnedFeeAmount(node1))
+            .should.be.equal(node1Fee);
+        (await staking.getStakedToNodeAmountFor(node1, user))
+            .should.be.equal(stakedToNode1);
+        (await staking.getStakedToNodeAmountFor(node2, user))
+            .should.be.equal(amount2 + node2Reward);
+
+        await staking.connect(node1Wallet).claimAllFee(node1Wallet)
+            .should.changeEtherBalance(node1Wallet, node1Fee);
+        // root pool:
+        //     total: 13 Playa, 4.(3) credits
+        //     node 1 pool:  4 Playa, 1.(3) credits
+        //     node 2 pool:  9 Playa, 3 credits
+        // node 1 pool:
+        //     total:   4 Playa, 2 node 1 credits
+        //     node 1:  0 Playa, 0 node 1 credits
+        //     user:    4 Playa, 2 node 1 credits
+        // node 2 pool:
+        //     total:   6 Playa, 3 node 2 credits
+        //     node 2:  0 Playa, 0 node 2 credits
+        //     user:    6 Playa, 3 node 1 credits
+
+        (await staking.getEarnedFeeAmount(node1))
+            .should.be.equal(0n);
+        (await staking.getStakedToNodeAmountFor(node1, user))
+            .should.be.equal(stakedToNode1 - roundingError);
+        (await staking.getStakedAmountFor(user))
+            .should.be.equal(stakedToNode1 + amount2 + node2Reward - roundingError);
+
+        await staking.connect(user).retrieve(node1, stakedToNode1 - roundingError)
+            .should.changeEtherBalance(user, stakedToNode1 - roundingError);
+        // root pool:
+        //     total: 9 Playa, 3 credits
+        //     node 1 pool:  0 Playa, 0 credits
+        //     node 2 pool:  9 Playa, 3 credits
+        // node 1 pool:
+        //     total:   0 Playa, 0 node 1 credits
+        //     node 1:  0 Playa, 0 node 1 credits
+        //     user:    0 Playa, 0 node 1 credits
+        // node 2 pool:
+        //     total:   6 Playa, 3 node 2 credits
+        //     node 2:  0 Playa, 0 node 2 credits
+        //     user:    6 Playa, 3 node 1 credits
+
+        (await staking.getEarnedFeeAmount(node1))
+            .should.be.equal(0n);
+        (await staking.getStakedToNodeAmountFor(node1, user))
+            .should.be.equal(0n);
+        (await staking.getStakedAmountFor(user))
+            .should.be.equal(amount2 + node2Reward + roundingError);
+    });
 });
