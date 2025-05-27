@@ -1,7 +1,7 @@
 import _ from "lodash";
 import seedrandom from 'seedrandom';
 import chai, { assert, expect } from "chai";
-import { cleanDeployment, nodesAreRegisteredAndHeartbeatIsSent, nodesRegistered, nodesRegisteredButNotWhitelisted } from "./tools/fixtures";
+import { cleanDeployment, sendHeartbeat, stakedNodes, whitelistedAndStakedAndHealthyNodes, whitelistedAndStakedNodes } from "./tools/fixtures";
 import { ethers } from "hardhat";
 import { runDkg } from "./tools/dkg";
 import { skipTime } from "./tools/time";
@@ -27,14 +27,14 @@ describe("Committee", () => {
 
     it("should not allow anyone to start committee rotation", async () => {
         const [, hacker] = await ethers.getSigners();
-        const {committee} = await nodesAreRegisteredAndHeartbeatIsSent();
+        const {committee} = await whitelistedAndStakedAndHealthyNodes();
         await committee.connect(hacker).select()
             .should.be.revertedWithCustomError(committee, "AccessManagedUnauthorized");
     });
 
     it("should select committee", async function () {
         this.timeout(600000); // 10 minutes timeout. DKG requires a lot of time
-        const {committee, dkg, nodesData} = await nodesAreRegisteredAndHeartbeatIsSent();
+        const {committee, dkg, nodesData} = await whitelistedAndStakedAndHealthyNodes();
         const activeCommitteeIndex = await committee.getActiveCommitteeIndex();
         const nextCommitteeIndex = activeCommitteeIndex + 1n;
 
@@ -101,7 +101,7 @@ describe("Committee", () => {
     });
 
     it("should set committee size", async () => {
-        const {committee} = await nodesAreRegisteredAndHeartbeatIsSent();
+        const {committee} = await whitelistedAndStakedAndHealthyNodes();
         const newSize = 13n;
 
         await committee.setCommitteeSize(newSize);
@@ -115,7 +115,7 @@ describe("Committee", () => {
     });
 
     it("should set transition delay", async () => {
-        const {committee, dkg, nodesData} = await nodesAreRegisteredAndHeartbeatIsSent();
+        const {committee, dkg, nodesData} = await whitelistedAndStakedAndHealthyNodes();
         const activeCommitteeIndex = await committee.getActiveCommitteeIndex();
         const nextCommitteeIndex = activeCommitteeIndex + 1n;
         const newTransitionDelay = 0xd2n;
@@ -142,7 +142,7 @@ describe("Committee", () => {
         // TODO: this test does not fit standard timelimit with old nodejs
         // remove this line after stop using nodejs 20
         this.timeout(50000); // slightly increase timeout for older nodejs
-        const {committee, dkg, nodesData, status} = await nodesAreRegisteredAndHeartbeatIsSent();
+        const {committee, dkg, nodesData, status} = await whitelistedAndStakedAndHealthyNodes();
         await committee.setCommitteeSize(5);
 
         await committee.select();
@@ -175,14 +175,12 @@ describe("Committee", () => {
     it("should select only whitelisted nodes to the committee", async () => {
         seedrandom('d2-d2', { global: true });
         const _lodash = _.runInContext();
-        const {committee, nodesData, status} = await nodesRegisteredButNotWhitelisted();
+        const {committee, nodesData, status} = await stakedNodes();
         const whitelistedNodes = _lodash.sampleSize(nodesData, Number(await committee.committeeSize()));
         for (const node of whitelistedNodes) {
             await status.whitelistNode(node.id);
         }
-        for (const node of nodesData) {
-            await status.connect(node.wallet).alive();
-        }
+        await sendHeartbeat(status, nodesData);
 
         await committee.select();
         const nextCommittee = await committee.getCommittee(await committee.getActiveCommitteeIndex() + 1n);
@@ -199,7 +197,7 @@ describe("Committee", () => {
     it("should select only healthy nodes to the committee", async () => {
         seedrandom('d2-d2', { global: true });
         const _lodash = _.runInContext();
-        const {committee, nodesData, status} = await nodesRegistered();
+        const {committee, nodesData, status} = await whitelistedAndStakedNodes();
         const healthyNodes = _lodash.sampleSize(nodesData, Number(await committee.committeeSize()));
         for (const node of healthyNodes) {
             await status.connect(node.wallet).alive();
@@ -218,7 +216,7 @@ describe("Committee", () => {
     });
 
     it("should restart committee selection", async () => {
-        const {committee, dkg, nodesData} = await nodesAreRegisteredAndHeartbeatIsSent();
+        const {committee, dkg, nodesData} = await whitelistedAndStakedAndHealthyNodes();
         await committee.setCommitteeSize(5);
 
         await committee.select();

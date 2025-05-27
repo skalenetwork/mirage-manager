@@ -33,7 +33,7 @@ import {IStaking} from "@skalenetwork/professional-interfaces/IStaking.sol";
 
 import {Nodes} from "./Nodes.sol";
 import {TypedSet} from "./structs/typed/TypedSet.sol";
-import {FundLibrary, Playa} from "./utils/Fund.sol";
+import {Credit, FundLibrary, Playa} from "./utils/Fund.sol";
 
 
 contract Staking is AccessManagedUpgradeable, IStaking {
@@ -96,6 +96,7 @@ contract Staking is AccessManagedUpgradeable, IStaking {
         }
         emit Retrieved(msg.sender, node, value);
 
+        committee.updateWeight(node, Credit.unwrap(_rootFund.credits[FundLibrary.nodeToHolder(node)]));
         payable(msg.sender).sendValue(Playa.unwrap(value));
     }
 
@@ -133,6 +134,12 @@ contract Staking is AccessManagedUpgradeable, IStaking {
             emit StakedToNewNode(msg.sender, node);
         }
         emit Staked(msg.sender, node, amount);
+
+        committee.updateWeight(node, Credit.unwrap(_rootFund.credits[FundLibrary.nodeToHolder(node)]));
+    }
+
+    function getNodeShare(NodeId node) external view override returns (uint256 share) {
+        return Credit.unwrap(_rootFund.credits[FundLibrary.nodeToHolder(node)]);
     }
 
     function getStakedAmount() external view override returns (Playa amount) {
@@ -162,6 +169,8 @@ contract Staking is AccessManagedUpgradeable, IStaking {
             amount
         );
         emit FeeClaimed(node, to, amount);
+
+        committee.updateWeight(node, Credit.unwrap(_rootFund.credits[FundLibrary.nodeToHolder(node)]));
         to.sendValue(Playa.unwrap(amount));
     }
 

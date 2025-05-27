@@ -1,6 +1,6 @@
 import { ethers } from "hardhat";
 import { expect } from "chai";
-import { cleanDeployment, nodesAreRegisteredAndHeartbeatIsSent } from "./tools/fixtures";
+import { cleanDeployment, whitelistedAndStakedAndHealthyNodes } from "./tools/fixtures";
 import { Nodes } from "../typechain-types";
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
@@ -378,7 +378,7 @@ describe("Nodes", function () {
     });
 
     it("should should not allow changing nodes data if node in current of next committee", async () => {
-        const {committee, nodesData, nodes} = await nodesAreRegisteredAndHeartbeatIsSent();
+        const {committee, nodesData, nodes} = await whitelistedAndStakedAndHealthyNodes();
         await committee.select();
 
         for(const node of nodesData) {

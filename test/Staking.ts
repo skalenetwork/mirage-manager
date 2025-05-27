@@ -1,12 +1,12 @@
 import chai from "chai";
-import { nodesRegisteredButNotWhitelisted } from "./tools/fixtures";
+import { registeredOnlyNodes } from "./tools/fixtures";
 import { ethers } from "hardhat";
 
 chai.should();
 
 describe("Staking", () => {
     it("should allow holder to stake", async () => {
-        const {staking, nodesData } = await nodesRegisteredButNotWhitelisted();
+        const {staking, nodesData } = await registeredOnlyNodes();
         const [,user] = await ethers.getSigners();
         const amount = ethers.parseEther("1");
         const node = nodesData[0].id;
@@ -16,7 +16,7 @@ describe("Staking", () => {
     });
 
     it("should distribute rewards proportionally to stake", async () => {
-        const {staking, nodesData } = await nodesRegisteredButNotWhitelisted();
+        const {staking, nodesData } = await registeredOnlyNodes();
         const [owner, user1, user2] = await ethers.getSigners();
         const [amount1, amount2] = [ethers.parseEther("2"), ethers.parseEther("3")];
         const reward = ethers.parseEther("5");
@@ -35,7 +35,7 @@ describe("Staking", () => {
     });
 
     it("should be able to stake to multiple nodes", async () => {
-        const {staking, nodesData } = await nodesRegisteredButNotWhitelisted();
+        const {staking, nodesData } = await registeredOnlyNodes();
         const [, user] = await ethers.getSigners();
         const [amount1, amount2] = [ethers.parseEther("2"), ethers.parseEther("3")];
         const [node1, node2] = [nodesData[0].id, nodesData[1].id];
@@ -55,7 +55,7 @@ describe("Staking", () => {
     });
 
     it("should be possible to retrieve", async () => {
-        const {staking, nodesData } = await nodesRegisteredButNotWhitelisted();
+        const {staking, nodesData } = await registeredOnlyNodes();
         const [,user] = await ethers.getSigners();
         const initialAmount = ethers.parseEther("3");
         const amount = ethers.parseEther("1");
@@ -71,7 +71,7 @@ describe("Staking", () => {
     });
 
     it("should apply validator fee on rewards", async () => {
-        const {staking, nodesData } = await nodesRegisteredButNotWhitelisted();
+        const {staking, nodesData } = await registeredOnlyNodes();
         const [owner,user] = await ethers.getSigners();
         const amount = ethers.parseEther("1");
         const reward = ethers.parseEther("2");
@@ -99,7 +99,7 @@ describe("Staking", () => {
     });
 
     it("should apply validator fee on rewards when there are multiple nodes", async () => {
-        const {staking, nodesData } = await nodesRegisteredButNotWhitelisted();
+        const {staking, nodesData } = await registeredOnlyNodes();
         const [owner,user] = await ethers.getSigners();
         const amount1 = ethers.parseEther("2");
         const amount2 = ethers.parseEther("3");

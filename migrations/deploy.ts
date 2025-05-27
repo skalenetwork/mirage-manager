@@ -246,6 +246,7 @@ const setupRoles = async (deployedContracts: DeployedContracts) => {
         Committee: committee,
         MirageAccessManager: accessManager,
         Nodes: nodes,
+        Staking: staking,
         Status: status
     } = deployedContracts;
 
@@ -279,12 +280,22 @@ const setupRoles = async (deployedContracts: DeployedContracts) => {
     );
     await response.wait();
 
+    response = await accessManager.setTargetFunctionRole(
+        await ethers.resolveAddress(committee),
+        [committee.interface.getFunction("updateWeight").selector],
+        await accessManager.STAKING_ROLE()
+    );
+    await response.wait();
+
     // grant roles
 
     response = await accessManager.grantRole(await accessManager.NODES_ROLE(), await ethers.resolveAddress(nodes), 0n);
     await response.wait();
 
     response = await accessManager.grantRole(await accessManager.STATUS_ROLE(), await ethers.resolveAddress(status), 0n);
+    await response.wait();
+
+    response = await accessManager.grantRole(await accessManager.STAKING_ROLE(), await ethers.resolveAddress(staking), 0n);
     await response.wait();
 }
 

@@ -51,11 +51,18 @@ library PoolLibrary {
         assert(pool.incomingNodes.add(id));
     }
 
-    function remove(Pool storage pool, NodeId node) internal {
+    function moveToFront(Pool storage pool, NodeId node, uint256 weight) internal {
+        remove(pool, node);
+        assert(pool.presentNodes.add(node));
+        pool.root = pool.tree.insertSmallest(pool.root, node, weight);
+    }
+
+    function remove(Pool storage pool, NodeId node) internal returns (bool removed) {
         if (pool.presentNodes.remove(node)) {
             pool.root = pool.tree.remove(node);
+            removed = true;
         } else {
-            require(pool.incomingNodes.remove(node), NodeIsMissing(node));
+            return pool.incomingNodes.remove(node);
         }
     }
 
@@ -86,12 +93,18 @@ library PoolLibrary {
         }
     }
 
-    function moveToFront(Pool storage pool, NodeId node) internal {
-        remove(pool, node);
-        assert(pool.presentNodes.add(node));
-        // TODO: call staking after it is implemented
-        uint256 stake = 1;
-        pool.root = pool.tree.insertSmallest(pool.root, node, stake);
+    function setWeight(
+        Pool storage pool,
+        NodeId node,
+        uint256 weight
+    ) internal {
+        if (pool.presentNodes.contains(node)) {
+            pool.root = pool.tree.setWeight(node, weight);
+        }
+    }
+
+    function contains(Pool storage pool, NodeId node) internal view returns (bool present) {
+        return pool.presentNodes.contains(node) || pool.incomingNodes.contains(node);
     }
 
     function length(Pool storage pool) internal view returns (uint256 poolSize) {
