@@ -1,12 +1,53 @@
-import _ from "lodash";
+import _, { round } from "lodash";
 import seedrandom from 'seedrandom';
 import chai, { assert, expect } from "chai";
-import { cleanDeployment, sendHeartbeat, stakedNodes, whitelistedAndStakedAndHealthyNodes, whitelistedAndStakedNodes } from "./tools/fixtures";
+import { cleanDeployment, sendHeartbeat, stakedNodes, whitelistedAndStakedAndHealthyNodes, whitelistedAndStakedNodes, whitelistedNodes } from "./tools/fixtures";
 import { ethers } from "hardhat";
 import { runDkg } from "./tools/dkg";
 import { skipTime } from "./tools/time";
 
 chai.should();
+
+const calculateProbabilityOfBeingSelectedToCommittee = (weights: Map<bigint, number>, committeeSize: number) => {
+    const probabilities = new Map<bigint, number>();
+    if (committeeSize < 1 || committeeSize > weights.size) {
+        for (const node of weights.keys()) {
+            probabilities.set(node, 0);
+        }
+        return probabilities;
+    }
+    if (committeeSize === weights.size) {
+        for (const node of weights.keys()) {
+            probabilities.set(node, 1);
+        }
+        return probabilities;
+    }
+    const totalWeight = _.sum([...weights.values()]);
+
+    for (const [selectedNode, weight] of weights.entries()) {
+        const probability = weight / totalWeight;
+        const nextWeights = new Map(weights);
+        nextWeights.delete(selectedNode);
+        const nextProbabilities = calculateProbabilityOfBeingSelectedToCommittee(nextWeights, committeeSize - 1);
+        for (const node of weights.keys()) {
+            if (node === selectedNode) {
+                probabilities.set(node, probability + (probabilities.get(node) ?? 0) );
+            } else {
+                probabilities.set(node, probability * (nextProbabilities.get(node) ?? 0) + (probabilities.get(node) ?? 0) );
+            }
+        }
+    }
+    return probabilities;
+}
+
+const normalize = (counts: Map<bigint, number>, total?: number) => {
+    const result = new Map<bigint, number>();
+    const _total = total ?? _.sum([...counts.values()]);
+    for (const [key, value] of counts.entries()) {
+        result.set(key, value / _total);
+    }
+    return result;
+};
 
 describe("Committee", () => {
 
@@ -233,6 +274,61 @@ describe("Committee", () => {
         for (const node of nodesData) {
             expect(await committee.isNodeInCurrentOrNextCommittee(node.id))
                 .to.be.equal(goodNextCommittee.nodes.includes(BigInt(node.id)));
+        }
+    });
+
+    it("should select nodes to the committee accordingly to its stake", async () => {
+        const committeeSize = 2;
+        const stakedNodesNumber = 5;
+        const maxIterations = 200;
+        const tolerance = 0.05;
+        const stakeAmounts = new Map(
+            _.range(stakedNodesNumber).map((value, index) => [BigInt(index + 1), Math.log(value + 2)])
+        );
+
+        const {committee, staking, status, nodesData} = await whitelistedNodes();
+        await committee.setCommitteeSize(committeeSize);
+        for (const [nodeId, stake] of stakeAmounts.entries()) {
+            await staking.stake(nodeId, {value: ethers.parseEther(stake.toString())});
+        }
+        await sendHeartbeat(status, nodesData);
+
+        const weights = new Map(stakeAmounts);
+        const probabilities = calculateProbabilityOfBeingSelectedToCommittee(weights, committeeSize);
+        const stakedNodes = [...stakeAmounts.keys()];
+        const counts = new Map<bigint, number>(stakedNodes.map((nodeId) => [nodeId, 0]));
+        let ratioIsGood = false;
+        for (let iteration = 1; !ratioIsGood ; ++iteration) {
+
+            await committee.select();
+            const nextCommittee = await committee.getCommittee(await committee.getActiveCommitteeIndex() + 1n);
+            for (const nodeId of nextCommittee.nodes) {
+                counts.set(nodeId, (counts.get(nodeId) || 0) + 1);
+            }
+            await sendHeartbeat(status, nodesData.filter((node) => nextCommittee.nodes.includes(BigInt(node.id))));
+            await status.connect(nodesData.find((node) => node.id === stakedNodes[iteration % stakedNodes.length])!.wallet).alive();
+
+            const frequencies = normalize(counts, iteration);
+
+            ratioIsGood = true;
+            for (const [node, frequency] of frequencies.entries()) {
+                const probability = probabilities.get(node) ?? 0;
+                const error = Math.abs(frequency - probability);
+                if (error > tolerance) {
+                    ratioIsGood = false;
+                }
+            }
+
+            if (iteration >= maxIterations) {
+                probabilities.should.be.equal(
+                    frequencies,
+                    `\nFrequencies:\t${
+                        [...frequencies.values()].map((value) => round(value, 2))
+                    }\nProbabilities:\t${
+                        [...probabilities.values()].map((value) => round(value, 2))
+                    }\n`);
+                break;
+            }
         }
     });
 });

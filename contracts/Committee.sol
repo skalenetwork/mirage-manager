@@ -177,7 +177,6 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
         } else {
             _pool.remove(node);
         }
-        _pool.setWeight(node, _shareToWeight(share));
     }
 
     function getCommittee(
