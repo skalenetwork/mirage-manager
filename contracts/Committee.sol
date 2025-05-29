@@ -63,6 +63,9 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
 
     PoolLibrary.Pool private _pool;
 
+    event NodeBecomesEligible(NodeId indexed node);
+    event NodeLosesEligibility(NodeId indexed node);
+
     error SenderIsNotDkg(
         address sender
     );
@@ -140,21 +143,27 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
     function nodeCreated(NodeId node) external override restricted {
         if (status.isWhitelisted(node) && staking.getNodeShare(node) > 0) {
             _pool.add(node);
+            emit NodeBecomesEligible(node);
         }
     }
 
     function nodeRemoved(NodeId node) external override restricted {
-        _pool.remove(node);
+        if (_pool.remove(node)) {
+            emit NodeLosesEligibility(node);
+        }
     }
 
     function nodeWhitelisted(NodeId node) external override restricted {
         if (staking.getNodeShare(node) > 0) {
             _pool.add(node);
+            emit NodeBecomesEligible(node);
         }
     }
 
     function nodeBlacklisted(NodeId node) external override restricted {
-        _pool.remove(node);
+        if (_pool.remove(node)) {
+            emit NodeLosesEligibility(node);
+        }
     }
 
     function processHeartbeat(NodeId node) external override restricted {
@@ -173,9 +182,12 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
                 _pool.setWeight(node, weight);
             } else if (status.isWhitelisted(node)) {
                 _pool.add(node);
+                emit NodeBecomesEligible(node);
             }
         } else {
-            _pool.remove(node);
+            if (_pool.remove(node)) {
+                emit NodeLosesEligibility(node);
+            }
         }
     }
 
