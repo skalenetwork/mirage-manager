@@ -304,6 +304,8 @@ describe("Committee", () => {
         const counts = new Map<bigint, number>(stakedNodes.map((nodeId) => [nodeId, 0]));
         let ratioIsGood = false;
         for (let iteration = 1; !ratioIsGood ; ++iteration) {
+            console.log(`Iteration: ${iteration}`);
+
             await committee.select();
             const nextCommittee = await committee.getCommittee(await committee.getActiveCommitteeIndex() + 1n);
             for (const nodeId of nextCommittee.nodes) {
