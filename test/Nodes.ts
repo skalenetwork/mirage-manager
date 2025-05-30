@@ -377,9 +377,12 @@ describe("Nodes", function () {
         .to.be.revertedWithCustomError(nodesContract, "PassiveNodeAlreadyExistsForAddress");
     });
 
-    it("should should not allow changing nodes data if node in current or next committee", async () => {
+    it("should should not allow changing nodes data if node in current or next committee", async function () {
+        // TODO: this test does not fit standard timelimit with old nodejs
+        // remove this line after stop using nodejs 20
+        this.timeout(50000); // slightly increase timeout for older nodejs
         const {committee, nodesData, nodes} = await whitelistedAndStakedAndHealthyNodes();
-        await committee.setCommitteeSize(5);
+        await committee.setCommitteeSize(5); // to save resources
         await committee.select();
 
         for(const node of nodesData) {
