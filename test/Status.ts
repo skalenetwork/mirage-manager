@@ -1,5 +1,5 @@
 import { expect } from "chai";
-import { nodesRegisteredButNotWhitelisted } from "./tools/fixtures";
+import { registeredOnlyNodes } from "./tools/fixtures";
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import { Nodes, Status } from "../typechain-types";
@@ -31,7 +31,7 @@ describe("Status", function () {
     let nodeIdForUser5: BigNumberish;
 
     beforeEach(async () => {
-        const { nodes, status , nodesData } = await nodesRegisteredButNotWhitelisted();
+        const { nodes, status , nodesData } = await registeredOnlyNodes();
         nodesContract = nodes;
         statusContract = status;
         [user1, user2, user3, user4, user5] = nodesData.map(({ wallet }) => wallet);

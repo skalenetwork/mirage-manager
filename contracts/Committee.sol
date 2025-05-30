@@ -63,6 +63,9 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
 
     PoolLibrary.Pool private _pool;
 
+    event NodeBecomesEligible(NodeId indexed node);
+    event NodeLosesEligibility(NodeId indexed node);
+
     error SenderIsNotDkg(
         address sender
     );
@@ -138,25 +141,54 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
     }
 
     function nodeCreated(NodeId node) external override restricted {
-        if (status.isWhitelisted(node)) {
+        if (status.isWhitelisted(node) && staking.getNodeShare(node) > 0) {
             _pool.add(node);
+            emit NodeBecomesEligible(node);
         }
     }
 
     function nodeRemoved(NodeId node) external override restricted {
-        _pool.remove(node);
+        if (_pool.remove(node)) {
+            emit NodeLosesEligibility(node);
+        }
     }
 
     function nodeWhitelisted(NodeId node) external override restricted {
-        _pool.add(node);
+        if (staking.getNodeShare(node) > 0) {
+            _pool.add(node);
+            emit NodeBecomesEligible(node);
+        }
     }
 
     function nodeBlacklisted(NodeId node) external override restricted {
-        _pool.remove(node);
+        if (_pool.remove(node)) {
+            emit NodeLosesEligibility(node);
+        }
     }
 
     function processHeartbeat(NodeId node) external override restricted {
-        _pool.moveToFront(node);
+        if (_pool.contains(node)) {
+            _pool.moveToFront(
+                node,
+                _shareToWeight(staking.getNodeShare(node))
+            );
+        }
+    }
+
+    function updateWeight(NodeId node, uint256 share) external override restricted {
+        uint256 weight = _shareToWeight(share);
+        if (weight > 0) {
+            if (_pool.contains(node)) {
+                _pool.setWeight(node, weight);
+            } else if (status.isWhitelisted(node)) {
+                _pool.add(node);
+                emit NodeBecomesEligible(node);
+            }
+        } else {
+            if (_pool.remove(node)) {
+                emit NodeLosesEligibility(node);
+            }
+        }
     }
 
     function getCommittee(
@@ -252,5 +284,10 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
 
     function _previous(CommitteeIndex index) private pure returns (CommitteeIndex nextIndex) {
         return CommitteeIndex.wrap(CommitteeIndex.unwrap(index) - 1);
+    }
+
+    function _shareToWeight(uint256 share) private pure returns (uint256 weight)
+    {
+        return share;
     }
 }

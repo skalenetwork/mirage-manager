@@ -1,5 +1,5 @@
 import chai, { expect } from "chai";
-import { NodeData, nodesRegistered } from "./tools/fixtures";
+import { NodeData, registeredOnlyNodes } from "./tools/fixtures";
 import { loadFixture } from "@nomicfoundation/hardhat-network-helpers";
 import { DKG } from "../typechain-types";
 import { DkgStatus, toEventFormat } from "./tools/dkg";
@@ -75,7 +75,7 @@ describe("DKG", () => {
         ];
 
         it("should start DKG", async () => {
-            const { dkg } = await nodesRegistered();
+            const { dkg } = await registeredOnlyNodes();
             await dkg.generate(committee);
 
             (await dkg.rounds(1)).status.should.be.equal(DkgStatus.BROADCAST);
@@ -89,7 +89,7 @@ describe("DKG", () => {
             const dkgId = 1n;
 
             const generationIsStartedFixture = async () => {
-                const { dkg, nodesData } = await nodesRegistered();
+                const { dkg, nodesData } = await registeredOnlyNodes();
                 const firstNode = nodesData[committee[0]];
                 const secondNode = nodesData[committee[1]];
                 const randomNode = nodesData[0];
@@ -130,7 +130,7 @@ describe("DKG", () => {
             });
 
             it("should broadcast data from 2 node", async () => {
-                const { dkg, nodesData } = await nodesRegistered();
+                const { dkg, nodesData } = await registeredOnlyNodes();
                 const secondNode = nodesData[committee[1]];
                 await dkg.generate(committee.map((index) => nodesData[index].id));
                 const dkgId = 1n;

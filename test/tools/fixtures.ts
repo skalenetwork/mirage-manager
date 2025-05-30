@@ -3,10 +3,10 @@
 import {
     loadFixture
 } from "@nomicfoundation/hardhat-network-helpers";
-import { deploy as productionDeploy } from "../../migrations/deploy";
+import { deploy } from "../../migrations/deploy";
 import { HDNodeWallet, Wallet } from "ethers";
 import { ethers } from "hardhat";
-import { INodes, IDkg } from "../../typechain-types";
+import { INodes, IDkg, Nodes, Status, Staking } from "../../typechain-types";
 import { getPublicKey } from "./signatures";
 
 // Parameters
@@ -14,6 +14,7 @@ import { getPublicKey } from "./signatures";
 const numberOfNodes = 50;
 const initialNumberOfNodes = 22;
 const nodeBalance = ethers.parseEther("1");
+const nodeStake = ethers.parseEther("1");
 export const commonPublicKey: IDkg.G2PointStruct = {
     x: {
       a: 1344029448544809206912243137223916831397685297347960966147194066834973842416n,
@@ -32,24 +33,6 @@ export interface NodeData extends INodes.NodeStruct {
 }
 
 const getIp = (): Uint8Array => ethers.randomBytes(4);
-
-// Fixtures
-
-const deploy = async () => {
-    const nodesData = await generateRandomNodes(initialNumberOfNodes);
-    const contracts = await productionDeploy(nodesData, commonPublicKey);
-    for (const node of nodesData) {
-        node.id = await contracts.Nodes.getNodeId(node.wallet.address);
-    };
-    return {
-        committee: contracts.Committee,
-        dkg: contracts.DKG,
-        nodes: contracts.Nodes,
-        staking: contracts.Staking,
-        status: contracts.Status,
-        nodesData
-    }
-}
 
 const generateRandomNodes = async (initialNumberOfNodes?: number) => {
     const [owner] = await ethers.getSigners();
@@ -74,38 +57,98 @@ const generateRandomNodes = async (initialNumberOfNodes?: number) => {
     return nodesData;
 }
 
-const registerNodes = async () => {
-    const contracts = await loadFixture(deploy);
-    const { nodes } = contracts;
-    const nodesData = await generateRandomNodes(numberOfNodes - initialNumberOfNodes);
-
+const registerNodes = async (nodes: Nodes, nodesData: NodeData[]) => {
     for (const node of nodesData) {
         await nodes.connect(node.wallet).registerNode(node.ip, node.publicKey, node.port);
         const nodeId = await nodes.getNodeId(node.wallet.address);
         node.id = nodeId;
     }
+}
+
+const whitelistNodes = async (status: Status, nodesData: NodeData[]) => {
+    for (const node of nodesData) {
+        await status.whitelistNode(node.id);
+    }
+}
+
+export const sendHeartbeat = async (status: Status, nodesData: NodeData[]) => {
+    for (const node of nodesData) {
+        await status.connect(node.wallet).alive();
+    }
+}
+
+const stake = async (staking: Staking, nodesData: NodeData[]) => {
+    for (const node of nodesData) {
+        await staking.stake(node.id, {value: nodeStake});
+    }
+}
+
+// Fixtures
+
+const deployFixture = async () => {
+    const nodesData = await generateRandomNodes(initialNumberOfNodes);
+    const contracts = await deploy(nodesData, commonPublicKey);
+    for (const node of nodesData) {
+        node.id = await contracts.Nodes.getNodeId(node.wallet.address);
+    };
+    return {
+        committee: contracts.Committee,
+        dkg: contracts.DKG,
+        nodes: contracts.Nodes,
+        staking: contracts.Staking,
+        status: contracts.Status,
+        nodesData
+    }
+}
+
+const registeredOnlyNodesFixture = async () => {
+    const contracts = await cleanDeployment();
+    const { nodes } = contracts;
+    const nodesData = await generateRandomNodes(numberOfNodes - initialNumberOfNodes);
+
+    await registerNodes(nodes, nodesData);
+
     return { ...contracts, nodesData:[...contracts.nodesData, ...nodesData] };
 }
 
-const whitelistNodes = async () => {
-    const registeredNodes = await nodesRegisteredButNotWhitelisted();
-    for (const node of registeredNodes.nodesData) {
-        await registeredNodes.status.whitelistNode(node.id);
-    }
+const whitelistedNodesFixture = async () => {
+    const registeredNodes = await registeredOnlyNodes();
+    await whitelistNodes(registeredNodes.status, registeredNodes.nodesData);
     return {...registeredNodes};
 }
 
-const registerNodesAndSendHeartbeat = async () => {
-    const registeredNodes = await nodesRegistered();
-    for (const node of registeredNodes.nodesData) {
-        await registeredNodes.status.connect(node.wallet).alive();
-    }
-    return {...registeredNodes};
+const nodesWhitelistedAndHealthyFixture = async () => {
+    const deployment = await whitelistedNodes();
+    await sendHeartbeat(deployment.status, deployment.nodesData);
+    return {...deployment};
+}
+
+const whitelistedAndStakedNodesFixture = async () => {
+    const deployment = await whitelistedNodes();
+    const { staking, nodesData } = deployment;
+    await stake(staking, nodesData);
+    return {...deployment};
+}
+
+const stakedNodesFixture = async () => {
+    const deployment = await registeredOnlyNodes();
+    const { staking, nodesData } = deployment;
+    await stake(staking, nodesData);
+    return {...deployment};
+}
+
+const whitelistedAndStakedAndHealthyNodesFixture = async () => {
+    const deployment = await whitelistedAndStakedNodes();
+    await sendHeartbeat(deployment.status, deployment.nodesData);
+    return {...deployment};
 }
 
 // External functions
 
-export const cleanDeployment = async () => loadFixture(deploy);
-export const nodesRegisteredButNotWhitelisted = async () => loadFixture(registerNodes);
-export const nodesRegistered = async () => loadFixture(whitelistNodes);
-export const nodesAreRegisteredAndHeartbeatIsSent = async () => loadFixture(registerNodesAndSendHeartbeat);
+export const cleanDeployment = async () => loadFixture(deployFixture);
+export const registeredOnlyNodes = async () => loadFixture(registeredOnlyNodesFixture);
+export const stakedNodes = async () => loadFixture(stakedNodesFixture);
+export const whitelistedNodes = async () => loadFixture(whitelistedNodesFixture);
+export const whitelistedAndHealthyNodes = async () => loadFixture(nodesWhitelistedAndHealthyFixture);
+export const whitelistedAndStakedNodes = async () => loadFixture(whitelistedAndStakedNodesFixture);
+export const whitelistedAndStakedAndHealthyNodes = async () => loadFixture(whitelistedAndStakedAndHealthyNodesFixture);

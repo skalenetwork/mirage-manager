@@ -29,6 +29,7 @@ import {
 contract MirageAccessManager is AccessManagerUpgradeable {
     uint64 public constant NODES_ROLE = 1;
     uint64 public constant STATUS_ROLE = 2;
+    uint64 public constant STAKING_ROLE = 3;
 
     function initialize(address initialAdmin) public initializer override {
         __AccessManager_init(initialAdmin);

@@ -85,6 +85,21 @@ library SplayTree {
         delete nodes[id];
     }
 
+    function setWeight(
+        mapping(NodeId => Node) storage nodes,
+        NodeId node,
+        uint256 weight
+    )
+        internal
+        returns (NodeId newRoot)
+    {
+        splay(nodes, node);
+        NodeId left = nodes[node].left;
+        NodeId right = nodes[node].right;
+        nodes[node].totalWeight = weight + nodes[left].totalWeight + nodes[right].totalWeight;
+        return node;
+    }
+
     function findByWeight(
         mapping(NodeId => Node) storage nodes,
         NodeId root,
