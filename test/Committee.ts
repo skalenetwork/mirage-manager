@@ -277,7 +277,12 @@ describe("Committee", () => {
         }
     });
 
-    it("should select nodes to the committee accordingly to its stake", async () => {
+    it("should select nodes to the committee accordingly to its stake", async function () {
+        // This test can consume a lot of time because it's random.
+        // To speed up the test decrease tolerance or committee size/nodes number
+        // On local machine it was checked that the accuracy is less then 1% for 5 nodes committee
+        this.timeout(180000); // 3 minutes for ~112 iterations
+
         const committeeSize = 2;
         const stakedNodesNumber = 5;
         const maxIterations = 200;
@@ -299,8 +304,6 @@ describe("Committee", () => {
         const counts = new Map<bigint, number>(stakedNodes.map((nodeId) => [nodeId, 0]));
         let ratioIsGood = false;
         for (let iteration = 1; !ratioIsGood ; ++iteration) {
-            console.log(`Iteration: ${iteration}`);
-
             await committee.select();
             const nextCommittee = await committee.getCommittee(await committee.getActiveCommitteeIndex() + 1n);
             for (const nodeId of nextCommittee.nodes) {
