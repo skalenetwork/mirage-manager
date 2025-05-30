@@ -377,8 +377,9 @@ describe("Nodes", function () {
         .to.be.revertedWithCustomError(nodesContract, "PassiveNodeAlreadyExistsForAddress");
     });
 
-    it("should should not allow changing nodes data if node in current of next committee", async () => {
+    it("should should not allow changing nodes data if node in current or next committee", async () => {
         const {committee, nodesData, nodes} = await whitelistedAndStakedAndHealthyNodes();
+        await committee.setCommitteeSize(5);
         await committee.select();
 
         for(const node of nodesData) {
