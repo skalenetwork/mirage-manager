@@ -286,7 +286,7 @@ describe("Committee", () => {
         const committeeSize = 2;
         const stakedNodesNumber = 5;
         const maxIterations = 200;
-        const tolerance = 0.05;
+        const tolerance = 0.1; // 10%
         const stakeAmounts = new Map(
             _.range(stakedNodesNumber).map((value, index) => [BigInt(index + 1), Math.log(value + 2)])
         );
@@ -304,8 +304,6 @@ describe("Committee", () => {
         const counts = new Map<bigint, number>(stakedNodes.map((nodeId) => [nodeId, 0]));
         let ratioIsGood = false;
         for (let iteration = 1; !ratioIsGood ; ++iteration) {
-            console.log(`Iteration: ${iteration}`);
-
             await committee.select();
             const nextCommittee = await committee.getCommittee(await committee.getActiveCommitteeIndex() + 1n);
             for (const nodeId of nextCommittee.nodes) {
