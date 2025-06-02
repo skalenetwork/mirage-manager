@@ -33,7 +33,7 @@ import {IStaking} from "@skalenetwork/professional-interfaces/IStaking.sol";
 
 import {Nodes} from "./Nodes.sol";
 import {TypedSet} from "./structs/typed/TypedSet.sol";
-import {Credit, FundLibrary, Playa} from "./utils/Fund.sol";
+import {Credit, FundLibrary, Mirage} from "./utils/Fund.sol";
 
 
 contract Staking is AccessManagedUpgradeable, IStaking {
@@ -47,10 +47,10 @@ contract Staking is AccessManagedUpgradeable, IStaking {
     mapping (NodeId node => FundLibrary.Fund nodeFund) private _nodesFunds;
     mapping (address holder => TypedSet.NodeIdSet nodeIds) private _stakedNodes;
 
-    event FeeClaimed(NodeId indexed node, address indexed to, Playa indexed amount);
-    event Retrieved(address indexed sender, NodeId indexed node, Playa indexed amount);
+    event FeeClaimed(NodeId indexed node, address indexed to, Mirage indexed amount);
+    event Retrieved(address indexed sender, NodeId indexed node, Mirage indexed amount);
     event RewardReceived(address indexed sender, uint256 indexed amount);
-    event Staked(address indexed sender, NodeId indexed node, Playa indexed amount);
+    event Staked(address indexed sender, NodeId indexed node, Mirage indexed amount);
     event StakedToNewNode(address indexed sender, NodeId indexed node);
     event StoppedStaking(address indexed sender, NodeId indexed node);
 
@@ -73,12 +73,12 @@ contract Staking is AccessManagedUpgradeable, IStaking {
         claimFee(to, getEarnedFeeAmount(nodes.getNodeId(msg.sender)));
     }
 
-    function retrieve(NodeId node, Playa value) external override {
-        require(value > FundLibrary.ZERO_PLAYA, ZeroAmount());
+    function retrieve(NodeId node, Mirage value) external override {
+        require(value > FundLibrary.ZERO_MIRAGE, ZeroAmount());
         require(nodes.activeNodeExists(node), Nodes.NodeDoesNotExist(node));
         require(_stakedNodes[msg.sender].contains(node), ZeroStakeToNode(node));
 
-        Playa balance = _getTotalBalance();
+        Mirage balance = _getTotalBalance();
         _nodesFunds[node].remove(
             _rootFund.getBalance(balance, FundLibrary.nodeToHolder(node)),
             FundLibrary.addressToHolder(msg.sender),
@@ -97,7 +97,7 @@ contract Staking is AccessManagedUpgradeable, IStaking {
         emit Retrieved(msg.sender, node, value);
 
         committee.updateWeight(node, Credit.unwrap(_rootFund.credits[FundLibrary.nodeToHolder(node)]));
-        payable(msg.sender).sendValue(Playa.unwrap(value));
+        payable(msg.sender).sendValue(Mirage.unwrap(value));
     }
 
     function setFeeRate(uint16 feeRate) external override {
@@ -118,8 +118,8 @@ contract Staking is AccessManagedUpgradeable, IStaking {
     function stake(NodeId node) external payable override {
         require(msg.value > 0, ZeroAmount());
         require(nodes.activeNodeExists(node), Nodes.NodeDoesNotExist(node));
-        Playa amount = Playa.wrap(msg.value);
-        Playa balance = _getTotalBalance() - amount;
+        Mirage amount = Mirage.wrap(msg.value);
+        Mirage balance = _getTotalBalance() - amount;
         _nodesFunds[node].supply(
             _rootFund.getBalance(balance, FundLibrary.nodeToHolder(node)),
             FundLibrary.addressToHolder(msg.sender),
@@ -142,11 +142,11 @@ contract Staking is AccessManagedUpgradeable, IStaking {
         return Credit.unwrap(_rootFund.credits[FundLibrary.nodeToHolder(node)]);
     }
 
-    function getStakedAmount() external view override returns (Playa amount) {
+    function getStakedAmount() external view override returns (Mirage amount) {
         return getStakedAmountFor(msg.sender);
     }
 
-    function getStakedToNodeAmount(NodeId node) external view override returns (Playa amount) {
+    function getStakedToNodeAmount(NodeId node) external view override returns (Mirage amount) {
         return getStakedToNodeAmountFor(node, msg.sender);
     }
 
@@ -156,9 +156,9 @@ contract Staking is AccessManagedUpgradeable, IStaking {
 
     // Public
 
-    function claimFee(address payable to, Playa amount) public override {
+    function claimFee(address payable to, Mirage amount) public override {
         NodeId node = nodes.getNodeId(msg.sender);
-        Playa balance = _getTotalBalance();
+        Mirage balance = _getTotalBalance();
         _nodesFunds[node].claimFee(
             _rootFund.getBalance(balance, FundLibrary.nodeToHolder(node)),
             amount
@@ -171,16 +171,16 @@ contract Staking is AccessManagedUpgradeable, IStaking {
         emit FeeClaimed(node, to, amount);
 
         committee.updateWeight(node, Credit.unwrap(_rootFund.credits[FundLibrary.nodeToHolder(node)]));
-        to.sendValue(Playa.unwrap(amount));
+        to.sendValue(Mirage.unwrap(amount));
     }
 
-    function getEarnedFeeAmount(NodeId node) public view override returns (Playa amount) {
+    function getEarnedFeeAmount(NodeId node) public view override returns (Mirage amount) {
         return _nodesFunds[node].getEarnedFee(
             _rootFund.getBalance(_getTotalBalance(), FundLibrary.nodeToHolder(node))
         );
     }
 
-    function getStakedAmountFor(address holder) public view override returns (Playa amount) {
+    function getStakedAmountFor(address holder) public view override returns (Mirage amount) {
         uint256 nodesCount = _stakedNodes[holder].length();
         for (uint256 nodeIndex; nodeIndex < nodesCount; ++nodeIndex) {
             NodeId node = _stakedNodes[holder].at(nodeIndex);
@@ -192,8 +192,8 @@ contract Staking is AccessManagedUpgradeable, IStaking {
         return _stakedNodes[holder].values();
     }
 
-    function getStakedToNodeAmountFor(NodeId node, address holder) public view override returns (Playa amount) {
-        Playa nodeBalance = _rootFund.getBalance(_getTotalBalance(), FundLibrary.nodeToHolder(node));
+    function getStakedToNodeAmountFor(NodeId node, address holder) public view override returns (Mirage amount) {
+        Mirage nodeBalance = _rootFund.getBalance(_getTotalBalance(), FundLibrary.nodeToHolder(node));
         return _nodesFunds[node].getBalance(
             nodeBalance,
             FundLibrary.addressToHolder(holder)
@@ -202,7 +202,7 @@ contract Staking is AccessManagedUpgradeable, IStaking {
 
     // Private
 
-    function _getTotalBalance() private view returns (Playa balance) {
-        return Playa.wrap(address(this).balance);
+    function _getTotalBalance() private view returns (Mirage balance) {
+        return Mirage.wrap(address(this).balance);
     }
 }

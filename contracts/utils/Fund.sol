@@ -23,7 +23,7 @@ pragma solidity ^0.8.24;
 
 import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
 import { NodeId } from "@skalenetwork/professional-interfaces/INodes.sol";
-import { Playa } from "@skalenetwork/professional-interfaces/units.sol";
+import { Mirage } from "@skalenetwork/professional-interfaces/units.sol";
 
 type Credit is uint256;
 type Holder is uint256;
@@ -39,7 +39,7 @@ using {
 library FundLibrary {
 
     struct Fund {
-        Playa lastBalance;
+        Mirage lastBalance;
         Credit totalCredits;
         mapping (Holder holder => Credit share) credits;
         Credit ownerCredits;
@@ -47,16 +47,16 @@ library FundLibrary {
     }
 
     Holder public constant NULL = Holder.wrap(0);
-    Playa public constant ZERO_PLAYA = Playa.wrap(0);
+    Mirage public constant ZERO_MIRAGE = Mirage.wrap(0);
     Credit public constant ZERO_CREDIT = Credit.wrap(0);
 
-    error NotEnoughStaked(Playa staked);
-    error NotEnoughFee(Playa earnedFee);
+    error NotEnoughStaked(Mirage staked);
+    error NotEnoughFee(Mirage earnedFee);
 
     function claimFee(
         Fund storage fund,
-        Playa balanceBeforeClaim,
-        Playa amount
+        Mirage balanceBeforeClaim,
+        Mirage amount
     )
         internal
     {
@@ -64,7 +64,7 @@ library FundLibrary {
         if (fund.feeRate > 0) {
             Credit credits = _toCreditsRoundedUp(fund, balanceBeforeClaim, amount);
             if (fund.ownerCredits < credits) {
-                revert NotEnoughFee(_toPlayaRoundedDown(fund, balanceBeforeClaim, ZERO_CREDIT, fund.ownerCredits));
+                revert NotEnoughFee(_toMirageRoundedDown(fund, balanceBeforeClaim, ZERO_CREDIT, fund.ownerCredits));
             }
             fund.ownerCredits = fund.ownerCredits - credits;
             fund.totalCredits = fund.totalCredits - credits;
@@ -74,16 +74,16 @@ library FundLibrary {
 
     function remove(
         Fund storage fund,
-        Playa balanceBeforeRemove,
+        Mirage balanceBeforeRemove,
         Holder holder,
-        Playa amount
+        Mirage amount
     )
         internal
     {
         _processBalanceChange(fund, balanceBeforeRemove);
         Credit credits = _toCreditsRoundedUp(fund, balanceBeforeRemove, amount);
         if (fund.credits[holder] < credits) {
-            revert NotEnoughStaked(_toPlayaRoundedDown(fund, balanceBeforeRemove, ZERO_CREDIT, fund.credits[holder]));
+            revert NotEnoughStaked(_toMirageRoundedDown(fund, balanceBeforeRemove, ZERO_CREDIT, fund.credits[holder]));
         }
         fund.credits[holder] = fund.credits[holder] - credits;
         fund.totalCredits = fund.totalCredits - credits;
@@ -92,7 +92,7 @@ library FundLibrary {
 
     function setFeeRate(
         Fund storage fund,
-        Playa balanceBefore,
+        Mirage balanceBefore,
         uint16 feeRate
     )
         internal
@@ -103,9 +103,9 @@ library FundLibrary {
 
     function supply(
         Fund storage fund,
-        Playa balanceBeforeSupply,
+        Mirage balanceBeforeSupply,
         Holder holder,
-        Playa amount
+        Mirage amount
     )
         internal
     {
@@ -118,18 +118,18 @@ library FundLibrary {
 
     function getBalance(
         Fund storage fund,
-        Playa balance,
+        Mirage balance,
         Holder holder
     )
         internal
         view
-        returns (Playa amount)
+        returns (Mirage amount)
     {
         if (fund.totalCredits == ZERO_CREDIT) {
-            return ZERO_PLAYA;
+            return ZERO_MIRAGE;
         }
-        return Playa.wrap(
-            Playa.unwrap(balance)
+        return Mirage.wrap(
+            Mirage.unwrap(balance)
             * Credit.unwrap(fund.credits[holder])
             / Credit.unwrap(fund.totalCredits + _getUncountedFeeCredits(fund, balance))
         );
@@ -137,15 +137,15 @@ library FundLibrary {
 
     function getEarnedFee(
         Fund storage fund,
-        Playa balance
+        Mirage balance
     )
         internal
         view
-        returns (Playa amount)
+        returns (Mirage amount)
     {
         if (fund.feeRate > 0) {
             Credit uncountedFee = _getUncountedFeeCredits(fund, balance);
-            return _toPlayaRoundedDown(fund, balance, uncountedFee, fund.ownerCredits + uncountedFee);
+            return _toMirageRoundedDown(fund, balance, uncountedFee, fund.ownerCredits + uncountedFee);
         }
     }
 
@@ -162,7 +162,7 @@ library FundLibrary {
 
     function _processBalanceChange(
         Fund storage fund,
-        Playa balance
+        Mirage balance
     )
         private
     {
@@ -176,74 +176,74 @@ library FundLibrary {
 
     function _getUncountedFeeCredits(
         Fund storage fund,
-        Playa balance
+        Mirage balance
     )
         private
         view
         returns (Credit fee)
     {
         if (fund.feeRate > 0 && balance > fund.lastBalance) {
-            Playa balanceChange = balance - fund.lastBalance;
-            Playa feeInPlaya = Playa.wrap(
-                Playa.unwrap(balanceChange) * fund.feeRate / 1000
+            Mirage balanceChange = balance - fund.lastBalance;
+            Mirage feeInMirage = Mirage.wrap(
+                Mirage.unwrap(balanceChange) * fund.feeRate / 1000
             );
-            return _toCreditsRoundedDown(fund, balance - feeInPlaya, feeInPlaya);
+            return _toCreditsRoundedDown(fund, balance - feeInMirage, feeInMirage);
         }
         return ZERO_CREDIT;
     }
 
     function _toCreditsRoundedDown(
         Fund storage fund,
-        Playa balance,
-        Playa amount
+        Mirage balance,
+        Mirage amount
     )
         private
         view
         returns (Credit credits)
     {
-        if (balance == ZERO_PLAYA) {
-            return Credit.wrap(Playa.unwrap(amount));
+        if (balance == ZERO_MIRAGE) {
+            return Credit.wrap(Mirage.unwrap(amount));
         }
         return Credit.wrap(
-            Playa.unwrap(amount) * Credit.unwrap(fund.totalCredits) / Playa.unwrap(balance)
+            Mirage.unwrap(amount) * Credit.unwrap(fund.totalCredits) / Mirage.unwrap(balance)
         );
     }
 
     function _toCreditsRoundedUp(
         Fund storage fund,
-        Playa balance,
-        Playa amount
+        Mirage balance,
+        Mirage amount
     )
         private
         view
         returns (Credit credits)
     {
-        if (balance == ZERO_PLAYA) {
-            return Credit.wrap(Playa.unwrap(amount));
+        if (balance == ZERO_MIRAGE) {
+            return Credit.wrap(Mirage.unwrap(amount));
         }
         return Credit.wrap(
             Math.ceilDiv(
-                Playa.unwrap(amount) * Credit.unwrap(fund.totalCredits),
-                Playa.unwrap(balance)
+                Mirage.unwrap(amount) * Credit.unwrap(fund.totalCredits),
+                Mirage.unwrap(balance)
             )
         );
     }
 
-    function _toPlayaRoundedDown(
+    function _toMirageRoundedDown(
         Fund storage fund,
-        Playa balance,
+        Mirage balance,
         Credit uncountedFee,
         Credit amount
     )
         private
         view
-        returns (Playa playa)
+        returns (Mirage mirage)
     {
         if (fund.totalCredits == ZERO_CREDIT) {
-            return ZERO_PLAYA;
+            return ZERO_MIRAGE;
         }
-        return Playa.wrap(
-            Playa.unwrap(balance) * Credit.unwrap(amount) / Credit.unwrap(fund.totalCredits + uncountedFee)
+        return Mirage.wrap(
+            Mirage.unwrap(balance) * Credit.unwrap(amount) / Credit.unwrap(fund.totalCredits + uncountedFee)
         );
     }
 }

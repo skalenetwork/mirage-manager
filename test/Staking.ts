@@ -110,53 +110,53 @@ describe("Staking", () => {
 
         await staking.connect(node1Wallet).setFeeRate(feeRate);
         // root pool:
-        //     total: 0 Playa, 0 credits
-        //     node 1 pool:  0 Playa, 0 credits
-        //     node 2 pool:  0 Playa, 0 credits
+        //     total: 0 Mirage, 0 credits
+        //     node 1 pool:  0 Mirage, 0 credits
+        //     node 2 pool:  0 Mirage, 0 credits
         // node 1 pool:
-        //     total:   0 Playa, 0 node 1 credits
-        //     node 1:  0 Playa, 0 node 1 credits
+        //     total:   0 Mirage, 0 node 1 credits
+        //     node 1:  0 Mirage, 0 node 1 credits
         // node 2 pool:
-        //     total:   0 Playa, 0 node 2 credits
-        //     node 2:  0 Playa, 0 node 2 credits
+        //     total:   0 Mirage, 0 node 2 credits
+        //     node 2:  0 Mirage, 0 node 2 credits
         await staking.connect(user).stake(node1, {value: amount1});
         // root pool:
-        //     total: 2 Playa, 2 credits
-        //     node 1 pool:  2 Playa, 2 credits
-        //     node 2 pool:  0 Playa, 0 credits
+        //     total: 2 Mirage, 2 credits
+        //     node 1 pool:  2 Mirage, 2 credits
+        //     node 2 pool:  0 Mirage, 0 credits
         // node 1 pool:
-        //     total:   2 Playa, 2 node 1 credits
-        //     node 1:  0 Playa, 0 node 1 credits
-        //     user:    2 Playa, 2 node 1 credits
+        //     total:   2 Mirage, 2 node 1 credits
+        //     node 1:  0 Mirage, 0 node 1 credits
+        //     user:    2 Mirage, 2 node 1 credits
         // node 2 pool:
-        //     total:   0 Playa, 0 node 2 credits
-        //     node 2:  0 Playa, 0 node 2 credits
+        //     total:   0 Mirage, 0 node 2 credits
+        //     node 2:  0 Mirage, 0 node 2 credits
         await staking.connect(user).stake(node2, {value: amount2});
         // root pool:
-        //     total: 5 Playa, 5 credits
-        //     node 1 pool:  2 Playa, 2 credits
-        //     node 2 pool:  3 Playa, 3 credits
+        //     total: 5 Mirage, 5 credits
+        //     node 1 pool:  2 Mirage, 2 credits
+        //     node 2 pool:  3 Mirage, 3 credits
         // node 1 pool:
-        //     total:   2 Playa, 2 node 1 credits
-        //     node 1:  0 Playa, 0 node 1 credits
-        //     user:    2 Playa, 2 node 1 credits
+        //     total:   2 Mirage, 2 node 1 credits
+        //     node 1:  0 Mirage, 0 node 1 credits
+        //     user:    2 Mirage, 2 node 1 credits
         // node 2 pool:
-        //     total:   3 Playa, 3 node 2 credits
-        //     node 2:  0 Playa, 0 node 2 credits
-        //     user:    3 Playa, 3 node 1 credits
+        //     total:   3 Mirage, 3 node 2 credits
+        //     node 2:  0 Mirage, 0 node 2 credits
+        //     user:    3 Mirage, 3 node 1 credits
         await owner.sendTransaction({to: staking, value: reward});
         // root pool:
-        //     total: 15 Playa, 5 credits
-        //     node 1 pool:  6 Playa, 2 credits
-        //     node 2 pool:  9 Playa, 3 credits
+        //     total: 15 Mirage, 5 credits
+        //     node 1 pool:  6 Mirage, 2 credits
+        //     node 2 pool:  9 Mirage, 3 credits
         // node 1 pool:
-        //     total:   6 Playa, 3 node 1 credits
-        //     node 1:  2 Playa, 1 node 1 credits
-        //     user:    4 Playa, 2 node 1 credits
+        //     total:   6 Mirage, 3 node 1 credits
+        //     node 1:  2 Mirage, 1 node 1 credits
+        //     user:    4 Mirage, 2 node 1 credits
         // node 2 pool:
-        //     total:   6 Playa, 3 node 2 credits
-        //     node 2:  0 Playa, 0 node 2 credits
-        //     user:    6 Playa, 3 node 1 credits
+        //     total:   6 Mirage, 3 node 2 credits
+        //     node 2:  0 Mirage, 0 node 2 credits
+        //     user:    6 Mirage, 3 node 1 credits
 
         const node1Reward = reward * amount1 / (amount1 + amount2);
         const node2Reward = reward * amount2 / (amount1 + amount2);
@@ -172,17 +172,17 @@ describe("Staking", () => {
         await staking.connect(node1Wallet).claimAllFee(node1Wallet)
             .should.changeEtherBalance(node1Wallet, node1Fee);
         // root pool:
-        //     total: 13 Playa, 4.(3) credits
-        //     node 1 pool:  4 Playa, 1.(3) credits
-        //     node 2 pool:  9 Playa, 3 credits
+        //     total: 13 Mirage, 4.(3) credits
+        //     node 1 pool:  4 Mirage, 1.(3) credits
+        //     node 2 pool:  9 Mirage, 3 credits
         // node 1 pool:
-        //     total:   4 Playa, 2 node 1 credits
-        //     node 1:  0 Playa, 0 node 1 credits
-        //     user:    4 Playa, 2 node 1 credits
+        //     total:   4 Mirage, 2 node 1 credits
+        //     node 1:  0 Mirage, 0 node 1 credits
+        //     user:    4 Mirage, 2 node 1 credits
         // node 2 pool:
-        //     total:   6 Playa, 3 node 2 credits
-        //     node 2:  0 Playa, 0 node 2 credits
-        //     user:    6 Playa, 3 node 1 credits
+        //     total:   6 Mirage, 3 node 2 credits
+        //     node 2:  0 Mirage, 0 node 2 credits
+        //     user:    6 Mirage, 3 node 1 credits
 
         (await staking.getEarnedFeeAmount(node1))
             .should.be.equal(0n);
@@ -194,17 +194,17 @@ describe("Staking", () => {
         await staking.connect(user).retrieve(node1, stakedToNode1 - roundingError)
             .should.changeEtherBalance(user, stakedToNode1 - roundingError);
         // root pool:
-        //     total: 9 Playa, 3 credits
-        //     node 1 pool:  0 Playa, 0 credits
-        //     node 2 pool:  9 Playa, 3 credits
+        //     total: 9 Mirage, 3 credits
+        //     node 1 pool:  0 Mirage, 0 credits
+        //     node 2 pool:  9 Mirage, 3 credits
         // node 1 pool:
-        //     total:   0 Playa, 0 node 1 credits
-        //     node 1:  0 Playa, 0 node 1 credits
-        //     user:    0 Playa, 0 node 1 credits
+        //     total:   0 Mirage, 0 node 1 credits
+        //     node 1:  0 Mirage, 0 node 1 credits
+        //     user:    0 Mirage, 0 node 1 credits
         // node 2 pool:
-        //     total:   6 Playa, 3 node 2 credits
-        //     node 2:  0 Playa, 0 node 2 credits
-        //     user:    6 Playa, 3 node 1 credits
+        //     total:   6 Mirage, 3 node 2 credits
+        //     node 2:  0 Mirage, 0 node 2 credits
+        //     user:    6 Mirage, 3 node 1 credits
 
         (await staking.getEarnedFeeAmount(node1))
             .should.be.equal(0n);
