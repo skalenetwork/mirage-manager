@@ -129,7 +129,9 @@ export const deploy = async (nodeList?: INodes.NodeStruct[], commonPublicKey?: I
         deployedContracts.Committee
     );
     deployedContracts.Staking = await deployStaking(
-        deployedContracts.MirageAccessManager
+        deployedContracts.MirageAccessManager,
+        deployedContracts.Committee,
+        deployedContracts.Nodes
     );
 
     let response = await deployedContracts.Committee.setDkg(deployedContracts.DKG);
@@ -216,11 +218,13 @@ const deployStatus = async (authority: MirageAccessManager, nodes: Nodes, commit
     ) as Status;
 }
 
-const deployStaking = async (authority: MirageAccessManager): Promise<Staking> => {
+const deployStaking = async (authority: MirageAccessManager, committee: Committee, nodes: Nodes): Promise<Staking> => {
     return await deployContract(
         "Staking",
         [
-            await ethers.resolveAddress(authority)
+            await ethers.resolveAddress(authority),
+            await ethers.resolveAddress(committee),
+            await ethers.resolveAddress(nodes)
         ]
     ) as Staking;
 }
@@ -242,6 +246,7 @@ const setupRoles = async (deployedContracts: DeployedContracts) => {
         Committee: committee,
         MirageAccessManager: accessManager,
         Nodes: nodes,
+        Staking: staking,
         Status: status
     } = deployedContracts;
 
@@ -275,12 +280,22 @@ const setupRoles = async (deployedContracts: DeployedContracts) => {
     );
     await response.wait();
 
+    response = await accessManager.setTargetFunctionRole(
+        await ethers.resolveAddress(committee),
+        [committee.interface.getFunction("updateWeight").selector],
+        await accessManager.STAKING_ROLE()
+    );
+    await response.wait();
+
     // grant roles
 
     response = await accessManager.grantRole(await accessManager.NODES_ROLE(), await ethers.resolveAddress(nodes), 0n);
     await response.wait();
 
     response = await accessManager.grantRole(await accessManager.STATUS_ROLE(), await ethers.resolveAddress(status), 0n);
+    await response.wait();
+
+    response = await accessManager.grantRole(await accessManager.STAKING_ROLE(), await ethers.resolveAddress(staking), 0n);
     await response.wait();
 }
 
