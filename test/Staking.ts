@@ -1,5 +1,5 @@
 import chai from "chai";
-import { registeredOnlyNodes } from "./tools/fixtures";
+import { registeredOnlyNodes, stakedNodes } from "./tools/fixtures";
 import { ethers } from "hardhat";
 
 chai.should();
@@ -212,5 +212,17 @@ describe("Staking", () => {
             .should.be.equal(0n);
         (await staking.getStakedAmountFor(user))
             .should.be.equal(amount2 + node2Reward + roundingError);
+    });
+
+    it("should not allow to retrieve from a node from committee", async () => {
+        const {committee, staking} = await stakedNodes();
+        const activeCommittee = await committee.getCommittee(await committee.getActiveCommitteeIndex());
+        for (const node of activeCommittee.nodes) {
+            await staking.retrieve(node, 1)
+                .should.be.revertedWithCustomError(
+                    staking,
+                    "NodeInCommittee"
+                ).withArgs(node);
+        }
     });
 });

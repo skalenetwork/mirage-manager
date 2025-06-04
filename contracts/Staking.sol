@@ -58,6 +58,7 @@ contract Staking is AccessManagedUpgradeable, IStaking {
     error OnlyFeeReductionIsAllowed(uint16 currentRate, uint16 newRate);
     error ZeroAmount();
     error ZeroStakeToNode(NodeId node);
+    error NodeInCommittee(NodeId node);
 
     function initialize(address initialAuthority, ICommittee committee_, INodes nodes_) public initializer override {
         __AccessManaged_init(initialAuthority);
@@ -77,6 +78,7 @@ contract Staking is AccessManagedUpgradeable, IStaking {
         require(value > FundLibrary.ZERO_MIRAGE, ZeroAmount());
         require(nodes.activeNodeExists(node), Nodes.NodeDoesNotExist(node));
         require(_stakedNodes[msg.sender].contains(node), ZeroStakeToNode(node));
+        require(!committee.isNodeInCurrentOrNextCommittee(node), NodeInCommittee(node));
 
         Mirage balance = _getTotalBalance();
         _nodesFunds[node].remove(
