@@ -59,7 +59,7 @@ describe("Staking", () => {
         const [,user] = await ethers.getSigners();
         const initialAmount = ethers.parseEther("3");
         const amount = ethers.parseEther("1");
-        const node = nodesData[0].id;
+        const node = nodesData[22].id; // not in the current committee
 
         await staking.connect(user).stake(node, {value: initialAmount});
         (await staking.connect(user).getStakedAmount())
@@ -76,7 +76,7 @@ describe("Staking", () => {
         const amount = ethers.parseEther("1");
         const reward = ethers.parseEther("2");
         const feeRate = 500; // Yes, Eddie, half
-        const {id: node, wallet: nodeWallet} = nodesData[0];
+        const {id: node, wallet: nodeWallet} = nodesData[22]; // not in the current committee
 
         await staking.connect(nodeWallet).setFeeRate(feeRate);
         await staking.connect(user).stake(node, {value: amount});
@@ -106,7 +106,7 @@ describe("Staking", () => {
         const reward = ethers.parseEther("10");
         const roundingError = 1n;
         const feeRate = 500; // Yes, Eddie, half
-        const [{id: node1, wallet: node1Wallet}, {id: node2}] = nodesData;
+        const [{id: node1, wallet: node1Wallet}, {id: node2}] = nodesData.slice(22); // not in the current committee
 
         await staking.connect(node1Wallet).setFeeRate(feeRate);
         // root pool:
