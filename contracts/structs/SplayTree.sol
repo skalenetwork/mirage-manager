@@ -35,7 +35,11 @@ library SplayTree {
 
     NodeId constant public NULL = NodeId.wrap(0);
 
+    error InsertNullNode();
     error NotFound();
+    error RemoveNullNode();
+    error SetWeightOfNullNode();
+    error SplayOnNull();
 
     function insertSmallest(
         mapping(NodeId => Node) storage nodes,
@@ -46,23 +50,21 @@ library SplayTree {
         internal
         returns (NodeId newRoot)
     {
-        createNode(nodes, newNode, weight + nodes[root].totalWeight);
+        require(newNode != NULL, InsertNullNode());
+        uint256 totalWeight = weight;
+        if (root != NULL) {
+            totalWeight += nodes[root].totalWeight;
+        }
+        _createNode(nodes, newNode, totalWeight);
         nodes[newNode].right = root;
-        nodes[root].parent = newNode;
+        if (root != NULL) {
+            nodes[root].parent = newNode;
+        }
         return newNode;
     }
 
-    function createNode(mapping(NodeId => Node) storage nodes, NodeId id, uint256 weight) internal {
-        nodes[id] = Node({
-            id: id,
-            parent: NULL,
-            left: NULL,
-            right: NULL,
-            totalWeight: weight
-        });
-    }
-
     function remove(mapping(NodeId => Node) storage nodes, NodeId id) internal returns (NodeId newRoot) {
+        require(id != NULL, RemoveNullNode());
         splay(nodes, id);
         if (hasLeft(nodes, id)) {
             NodeId left = nodes[id].left;
@@ -93,6 +95,7 @@ library SplayTree {
         internal
         returns (NodeId newRoot)
     {
+        require(node != NULL, SetWeightOfNullNode());
         splay(nodes, node);
         NodeId left = nodes[node].left;
         NodeId right = nodes[node].right;
@@ -108,7 +111,6 @@ library SplayTree {
         internal
         returns (NodeId newRoot)
     {
-        newRoot = SplayTree.NULL;
         NodeId node = root;
         while (node != SplayTree.NULL) {
             NodeId left = nodes[node].left;
@@ -118,8 +120,7 @@ library SplayTree {
                 NodeId right = nodes[node].right;
                 uint256 leftAndNodeWeight = nodes[node].totalWeight - nodes[right].totalWeight;
                 if (weight < leftAndNodeWeight) {
-                    splay(nodes, node);
-                    return node;
+                    return splay(nodes, node);
                 } else {
                     weight -= leftAndNodeWeight;
                     node = right;
@@ -130,6 +131,7 @@ library SplayTree {
     }
 
     function splay(mapping(NodeId => Node) storage nodes, NodeId id) internal returns (NodeId newRoot) {
+        require(id != NULL, SplayOnNull());
         if (nodes[id].parent != NULL) {
             _splay(nodes, nodes[id]);
         }
@@ -137,6 +139,16 @@ library SplayTree {
     }
 
     // Private
+
+    function _createNode(mapping(NodeId => Node) storage nodes, NodeId id, uint256 weight) internal {
+        nodes[id] = Node({
+            id: id,
+            parent: NULL,
+            left: NULL,
+            right: NULL,
+            totalWeight: weight
+        });
+    }
 
     function _splay(mapping(NodeId => Node) storage nodes, Node memory node) private {
         while (node.parent != NULL) {

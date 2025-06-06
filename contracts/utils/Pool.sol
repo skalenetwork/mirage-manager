@@ -76,6 +76,7 @@ library PoolLibrary {
     {
         nodesSample = new NodeId[](size);
         NodeId lastHealthy = _findLastHealthyNode(pool);
+        require(lastHealthy != SplayTree.NULL, TooFewCandidates(size, 0));
         pool.root = pool.tree.splay(lastHealthy);
         uint256 totalWeight = pool.tree[lastHealthy].totalWeight
                 - pool.tree[pool.tree[lastHealthy].right].totalWeight;

@@ -91,5 +91,22 @@ describe("SplayTree", () => {
             await splayTree.splay(n);
             await checkSplayTree(splayTree, changedNodes);
         });
+
+        it("should revert if trying to splay non-existing node", async () => {
+            const {splayTree} = await loadFixture(buildTreeFixture);
+            await splayTree.splay(await splayTree.NULL())
+                .should.be.revertedWithCustomError(splayTree, "SplayOnNull");
+        });
+
+        it("should not set anything to the node with NULL id when inserting to empty tree", async () => {
+            const {splayTreeTester: splayTree} = await splayTreeTester();
+            await splayTree.insertSmallest(1, 1);
+            const node = await splayTree.tree(await splayTree.NULL());
+            node.id.should.be.equal(await splayTree.NULL());
+            node.parent.should.be.equal(await splayTree.NULL());
+            node.left.should.be.equal(await splayTree.NULL());
+            node.right.should.be.equal(await splayTree.NULL());
+            node.totalWeight.should.be.equal(0n);
+        });
     });
 });

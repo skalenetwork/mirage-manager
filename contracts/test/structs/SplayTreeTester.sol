@@ -36,6 +36,7 @@ contract SplayTreeTester is ISplayTreeTester {
 
     mapping(NodeId node => SplayTree.Node data) public tree;
     NodeId public root;
+    NodeId public constant NULL = SplayTree.NULL;
 
     function insertSmallest(NodeId node, uint256 weight) external override {
         root = tree.insertSmallest(root, node, weight);
