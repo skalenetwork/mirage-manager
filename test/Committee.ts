@@ -1,7 +1,14 @@
 import _, { round } from "lodash";
 import seedrandom from 'seedrandom';
 import chai, { assert, expect } from "chai";
-import { cleanDeployment, sendHeartbeat, stakedNodes, whitelistedAndStakedAndHealthyNodes, whitelistedAndStakedNodes, whitelistedNodes } from "./tools/fixtures";
+import {
+    cleanDeployment,
+    sendHeartbeat,
+    stakedNodes,
+    whitelistedAndStakedAndHealthyNodes,
+    whitelistedAndStakedNodes,
+    whitelistedNodes
+} from "./tools/fixtures";
 import { ethers } from "hardhat";
 import { runDkg } from "./tools/dkg";
 import { skipTime } from "./tools/time";
@@ -334,5 +341,13 @@ describe("Committee", () => {
                 break;
             }
         }
+    });
+
+    it("should emit proper error when there are eligible nodes but all of them are not healthy", async () => {
+        const {committee, status} = await whitelistedAndStakedAndHealthyNodes();
+        await skipTime(await status.heartbeatInterval());
+        await committee.select()
+            .should.be.revertedWithCustomError(committee, "TooFewCandidates")
+            .withArgs(await committee.committeeSize(), 0);
     });
 });
