@@ -114,6 +114,13 @@ describe("Committee", () => {
             .should.be.revertedWithCustomError(committee, "AccessManagedUnauthorized");
     });
 
+    it("should not allow anyone to set rng contract", async () => {
+        const [, hacker] = await ethers.getSigners();
+        const {committee} = await cleanDeployment();
+        await committee.connect(hacker).setRNG(hacker)
+            .should.be.revertedWithCustomError(committee, "AccessManagedUnauthorized");
+    });
+
     it("should not allow anyone to set nodes contract", async () => {
         const [, hacker] = await ethers.getSigners();
         const {committee} = await cleanDeployment();
@@ -146,6 +153,17 @@ describe("Committee", () => {
         const {committee} = await cleanDeployment();
         await committee.connect(hacker).setTransitionDelay(0xd2n)
             .should.be.revertedWithCustomError(committee, "AccessManagedUnauthorized");
+    });
+
+    it("should set rng contract", async () => {
+        const {committee} = await whitelistedAndStakedAndHealthyNodes();
+        const rng = await ethers.deployContract("MockRNG");
+        await rng.waitForDeployment();
+
+        // This automaticaly tests if call to random is succeeded
+        await committee.setRNG(rng);
+
+        expect(await committee.rng()).to.equal(await rng.getAddress());
     });
 
     it("should set committee size", async () => {

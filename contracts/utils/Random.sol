@@ -22,12 +22,19 @@
 pragma solidity ^0.8.24;
 
 import { IRandom } from "@skalenetwork/professional-interfaces/IRandom.sol";
+import { Precompiled } from "./fieldOperations/Precompiled.sol";
 
 /**
  * @title Random
  * @dev The library for generating of pseudo random numbers
  */
 library Random {
+    /**
+     * @dev Retrieves randomSeed from rng
+     */
+    function randomSeed(address rng) internal view returns (uint256 seed) {
+        return Precompiled.getRandomNumber(rng);
+    }
 
     /**
      * @dev Create an instance of RandomGenerator
