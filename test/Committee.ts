@@ -159,9 +159,12 @@ describe("Committee", () => {
         const {committee} = await whitelistedAndStakedAndHealthyNodes();
         const rng = await ethers.deployContract("MockRNG");
         await rng.waitForDeployment();
+        const [, hacker] = await ethers.getSigners();
 
-        // This automaticaly tests if call to random is succeeded
         await committee.setRNG(rng);
+
+        // This should revert if address is invalid
+        await committee.setRNG(hacker).should.be.reverted;
 
         expect(await committee.rng()).to.equal(await rng.getAddress());
     });

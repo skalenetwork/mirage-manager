@@ -104,7 +104,7 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
     }
 
     function setRNG(address newRNG) external override restricted {
-        Random.randomSeed(newRNG); // If it fails, address is invalid
+        assert(Random.randomSeed(newRNG) > 0);
         rng = newRNG;
     }
 
