@@ -166,7 +166,7 @@ describe("Committee", () => {
         // This should revert if address is invalid
         await committee.setRNG(hacker).should.be.reverted;
 
-        expect(await committee.rng()).to.equal(await rng.getAddress());
+        expect(await committee.skaleRng()).to.equal(await rng.getAddress());
     });
 
     it("should set committee size", async () => {
