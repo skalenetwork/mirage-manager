@@ -169,13 +169,36 @@ describe("Committee", () => {
         expect(await committee.skaleRng()).to.equal(await rng.getAddress());
     });
 
-    it("should select committee with custom rng contract", async () => {
-        const {committee} = await whitelistedAndStakedAndHealthyNodes();
+   it("should select committee with custom rng", async function () {
+        this.timeout(600000); // 10 minutes timeout. DKG requires a lot of time
+        const {committee, dkg, nodesData} = await whitelistedAndStakedAndHealthyNodes();
+        const activeCommitteeIndex = await committee.getActiveCommitteeIndex();
+        const nextCommitteeIndex = activeCommitteeIndex + 1n;
         const rng = await ethers.deployContract("MockRNG");
         await rng.waitForDeployment();
         await committee.setRNG(rng);
         expect(await committee.skaleRng()).to.equal(await rng.getAddress());
 
+
+        await committee.select();
+
+        let nextCommittee = await committee.getCommittee(nextCommitteeIndex);
+        nextCommittee.dkg.should.not.be.equal(0n);
+        nextCommittee.startingTimestamp.should.be.equal(2n ** 256n - 1n);
+        nextCommittee.nodes.length.should.be.equal(await committee.committeeSize());
+
+        await runDkg(dkg, nodesData, nextCommittee.dkg);
+
+        nextCommittee = await committee.getCommittee(nextCommitteeIndex);
+        const lastTransactionTimestamp = (await ethers.provider.getBlock("latest"))?.timestamp;
+        assert(lastTransactionTimestamp);
+        nextCommittee.startingTimestamp.should.be.equal(
+            BigInt(lastTransactionTimestamp) + (await committee.transitionDelay())
+        );
+        nextCommittee.commonPublicKey.x.a.should.not.be.equal(0n);
+        nextCommittee.commonPublicKey.x.b.should.not.be.equal(0n);
+        nextCommittee.commonPublicKey.y.a.should.not.be.equal(0n);
+        nextCommittee.commonPublicKey.y.b.should.not.be.equal(0n);
     });
 
     it("should set committee size", async () => {
