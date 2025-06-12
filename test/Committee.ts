@@ -164,7 +164,7 @@ describe("Committee", () => {
         await committee.setRNG(rng);
 
         // This should revert if address is invalid
-        await committee.setRNG(hacker).should.be.reverted;
+        await committee.setRNG(hacker).should.be.revertedWithCustomError(committee, "InvalidContract");
 
         expect(await committee.skaleRng()).to.equal(await rng.getAddress());
     });
