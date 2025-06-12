@@ -169,6 +169,15 @@ describe("Committee", () => {
         expect(await committee.skaleRng()).to.equal(await rng.getAddress());
     });
 
+    it("should select committee with custom rng contract", async () => {
+        const {committee} = await whitelistedAndStakedAndHealthyNodes();
+        const rng = await ethers.deployContract("MockRNG");
+        await rng.waitForDeployment();
+        await committee.setRNG(rng);
+        expect(await committee.skaleRng()).to.equal(await rng.getAddress());
+
+    });
+
     it("should set committee size", async () => {
         const {committee} = await whitelistedAndStakedAndHealthyNodes();
         const newSize = 13n;
