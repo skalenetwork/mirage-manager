@@ -30,6 +30,7 @@ contract MockRNG {
         bytes32 val = keccak256(abi.encodePacked(block.timestamp));
 
         // Just a Mock: requires assembly to force return
+        // slither-disable-start assembly
         // solhint-disable-next-line no-inline-assembly
         assembly {
             // store it at memory slot 0x00
@@ -37,5 +38,6 @@ contract MockRNG {
             // return exactly 32 bytes from memory[0x00..0x20]
             return(0x00, 0x20)
         }
+        // slither-disable-end assembly
     }
 }
