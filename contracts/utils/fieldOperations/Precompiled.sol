@@ -93,7 +93,7 @@ library Precompiled {
         return abi.decode(output, (uint256)) != 0;
     }
 
-    // rngOnChain should be SKALE Random Number Generator predeployed or simmilar
+    // rngOnChain should be SKALE Random Number Generator predeployed or similar
     function getRandomBytes(address rngOnChain) internal view returns (bytes32 addr) {
         if (rngOnChain == address(0)) {
             return bytes32(block.prevrandao);
