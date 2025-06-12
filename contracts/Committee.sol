@@ -53,6 +53,7 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
     INodes public nodes;
     IStatus public status;
     IStaking public staking;
+    address public rng;
 
     mapping (CommitteeIndex index => Committee committee) public committees;
     mapping (CommitteeIndex index => CommitteeAuxiliary committee) private _committeesAuxiliary;
@@ -91,15 +92,20 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
         committeeSize = 22;
         transitionDelay = Duration.wrap(1 days);
         nodes = nodesAddress;
-
+        rng = address(0);
         _initializeCommittee(commonPublicKey);
     }
 
     function select() external override restricted {
-        IRandom.RandomGenerator memory generator = Random.create(uint256(blockhash(block.number - 1)));
+        IRandom.RandomGenerator memory generator = Random.create(Random.randomSeed(rng));
         NodeId[] memory members = _pool.sample(committeeSize, generator);
         Committee storage committee = _createSuccessorCommittee(members);
         committee.dkg = dkg.generate(committee.nodes);
+    }
+
+    function setRNG(address newRNG) external override restricted {
+        Random.randomSeed(newRNG); // If it fails, address is invalid
+        rng = newRNG;
     }
 
     function setDkg(IDkg dkgAddress) external override restricted {
