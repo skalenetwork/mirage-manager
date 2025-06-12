@@ -106,6 +106,8 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
     }
 
     function setRNG(address newRNG) external override restricted {
+        // address(0) is allowed here
+        // slither-disable-next-line missing-zero-check
         skaleRng = newRNG;
         require(_safeRandom() > 0, InvalidContract(newRNG));
     }
