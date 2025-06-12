@@ -24,20 +24,8 @@ pragma solidity ^0.8.24;
 contract MockRNG {
 
     // Just a Mock
-    // solhint-disable-next-line comprehensive-interface, no-complex-fallback, payable-fallback
-    fallback() external {
-        // compute or hard-code your 32-byte value
-        bytes32 val = keccak256(abi.encodePacked(block.timestamp));
-
-        // Just a Mock: requires assembly to force return
-        // slither-disable-start assembly
-        // solhint-disable-next-line no-inline-assembly
-        assembly {
-            // store it at memory slot 0x00
-            mstore(0x00, val)
-            // return exactly 32 bytes from memory[0x00..0x20]
-            return(0x00, 0x20)
-        }
-        // slither-disable-end assembly
+    // solhint-disable-next-line comprehensive-interface, payable-fallback
+    fallback(bytes calldata) external returns (bytes memory result) {
+        return abi.encode(block.timestamp);
     }
 }
