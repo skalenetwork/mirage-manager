@@ -37,8 +37,8 @@ import { Duration, IStatus } from "@skalenetwork/professional-interfaces/IStatus
 import { TypedSet } from "./structs/typed/TypedSet.sol";
 import { G2Operations } from "./utils/fieldOperations/G2Operations.sol";
 import { PoolLibrary } from "./utils/Pool.sol";
-import { IRandom, Random } from "./utils/Random.sol";
 import { Precompiled } from "./utils/Precompiled.sol";
+import { IRandom, Random } from "./utils/Random.sol";
 
 
 contract Committee is AccessManagedUpgradeable, ICommittee {
@@ -74,7 +74,7 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
     error CommitteeNotFound(
         CommitteeIndex index
     );
-    error InvalidRng(address rng);
+    error InvalidContract(address contractAddress);
 
     modifier onlyDkg() {
         require(msg.sender == address(dkg), SenderIsNotDkg(msg.sender));
@@ -107,9 +107,7 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
 
     function setRNG(address newRNG) external override restricted {
         skaleRng = newRNG;
-
-        // Will revert if unable to decode bytes32 random
-        _safeRandom();
+        require(_safeRandom() > 0, InvalidContract(newRNG));
     }
 
     function setDkg(IDkg dkgAddress) external override restricted {
