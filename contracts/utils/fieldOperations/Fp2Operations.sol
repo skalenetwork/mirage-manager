@@ -26,7 +26,7 @@ pragma solidity ^0.8.24;
 
 import { IDkg } from "@skalenetwork/professional-interfaces/IDkg.sol";
 
-import { Precompiled } from "./Precompiled.sol";
+import { Precompiled } from "../Precompiled.sol";
 
 
 library Fp2Operations {

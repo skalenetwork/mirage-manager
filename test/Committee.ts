@@ -114,6 +114,13 @@ describe("Committee", () => {
             .should.be.revertedWithCustomError(committee, "AccessManagedUnauthorized");
     });
 
+    it("should not allow anyone to set rng contract", async () => {
+        const [, hacker] = await ethers.getSigners();
+        const {committee} = await cleanDeployment();
+        await committee.connect(hacker).setRNG(hacker)
+            .should.be.revertedWithCustomError(committee, "AccessManagedUnauthorized");
+    });
+
     it("should not allow anyone to set nodes contract", async () => {
         const [, hacker] = await ethers.getSigners();
         const {committee} = await cleanDeployment();
@@ -146,6 +153,39 @@ describe("Committee", () => {
         const {committee} = await cleanDeployment();
         await committee.connect(hacker).setTransitionDelay(0xd2n)
             .should.be.revertedWithCustomError(committee, "AccessManagedUnauthorized");
+    });
+
+    it("should enable and disable rng contract", async () => {
+        const {committee} = await whitelistedAndStakedAndHealthyNodes();
+        const rng = await ethers.deployContract("MockRNG");
+        await rng.waitForDeployment();
+        const [, hacker] = await ethers.getSigners();
+
+        await committee.setRNG(rng);
+
+        // This should revert if address is invalid
+        await committee.setRNG(hacker).should.be.revertedWithCustomError(committee, "InvalidSkaleRngContract");
+
+        expect(await committee.skaleRng()).to.equal(await rng.getAddress());
+        await committee.disableRNG();
+        expect(await committee.skaleRng()).to.equal(ethers.ZeroAddress);
+    });
+
+   it("should select committee with custom rng", async function () {
+        const {committee} = await whitelistedAndStakedAndHealthyNodes();
+        const activeCommitteeIndex = await committee.getActiveCommitteeIndex();
+        const nextCommitteeIndex = activeCommitteeIndex + 1n;
+        const rng = await ethers.deployContract("MockRNG");
+        await rng.waitForDeployment();
+        await committee.setRNG(rng);
+        expect(await committee.skaleRng()).to.equal(await rng.getAddress());
+
+        await committee.select();
+
+        const nextCommittee = await committee.getCommittee(nextCommitteeIndex);
+        nextCommittee.dkg.should.not.be.equal(0n);
+        nextCommittee.startingTimestamp.should.be.equal(2n ** 256n - 1n);
+        nextCommittee.nodes.length.should.be.equal(await committee.committeeSize());
     });
 
     it("should set committee size", async () => {
