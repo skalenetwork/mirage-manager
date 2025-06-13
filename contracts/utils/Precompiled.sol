@@ -94,12 +94,12 @@ library Precompiled {
     }
 
     // rngOnChain should be SKALE Random Number Generator predeployed or similar
-    function getRandomBytes(address rngOnChain) internal view returns (bytes32 addr) {
+    function getRandomBytes32(address rngOnChain) internal view returns (bytes32 addr) {
         return bytes32(_callPrecompiled(rngOnChain, ""));
     }
 
     function getRandomNumber(address rngOnChain) internal view returns (uint256 addr) {
-        return uint256(getRandomBytes(rngOnChain));
+        return uint256(getRandomBytes32(rngOnChain));
     }
 
     // Private
