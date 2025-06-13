@@ -67,6 +67,8 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
 
     event NodeBecomesEligible(NodeId indexed node);
     event NodeLosesEligibility(NodeId indexed node);
+    event SkaleRNGEnabled(address indexed rng);
+    event SkaleRNGDisabled();
 
     error SenderIsNotDkg(
         address sender
@@ -74,7 +76,7 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
     error CommitteeNotFound(
         CommitteeIndex index
     );
-    error InvalidContract(address contractAddress);
+    error InvalidSkaleRngContract(address rng);
 
     modifier onlyDkg() {
         require(msg.sender == address(dkg), SenderIsNotDkg(msg.sender));
@@ -99,17 +101,22 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
     }
 
     function select() external override restricted {
-        IRandom.RandomGenerator memory generator = Random.create(_safeRandom());
+        IRandom.RandomGenerator memory generator = Random.create(_getSafeRandom());
         NodeId[] memory members = _pool.sample(committeeSize, generator);
         Committee storage committee = _createSuccessorCommittee(members);
         committee.dkg = dkg.generate(committee.nodes);
     }
 
     function setRNG(address newRNG) external override restricted {
-        // address(0) is allowed here
-        // slither-disable-next-line missing-zero-check
+        require(newRNG != address(0), InvalidSkaleRngContract(newRNG));
         skaleRng = newRNG;
-        require(_safeRandom() > 0, InvalidContract(newRNG));
+        require(_getSafeRandom() > 0, InvalidSkaleRngContract(newRNG));
+        emit SkaleRNGEnabled(newRNG);
+    }
+
+    function disableRNG() external override restricted {
+        skaleRng = address(0);
+        emit SkaleRNGDisabled();
     }
 
     function setDkg(IDkg dkgAddress) external override restricted {
@@ -288,7 +295,7 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
         return !(CommitteeIndex.unwrap(lastCommitteeIndex) < CommitteeIndex.unwrap(index));
     }
 
-    function _safeRandom() private view returns (uint256 randomNumber) {
+    function _getSafeRandom() private view returns (uint256 randomNumber) {
         if (skaleRng == address(0)) {
             return block.prevrandao;
         }

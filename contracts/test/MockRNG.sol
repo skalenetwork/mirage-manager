@@ -20,12 +20,12 @@
 */
 
 pragma solidity ^0.8.24;
+interface IMockRNG {
+    fallback(bytes calldata) external payable returns (bytes memory result);
+}
+contract MockRNG is IMockRNG{
 
-contract MockRNG {
-
-    // Just a Mock
-    // solhint-disable-next-line comprehensive-interface, payable-fallback
-    fallback(bytes calldata) external returns (bytes memory result) {
+    fallback(bytes calldata) external payable override returns (bytes memory result) {
         return abi.encode(block.timestamp);
     }
 }
