@@ -22,10 +22,15 @@
 pragma solidity ^0.8.24;
 interface IMockRNG {
     fallback(bytes calldata) external payable returns (bytes memory result);
+    function burnEth() external;
 }
 contract MockRNG is IMockRNG{
 
     fallback(bytes calldata) external payable override returns (bytes memory result) {
         return abi.encode(block.timestamp);
+    }
+
+    function burnEth() external override {
+        payable(address(0)).transfer(address(this).balance);
     }
 }
