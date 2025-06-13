@@ -30,6 +30,7 @@ contract MockRNG is IMockRNG{
         return abi.encode(block.timestamp);
     }
 
+    // required for slither warning
     function burnEth() external override {
         payable(address(0)).transfer(address(this).balance);
     }
