@@ -1,22 +1,22 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 /**
- *   Staking.sol - mirage-manager
+ *   Staking.sol - fair-manager
  *   Copyright (C) 2025-Present SKALE Labs
  *   @author Dmytro Stebaiev
  *
- *   mirage-manager is free software: you can redistribute it and/or modify
+ *   fair-manager is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU Affero General Public License as published
  *   by the Free Software Foundation, either version 3 of the License, or
  *   (at your option) any later version.
  *
- *   mirage-manager is distributed in the hope that it will be useful,
+ *   fair-manager is distributed in the hope that it will be useful,
  *   but WITHOUT ANY WARRANTY; without even the implied warranty of
  *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *   GNU Affero General Public License for more details.
  *
  *   You should have received a copy of the GNU Affero General Public License
- *   along with mirage-manager.  If not, see <https://www.gnu.org/licenses/>.
+ *   along with fair-manager.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 pragma solidity ^0.8.24;
@@ -27,14 +27,14 @@ import {
 import {
     Address
 } from "@openzeppelin/contracts/utils/Address.sol";
-import {ICommittee} from "@skalenetwork/professional-interfaces/ICommittee.sol";
-import {INodes, NodeId} from "@skalenetwork/professional-interfaces/INodes.sol";
-import {IStaking} from "@skalenetwork/professional-interfaces/IStaking.sol";
+import {ICommittee} from "@skalenetwork/fair-interfaces/ICommittee.sol";
+import {INodes, NodeId} from "@skalenetwork/fair-interfaces/INodes.sol";
+import {IStaking} from "@skalenetwork/fair-interfaces/IStaking.sol";
 
 import {Nodes} from "./Nodes.sol";
 import {TypedMap} from "./structs/typed/TypedMap.sol";
 import {TypedSet} from "./structs/typed/TypedSet.sol";
-import {Credit, FundLibrary, Mirage} from "./utils/Fund.sol";
+import {Credit, FundLibrary, Fair} from "./utils/Fund.sol";
 
 
 contract Staking is AccessManagedUpgradeable, IStaking {
@@ -51,10 +51,10 @@ contract Staking is AccessManagedUpgradeable, IStaking {
     mapping (address holder => TypedSet.NodeIdSet nodeIds) private _stakedNodes;
     TypedMap.NodeIdToMirageMap private _disabledNodesBalances;
 
-    event FeeClaimed(NodeId indexed node, address indexed to, Mirage indexed amount);
-    event Retrieved(address indexed sender, NodeId indexed node, Mirage indexed amount);
+    event FeeClaimed(NodeId indexed node, address indexed to, Fair indexed amount);
+    event Retrieved(address indexed sender, NodeId indexed node, Fair indexed amount);
     event RewardReceived(address indexed sender, uint256 indexed amount);
-    event Staked(address indexed sender, NodeId indexed node, Mirage indexed amount);
+    event Staked(address indexed sender, NodeId indexed node, Fair indexed amount);
     event StakedToNewNode(address indexed sender, NodeId indexed node);
     event StoppedStaking(address indexed sender, NodeId indexed node);
     event NodeDisabled(NodeId indexed node);
@@ -148,7 +148,7 @@ contract Staking is AccessManagedUpgradeable, IStaking {
         if (nodeIsEnabled) {
             committee.updateWeight(node, Credit.unwrap(_rootFund.credits[FundLibrary.nodeToHolder(node)]));
         }
-        payable(msg.sender).sendValue(Mirage.unwrap(value));
+        payable(msg.sender).sendValue(Fair.unwrap(value));
     }
 
     function setFeeRate(uint16 feeRate) external override {
@@ -170,8 +170,8 @@ contract Staking is AccessManagedUpgradeable, IStaking {
         require(msg.value > 0, ZeroAmount());
         require(nodes.activeNodeExists(node), Nodes.NodeDoesNotExist(node));
         bool nodeIsEnabled = !_disabledNodesBalances.contains(node);
-        Mirage amount = Mirage.wrap(msg.value);
-        Mirage balance = _getTotalBalance() - amount;
+        Fair amount = Fair.wrap(msg.value);
+        Fair balance = _getTotalBalance() - amount;
         if (nodeIsEnabled) {
             _nodesFunds[node].supply(
                 _rootFund.getBalance(balance, FundLibrary.nodeToHolder(node)),
@@ -209,11 +209,11 @@ contract Staking is AccessManagedUpgradeable, IStaking {
         return Credit.unwrap(_rootFund.credits[FundLibrary.nodeToHolder(node)]);
     }
 
-    function getStakedAmount() external view override returns (Mirage amount) {
+    function getStakedAmount() external view override returns (Fair amount) {
         return getStakedAmountFor(msg.sender);
     }
 
-    function getStakedToNodeAmount(NodeId node) external view override returns (Mirage amount) {
+    function getStakedToNodeAmount(NodeId node) external view override returns (Fair amount) {
         return getStakedToNodeAmountFor(node, msg.sender);
     }
 
@@ -223,9 +223,9 @@ contract Staking is AccessManagedUpgradeable, IStaking {
 
     // Public
 
-    function claimFee(address payable to, Mirage amount) public override {
+    function claimFee(address payable to, Fair amount) public override {
         NodeId node = nodes.getNodeId(msg.sender);
-        Mirage balance = _getTotalBalance();
+        Fair balance = _getTotalBalance();
         bool nodeIsEnabled = !_disabledNodesBalances.contains(node);
         if (nodeIsEnabled) {
             _nodesFunds[node].claimFee(
@@ -249,10 +249,10 @@ contract Staking is AccessManagedUpgradeable, IStaking {
         if (nodeIsEnabled) {
             committee.updateWeight(node, Credit.unwrap(_rootFund.credits[FundLibrary.nodeToHolder(node)]));
         }
-        to.sendValue(Mirage.unwrap(amount));
+        to.sendValue(Fair.unwrap(amount));
     }
 
-    function getEarnedFeeAmount(NodeId node) public view override returns (Mirage amount) {
+    function getEarnedFeeAmount(NodeId node) public view override returns (Fair amount) {
         if (_disabledNodesBalances.contains(node)) {
             return _nodesFunds[node].getEarnedFee(_disabledNodesBalances.get(node));
         }
@@ -261,7 +261,7 @@ contract Staking is AccessManagedUpgradeable, IStaking {
         );
     }
 
-    function getStakedAmountFor(address holder) public view override returns (Mirage amount) {
+    function getStakedAmountFor(address holder) public view override returns (Fair amount) {
         uint256 nodesCount = _stakedNodes[holder].length();
         for (uint256 nodeIndex; nodeIndex < nodesCount; ++nodeIndex) {
             NodeId node = _stakedNodes[holder].at(nodeIndex);
