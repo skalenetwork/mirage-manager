@@ -62,7 +62,7 @@ describe("Committee", () => {
         const {committee} = await cleanDeployment();
         const version = await committee.version();
         expect(version).to.not.be.eql("");
-        const newVersion = "mirage-mock-version";
+        const newVersion = "fair-mock-version";
         await committee.setVersion(newVersion);
         expect(newVersion).to.be.eql(await committee.version());
         const [, hacker] = await ethers.getSigners();
