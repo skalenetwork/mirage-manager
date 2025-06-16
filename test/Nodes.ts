@@ -21,7 +21,7 @@ const MOCK_DOMAIN_NAME_0 = "skale.pt"
 
 const MOCK_IP_1 = "190.168.0.1"
 const MOCK_IP_1_BYTES = ip.toBuffer(MOCK_IP_1);
-const MOCK_DOMAIN_NAME_1 = "mirage.pt"
+const MOCK_DOMAIN_NAME_1 = "fair.pt"
 
 
 const MOCK_IP_2 = "191.168.0.1"

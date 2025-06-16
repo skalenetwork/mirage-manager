@@ -10,7 +10,7 @@ import {
     IDkg,
     INodes,
     Nodes,
-    MirageAccessManager,
+    FairAccessManager,
     Staking,
     Status
 } from "../typechain-types";
@@ -27,7 +27,7 @@ export const contracts = [
     "Committee",
     "DKG",
     "Nodes",
-    "MirageAccessManager",
+    "FairAccessManager",
     "Status",
     "Staking"
 ];
@@ -36,7 +36,7 @@ interface DeployedContracts {
     Committee: Committee,
     DKG: DKG,
     Nodes: Nodes,
-    MirageAccessManager: MirageAccessManager,
+    FairAccessManager: FairAccessManager,
     Staking: Staking,
     Status: Status
 }
@@ -60,15 +60,15 @@ async function getSkaleManagerInstance() {
 }
 
 async function fetchNodes() {
-    const mirageChainName = getEnvVar("CHAIN_NAME");
-    const mirageChainHash = ethers.solidityPackedKeccak256(
+    const fairChainName = getEnvVar("CHAIN_NAME");
+    const fairChainHash = ethers.solidityPackedKeccak256(
         ["string"],
-        [mirageChainName]
+        [fairChainName]
     );
     const skaleManagerInstance = await getSkaleManagerInstance();
     const nodes = await skaleManagerInstance.getContract("Nodes") as unknown as INodesInSkaleManager;
     const schainsInternal = await skaleManagerInstance.getContract("SchainsInternal") as unknown as ISchainsInternal;
-    const nodesInGroup = await schainsInternal.getNodesInGroup(mirageChainHash);
+    const nodesInGroup = await schainsInternal.getNodesInGroup(fairChainHash);
     const nodeList: INodes.NodeStruct[] = [];
     for (const nodeId of nodesInGroup) {
         const [ip, domainName ,nodeAddress, port, publicKey] = await Promise.all([
@@ -91,14 +91,14 @@ async function fetchNodes() {
 }
 
 async function fetchDkgCommonPublicKey() {
-    const mirageChainName = getEnvVar("CHAIN_NAME");
-    const mirageChainHash = ethers.solidityPackedKeccak256(
+    const fairChainName = getEnvVar("CHAIN_NAME");
+    const fairChainHash = ethers.solidityPackedKeccak256(
         ["string"],
-        [mirageChainName]
+        [fairChainName]
     );
     const skaleManagerInstance = await getSkaleManagerInstance();
     const dkg = await skaleManagerInstance.getContract("KeyStorage") as unknown as IKeyStorage;
-    const commonPublicKey = await dkg.getCommonPublicKey(mirageChainHash);
+    const commonPublicKey = await dkg.getCommonPublicKey(fairChainHash);
     return commonPublicKey;
 }
 
@@ -108,28 +108,28 @@ export const deploy = async (nodeList?: INodes.NodeStruct[], commonPublicKey?: I
     nodeList = nodeList || await fetchNodes();
     commonPublicKey = commonPublicKey ||  await fetchDkgCommonPublicKey();
 
-    deployedContracts.MirageAccessManager = await deployMirageAccessManager(deployer);
+    deployedContracts.FairAccessManager = await deployFairAccessManager(deployer);
     deployedContracts.Nodes = await deployNodes(
-        deployedContracts.MirageAccessManager,
+        deployedContracts.FairAccessManager,
         nodeList
     );
     deployedContracts.Committee = await deployCommittee(
-        deployedContracts.MirageAccessManager,
+        deployedContracts.FairAccessManager,
         deployedContracts.Nodes,
         commonPublicKey
     );
     deployedContracts.DKG = await deployDkg(
-        deployedContracts.MirageAccessManager,
+        deployedContracts.FairAccessManager,
         deployedContracts.Committee,
         deployedContracts.Nodes
     );
     deployedContracts.Status = await deployStatus(
-        deployedContracts.MirageAccessManager,
+        deployedContracts.FairAccessManager,
         deployedContracts.Nodes,
         deployedContracts.Committee
     );
     deployedContracts.Staking = await deployStaking(
-        deployedContracts.MirageAccessManager,
+        deployedContracts.FairAccessManager,
         deployedContracts.Committee,
         deployedContracts.Nodes
     );
@@ -162,17 +162,17 @@ const deployContract = async (name: string, args: unknown[]) => {
     return instance;
 }
 
-const deployMirageAccessManager = async (
+const deployFairAccessManager = async (
     owner: AddressLike
-): Promise<MirageAccessManager> => {
+): Promise<FairAccessManager> => {
     return await deployContract(
-        "MirageAccessManager",
+        "FairAccessManager",
         [await ethers.resolveAddress(owner)]
-    ) as MirageAccessManager;
+    ) as FairAccessManager;
 }
 
 const deployCommittee = async (
-    authority: MirageAccessManager,
+    authority: FairAccessManager,
     nodes: Nodes,
     commonPublicKey: IDkg.G2PointStruct
 ): Promise<Committee> => {
@@ -186,7 +186,7 @@ const deployCommittee = async (
     ) as Committee;
 }
 
-const deployNodes = async (accessManager: MirageAccessManager, nodeList: INodes.NodeStruct[]): Promise<Nodes> => {
+const deployNodes = async (accessManager: FairAccessManager, nodeList: INodes.NodeStruct[]): Promise<Nodes> => {
     return await deployContract(
         "Nodes",
         [
@@ -196,7 +196,7 @@ const deployNodes = async (accessManager: MirageAccessManager, nodeList: INodes.
     ) as Nodes;
 }
 
-const deployDkg = async (authority: MirageAccessManager, committee: Committee, nodes: Nodes): Promise<DKG> => {
+const deployDkg = async (authority: FairAccessManager, committee: Committee, nodes: Nodes): Promise<DKG> => {
     return await deployContract(
         "DKG",
         [
@@ -207,7 +207,7 @@ const deployDkg = async (authority: MirageAccessManager, committee: Committee, n
     ) as DKG;
 }
 
-const deployStatus = async (authority: MirageAccessManager, nodes: Nodes, committee: Committee): Promise<Status> => {
+const deployStatus = async (authority: FairAccessManager, nodes: Nodes, committee: Committee): Promise<Status> => {
     return await deployContract(
         "Status",
         [
@@ -218,7 +218,7 @@ const deployStatus = async (authority: MirageAccessManager, nodes: Nodes, commit
     ) as Status;
 }
 
-const deployStaking = async (authority: MirageAccessManager, committee: Committee, nodes: Nodes): Promise<Staking> => {
+const deployStaking = async (authority: FairAccessManager, committee: Committee, nodes: Nodes): Promise<Staking> => {
     return await deployContract(
         "Staking",
         [
@@ -237,14 +237,14 @@ const storeAddresses = async (deployedContracts: DeployedContracts, version: str
         console.log(`${contract}: ${addresses[contract]}`);
     }
     await fs.writeFile(
-        `data/mirage-manager-${version}-${network.name}-contracts.json`,
+        `data/fair-manager-${version}-${network.name}-contracts.json`,
         JSON.stringify(addresses, null, 4));
 }
 
 const setupRoles = async (deployedContracts: DeployedContracts) => {
     const {
         Committee: committee,
-        MirageAccessManager: accessManager,
+        FairAccessManager: accessManager,
         Nodes: nodes,
         Staking: staking,
         Status: status
