@@ -82,7 +82,7 @@ contract Staking is AccessManagedUpgradeable, IStaking {
         claimFee(to, getEarnedFeeAmount(nodes.getNodeId(msg.sender)));
     }
 
-    function disable(NodeId node) external restricted {
+    function disable(NodeId node) external override restricted {
         Mirage balance = _getTotalBalance();
         Mirage nodeFundBalance = _rootFund.getBalance(balance, FundLibrary.nodeToHolder(node));
         _rootFund.remove(
@@ -96,7 +96,7 @@ contract Staking is AccessManagedUpgradeable, IStaking {
         committee.updateWeight(node, 0);
     }
 
-    function enable(NodeId node) external restricted {
+    function enable(NodeId node) external override restricted {
         (bool wasDisabled, Mirage value) = _disabledNodesBalances.tryGet(node);
         require(wasDisabled, NodeIsNotDisabled(node));
         Mirage balance = _getTotalBalance();
@@ -278,7 +278,7 @@ contract Staking is AccessManagedUpgradeable, IStaking {
         if (_disabledNodesBalances.contains(node)) {
             nodeBalance = _disabledNodesBalances.get(node);
         } else {
-          nodeBalance = _rootFund.getBalance(_getTotalBalance(), FundLibrary.nodeToHolder(node));
+            nodeBalance = _rootFund.getBalance(_getTotalBalance(), FundLibrary.nodeToHolder(node));
         }
         return _nodesFunds[node].getBalance(
             nodeBalance,
