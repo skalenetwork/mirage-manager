@@ -136,7 +136,7 @@ contract Staking is AccessManagedUpgradeable, IStaking {
                 FundLibrary.addressToHolder(msg.sender),
                 value
             );
-            _disabledNodesBalances.set(node, nodeFundBalance - value);
+            assert(!_disabledNodesBalances.set(node, nodeFundBalance - value));
         }
 
         if (_nodesFunds[node].credits[FundLibrary.addressToHolder(msg.sender)] == FundLibrary.ZERO_CREDIT) {
@@ -190,7 +190,7 @@ contract Staking is AccessManagedUpgradeable, IStaking {
                 FundLibrary.addressToHolder(msg.sender),
                 amount
             );
-            _disabledNodesBalances.set(node, nodeFundBalance + amount);
+            assert(!_disabledNodesBalances.set(node, nodeFundBalance + amount));
         }
         if(_stakedNodes[msg.sender].add(node)) {
             emit StakedToNewNode(msg.sender, node);
