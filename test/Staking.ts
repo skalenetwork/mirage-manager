@@ -1,8 +1,11 @@
-import chai from "chai";
+import chai, { assert } from "chai";
 import { registeredOnlyNodes, stakedNodes } from "./tools/fixtures";
 import { ethers } from "hardhat";
+import { zip } from "lodash";
 
 chai.should();
+
+const sumBigInt = (arr: bigint[]) => arr.reduce((acc, val) => acc + val, 0n);
 
 describe("Staking", () => {
     it("should allow holder to stake", async () => {
@@ -223,6 +226,82 @@ describe("Staking", () => {
                     staking,
                     "NodeInCommittee"
                 ).withArgs(node);
+        }
+    });
+
+    it("should not pay rewards to stakers of unhealthy nodes", async () => {
+        const {staking, nodesData } = await registeredOnlyNodes();
+        const [owner, ...allUsers] = await ethers.getSigners();
+        const amounts = [2, 3, 5].map(String).map(ethers.parseEther);
+        const users = allUsers.slice(0, amounts.length);
+        const targetNodes = nodesData.slice(0, amounts.length);
+        const feeRate = 500; // Yes, Eddie, half
+        const tolerance = 10n; // 10 wei tolerance for rounding errors
+
+        // set fee
+        for (const node of targetNodes) {
+            await staking.connect(node.wallet).setFeeRate(feeRate);
+        }
+
+        // stake to nodes
+        for (const [user, node, amount] of zip(users, targetNodes, amounts)) {
+            assert(node);
+            await staking.connect(user).stake(node.id, {value: amount});
+        }
+
+        const disabledNode = targetNodes.slice(-1)[0];
+        const delegatorOfDisabledNode = users.slice(-1)[0];
+        await staking.disable(disabledNode.id);
+
+        // pay rewards
+        const reward = sumBigInt(amounts.slice(0, 2)) * 2n;
+        await owner.sendTransaction({to: staking, value: reward});
+
+        // check distribution
+        for (const [user, amount] of zip(users, amounts)) {
+            assert(amount && user);
+            const currentBalance = user === delegatorOfDisabledNode ? amount : amount + amount;
+            (await staking.connect(user).getStakedAmount())
+                .should.be.equal(currentBalance);
+        }
+        for (const [node, amount] of zip(targetNodes, amounts)) {
+            assert(node);
+            const currentFee = node === disabledNode ? 0 : amount;
+            (await staking.getEarnedFeeAmount(node.id))
+                .should.be.equal(currentFee);
+            (await staking.connect(node.wallet).claimAllFee(node.wallet))
+                .should.changeEtherBalance(node.wallet, currentFee);
+        }
+
+        // current stakes are 4, 6 and 5
+
+        await staking.enable(disabledNode.id);
+
+        for (const [user, amount] of zip(users, amounts)) {
+            assert(amount && user);
+            const currentBalance = user === delegatorOfDisabledNode ? amount : amount + amount;
+            (await staking.connect(user).getStakedAmount())
+                .should.be.approximately(currentBalance, tolerance);
+        }
+
+        // pay rewards
+        const secondReward = ethers.parseEther(String(15 * 2));
+        await owner.sendTransaction({to: staking, value: secondReward});
+
+        // check distribution
+        for (const [user, amount] of zip(users, amounts)) {
+            assert(amount && user);
+            const currentBalance = user === delegatorOfDisabledNode ? amount * 2n : amount * 4n;
+            (await staking.connect(user).getStakedAmount())
+                .should.be.approximately(currentBalance, tolerance);
+        }
+        for (const [node, amount] of zip(targetNodes, amounts)) {
+            assert(node && amount);
+            const currentFee = node === disabledNode ? amount : amount * 2n;
+            (await staking.getEarnedFeeAmount(node.id))
+                .should.be.approximately(currentFee, tolerance);
+            (await staking.connect(node.wallet).claimAllFee(node.wallet))
+                .should.changeEtherBalance(node.wallet, currentFee);
         }
     });
 });
