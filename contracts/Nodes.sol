@@ -91,6 +91,7 @@ contract Nodes is AccessManagedUpgradeable, INodes {
     error PortShouldNotBeZero();
     error SenderIsNotNodeOwner();
     error SenderIsNotNewNodeOwner();
+    error InvalidNodeId(NodeId nodeId, NodeId expected);
 
     modifier nodeNotInCurrentOrNextCommittee(NodeId nodeId){
         require(
@@ -416,7 +417,7 @@ contract Nodes is AccessManagedUpgradeable, INodes {
             Node calldata initNode = initialNodes[i];
             require(
                 NodeId.unwrap(initNode.id) == _nodeIdCounter,
-                "Invalid node ID"
+                InvalidNodeId(initNode.id, NodeId.wrap(_nodeIdCounter))
             );
             _createActiveNode({
                 nodeAddress: initNode.nodeAddress,
