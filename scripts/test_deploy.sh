@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+// Cspell:words hoodi
 
 set -e
 export MAINNET_ENDPOINT="http://hoodi-qa-geth.skalenodes.com:8545"
