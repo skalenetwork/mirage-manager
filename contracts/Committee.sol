@@ -262,7 +262,7 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
     function _initializeCommittee(
         IDkg.G2Point memory commonPublicKey
     ) private {
-        NodeId[] memory nodeIds = nodes.getActiveNodesIds();
+        NodeId[] memory nodeIds = nodes.getActiveNodeIds();
         committeeSize = nodeIds.length;
         Committee storage initialCommittee =
             _createCommittee(nodeIds, CommitteeIndex.wrap(0));

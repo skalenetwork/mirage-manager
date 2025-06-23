@@ -67,9 +67,9 @@ describe("Nodes", function () {
 
         expect(await nodesContract.getNodeId(deployer.address)).to.equal(nodeId);
 
-        expect(await nodesContract.getActiveNodesIds()).to.include(nodeId);
+        expect(await nodesContract.getActiveNodeIds()).to.include(nodeId);
         expect(await nodesContract.activeNodeExists(nodeId)).to.eql(true);
-        const passiveNodeIds = await nodesContract.getPassiveNodesIds();
+        const passiveNodeIds = await nodesContract.getPassiveNodeIds();
         expect(passiveNodeIds.length).to.eql(0);
 
     });
@@ -77,20 +77,20 @@ describe("Nodes", function () {
     it("should register Passive Nodes", async () => {
 
         await nodesContract.registerPassiveNode(MOCK_IPV6_BYTES, 8000);
-        const [passiveNodeId] = await nodesContract.getPassiveNodesIdsForAddress(deployer.address);
+        const [passiveNodeId] = await nodesContract.getPassiveNodeIdsForAddress(deployer.address);
         const passiveNode = await nodesContract.getNode(passiveNodeId);
         expect(passiveNode.id).to.equal(passiveNodeId);
         expect(passiveNode.port).to.equal(8000n);
         expect(Buffer.from(getBytes(passiveNode.ip))).to.eql(MOCK_IPV6_BYTES);
         expect(passiveNode.nodeAddress).to.equal(deployer.address);
-        expect(await nodesContract.getPassiveNodesIdsForAddress(deployer.address)).to.include(passiveNodeId);
+        expect(await nodesContract.getPassiveNodeIdsForAddress(deployer.address)).to.include(passiveNodeId);
 
         await nodesContract.connect(user1).registerPassiveNode(MOCK_IP_2_BYTES, 8000);
 
-        const nodesDeployer = await nodesContract.getPassiveNodesIdsForAddress(deployer.address);
-        const nodesUser1 = await nodesContract.getPassiveNodesIdsForAddress(user1.address);
+        const nodesDeployer = await nodesContract.getPassiveNodeIdsForAddress(deployer.address);
+        const nodesUser1 = await nodesContract.getPassiveNodeIdsForAddress(user1.address);
 
-        const allPassiveNodeIds = await nodesContract.getPassiveNodesIds();
+        const allPassiveNodeIds = await nodesContract.getPassiveNodeIds();
         expect(nodesDeployer.length).to.eql(1);
         expect(nodesUser1.length).to.eql(1);
         expect(allPassiveNodeIds.length).to.eql(2);
@@ -104,7 +104,7 @@ describe("Nodes", function () {
         await expect(nodesContract.getNodeId(deployer.address))
         .to.be.revertedWithCustomError(nodesContract, "AddressIsNotAssignedToAnyNode");
 
-        await expect(nodesContract.getPassiveNodesIdsForAddress(deployer.address))
+        await expect(nodesContract.getPassiveNodeIdsForAddress(deployer.address))
         .to.be.revertedWithCustomError(nodesContract, "AddressIsNotAssignedToAnyNode");
     });
 
@@ -250,7 +250,7 @@ describe("Nodes", function () {
 
     it("should allow only Node owner to request Node address change", async () => {
         await nodesContract.registerPassiveNode(MOCK_IP_0_BYTES, 8000);
-        const [nodeId] = await nodesContract.getPassiveNodesIdsForAddress(deployer.address);
+        const [nodeId] = await nodesContract.getPassiveNodeIdsForAddress(deployer.address);
 
         await expect(nodesContract.connect(user1).requestChangeOwner(nodeId, user1.address))
         .to.be.reverted;
@@ -262,7 +262,7 @@ describe("Nodes", function () {
 
     it("should not allow passive nodes to request active node's addresses", async () => {
         await nodesContract.registerPassiveNode(MOCK_IP_0_BYTES, 8000);
-        const [firstNodeId] = await nodesContract.getPassiveNodesIdsForAddress(deployer.address);
+        const [firstNodeId] = await nodesContract.getPassiveNodeIdsForAddress(deployer.address);
 
         await nodesContract.connect(user1).registerNode(MOCK_IP_1_BYTES, user1PubKey, 8000);
 
@@ -272,7 +272,7 @@ describe("Nodes", function () {
 
     it("should allow only new Node owner to submit Node address change", async () => {
         await nodesContract.registerPassiveNode(MOCK_IP_0_BYTES, 8000);
-        const [nodeId] = await nodesContract.getPassiveNodesIdsForAddress(deployer.address);
+        const [nodeId] = await nodesContract.getPassiveNodeIdsForAddress(deployer.address);
 
         await nodesContract.requestChangeOwner(nodeId, user1.address);
 
@@ -286,7 +286,7 @@ describe("Nodes", function () {
 
     it("should free an address after no passive node has it", async () => {
         await nodesContract.registerPassiveNode(MOCK_IP_0_BYTES, 8000);
-        const [nodeId] = await nodesContract.getPassiveNodesIdsForAddress(deployer.address);
+        const [nodeId] = await nodesContract.getPassiveNodeIdsForAddress(deployer.address);
 
         await nodesContract.requestChangeOwner(nodeId, user1.address);
 
@@ -308,7 +308,7 @@ describe("Nodes", function () {
 
     it("should block address change confirmation if address is taken", async () => {
         await nodesContract.registerPassiveNode(MOCK_IP_0_BYTES, 8000);
-        const [nodeId] = await nodesContract.getPassiveNodesIdsForAddress(deployer.address);
+        const [nodeId] = await nodesContract.getPassiveNodeIdsForAddress(deployer.address);
 
         await nodesContract.requestChangeOwner(nodeId, user1.address);
 
@@ -337,7 +337,7 @@ describe("Nodes", function () {
         // deployer owns 2 passive nodes
         await nodesContract.registerPassiveNode(MOCK_IP_0_BYTES, 8000);
         await nodesContract.registerPassiveNode(MOCK_IP_1_BYTES, 8000);
-        const [firstNodeId, secondNodeId] = await nodesContract.getPassiveNodesIdsForAddress(deployer.address);
+        const [firstNodeId, secondNodeId] = await nodesContract.getPassiveNodeIdsForAddress(deployer.address);
 
         // Fails, active node addresses must be unique
         await expect(nodesContract.registerNode(MOCK_IP_2_BYTES, deployerPubKey, 8000))
@@ -369,7 +369,7 @@ describe("Nodes", function () {
 
     it("should revert when passive node was already assigned to the new address", async () => {
         await nodesContract.registerPassiveNode(MOCK_IP_0_BYTES, 8000);
-        const [firstNodeId] = await nodesContract.getPassiveNodesIdsForAddress(deployer.address);
+        const [firstNodeId] = await nodesContract.getPassiveNodeIdsForAddress(deployer.address);
 
         await nodesContract.requestChangeOwner(firstNodeId, deployer.address);
 

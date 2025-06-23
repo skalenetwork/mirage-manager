@@ -315,7 +315,7 @@ contract Nodes is AccessManagedUpgradeable, INodes {
         nodeId = _activeNodesAddressToId.get(nodeAddress);
     }
 
-    function getPassiveNodesIdsForAddress(
+    function getPassiveNodeIdsForAddress(
         address nodeAddress
     )
         external
@@ -330,11 +330,11 @@ contract Nodes is AccessManagedUpgradeable, INodes {
         nodeIds = _passiveNodeIdByAddress.getValuesAt(nodeAddress);
     }
 
-    function getPassiveNodesIds() external view override returns (NodeId[] memory nodeIds) {
+    function getPassiveNodeIds() external view override returns (NodeId[] memory nodeIds) {
         nodeIds = _passiveNodeIds.values();
     }
 
-    function getActiveNodesIds() external view override returns (NodeId[] memory nodeIds) {
+    function getActiveNodeIds() external view override returns (NodeId[] memory nodeIds) {
         nodeIds = _activeNodeIds.values();
     }
 
