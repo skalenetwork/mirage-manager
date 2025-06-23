@@ -414,7 +414,10 @@ contract Nodes is AccessManagedUpgradeable, INodes {
         uint256 length = initialNodes.length;
         for (uint256 i; i < length; ++i) {
             Node calldata initNode = initialNodes[i];
-
+            require(
+                NodeId.unwrap(initNode.id) == _nodeIdCounter,
+                "Invalid node ID"
+            );
             _createActiveNode({
                 nodeAddress: initNode.nodeAddress,
                 ip: initNode.ip,
