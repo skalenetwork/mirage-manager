@@ -45,7 +45,7 @@ const generateRandomNodes = async (initialNumberOfNodes?: number) => {
             value: nodeBalance
         });
         nodesData.push({
-            id: 0,
+            id: i,
             ip: getIp(),
             domainName: `d2-${i}.skale`,
             nodeAddress: wallet.address,
