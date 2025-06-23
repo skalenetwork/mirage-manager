@@ -415,17 +415,18 @@ contract Nodes is AccessManagedUpgradeable, INodes {
         uint256 length = initialNodes.length;
         for (uint256 i; i < length; ++i) {
             Node calldata initNode = initialNodes[i];
-            require(
-                NodeId.unwrap(initNode.id) == _nodeIdCounter,
-                InvalidNodeId(initNode.id, NodeId.wrap(_nodeIdCounter))
-            );
-            _createActiveNode({
+
+            NodeId createdNodeId =_createActiveNode({
                 nodeAddress: initNode.nodeAddress,
                 ip: initNode.ip,
                 port: initNode.port,
                 domainName: initNode.domainName,
                 publicKey: initNode.publicKey
             });
+            require(
+                NodeId.unwrap(initNode.id) + 1 == NodeId.unwrap(createdNodeId),
+                InvalidNodeId(initNode.id, createdNodeId)
+            );
         }
     }
 
