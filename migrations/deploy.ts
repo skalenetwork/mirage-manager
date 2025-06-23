@@ -68,9 +68,9 @@ async function fetchNodes() {
     const skaleManagerInstance = await getSkaleManagerInstance();
     const nodes = await skaleManagerInstance.getContract("Nodes") as unknown as INodesInSkaleManager;
     const schainsInternal = await skaleManagerInstance.getContract("SchainsInternal") as unknown as ISchainsInternal;
-    const nodesInGroup = await schainsInternal.getNodesInGroup(mirageChainHash);
+    const numberOfNodesInGroup = await schainsInternal.getNumberOfNodesInGroup(mirageChainHash);
     const nodeList: INodes.NodeStruct[] = [];
-    for (const nodeId of nodesInGroup) {
+    for (let nodeId = 0; nodeId < numberOfNodesInGroup; ++nodeId) {
         const [ip, domainName ,nodeAddress, port, publicKey] = await Promise.all([
             nodes.getNodeIP(nodeId),
             nodes.getNodeDomainName(nodeId),
