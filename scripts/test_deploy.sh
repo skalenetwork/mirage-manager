@@ -2,8 +2,12 @@
 // Cspell:words hoodi
 
 set -e
-export MAINNET_ENDPOINT="http://hoodi-qa-geth.skalenodes.com:8545"
-export CHAIN_NAME="mirage-qa-hoodi-1"
-export TARGET="0x5ef7849BF607Cbdb1f48cA82E38Fb567c7A77316"
+if [ -n "$INFURA_API_TOKEN" ]; then
+    export MAINNET_ENDPOINT="https://mainnet.infura.io/v3/${INFURA_API_TOKEN}"
+else
+    export MAINNET_ENDPOINT="https://eth.llamarpc.com"
+fi
+export CHAIN_NAME="affectionate-immediate-pollux"
+export TARGET="production"
 
 yarn hardhat run migrations/deploy.ts
