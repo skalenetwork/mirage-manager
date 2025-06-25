@@ -91,7 +91,7 @@ contract Nodes is AccessManagedUpgradeable, INodes {
     error PortShouldNotBeZero();
     error SenderIsNotNodeOwner();
     error SenderIsNotNewNodeOwner();
-    error InvalidNodeId(NodeId nodeId, uint256 numberOfNodes);
+    error InvalidNodeId(NodeId nodeId, uint256 nodeIdCounter);
 
     modifier nodeNotInCurrentOrNextCommittee(NodeId nodeId){
         require(
@@ -161,7 +161,10 @@ contract Nodes is AccessManagedUpgradeable, INodes {
             msg.sender == nodeAddress,
             InvalidPublicKeyForSender(publicKey, nodeAddress, msg.sender)
         );
-        NodeId nextNodeId = NodeId.wrap(_nodeIdCounter + 1);
+        unchecked {
+            ++_nodeIdCounter;
+        }
+        NodeId nextNodeId = NodeId.wrap(_nodeIdCounter);
         _createActiveNode({
             nodeId: nextNodeId,
             nodeAddress: msg.sender,
@@ -355,9 +358,6 @@ contract Nodes is AccessManagedUpgradeable, INodes {
         internal
     {
         require(NodeId.unwrap(nodeId) > _nodeIdCounter, InvalidNodeId(nodeId, _nodeIdCounter));
-        unchecked {
-            ++_nodeIdCounter;
-        }
         _addActiveNodeId(nodeId);
         _setActiveNodeIdForAddress(nodeAddress, nodeId);
 
@@ -422,6 +422,7 @@ contract Nodes is AccessManagedUpgradeable, INodes {
                 domainName: initNode.domainName,
                 publicKey: initNode.publicKey
             });
+            _nodeIdCounter = NodeId.unwrap(initNode.id);
         }
     }
 

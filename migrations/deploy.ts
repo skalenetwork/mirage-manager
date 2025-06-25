@@ -70,17 +70,20 @@ async function fetchNodes() {
     const schainsInternal = await skaleManagerInstance.getContract("SchainsInternal") as unknown as ISchainsInternal;
     const nodeIds = await schainsInternal.getNodesInGroup(mirageChainHash);
     const nodeIdsSorted = nodeIds.map(Number).sort((a, b) => a - b);
+    if (nodeIdsSorted.includes(0)) {
+        throw new Error("Node IDs cannot contain 0");
+    }
     const nodeList: INodes.NodeStruct[] = [];
-    for (const id of nodeIdsSorted) {
+    for (const nodeId of nodeIdsSorted) {
         const [ip, domainName ,nodeAddress, port, publicKey] = await Promise.all([
-            nodes.getNodeIP(id),
-            nodes.getNodeDomainName(id),
-            nodes.getNodeAddress(id),
-            nodes.getNodePort(id),
-            nodes.getNodePublicKey(id)
+            nodes.getNodeIP(nodeId),
+            nodes.getNodeDomainName(nodeId),
+            nodes.getNodeAddress(nodeId),
+            nodes.getNodePort(nodeId),
+            nodes.getNodePublicKey(nodeId)
         ]);
         nodeList.push({
-            id,
+            id: nodeId,
             ip,
             domainName,
             nodeAddress,
