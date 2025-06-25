@@ -161,10 +161,7 @@ contract Nodes is AccessManagedUpgradeable, INodes {
             msg.sender == nodeAddress,
             InvalidPublicKeyForSender(publicKey, nodeAddress, msg.sender)
         );
-        unchecked {
-            ++_nodeIdCounter;
-        }
-        NodeId nextNodeId = NodeId.wrap(_nodeIdCounter);
+        NodeId nextNodeId = NodeId.wrap(_nodeIdCounter + 1);
         _createActiveNode({
             nodeId: nextNodeId,
             nodeAddress: msg.sender,
@@ -358,10 +355,11 @@ contract Nodes is AccessManagedUpgradeable, INodes {
         internal
     {
         require(NodeId.unwrap(nodeId) > _nodeIdCounter, InvalidNodeId(nodeId, _nodeIdCounter));
+        require(_usedIps.add(keccak256(ip)), IpIsNotAvailable(ip));
+
+        _nodeIdCounter = NodeId.unwrap(nodeId);
         _addActiveNodeId(nodeId);
         _setActiveNodeIdForAddress(nodeAddress, nodeId);
-
-        require(_usedIps.add(keccak256(ip)), IpIsNotAvailable(ip));
 
         nodes[nodeId] = Node({
             id: nodeId,
@@ -422,7 +420,6 @@ contract Nodes is AccessManagedUpgradeable, INodes {
                 domainName: initNode.domainName,
                 publicKey: initNode.publicKey
             });
-            _nodeIdCounter = NodeId.unwrap(initNode.id);
         }
     }
 
