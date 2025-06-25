@@ -91,7 +91,7 @@ contract Nodes is AccessManagedUpgradeable, INodes {
     error PortShouldNotBeZero();
     error SenderIsNotNodeOwner();
     error SenderIsNotNewNodeOwner();
-    error InvalidNodeId(NodeId nodeId, NodeId expected);
+    error InvalidNodeId(NodeId nodeId, uint256 numberOfNodes);
 
     modifier nodeNotInCurrentOrNextCommittee(NodeId nodeId){
         require(
@@ -161,15 +161,16 @@ contract Nodes is AccessManagedUpgradeable, INodes {
             msg.sender == nodeAddress,
             InvalidPublicKeyForSender(publicKey, nodeAddress, msg.sender)
         );
-
-        NodeId nodeId = _createActiveNode({
+        NodeId nextNodeId = NodeId.wrap(_nodeIdCounter + 1);
+        _createActiveNode({
+            nodeId: nextNodeId,
             nodeAddress: msg.sender,
             ip: ip,
             port: port,
             domainName: "",
             publicKey: publicKey
         });
-        committeeContract.nodeCreated(nodeId);
+        committeeContract.nodeCreated(nextNodeId);
     }
 
     function requestChangeOwner(
@@ -344,6 +345,7 @@ contract Nodes is AccessManagedUpgradeable, INodes {
     }
 
     function _createActiveNode(
+        NodeId nodeId,
         address nodeAddress,
         bytes calldata ip,
         uint16 port,
@@ -351,13 +353,11 @@ contract Nodes is AccessManagedUpgradeable, INodes {
         bytes32[2] memory publicKey
     )
         internal
-        returns (NodeId nodeId)
     {
+        require(NodeId.unwrap(nodeId) > _nodeIdCounter, InvalidNodeId(nodeId, _nodeIdCounter));
         unchecked {
             ++_nodeIdCounter;
         }
-        nodeId = NodeId.wrap(_nodeIdCounter);
-
         _addActiveNodeId(nodeId);
         _setActiveNodeIdForAddress(nodeAddress, nodeId);
 
@@ -373,7 +373,6 @@ contract Nodes is AccessManagedUpgradeable, INodes {
         });
 
         emit NodeRegistered(nodeId, nodeAddress, ip, port);
-        return nodeId;
     }
 
     function _addPassiveNodeId(NodeId nodeId) private {
@@ -415,18 +414,14 @@ contract Nodes is AccessManagedUpgradeable, INodes {
         uint256 length = initialNodes.length;
         for (uint256 i; i < length; ++i) {
             Node calldata initNode = initialNodes[i];
-
-            NodeId createdNodeId =_createActiveNode({
+            _createActiveNode({
+                nodeId: initNode.id,
                 nodeAddress: initNode.nodeAddress,
                 ip: initNode.ip,
                 port: initNode.port,
                 domainName: initNode.domainName,
                 publicKey: initNode.publicKey
             });
-            require(
-                NodeId.unwrap(initNode.id) + 1 == NodeId.unwrap(createdNodeId),
-                InvalidNodeId(initNode.id, createdNodeId)
-            );
         }
     }
 
