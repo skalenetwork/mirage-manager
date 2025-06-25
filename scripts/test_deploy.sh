@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-// Cspell:words hoodi
 
 set -e
 if [ -n "$INFURA_API_TOKEN" ]; then
