@@ -91,6 +91,7 @@ contract Nodes is AccessManagedUpgradeable, INodes {
     error PortShouldNotBeZero();
     error SenderIsNotNodeOwner();
     error SenderIsNotNewNodeOwner();
+    error InvalidNodeId(NodeId nodeId, uint256 nodeIdCounter);
 
     modifier nodeNotInCurrentOrNextCommittee(NodeId nodeId){
         require(
@@ -160,15 +161,16 @@ contract Nodes is AccessManagedUpgradeable, INodes {
             msg.sender == nodeAddress,
             InvalidPublicKeyForSender(publicKey, nodeAddress, msg.sender)
         );
-
-        NodeId nodeId = _createActiveNode({
+        NodeId nextNodeId = NodeId.wrap(_nodeIdCounter + 1);
+        _createActiveNode({
+            nodeId: nextNodeId,
             nodeAddress: msg.sender,
             ip: ip,
             port: port,
             domainName: "",
             publicKey: publicKey
         });
-        committeeContract.nodeCreated(nodeId);
+        committeeContract.nodeCreated(nextNodeId);
     }
 
     function requestChangeOwner(
@@ -315,7 +317,7 @@ contract Nodes is AccessManagedUpgradeable, INodes {
         nodeId = _activeNodesAddressToId.get(nodeAddress);
     }
 
-    function getPassiveNodesIdsForAddress(
+    function getPassiveNodeIdsForAddress(
         address nodeAddress
     )
         external
@@ -330,11 +332,11 @@ contract Nodes is AccessManagedUpgradeable, INodes {
         nodeIds = _passiveNodeIdByAddress.getValuesAt(nodeAddress);
     }
 
-    function getPassiveNodesIds() external view override returns (NodeId[] memory nodeIds) {
+    function getPassiveNodeIds() external view override returns (NodeId[] memory nodeIds) {
         nodeIds = _passiveNodeIds.values();
     }
 
-    function getActiveNodesIds() external view override returns (NodeId[] memory nodeIds) {
+    function getActiveNodeIds() external view override returns (NodeId[] memory nodeIds) {
         nodeIds = _activeNodeIds.values();
     }
 
@@ -343,6 +345,7 @@ contract Nodes is AccessManagedUpgradeable, INodes {
     }
 
     function _createActiveNode(
+        NodeId nodeId,
         address nodeAddress,
         bytes calldata ip,
         uint16 port,
@@ -350,17 +353,13 @@ contract Nodes is AccessManagedUpgradeable, INodes {
         bytes32[2] memory publicKey
     )
         internal
-        returns (NodeId nodeId)
     {
-        unchecked {
-            ++_nodeIdCounter;
-        }
-        nodeId = NodeId.wrap(_nodeIdCounter);
+        require(NodeId.unwrap(nodeId) > _nodeIdCounter, InvalidNodeId(nodeId, _nodeIdCounter));
+        require(_usedIps.add(keccak256(ip)), IpIsNotAvailable(ip));
 
+        _nodeIdCounter = NodeId.unwrap(nodeId);
         _addActiveNodeId(nodeId);
         _setActiveNodeIdForAddress(nodeAddress, nodeId);
-
-        require(_usedIps.add(keccak256(ip)), IpIsNotAvailable(ip));
 
         nodes[nodeId] = Node({
             id: nodeId,
@@ -372,7 +371,6 @@ contract Nodes is AccessManagedUpgradeable, INodes {
         });
 
         emit NodeRegistered(nodeId, nodeAddress, ip, port);
-        return nodeId;
     }
 
     function _addPassiveNodeId(NodeId nodeId) private {
@@ -414,8 +412,8 @@ contract Nodes is AccessManagedUpgradeable, INodes {
         uint256 length = initialNodes.length;
         for (uint256 i; i < length; ++i) {
             Node calldata initNode = initialNodes[i];
-
             _createActiveNode({
+                nodeId: initNode.id,
                 nodeAddress: initNode.nodeAddress,
                 ip: initNode.ip,
                 port: initNode.port,

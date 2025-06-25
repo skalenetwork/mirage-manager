@@ -38,14 +38,14 @@ const generateRandomNodes = async (initialNumberOfNodes?: number) => {
     const [owner] = await ethers.getSigners();
     initialNumberOfNodes = initialNumberOfNodes || numberOfNodes;
     const nodesData: NodeData[] = [];
-    for (let i = 0; i < initialNumberOfNodes; ++i) {
+    for (let i = 1; i <= initialNumberOfNodes; ++i) {
         const wallet = Wallet.createRandom().connect(ethers.provider) as HDNodeWallet;
         await owner.sendTransaction({
             to: wallet.address,
             value: nodeBalance
         });
         nodesData.push({
-            id: 0,
+            id: i,
             ip: getIp(),
             domainName: `d2-${i}.skale`,
             nodeAddress: wallet.address,
