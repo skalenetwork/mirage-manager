@@ -70,11 +70,6 @@ async function fetchNodes() {
     const schainsInternal = await skaleManagerInstance.getContract("SchainsInternal") as unknown as ISchainsInternal;
     const nodeIds = await schainsInternal.getNodesInGroup(mirageChainHash);
     const nodeIdsSorted = nodeIds.map(Number).sort((a, b) => a - b);
-    for (let i = 0; i < nodeIdsSorted.length; i++) {
-        if (nodeIdsSorted[i] !== i) {
-            throw new Error(`Node IDs are not consecutive from 0 to n. Expected ${i}, but found ${nodeIds[i]}`);
-        }
-    }
     const nodeList: INodes.NodeStruct[] = [];
     for (const id of nodeIdsSorted) {
         const [ip, domainName ,nodeAddress, port, publicKey] = await Promise.all([
