@@ -141,38 +141,39 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
     }
 
     function nodeCreated(NodeId node) external override restricted {
-        if (status.isWhitelisted(node) && staking.getNodeShare(node) > 0) {
-            _pool.add(node);
-            emit NodeBecomesEligible(node);
+        if (status.isWhitelisted(node) && staking.getNodeShare(node) > 0 && status.isHealthy(node)) {
+            _setEligible(node);
         }
     }
 
     function nodeRemoved(NodeId node) external override restricted {
-        if (_pool.remove(node)) {
-            emit NodeLosesEligibility(node);
-        }
+        _setIneligible(node);
+
     }
 
     function nodeWhitelisted(NodeId node) external override restricted {
-        if (staking.getNodeShare(node) > 0) {
-            _pool.add(node);
-            emit NodeBecomesEligible(node);
+        if (staking.getNodeShare(node) > 0 && status.isHealthy(node)) {
+            _setEligible(node);
         }
     }
 
     function nodeBlacklisted(NodeId node) external override restricted {
-        if (_pool.remove(node)) {
-            emit NodeLosesEligibility(node);
-        }
+        _setIneligible(node);
     }
 
     function processHeartbeat(NodeId node) external override restricted {
-        if (_pool.contains(node)) {
+        if (_isEligible(node)) {
             _pool.moveToFront(
                 node,
                 _shareToWeight(staking.getNodeShare(node))
             );
+        } else {
+            if (status.isWhitelisted(node) && staking.getNodeShare(node) > 0) {
+                _setEligible(node);
+            }
         }
+
+        ejectUnhealthyNode();
     }
 
     function updateWeight(NodeId node, uint256 share) external override restricted {
@@ -218,6 +219,16 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
     }
 
     // Public
+
+    function ejectUnhealthyNode() public override {
+        if (_pool.length() == 0) {
+            return;
+        }
+        NodeId oldest = _pool.getOldestIsh();
+        if (!status.isHealthy(oldest)) {
+            _setIneligible(oldest);
+        }
+    }
 
     function getActiveCommitteeIndex() public view override returns (CommitteeIndex committeeIndex) {
         committeeIndex = lastCommitteeIndex;
@@ -268,6 +279,21 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
             _createCommittee(nodeIds, CommitteeIndex.wrap(0));
         initialCommittee.commonPublicKey = commonPublicKey;
         initialCommittee.startingTimestamp = Timestamp.wrap(block.timestamp);
+    }
+
+    function _setEligible(NodeId node) private {
+        _pool.add(node);
+        emit NodeBecomesEligible(node);
+    }
+
+    function _setIneligible(NodeId node) private {
+        if (_pool.remove(node)) {
+            emit NodeLosesEligibility(node);
+        }
+    }
+
+    function _isEligible(NodeId node) private view returns (bool eligible) {
+        return _pool.contains(node);
     }
 
     function _getCommittee(CommitteeIndex index) private view returns (Committee storage committee) {
