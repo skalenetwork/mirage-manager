@@ -28,7 +28,6 @@ import { IDkg } from "@skalenetwork/professional-interfaces/IDkg.sol";
 
 import { Fp2Operations } from "./Fp2Operations.sol";
 
-
 library G2Operations {
     using Fp2Operations for IDkg.Fp2Point;
 
@@ -75,13 +74,8 @@ library G2Operations {
             return sum;
         }
 
-        IDkg.Fp2Point memory s = value2.y
-            .minusFp2(value1.y)
-            .mulFp2(
-                value2.x
-                    .minusFp2(value1.x)
-                    .inverseFp2()
-            );
+        IDkg.Fp2Point memory s =
+            value2.y.minusFp2(value1.y).mulFp2(value2.x.minusFp2(value1.x).inverseFp2());
         sum.x = s.squaredFp2().minusFp2(value1.x.addFp2(value2.x));
         sum.y = value1.y.addFp2(s.mulFp2(sum.x.minusFp2(value1.x)));
         uint256 p = Fp2Operations.P;
@@ -116,16 +110,7 @@ library G2Operations {
     function getG2Zero() internal pure returns (IDkg.G2Point memory point) {
         // Current solidity version does not support Constants of non-value type
         // so we implemented this function
-        return IDkg.G2Point({
-            x: IDkg.Fp2Point({
-                a: 0,
-                b: 0
-            }),
-            y: IDkg.Fp2Point({
-                a: 1,
-                b: 0
-            })
-        });
+        return IDkg.G2Point({ x: IDkg.Fp2Point({ a: 0, b: 0 }), y: IDkg.Fp2Point({ a: 1, b: 0 }) });
     }
 
     function isG2Point(
@@ -140,9 +125,7 @@ library G2Operations {
             return true;
         }
         IDkg.Fp2Point memory squaredY = y.squaredFp2();
-        IDkg.Fp2Point memory res = squaredY.minusFp2(
-                x.squaredFp2().mulFp2(x)
-            ).minusFp2(getTWISTB());
+        IDkg.Fp2Point memory res = squaredY.minusFp2(x.squaredFp2().mulFp2(x)).minusFp2(getTWISTB());
         return res.a == 0 && res.b == 0;
     }
 

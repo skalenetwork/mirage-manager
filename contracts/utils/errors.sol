@@ -18,8 +18,6 @@
  *   You should have received a copy of the GNU Affero General Public License
  *   along with mirage-manager.  If not, see <https://www.gnu.org/licenses/>.
  */
-
 pragma solidity ^0.8.24;
-
 
 error NotImplemented();

@@ -21,9 +21,8 @@
 
 pragma solidity ^0.8.24;
 
-import {NodeId} from "@skalenetwork/professional-interfaces/INodes.sol";
-import {SplayTree} from "../../structs/SplayTree.sol";
-
+import { NodeId } from "@skalenetwork/professional-interfaces/INodes.sol";
+import { SplayTree } from "../../structs/SplayTree.sol";
 
 interface ISplayTreeTester {
     function insertSmallest(NodeId node, uint256 weight) external;
@@ -34,9 +33,9 @@ interface ISplayTreeTester {
 contract SplayTreeTester is ISplayTreeTester {
     using SplayTree for mapping(NodeId => SplayTree.Node);
 
+    NodeId public constant NULL = SplayTree.NULL;
     mapping(NodeId node => SplayTree.Node data) public tree;
     NodeId public root;
-    NodeId public constant NULL = SplayTree.NULL;
 
     function insertSmallest(NodeId node, uint256 weight) external override {
         root = tree.insertSmallest(root, node, weight);

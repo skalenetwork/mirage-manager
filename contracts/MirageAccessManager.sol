@@ -21,17 +21,15 @@
 
 pragma solidity ^0.8.24;
 
-import {
-    AccessManagerUpgradeable
-} from "@openzeppelin/contracts-upgradeable/access/manager/AccessManagerUpgradeable.sol";
-
+import { AccessManagerUpgradeable } from
+    "@openzeppelin/contracts-upgradeable/access/manager/AccessManagerUpgradeable.sol";
 
 contract MirageAccessManager is AccessManagerUpgradeable {
     uint64 public constant NODES_ROLE = 1;
     uint64 public constant STATUS_ROLE = 2;
     uint64 public constant STAKING_ROLE = 3;
 
-    function initialize(address initialAdmin) public initializer override {
+    function initialize(address initialAdmin) public override initializer {
         __AccessManager_init(initialAdmin);
     }
 }

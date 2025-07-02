@@ -28,22 +28,23 @@ import { IRandom } from "@skalenetwork/professional-interfaces/IRandom.sol";
  * @dev The library for generating of pseudo random numbers
  */
 library Random {
-
     /**
      * @dev Create an instance of RandomGenerator
      */
-    function create(uint256 seed) internal pure returns (IRandom.RandomGenerator memory generator) {
-        return IRandom.RandomGenerator({seed: seed});
-    }
-
-    function createFromEntropy(
-        bytes memory entropy
-    )
+    function create(uint256 seed)
         internal
         pure
         returns (IRandom.RandomGenerator memory generator)
     {
-        return create(uint(keccak256(entropy)));
+        return IRandom.RandomGenerator({ seed: seed });
+    }
+
+    function createFromEntropy(bytes memory entropy)
+        internal
+        pure
+        returns (IRandom.RandomGenerator memory generator)
+    {
+        return create(uint256(keccak256(entropy)));
     }
 
     /**

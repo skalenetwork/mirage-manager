@@ -18,23 +18,18 @@
  *   You should have received a copy of the GNU Affero General Public License
  *   along with mirage-manager.  If not, see <https://www.gnu.org/licenses/>.
  */
-
 pragma solidity ^0.8.24;
 
-import {
-    AccessManagedUpgradeable
-} from "@openzeppelin/contracts-upgradeable/access/manager/AccessManagedUpgradeable.sol";
-import {
-    Address
-} from "@openzeppelin/contracts/utils/Address.sol";
-import {ICommittee} from "@skalenetwork/professional-interfaces/ICommittee.sol";
-import {INodes, NodeId} from "@skalenetwork/professional-interfaces/INodes.sol";
-import {IStaking} from "@skalenetwork/professional-interfaces/IStaking.sol";
+import { AccessManagedUpgradeable } from
+    "@openzeppelin/contracts-upgradeable/access/manager/AccessManagedUpgradeable.sol";
+import { Address } from "@openzeppelin/contracts/utils/Address.sol";
+import { ICommittee } from "@skalenetwork/professional-interfaces/ICommittee.sol";
+import { INodes, NodeId } from "@skalenetwork/professional-interfaces/INodes.sol";
+import { IStaking } from "@skalenetwork/professional-interfaces/IStaking.sol";
 
-import {Nodes} from "./Nodes.sol";
-import {TypedSet} from "./structs/typed/TypedSet.sol";
-import {Credit, FundLibrary, Mirage} from "./utils/Fund.sol";
-
+import { Nodes } from "./Nodes.sol";
+import { TypedSet } from "./structs/typed/TypedSet.sol";
+import { Credit, FundLibrary, Mirage } from "./utils/Fund.sol";
 
 contract Staking is AccessManagedUpgradeable, IStaking {
     using Address for address payable;
@@ -44,8 +39,8 @@ contract Staking is AccessManagedUpgradeable, IStaking {
     ICommittee public committee;
     INodes public nodes;
     FundLibrary.Fund private _rootFund;
-    mapping (NodeId node => FundLibrary.Fund nodeFund) private _nodesFunds;
-    mapping (address holder => TypedSet.NodeIdSet nodeIds) private _stakedNodes;
+    mapping(NodeId node => FundLibrary.Fund nodeFund) private _nodesFunds;
+    mapping(address holder => TypedSet.NodeIdSet nodeIds) private _stakedNodes;
 
     event FeeClaimed(NodeId indexed node, address indexed to, Mirage indexed amount);
     event Retrieved(address indexed sender, NodeId indexed node, Mirage indexed amount);
@@ -60,14 +55,22 @@ contract Staking is AccessManagedUpgradeable, IStaking {
     error ZeroStakeToNode(NodeId node);
     error NodeInCommittee(NodeId node);
 
-    function initialize(address initialAuthority, ICommittee committee_, INodes nodes_) public initializer override {
+    receive() external payable override {
+        emit RewardReceived(msg.sender, msg.value);
+    }
+
+    function initialize(
+        address initialAuthority,
+        ICommittee committee_,
+        INodes nodes_
+    )
+        external
+        override
+        initializer
+    {
         __AccessManaged_init(initialAuthority);
         committee = committee_;
         nodes = nodes_;
-    }
-
-    receive() external override payable {
-        emit RewardReceived(msg.sender, msg.value);
     }
 
     function claimAllFee(address payable to) external override {
@@ -86,19 +89,20 @@ contract Staking is AccessManagedUpgradeable, IStaking {
             FundLibrary.addressToHolder(msg.sender),
             value
         );
-        _rootFund.remove(
-            balance,
-            FundLibrary.nodeToHolder(node),
-            value
-        );
+        _rootFund.remove(balance, FundLibrary.nodeToHolder(node), value);
 
-        if (_nodesFunds[node].credits[FundLibrary.addressToHolder(msg.sender)] == FundLibrary.ZERO_CREDIT) {
+        if (
+            _nodesFunds[node].credits[FundLibrary.addressToHolder(msg.sender)]
+                == FundLibrary.ZERO_CREDIT
+        ) {
             assert(_stakedNodes[msg.sender].remove(node));
             emit StoppedStaking(msg.sender, node);
         }
         emit Retrieved(msg.sender, node, value);
 
-        committee.updateWeight(node, Credit.unwrap(_rootFund.credits[FundLibrary.nodeToHolder(node)]));
+        committee.updateWeight(
+            node, Credit.unwrap(_rootFund.credits[FundLibrary.nodeToHolder(node)])
+        );
         payable(msg.sender).sendValue(Mirage.unwrap(value));
     }
 
@@ -112,8 +116,7 @@ contract Staking is AccessManagedUpgradeable, IStaking {
         );
 
         _nodesFunds[node].setFeeRate(
-            _rootFund.getBalance(_getTotalBalance(), FundLibrary.nodeToHolder(node)),
-            feeRate
+            _rootFund.getBalance(_getTotalBalance(), FundLibrary.nodeToHolder(node)), feeRate
         );
     }
 
@@ -127,17 +130,15 @@ contract Staking is AccessManagedUpgradeable, IStaking {
             FundLibrary.addressToHolder(msg.sender),
             amount
         );
-        _rootFund.supply(
-            balance,
-            FundLibrary.nodeToHolder(node),
-            amount
-        );
-        if(_stakedNodes[msg.sender].add(node)) {
+        _rootFund.supply(balance, FundLibrary.nodeToHolder(node), amount);
+        if (_stakedNodes[msg.sender].add(node)) {
             emit StakedToNewNode(msg.sender, node);
         }
         emit Staked(msg.sender, node, amount);
 
-        committee.updateWeight(node, Credit.unwrap(_rootFund.credits[FundLibrary.nodeToHolder(node)]));
+        committee.updateWeight(
+            node, Credit.unwrap(_rootFund.credits[FundLibrary.nodeToHolder(node)])
+        );
     }
 
     function getNodeShare(NodeId node) external view override returns (uint256 share) {
@@ -162,17 +163,14 @@ contract Staking is AccessManagedUpgradeable, IStaking {
         NodeId node = nodes.getNodeId(msg.sender);
         Mirage balance = _getTotalBalance();
         _nodesFunds[node].claimFee(
-            _rootFund.getBalance(balance, FundLibrary.nodeToHolder(node)),
-            amount
+            _rootFund.getBalance(balance, FundLibrary.nodeToHolder(node)), amount
         );
-        _rootFund.remove(
-            balance,
-            FundLibrary.nodeToHolder(node),
-            amount
-        );
+        _rootFund.remove(balance, FundLibrary.nodeToHolder(node), amount);
         emit FeeClaimed(node, to, amount);
 
-        committee.updateWeight(node, Credit.unwrap(_rootFund.credits[FundLibrary.nodeToHolder(node)]));
+        committee.updateWeight(
+            node, Credit.unwrap(_rootFund.credits[FundLibrary.nodeToHolder(node)])
+        );
         to.sendValue(Mirage.unwrap(amount));
     }
 
@@ -190,16 +188,27 @@ contract Staking is AccessManagedUpgradeable, IStaking {
         }
     }
 
-    function getStakedNodesFor(address holder) public view override returns (NodeId[] memory stakedNodes) {
+    function getStakedNodesFor(address holder)
+        public
+        view
+        override
+        returns (NodeId[] memory stakedNodes)
+    {
         return _stakedNodes[holder].values();
     }
 
-    function getStakedToNodeAmountFor(NodeId node, address holder) public view override returns (Mirage amount) {
-        Mirage nodeBalance = _rootFund.getBalance(_getTotalBalance(), FundLibrary.nodeToHolder(node));
-        return _nodesFunds[node].getBalance(
-            nodeBalance,
-            FundLibrary.addressToHolder(holder)
-        );
+    function getStakedToNodeAmountFor(
+        NodeId node,
+        address holder
+    )
+        public
+        view
+        override
+        returns (Mirage amount)
+    {
+        Mirage nodeBalance =
+            _rootFund.getBalance(_getTotalBalance(), FundLibrary.nodeToHolder(node));
+        return _nodesFunds[node].getBalance(nodeBalance, FundLibrary.addressToHolder(holder));
     }
 
     // Private

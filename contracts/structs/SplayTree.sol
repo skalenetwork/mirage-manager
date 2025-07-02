@@ -23,7 +23,6 @@ pragma solidity ^0.8.24;
 
 import { NodeId } from "@skalenetwork/professional-interfaces/INodes.sol";
 
-
 library SplayTree {
     struct Node {
         NodeId id;
@@ -33,7 +32,7 @@ library SplayTree {
         uint256 totalWeight;
     }
 
-    NodeId constant public NULL = NodeId.wrap(0);
+    NodeId public constant NULL = NodeId.wrap(0);
 
     error InsertNullNode();
     error NotFound();
@@ -63,7 +62,13 @@ library SplayTree {
         return newNode;
     }
 
-    function remove(mapping(NodeId => Node) storage nodes, NodeId id) internal returns (NodeId newRoot) {
+    function remove(
+        mapping(NodeId => Node) storage nodes,
+        NodeId id
+    )
+        internal
+        returns (NodeId newRoot)
+    {
         require(id != NULL, RemoveNullNode());
         splay(nodes, id);
         if (hasLeft(nodes, id)) {
@@ -130,7 +135,13 @@ library SplayTree {
         revert NotFound();
     }
 
-    function splay(mapping(NodeId => Node) storage nodes, NodeId id) internal returns (NodeId newRoot) {
+    function splay(
+        mapping(NodeId => Node) storage nodes,
+        NodeId id
+    )
+        internal
+        returns (NodeId newRoot)
+    {
         require(id != NULL, SplayOnNull());
         if (nodes[id].parent != NULL) {
             _splay(nodes, nodes[id]);
@@ -140,14 +151,14 @@ library SplayTree {
 
     // Private
 
-    function _createNode(mapping(NodeId => Node) storage nodes, NodeId id, uint256 weight) internal {
-        nodes[id] = Node({
-            id: id,
-            parent: NULL,
-            left: NULL,
-            right: NULL,
-            totalWeight: weight
-        });
+    function _createNode(
+        mapping(NodeId => Node) storage nodes,
+        NodeId id,
+        uint256 weight
+    )
+        internal
+    {
+        nodes[id] = Node({ id: id, parent: NULL, left: NULL, right: NULL, totalWeight: weight });
     }
 
     function _splay(mapping(NodeId => Node) storage nodes, Node memory node) private {
@@ -179,7 +190,13 @@ library SplayTree {
         nodes[node.id] = node;
     }
 
-    function _leftZig(mapping(NodeId => Node) storage nodes, Node memory node, NodeId parent) private {
+    function _leftZig(
+        mapping(NodeId => Node) storage nodes,
+        Node memory node,
+        NodeId parent
+    )
+        private
+    {
         NodeId beta = node.right;
         uint256 parentAndGammaWeight = nodes[parent].totalWeight - node.totalWeight;
 
@@ -194,7 +211,13 @@ library SplayTree {
         nodes[beta].parent = parent;
     }
 
-    function _rightZig(mapping(NodeId => Node) storage nodes, Node memory node, NodeId parent) private {
+    function _rightZig(
+        mapping(NodeId => Node) storage nodes,
+        Node memory node,
+        NodeId parent
+    )
+        private
+    {
         NodeId beta = node.left;
         uint256 parentAndAlphaWeight = nodes[parent].totalWeight - node.totalWeight;
 
@@ -220,7 +243,8 @@ library SplayTree {
         NodeId beta = node.right;
         NodeId gamma = nodes[parent].right;
         uint256 parentAndGammaWeight = nodes[parent].totalWeight - node.totalWeight;
-        uint256 grandParentAndDeltaWeight = nodes[grandParent].totalWeight - nodes[parent].totalWeight;
+        uint256 grandParentAndDeltaWeight =
+            nodes[grandParent].totalWeight - nodes[parent].totalWeight;
 
         node.parent = nodes[grandParent].parent;
         if (node.parent != NULL) {
@@ -236,7 +260,8 @@ library SplayTree {
         nodes[parent].parent = node.id;
         nodes[parent].left = beta;
         nodes[parent].right = grandParent;
-        nodes[parent].totalWeight = parentAndGammaWeight + grandParentAndDeltaWeight + nodes[beta].totalWeight;
+        nodes[parent].totalWeight =
+            parentAndGammaWeight + grandParentAndDeltaWeight + nodes[beta].totalWeight;
 
         nodes[grandParent].parent = parent;
         nodes[grandParent].left = gamma;
@@ -257,7 +282,8 @@ library SplayTree {
         NodeId beta = nodes[parent].left;
         NodeId gamma = node.left;
         uint256 parentAndBetaWeight = nodes[parent].totalWeight - node.totalWeight;
-        uint256 grandParentAndAlphaWeight = nodes[grandParent].totalWeight - nodes[parent].totalWeight;
+        uint256 grandParentAndAlphaWeight =
+            nodes[grandParent].totalWeight - nodes[parent].totalWeight;
 
         node.parent = nodes[grandParent].parent;
         if (node.parent != NULL) {
@@ -273,7 +299,8 @@ library SplayTree {
         nodes[parent].parent = node.id;
         nodes[parent].right = gamma;
         nodes[parent].left = grandParent;
-        nodes[parent].totalWeight = parentAndBetaWeight + grandParentAndAlphaWeight + nodes[gamma].totalWeight;
+        nodes[parent].totalWeight =
+            parentAndBetaWeight + grandParentAndAlphaWeight + nodes[gamma].totalWeight;
 
         nodes[grandParent].parent = parent;
         nodes[grandParent].right = beta;
@@ -294,7 +321,8 @@ library SplayTree {
         NodeId beta = node.left;
         NodeId gamma = node.right;
         uint256 parentAndDeltaWeight = nodes[parent].totalWeight - node.totalWeight;
-        uint256 grandParentAndAlphaWeight = nodes[grandParent].totalWeight - nodes[parent].totalWeight;
+        uint256 grandParentAndAlphaWeight =
+            nodes[grandParent].totalWeight - nodes[parent].totalWeight;
 
         node.parent = nodes[grandParent].parent;
         if (node.parent != NULL) {
@@ -331,7 +359,8 @@ library SplayTree {
         NodeId beta = node.left;
         NodeId gamma = node.right;
         uint256 parentAndAlphaWeight = nodes[parent].totalWeight - node.totalWeight;
-        uint256 grandParentAndDeltaWeight = nodes[grandParent].totalWeight - nodes[parent].totalWeight;
+        uint256 grandParentAndDeltaWeight =
+            nodes[grandParent].totalWeight - nodes[parent].totalWeight;
 
         node.parent = nodes[grandParent].parent;
         if (node.parent != NULL) {
@@ -371,11 +400,25 @@ library SplayTree {
         }
     }
 
-    function hasLeft(mapping(NodeId => Node) storage nodes, NodeId vertex) private view returns (bool exists) {
+    function hasLeft(
+        mapping(NodeId => Node) storage nodes,
+        NodeId vertex
+    )
+        private
+        view
+        returns (bool exists)
+    {
         return nodes[vertex].left != NULL;
     }
 
-    function hasRight(mapping(NodeId => Node) storage nodes, NodeId vertex) private view returns (bool exists) {
+    function hasRight(
+        mapping(NodeId => Node) storage nodes,
+        NodeId vertex
+    )
+        private
+        view
+        returns (bool exists)
+    {
         return nodes[vertex].right != NULL;
     }
 }

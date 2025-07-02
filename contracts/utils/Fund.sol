@@ -26,6 +26,7 @@ import { NodeId } from "@skalenetwork/professional-interfaces/INodes.sol";
 import { Mirage } from "@skalenetwork/professional-interfaces/units.sol";
 
 type Credit is uint256;
+
 type Holder is uint256;
 
 using {
@@ -35,13 +36,11 @@ using {
     _creditSubtract as -
 } for Credit global;
 
-
 library FundLibrary {
-
     struct Fund {
         Mirage lastBalance;
         Credit totalCredits;
-        mapping (Holder holder => Credit share) credits;
+        mapping(Holder holder => Credit share) credits;
         Credit ownerCredits;
         uint16 feeRate; // 0 - 1000‰
     }
@@ -53,18 +52,14 @@ library FundLibrary {
     error NotEnoughStaked(Mirage staked);
     error NotEnoughFee(Mirage earnedFee);
 
-    function claimFee(
-        Fund storage fund,
-        Mirage balanceBeforeClaim,
-        Mirage amount
-    )
-        internal
-    {
+    function claimFee(Fund storage fund, Mirage balanceBeforeClaim, Mirage amount) internal {
         _processBalanceChange(fund, balanceBeforeClaim);
         if (fund.feeRate > 0) {
             Credit credits = _toCreditsRoundedUp(fund, balanceBeforeClaim, amount);
             if (fund.ownerCredits < credits) {
-                revert NotEnoughFee(_toMirageRoundedDown(fund, balanceBeforeClaim, ZERO_CREDIT, fund.ownerCredits));
+                revert NotEnoughFee(
+                    _toMirageRoundedDown(fund, balanceBeforeClaim, ZERO_CREDIT, fund.ownerCredits)
+                );
             }
             fund.ownerCredits = fund.ownerCredits - credits;
             fund.totalCredits = fund.totalCredits - credits;
@@ -83,20 +78,16 @@ library FundLibrary {
         _processBalanceChange(fund, balanceBeforeRemove);
         Credit credits = _toCreditsRoundedUp(fund, balanceBeforeRemove, amount);
         if (fund.credits[holder] < credits) {
-            revert NotEnoughStaked(_toMirageRoundedDown(fund, balanceBeforeRemove, ZERO_CREDIT, fund.credits[holder]));
+            revert NotEnoughStaked(
+                _toMirageRoundedDown(fund, balanceBeforeRemove, ZERO_CREDIT, fund.credits[holder])
+            );
         }
         fund.credits[holder] = fund.credits[holder] - credits;
         fund.totalCredits = fund.totalCredits - credits;
         fund.lastBalance = balanceBeforeRemove - amount;
     }
 
-    function setFeeRate(
-        Fund storage fund,
-        Mirage balanceBefore,
-        uint16 feeRate
-    )
-        internal
-    {
+    function setFeeRate(Fund storage fund, Mirage balanceBefore, uint16 feeRate) internal {
         _processBalanceChange(fund, balanceBefore);
         fund.feeRate = feeRate;
     }
@@ -129,9 +120,8 @@ library FundLibrary {
             return ZERO_MIRAGE;
         }
         return Mirage.wrap(
-            Mirage.unwrap(balance)
-            * Credit.unwrap(fund.credits[holder])
-            / Credit.unwrap(fund.totalCredits + _getUncountedFeeCredits(fund, balance))
+            Mirage.unwrap(balance) * Credit.unwrap(fund.credits[holder])
+                / Credit.unwrap(fund.totalCredits + _getUncountedFeeCredits(fund, balance))
         );
     }
 
@@ -145,10 +135,10 @@ library FundLibrary {
     {
         if (fund.feeRate > 0) {
             Credit uncountedFee = _getUncountedFeeCredits(fund, balance);
-            return _toMirageRoundedDown(fund, balance, uncountedFee, fund.ownerCredits + uncountedFee);
+            return
+                _toMirageRoundedDown(fund, balance, uncountedFee, fund.ownerCredits + uncountedFee);
         }
     }
-
 
     function addressToHolder(address holder) internal pure returns (Holder typedHolder) {
         return Holder.wrap(uint256(uint160(holder)));
@@ -160,12 +150,7 @@ library FundLibrary {
 
     // private
 
-    function _processBalanceChange(
-        Fund storage fund,
-        Mirage balance
-    )
-        private
-    {
+    function _processBalanceChange(Fund storage fund, Mirage balance) private {
         if (fund.feeRate > 0 && balance > fund.lastBalance) {
             Credit credits = _getUncountedFeeCredits(fund, balance);
             fund.ownerCredits = fund.ownerCredits + credits;
@@ -184,9 +169,7 @@ library FundLibrary {
     {
         if (fund.feeRate > 0 && balance > fund.lastBalance) {
             Mirage balanceChange = balance - fund.lastBalance;
-            Mirage feeInMirage = Mirage.wrap(
-                Mirage.unwrap(balanceChange) * fund.feeRate / 1000
-            );
+            Mirage feeInMirage = Mirage.wrap(Mirage.unwrap(balanceChange) * fund.feeRate / 1000);
             return _toCreditsRoundedDown(fund, balance - feeInMirage, feeInMirage);
         }
         return ZERO_CREDIT;
@@ -223,8 +206,7 @@ library FundLibrary {
         }
         return Credit.wrap(
             Math.ceilDiv(
-                Mirage.unwrap(amount) * Credit.unwrap(fund.totalCredits),
-                Mirage.unwrap(balance)
+                Mirage.unwrap(amount) * Credit.unwrap(fund.totalCredits), Mirage.unwrap(balance)
             )
         );
     }
@@ -243,7 +225,8 @@ library FundLibrary {
             return ZERO_MIRAGE;
         }
         return Mirage.wrap(
-            Mirage.unwrap(balance) * Credit.unwrap(amount) / Credit.unwrap(fund.totalCredits + uncountedFee)
+            Mirage.unwrap(balance) * Credit.unwrap(amount)
+                / Credit.unwrap(fund.totalCredits + uncountedFee)
         );
     }
 }

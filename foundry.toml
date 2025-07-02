@@ -1,0 +1,6 @@
+[fmt]
+line_length = 100
+tab_width = 4
+bracket_spacing = true
+wrap_comments = true
+multiline_func_header = "all"

@@ -18,15 +18,13 @@
     You should have received a copy of the GNU Affero General Public License
     along with mirage-manager.  If not, see <https://www.gnu.org/licenses/>.
 */
-
 pragma solidity ^0.8.24;
 
 import { NodeId } from "@skalenetwork/professional-interfaces/INodes.sol";
 import { IStatus } from "@skalenetwork/professional-interfaces/IStatus.sol";
-import { SplayTree } from "../structs/SplayTree.sol";
-import { TypedSet } from "../structs/typed/TypedSet.sol";
+import { SplayTree } from "./../structs/SplayTree.sol";
+import { TypedSet } from "./../structs/typed/TypedSet.sol";
 import { IRandom, Random } from "./Random.sol";
-
 
 library PoolLibrary {
     using Random for IRandom.RandomGenerator;
@@ -34,7 +32,7 @@ library PoolLibrary {
     using TypedSet for TypedSet.NodeIdSet;
 
     struct Pool {
-        mapping (NodeId id => SplayTree.Node node) tree;
+        mapping(NodeId id => SplayTree.Node node) tree;
         NodeId root;
         TypedSet.NodeIdSet presentNodes;
         TypedSet.NodeIdSet incomingNodes;
@@ -42,10 +40,7 @@ library PoolLibrary {
     }
 
     error NodeIsMissing(NodeId id);
-    error TooFewCandidates(
-        uint256 needed,
-        uint256 available
-    );
+    error TooFewCandidates(uint256 needed, uint256 available);
 
     function add(Pool storage pool, NodeId id) internal {
         assert(pool.incomingNodes.add(id));
@@ -78,15 +73,18 @@ library PoolLibrary {
         NodeId lastHealthy = _findLastHealthyNode(pool);
         require(lastHealthy != SplayTree.NULL, TooFewCandidates(size, 0));
         pool.root = pool.tree.splay(lastHealthy);
-        uint256 totalWeight = pool.tree[lastHealthy].totalWeight
-                - pool.tree[pool.tree[lastHealthy].right].totalWeight;
+        uint256 totalWeight =
+            pool.tree[lastHealthy].totalWeight - pool.tree[pool.tree[lastHealthy].right].totalWeight;
         for (uint256 i = 0; i < size; ++i) {
             require(totalWeight > 0, TooFewCandidates(size, i));
             uint256 randomValue = generator.random(totalWeight);
             NodeId choice = pool.tree.findByWeight(pool.root, randomValue);
             // findByWeight did splay
-            uint256 weight = pool.tree[choice].totalWeight -
-                (pool.tree[pool.tree[choice].left].totalWeight + pool.tree[pool.tree[choice].right].totalWeight);
+            uint256 weight = pool.tree[choice].totalWeight
+                - (
+                    pool.tree[pool.tree[choice].left].totalWeight
+                        + pool.tree[pool.tree[choice].right].totalWeight
+                );
             remove(pool, choice);
             add(pool, choice);
             nodesSample[i] = choice;
@@ -94,11 +92,7 @@ library PoolLibrary {
         }
     }
 
-    function setWeight(
-        Pool storage pool,
-        NodeId node,
-        uint256 weight
-    ) internal {
+    function setWeight(Pool storage pool, NodeId node, uint256 weight) internal {
         if (pool.presentNodes.contains(node)) {
             pool.root = pool.tree.setWeight(node, weight);
         }

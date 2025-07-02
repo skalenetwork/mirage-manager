@@ -18,12 +18,10 @@
  *   You should have received a copy of the GNU Affero General Public License
  *   along with mirage-manager.  If not, see <https://www.gnu.org/licenses/>.
  */
-
 pragma solidity ^0.8.24;
 
-import {
-    AccessManagedUpgradeable
-} from "@openzeppelin/contracts-upgradeable/access/manager/AccessManagedUpgradeable.sol";
+import { AccessManagedUpgradeable } from
+    "@openzeppelin/contracts-upgradeable/access/manager/AccessManagedUpgradeable.sol";
 import {
     CommitteeIndex,
     ICommittee,
@@ -33,12 +31,10 @@ import { DkgId, IDkg } from "@skalenetwork/professional-interfaces/IDkg.sol";
 import { INodes, NodeId } from "@skalenetwork/professional-interfaces/INodes.sol";
 import { IStaking } from "@skalenetwork/professional-interfaces/IStaking.sol";
 import { Duration, IStatus } from "@skalenetwork/professional-interfaces/IStatus.sol";
-
 import { TypedSet } from "./structs/typed/TypedSet.sol";
 import { G2Operations } from "./utils/fieldOperations/G2Operations.sol";
 import { PoolLibrary } from "./utils/Pool.sol";
 import { IRandom, Random } from "./utils/Random.sol";
-
 
 contract Committee is AccessManagedUpgradeable, ICommittee {
     using PoolLibrary for PoolLibrary.Pool;
@@ -54,8 +50,8 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
     IStatus public status;
     IStaking public staking;
 
-    mapping (CommitteeIndex index => Committee committee) public committees;
-    mapping (CommitteeIndex index => CommitteeAuxiliary committee) private _committeesAuxiliary;
+    mapping(CommitteeIndex index => Committee committee) public committees;
+    mapping(CommitteeIndex index => CommitteeAuxiliary committee) private _committeesAuxiliary;
     CommitteeIndex public lastCommitteeIndex;
     uint256 public committeeSize;
     Duration public transitionDelay;
@@ -66,12 +62,8 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
     event NodeBecomesEligible(NodeId indexed node);
     event NodeLosesEligibility(NodeId indexed node);
 
-    error SenderIsNotDkg(
-        address sender
-    );
-    error CommitteeNotFound(
-        CommitteeIndex index
-    );
+    error SenderIsNotDkg(address sender);
+    error CommitteeNotFound(CommitteeIndex index);
 
     modifier onlyDkg() {
         require(msg.sender == address(dkg), SenderIsNotDkg(msg.sender));
@@ -81,11 +73,11 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
     function initialize(
         address initialAuthority,
         INodes nodesAddress,
-        IDkg.G2Point memory commonPublicKey
+        IDkg.G2Point calldata commonPublicKey
     )
-        public
-        initializer
+        external
         override
+        initializer
     {
         __AccessManaged_init(initialAuthority);
         committeeSize = 22;
@@ -96,7 +88,8 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
     }
 
     function select() external override restricted {
-        IRandom.RandomGenerator memory generator = Random.create(uint256(blockhash(block.number - 1)));
+        IRandom.RandomGenerator memory generator =
+            Random.create(uint256(blockhash(block.number - 1)));
         NodeId[] memory members = _pool.sample(committeeSize, generator);
         Committee storage committee = _createSuccessorCommittee(members);
         committee.dkg = dkg.generate(committee.nodes);
@@ -124,11 +117,12 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
         version = newVersion;
     }
 
-    function processSuccessfulDkg(DkgId round) external onlyDkg override {
+    function processSuccessfulDkg(DkgId round) external override onlyDkg {
         Committee storage committee = _getCommittee(lastCommitteeIndex);
         if (committee.dkg == round) {
             committee.commonPublicKey = dkg.getPublicKey(round);
-            committee.startingTimestamp = Timestamp.wrap(block.timestamp + Duration.unwrap(transitionDelay));
+            committee.startingTimestamp =
+                Timestamp.wrap(block.timestamp + Duration.unwrap(transitionDelay));
         }
     }
 
@@ -168,10 +162,7 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
 
     function processHeartbeat(NodeId node) external override restricted {
         if (_pool.contains(node)) {
-            _pool.moveToFront(
-                node,
-                _shareToWeight(staking.getNodeShare(node))
-            );
+            _pool.moveToFront(node, _shareToWeight(staking.getNodeShare(node)));
         }
     }
 
@@ -191,19 +182,22 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
         }
     }
 
-    function getCommittee(
-        CommitteeIndex committeeIndex
-    )
+    function getCommittee(CommitteeIndex committeeIndex)
         external
         view
         override
         returns (Committee memory committee)
     {
-        require (_committeeExists(committeeIndex), CommitteeNotFound(committeeIndex));
+        require(_committeeExists(committeeIndex), CommitteeNotFound(committeeIndex));
         return committees[committeeIndex];
     }
 
-    function isNodeInCurrentOrNextCommittee(NodeId node) external view override returns (bool result) {
+    function isNodeInCurrentOrNextCommittee(NodeId node)
+        external
+        view
+        override
+        returns (bool result)
+    {
         for (
             uint256 i = CommitteeIndex.unwrap(getActiveCommitteeIndex());
             i < 1 + CommitteeIndex.unwrap(lastCommitteeIndex);
@@ -219,7 +213,12 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
 
     // Public
 
-    function getActiveCommitteeIndex() public view override returns (CommitteeIndex committeeIndex) {
+    function getActiveCommitteeIndex()
+        public
+        view
+        override
+        returns (CommitteeIndex committeeIndex)
+    {
         committeeIndex = lastCommitteeIndex;
         while (Timestamp.wrap(block.timestamp) < _getCommittee(committeeIndex).startingTimestamp) {
             committeeIndex = _previous(committeeIndex);
@@ -228,7 +227,10 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
 
     // Private
 
-    function _createCommittee(NodeId[] memory nodes_, CommitteeIndex index)
+    function _createCommittee(
+        NodeId[] memory nodes_,
+        CommitteeIndex index
+    )
         private
         returns (Committee storage committee)
     {
@@ -259,18 +261,19 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
         return _createCommittee(nodes_, _next(getActiveCommitteeIndex()));
     }
 
-    function _initializeCommittee(
-        IDkg.G2Point memory commonPublicKey
-    ) private {
+    function _initializeCommittee(IDkg.G2Point calldata commonPublicKey) private {
         NodeId[] memory nodeIds = nodes.getActiveNodeIds();
         committeeSize = nodeIds.length;
-        Committee storage initialCommittee =
-            _createCommittee(nodeIds, CommitteeIndex.wrap(0));
+        Committee storage initialCommittee = _createCommittee(nodeIds, CommitteeIndex.wrap(0));
         initialCommittee.commonPublicKey = commonPublicKey;
         initialCommittee.startingTimestamp = Timestamp.wrap(block.timestamp);
     }
 
-    function _getCommittee(CommitteeIndex index) private view returns (Committee storage committee) {
+    function _getCommittee(CommitteeIndex index)
+        private
+        view
+        returns (Committee storage committee)
+    {
         return committees[index];
     }
 
@@ -286,8 +289,7 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
         return CommitteeIndex.wrap(CommitteeIndex.unwrap(index) - 1);
     }
 
-    function _shareToWeight(uint256 share) private pure returns (uint256 weight)
-    {
+    function _shareToWeight(uint256 share) private pure returns (uint256 weight) {
         return share;
     }
 }

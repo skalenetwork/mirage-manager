@@ -24,7 +24,6 @@ import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableS
 import { NodeId } from "@skalenetwork/professional-interfaces/INodes.sol";
 
 library TypedSet {
-
     struct NodeIdSet {
         EnumerableSet.UintSet inner;
     }

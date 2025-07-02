@@ -18,25 +18,21 @@
  *   You should have received a copy of the GNU Affero General Public License
  *   along with mirage-manager.  If not, see <https://www.gnu.org/licenses/>.
  */
-
 pragma solidity ^0.8.24;
 
-import {
-    AccessManagedUpgradeable
-} from "@openzeppelin/contracts-upgradeable/access/manager/AccessManagedUpgradeable.sol";
+import { AccessManagedUpgradeable } from
+    "@openzeppelin/contracts-upgradeable/access/manager/AccessManagedUpgradeable.sol";
 import { ICommittee } from "@skalenetwork/professional-interfaces/ICommittee.sol";
 import { INodes, NodeId } from "@skalenetwork/professional-interfaces/INodes.sol";
 import { Duration, IStatus } from "@skalenetwork/professional-interfaces/IStatus.sol";
 
 import { TypedSet } from "./structs/typed/TypedSet.sol";
 
-
 contract Status is AccessManagedUpgradeable, IStatus {
-
     using TypedSet for TypedSet.NodeIdSet;
 
     Duration public heartbeatInterval;
-    mapping (NodeId id => uint256 timestamp) public lastHeartbeatTimestamp;
+    mapping(NodeId id => uint256 timestamp) public lastHeartbeatTimestamp;
     TypedSet.NodeIdSet private _whitelist;
 
     ICommittee public committee;
@@ -50,12 +46,13 @@ contract Status is AccessManagedUpgradeable, IStatus {
         require(nodes.activeNodeExists(nodeId), NodeDoesNotExist(nodeId));
         _;
     }
+
     function initialize(
         address initialAuthority,
         INodes nodesAddress,
         ICommittee committeeAddress
     )
-        public
+        external
         override
         initializer
     {
@@ -75,6 +72,7 @@ contract Status is AccessManagedUpgradeable, IStatus {
             committee.processHeartbeat(nodeId);
         }
     }
+
     function setHeartbeatInterval(Duration interval) external override restricted {
         heartbeatInterval = interval;
     }
@@ -89,8 +87,12 @@ contract Status is AccessManagedUpgradeable, IStatus {
         committee.nodeBlacklisted(nodeId);
     }
 
-    function getNodesEligibleForCommittee() external view override returns (NodeId[] memory nodeIds) {
-
+    function getNodesEligibleForCommittee()
+        external
+        view
+        override
+        returns (NodeId[] memory nodeIds)
+    {
         uint256 whitelistedLength = _whitelist.length();
         NodeId[] memory healthyNodeIds = new NodeId[](whitelistedLength);
         uint256 eligibleCount = 0;

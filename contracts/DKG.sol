@@ -23,15 +23,13 @@
 
 pragma solidity ^0.8.24;
 
-import {
-    AccessManagedUpgradeable
-} from "@openzeppelin/contracts-upgradeable/access/manager/AccessManagedUpgradeable.sol";
-import {ICommittee} from "@skalenetwork/professional-interfaces/ICommittee.sol";
-import {DkgId, IDkg} from "@skalenetwork/professional-interfaces/IDkg.sol";
-import {INodes, NodeId} from "@skalenetwork/professional-interfaces/INodes.sol";
+import { AccessManagedUpgradeable } from
+    "@openzeppelin/contracts-upgradeable/access/manager/AccessManagedUpgradeable.sol";
+import { ICommittee } from "@skalenetwork/professional-interfaces/ICommittee.sol";
+import { DkgId, IDkg } from "@skalenetwork/professional-interfaces/IDkg.sol";
+import { INodes, NodeId } from "@skalenetwork/professional-interfaces/INodes.sol";
 
-import {G2Operations} from "./utils/fieldOperations/G2Operations.sol";
-
+import { G2Operations } from "./utils/fieldOperations/G2Operations.sol";
 
 contract DKG is AccessManagedUpgradeable, IDkg {
     using G2Operations for G2Point;
@@ -68,27 +66,15 @@ contract DKG is AccessManagedUpgradeable, IDkg {
         KeyShare[] secretKeyContribution
     );
 
-    event AllDataReceived(
-        DkgId dkg,
-        NodeId indexed node,
-        uint256 nodeIndex
-    );
+    event AllDataReceived(DkgId dkg, NodeId indexed node, uint256 nodeIndex);
 
-    event SuccessfulDkg(
-        DkgId dkg
-    );
+    event SuccessfulDkg(DkgId dkg);
 
     error DkgIsNotSuccessful(DkgId id);
     error DkgIsNotInBroadcastStage(DkgId id);
     error DkgIsNotInAlrightStage(DkgId id);
-    error IncorrectVerificationsVectorQuantity(
-        uint256 actual,
-        uint256 expected
-    );
-    error IncorrectSecretKeyContributionQuantity(
-        uint256 actual,
-        uint256 expected
-    );
+    error IncorrectVerificationsVectorQuantity(uint256 actual, uint256 expected);
+    error IncorrectSecretKeyContributionQuantity(uint256 actual, uint256 expected);
     error NodeDoesNotParticipateInDkg(NodeId node);
     error NodeAlreadyBroadcasted(NodeId node);
     error IncorrectG2Point(G2Point value);
@@ -109,7 +95,7 @@ contract DKG is AccessManagedUpgradeable, IDkg {
         ICommittee committeeAddress,
         INodes nodesAddress
     )
-        public
+        external
         override
         initializer
     {
@@ -136,10 +122,17 @@ contract DKG is AccessManagedUpgradeable, IDkg {
         DkgId dkg,
         G2Point[] calldata verificationVector,
         KeyShare[] calldata secretKeyContribution
-    ) external onlyBroadcastingDkg(dkg) override {
+    )
+        external
+        override
+        onlyBroadcastingDkg(dkg)
+    {
         uint256 n = rounds[dkg].nodes.length;
         uint256 t = _getT(n);
-        require(verificationVector.length == t, IncorrectVerificationsVectorQuantity(verificationVector.length, t));
+        require(
+            verificationVector.length == t,
+            IncorrectVerificationsVectorQuantity(verificationVector.length, t)
+        );
         require(
             secretKeyContribution.length == n,
             IncorrectSecretKeyContributionQuantity(secretKeyContribution.length, n)
@@ -150,30 +143,38 @@ contract DKG is AccessManagedUpgradeable, IDkg {
         require(!_isNodeBroadcasted(dkg, index), NodeAlreadyBroadcasted(node));
 
         ++round.numberOfBroadcasted;
-        if ( round.numberOfBroadcasted == n ) {
+        if (round.numberOfBroadcasted == n) {
             round.status = Status.ALRIGHT;
         }
         round.hashedData[index] = _hashData(secretKeyContribution, verificationVector);
         _contributeToPublicKey(round, verificationVector[0]);
 
-        emit BroadcastAndKeyShare(
-            dkg,
-            node,
-            verificationVector,
-            secretKeyContribution
-        );
+        emit BroadcastAndKeyShare(dkg, node, verificationVector, secretKeyContribution);
     }
 
     function generate(NodeId[] calldata participants) external override returns (DkgId dkg) {
         return _createRound(participants);
     }
 
-    function isNodeBroadcasted(DkgId dkg, NodeId node) external view override returns (bool broadcasted) {
+    function isNodeBroadcasted(
+        DkgId dkg,
+        NodeId node
+    )
+        external
+        view
+        override
+        returns (bool broadcasted)
+    {
         uint256 index = _getIndex(dkg, node);
         return _isNodeBroadcasted(dkg, index);
     }
 
-    function getParticipants(DkgId dkg) external view override returns (NodeId[] memory participants) {
+    function getParticipants(DkgId dkg)
+        external
+        view
+        override
+        returns (NodeId[] memory participants)
+    {
         return rounds[dkg].nodes;
     }
 

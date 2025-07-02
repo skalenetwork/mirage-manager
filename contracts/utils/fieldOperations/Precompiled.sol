@@ -21,9 +21,7 @@
 
 pragma solidity ^0.8.24;
 
-
 library Precompiled {
-
     address public constant MOD_EXP = address(5);
     address public constant EC_MUL = address(7);
     address public constant EC_PAIRING = address(8);
@@ -43,14 +41,12 @@ library Precompiled {
         uint256 lengthOfExponent = 32;
         uint256 lengthOfModulus = 32;
 
-        bytes memory output = _callPrecompiled(MOD_EXP, abi.encodePacked(
-            lengthOfBase,
-            lengthOfExponent,
-            lengthOfModulus,
-            base,
-            exponent,
-            modulus
-        ));
+        bytes memory output = _callPrecompiled(
+            MOD_EXP,
+            abi.encodePacked(
+                lengthOfBase, lengthOfExponent, lengthOfModulus, base, exponent, modulus
+            )
+        );
         return abi.decode(output, (uint256));
     }
 
@@ -79,17 +75,15 @@ library Precompiled {
         uint256 a2,
         uint256 b2,
         uint256 c2,
-        uint256 d2)
-        internal view returns (bool pairing)
+        uint256 d2
+    )
+        internal
+        view
+        returns (bool pairing)
     {
-        bytes memory output = _callPrecompiled(EC_PAIRING, abi.encodePacked(
-            x1, y1,
-            a1, b1,
-            c1, d1,
-            x2, y2,
-            a2, b2,
-            c2, d2
-        ));
+        bytes memory output = _callPrecompiled(
+            EC_PAIRING, abi.encodePacked(x1, y1, a1, b1, c1, d1, x2, y2, a2, b2, c2, d2)
+        );
         return abi.decode(output, (uint256)) != 0;
     }
 
