@@ -170,6 +170,10 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
         } else {
             if (status.isWhitelisted(node) && staking.getNodeShare(node) > 0) {
                 _setEligible(node);
+                _pool.moveToFront(
+                    node,
+                    _shareToWeight(staking.getNodeShare(node))
+                );
             }
         }
 
