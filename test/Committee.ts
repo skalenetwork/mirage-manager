@@ -190,7 +190,7 @@ describe("Committee", () => {
     it("should check if a node in the committee or will be there soon", async () => {
         const {committee, dkg, nodesData, status} = await whitelistedAndStakedNodes();
         await committee.setCommitteeSize(5); // to save time
-        await sendHeartbeat(status, nodesData.slice(0, 15)); // to save time
+        await sendHeartbeat(status, nodesData.slice(0, 10)); // to save time
 
         await committee.select();
         await runDkg(
@@ -263,8 +263,9 @@ describe("Committee", () => {
     });
 
     it("should restart committee selection", async () => {
-        const {committee, dkg, nodesData} = await whitelistedAndStakedAndHealthyNodes();
-        await committee.setCommitteeSize(5);
+        const {committee, dkg, nodesData, status} = await whitelistedAndStakedNodes();
+        await committee.setCommitteeSize(5); // to save time
+        await sendHeartbeat(status, nodesData.slice(0, 10)); // to save time
 
         await committee.select();
         const badNextCommittee = await committee.getCommittee(await committee.getActiveCommitteeIndex() + 1n);
