@@ -199,9 +199,7 @@ describe("Committee", () => {
             (await committee.getCommittee(await committee.getActiveCommitteeIndex() + 1n)).dkg
         );
         await skipTime(await committee.transitionDelay());
-        for (const node of nodesData) {
-            await status.connect(node.wallet).alive();
-        }
+        await sendHeartbeat(status, nodesData.slice(0, 10)); // not all nodes to save time
         await committee.select();
 
         const activeCommitteeIndex = await committee.getActiveCommitteeIndex();
