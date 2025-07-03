@@ -149,11 +149,12 @@ describe("Committee", () => {
     });
 
     it("should set committee size", async () => {
-        const {committee} = await whitelistedAndStakedAndHealthyNodes();
-        const newSize = 13n;
+        const {committee, nodesData, status} = await whitelistedAndStakedNodes();
+        const newSize = 13;
 
         await committee.setCommitteeSize(newSize);
 
+        await sendHeartbeat(status, nodesData.slice(0, newSize));
         (await committee.committeeSize()).should.be.equal(newSize);
 
         await committee.select();
