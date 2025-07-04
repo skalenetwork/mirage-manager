@@ -51,7 +51,7 @@
   },
   "dependencies": {
     "@openzeppelin/contracts": "^5.3.0",
-    "@openzeppelin/contracts-upgradeable": "^5.2.0",
+    "@openzeppelin/contracts-upgradeable": "^5.3.0",
     "@openzeppelin/hardhat-upgrades": "^3.9.0",
     "@openzeppelin/upgrades-core": "^1.42.2",
     "@skalenetwork/professional-interfaces": "^0.1.0-unhealthy.2",
