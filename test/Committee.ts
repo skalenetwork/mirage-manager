@@ -73,9 +73,9 @@ describe("Committee", () => {
         expect(newVersion).to.be.eql(await committee.version());
     });
 
-    it("should not allow anyone to start committee rotation", async () => {
+    it("should not allow everyone to start committee rotation", async () => {
         const [, hacker] = await ethers.getSigners();
-        const {committee} = await whitelistedAndStakedAndHealthyNodes();
+        const {committee} = await whitelistedAndStakedNodes();
         await committee.connect(hacker).select()
             .should.be.revertedWithCustomError(committee, "AccessManagedUnauthorized");
     });
@@ -107,41 +107,41 @@ describe("Committee", () => {
         nextCommittee.commonPublicKey.y.b.should.not.be.equal(0n);
     });
 
-    it("should not allow anyone to set dkg contract", async () => {
+    it("should not allow everyone to set dkg contract", async () => {
         const [, hacker] = await ethers.getSigners();
         const {committee} = await cleanDeployment();
         await committee.connect(hacker).setDkg(hacker)
             .should.be.revertedWithCustomError(committee, "AccessManagedUnauthorized");
     });
 
-    it("should not allow anyone to set nodes contract", async () => {
+    it("should not allow everyone to set nodes contract", async () => {
         const [, hacker] = await ethers.getSigners();
         const {committee} = await cleanDeployment();
         await committee.connect(hacker).setNodes(hacker)
             .should.be.revertedWithCustomError(committee, "AccessManagedUnauthorized");
     });
 
-    it("should not allow anyone to set status contract", async () => {
+    it("should not allow everyone to set status contract", async () => {
         const [, hacker] = await ethers.getSigners();
         const {committee} = await cleanDeployment();
         await committee.connect(hacker).setStatus(hacker)
             .should.be.revertedWithCustomError(committee, "AccessManagedUnauthorized");
     });
 
-    it("should not allow anyone to call successful dkg", async () => {
+    it("should not allow everyone to call successful dkg", async () => {
         const {committee} = await cleanDeployment();
         await committee.processSuccessfulDkg(0xd2n)
             .should.be.revertedWithCustomError(committee, "SenderIsNotDkg");
     });
 
-    it("should not allow anyone to set committee", async () => {
+    it("should not allow everyone to set committee", async () => {
         const [, hacker] = await ethers.getSigners();
         const {committee} = await cleanDeployment();
         await committee.connect(hacker).setCommitteeSize(0xd2n)
             .should.be.revertedWithCustomError(committee, "AccessManagedUnauthorized");
     });
 
-    it("should not allow anyone to set transition delay", async () => {
+    it("should not allow everyone to set transition delay", async () => {
         const [, hacker] = await ethers.getSigners();
         const {committee} = await cleanDeployment();
         await committee.connect(hacker).setTransitionDelay(0xd2n)
@@ -149,11 +149,12 @@ describe("Committee", () => {
     });
 
     it("should set committee size", async () => {
-        const {committee} = await whitelistedAndStakedAndHealthyNodes();
-        const newSize = 13n;
+        const {committee, nodesData, status} = await whitelistedAndStakedNodes();
+        const newSize = 13;
 
         await committee.setCommitteeSize(newSize);
 
+        await sendHeartbeat(status, nodesData.slice(0, newSize));
         (await committee.committeeSize()).should.be.equal(newSize);
 
         await committee.select();
@@ -186,12 +187,10 @@ describe("Committee", () => {
         );
     });
 
-    it("should check if a node in the committee or will be there soon", async function () {
-        // TODO: this test does not fit standard timelimit with old nodejs
-        // remove this line after stop using nodejs 20
-        this.timeout(50000); // slightly increase timeout for older nodejs
-        const {committee, dkg, nodesData, status} = await whitelistedAndStakedAndHealthyNodes();
-        await committee.setCommitteeSize(5);
+    it("should check if a node in the committee or will be there soon", async () => {
+        const {committee, dkg, nodesData, status} = await whitelistedAndStakedNodes();
+        await committee.setCommitteeSize(5); // to save time
+        await sendHeartbeat(status, nodesData.slice(0, 10)); // to save time
 
         await committee.select();
         await runDkg(
@@ -200,9 +199,7 @@ describe("Committee", () => {
             (await committee.getCommittee(await committee.getActiveCommitteeIndex() + 1n)).dkg
         );
         await skipTime(await committee.transitionDelay());
-        for (const node of nodesData) {
-            await status.connect(node.wallet).alive();
-        }
+        await sendHeartbeat(status, nodesData.slice(0, 10)); // not all nodes to save time
         await committee.select();
 
         const activeCommitteeIndex = await committee.getActiveCommitteeIndex();
@@ -264,8 +261,9 @@ describe("Committee", () => {
     });
 
     it("should restart committee selection", async () => {
-        const {committee, dkg, nodesData} = await whitelistedAndStakedAndHealthyNodes();
-        await committee.setCommitteeSize(5);
+        const {committee, dkg, nodesData, status} = await whitelistedAndStakedNodes();
+        await committee.setCommitteeSize(5); // to save time
+        await sendHeartbeat(status, nodesData.slice(0, 10)); // to save time
 
         await committee.select();
         const badNextCommittee = await committee.getCommittee(await committee.getActiveCommitteeIndex() + 1n);

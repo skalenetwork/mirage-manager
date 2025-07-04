@@ -22,6 +22,7 @@ pragma solidity ^0.8.24;
 
 import { EnumerableMap } from "@openzeppelin/contracts/utils/structs/EnumerableMap.sol";
 import { NodeId } from "@skalenetwork/professional-interfaces/INodes.sol";
+import { Mirage } from "@skalenetwork/professional-interfaces/units.sol";
 
 import { TypedSet } from "./TypedSet.sol";
 
@@ -34,6 +35,10 @@ library TypedMap {
 
     struct AddressToNodeIdSetMap {
         mapping(address => TypedSet.NodeIdSet) inner;
+    }
+
+    struct NodeIdToMirageMap {
+        EnumerableMap.UintToUintMap inner;
     }
 
     // ----------
@@ -57,6 +62,16 @@ library TypedMap {
 
     function remove(AddressToNodeIdSetMap storage map, address key, NodeId nodeId) internal returns (bool removed) {
         removed = map.inner[key].remove(nodeId);
+    }
+
+    // NodeIdToMirageMap
+
+    function set(NodeIdToMirageMap storage map, NodeId key, Mirage value) internal returns (bool added) {
+        added = EnumerableMap.set(map.inner, NodeId.unwrap(key), Mirage.unwrap(value));
+    }
+
+    function remove(NodeIdToMirageMap storage map, NodeId key) internal returns (bool removed) {
+        removed = EnumerableMap.remove(map.inner, NodeId.unwrap(key));
     }
 
     // --------------
@@ -93,5 +108,21 @@ library TypedMap {
 
     function isSet(AddressToNodeIdSetMap storage map, address key, NodeId nodeId) internal view returns (bool result) {
         result = map.inner[key].contains(nodeId);
+    }
+
+    // NodeIdToMirageMap
+
+    function get(NodeIdToMirageMap storage map, NodeId key) internal view returns (Mirage value) {
+        return Mirage.wrap(EnumerableMap.get(map.inner, NodeId.unwrap(key)));
+    }
+
+    function contains(NodeIdToMirageMap storage map, NodeId key) internal view returns (bool result) {
+        result = EnumerableMap.contains(map.inner, NodeId.unwrap(key));
+    }
+
+    function tryGet(NodeIdToMirageMap storage map, NodeId key) internal view returns (bool success, Mirage value) {
+        uint256 rawValue;
+        (success, rawValue) = EnumerableMap.tryGet(map.inner, NodeId.unwrap(key));
+        value = Mirage.wrap(rawValue);
     }
 }

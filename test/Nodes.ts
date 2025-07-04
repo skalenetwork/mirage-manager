@@ -1,6 +1,6 @@
 import { ethers } from "hardhat";
 import { expect } from "chai";
-import { cleanDeployment, whitelistedAndStakedAndHealthyNodes } from "./tools/fixtures";
+import { cleanDeployment, sendHeartbeat, whitelistedAndStakedNodes } from "./tools/fixtures";
 import { Nodes } from "../typechain-types";
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
@@ -377,12 +377,10 @@ describe("Nodes", function () {
         .to.be.revertedWithCustomError(nodesContract, "PassiveNodeAlreadyExistsForAddress");
     });
 
-    it("should should not allow changing nodes data if node in current or next committee", async function () {
-        // TODO: this test does not fit standard timelimit with old nodejs
-        // remove this line after stop using nodejs 20
-        this.timeout(50000); // slightly increase timeout for older nodejs
-        const {committee, nodesData, nodes} = await whitelistedAndStakedAndHealthyNodes();
+    it("should should not allow changing nodes data if node in current or next committee", async () => {
+        const {committee, nodesData, nodes, status} = await whitelistedAndStakedNodes();
         await committee.setCommitteeSize(5); // to save resources
+        await sendHeartbeat(status, nodesData.slice(0, 10)); // to save time
         await committee.select();
 
         for(const node of nodesData) {

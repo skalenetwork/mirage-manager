@@ -130,6 +130,17 @@ library SplayTree {
         revert NotFound();
     }
 
+    function findLast(mapping(NodeId => Node) storage nodes, NodeId root) internal returns (NodeId newRoot) {
+        NodeId node = root;
+        while (node != SplayTree.NULL) {
+            if (nodes[node].right == SplayTree.NULL) {
+                return splay(nodes, node);
+            }
+            node = nodes[node].right;
+        }
+        revert NotFound();
+    }
+
     function splay(mapping(NodeId => Node) storage nodes, NodeId id) internal returns (NodeId newRoot) {
         require(id != NULL, SplayOnNull());
         if (nodes[id].parent != NULL) {

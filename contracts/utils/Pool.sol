@@ -104,6 +104,17 @@ library PoolLibrary {
         }
     }
 
+    function getOldestIsh(Pool storage pool) internal returns (NodeId oldest) {
+        if (pool.incomingNodes.length() > 0) {
+            return pool.incomingNodes.at(0);
+        }
+        if (pool.root == SplayTree.NULL) {
+            return SplayTree.NULL;
+        }
+        pool.root = pool.tree.findLast(pool.root);
+        return pool.root;
+    }
+
     function contains(Pool storage pool, NodeId node) internal view returns (bool present) {
         return pool.presentNodes.contains(node) || pool.incomingNodes.contains(node);
     }
