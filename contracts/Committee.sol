@@ -101,7 +101,7 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
     }
 
     function select() external override restricted {
-        IRandom.RandomGenerator memory generator = Random.create(_getSafeRandom());
+        IRandom.RandomGenerator memory generator = Random.create(_safeGetRandom());
         NodeId[] memory members = _pool.sample(committeeSize, generator);
         Committee storage committee = _createSuccessorCommittee(members);
         committee.dkg = dkg.generate(committee.nodes);
@@ -110,7 +110,7 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
     function setRNG(address newRNG) external override restricted {
         require(newRNG != address(0), InvalidSkaleRngContract(newRNG));
         skaleRng = newRNG;
-        require(_getSafeRandom() > 0, InvalidSkaleRngContract(newRNG));
+        require(_safeGetRandom() > 0, InvalidSkaleRngContract(newRNG));
         emit SkaleRNGEnabled(newRNG);
     }
 
@@ -325,7 +325,7 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
         return !(CommitteeIndex.unwrap(lastCommitteeIndex) < CommitteeIndex.unwrap(index));
     }
 
-    function _getSafeRandom() private view returns (uint256 randomNumber) {
+    function _safeGetRandom() private view returns (uint256 randomNumber) {
         if (skaleRng == address(0)) {
             return block.prevrandao;
         }
