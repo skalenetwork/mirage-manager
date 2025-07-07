@@ -114,14 +114,14 @@ describe("Committee", () => {
             .should.be.revertedWithCustomError(committee, "AccessManagedUnauthorized");
     });
 
-    it("should not allow anyone to set rng contract", async () => {
+    it("should not allow everyone to set rng contract", async () => {
         const [, hacker] = await ethers.getSigners();
         const {committee} = await cleanDeployment();
         await committee.connect(hacker).setRNG(hacker)
             .should.be.revertedWithCustomError(committee, "AccessManagedUnauthorized");
     });
 
-    it("should not allow anyone to set nodes contract", async () => {
+    it("should not allow everyone to set nodes contract", async () => {
         const [, hacker] = await ethers.getSigners();
         const {committee} = await cleanDeployment();
         await committee.connect(hacker).setNodes(hacker)
