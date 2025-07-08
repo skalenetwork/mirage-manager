@@ -103,8 +103,8 @@ async function fetchDkgCommonPublicKey() {
     const skaleManagerInstance = await getSkaleManagerInstance();
     const dkg = await skaleManagerInstance.getContract("KeyStorage") as unknown as IKeyStorage;
     const commonPublicKey = await dkg.getCommonPublicKey(mirageChainHash);
-        return commonPublicKey;
-    }
+    return commonPublicKey;
+}
 
 export const deploy = async (nodeList?: INodes.NodeStruct[], commonPublicKey?: IDkg.G2PointStruct): Promise<DeployedContracts> => {
     const [deployer] = await ethers.getSigners();
