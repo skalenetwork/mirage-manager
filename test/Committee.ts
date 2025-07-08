@@ -156,7 +156,7 @@ describe("Committee", () => {
     });
 
     it("should enable and disable rng contract", async () => {
-        const {committee} = await whitelistedAndStakedAndHealthyNodes();
+        const {committee} = await cleanDeployment();
         const rng = await ethers.deployContract("MockRNG");
         await rng.waitForDeployment();
         const [, hacker] = await ethers.getSigners();
