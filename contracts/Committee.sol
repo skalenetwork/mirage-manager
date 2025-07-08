@@ -77,6 +77,7 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
         CommitteeIndex index
     );
     error InvalidSkaleRngContract(address rng);
+    error NodeNotActive(NodeId node);
 
     modifier onlyDkg() {
         require(msg.sender == address(dkg), SenderIsNotDkg(msg.sender));
@@ -297,6 +298,12 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
         NodeId[] memory nodeIds
     ) private {
         committeeSize = nodeIds.length;
+
+        for (uint256 i = 0; i < nodeIds.length; ++i) {
+            if (!nodes.activeNodeExists(nodeIds[i])) {
+                revert NodeNotActive(nodeIds[i]);
+            }
+        }
         Committee storage initialCommittee =
             _createCommittee(nodeIds, CommitteeIndex.wrap(0));
         initialCommittee.commonPublicKey = commonPublicKey;
