@@ -109,19 +109,18 @@ export const deploy = async (nodeList?: INodes.NodeStruct[], commonPublicKey?: I
     const [deployer] = await ethers.getSigners();
     const deployedContracts: DeployedContracts = {} as DeployedContracts;
     nodeList = nodeList || await fetchNodes();
-    const nodeIds = nodeList.map(node => BigInt(node.id));
     commonPublicKey = commonPublicKey || await fetchDkgCommonPublicKey();
 
     deployedContracts.MirageAccessManager = await deployMirageAccessManager(deployer);
     deployedContracts.Nodes = await deployNodes(
         deployedContracts.MirageAccessManager,
-        nodeList.sort((a, b) => Number(a.id) - Number(b.id))
+        [...nodeList].sort((a, b) => Number(a.id) - Number(b.id))
     );
     deployedContracts.Committee = await deployCommittee(
         deployedContracts.MirageAccessManager,
         deployedContracts.Nodes,
         commonPublicKey,
-        nodeIds
+        nodeList.map(node => BigInt(node.id))
     );
     deployedContracts.DKG = await deployDkg(
         deployedContracts.MirageAccessManager,
