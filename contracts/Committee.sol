@@ -299,7 +299,7 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
     ) private {
         committeeSize = nodeIds.length;
 
-        for (uint256 i = 0; i < nodeIds.length; ++i) {
+        for (uint256 i = 0; i < committeeSize; ++i) {
             if (!nodes.activeNodeExists(nodeIds[i])) {
                 revert NodeNotActive(nodeIds[i]);
             }
