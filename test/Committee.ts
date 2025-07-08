@@ -172,14 +172,17 @@ describe("Committee", () => {
     });
 
    it("should select committee with custom rng", async function () {
-        const {committee} = await whitelistedAndStakedAndHealthyNodes();
+        const {committee, nodesData, status} = await whitelistedAndStakedNodes();
+        await committee.setCommitteeSize(5);
+        for (const node of nodesData.slice(0, 5)) {
+            await status.connect(node.wallet).alive();
+        }
         const activeCommitteeIndex = await committee.getActiveCommitteeIndex();
         const nextCommitteeIndex = activeCommitteeIndex + 1n;
         const rng = await ethers.deployContract("MockRNG");
         await rng.waitForDeployment();
         await committee.setRNG(rng);
         expect(await committee.skaleRng()).to.equal(await rng.getAddress());
-
         await committee.select();
 
         const nextCommittee = await committee.getCommittee(nextCommitteeIndex);
