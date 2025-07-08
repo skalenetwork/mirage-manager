@@ -69,12 +69,11 @@ async function fetchNodes() {
     const nodes = await skaleManagerInstance.getContract("Nodes") as unknown as INodesInSkaleManager;
     const schainsInternal = await skaleManagerInstance.getContract("SchainsInternal") as unknown as ISchainsInternal;
     const nodeIds = await schainsInternal.getNodesInGroup(mirageChainHash);
-    const nodeIdsSorted = nodeIds.map(Number).sort((a, b) => a - b);
-    if (nodeIdsSorted.includes(0)) {
+    if (nodeIds.includes(0n)) {
         throw new Error("Node IDs cannot contain 0");
     }
     const nodeList: INodes.NodeStruct[] = [];
-    for (const nodeId of nodeIdsSorted) {
+    for (const nodeId of nodeIds) {
         const [ip, domainName ,nodeAddress, port, publicKey] = await Promise.all([
             nodes.getNodeIP(nodeId),
             nodes.getNodeDomainName(nodeId),
@@ -91,7 +90,7 @@ async function fetchNodes() {
             publicKey
         });
     }
-    return { nodeList, nodeIds};
+    return nodeList;
 }
 
 async function fetchDkgCommonPublicKey() {
@@ -109,18 +108,14 @@ async function fetchDkgCommonPublicKey() {
 export const deploy = async (nodeList?: INodes.NodeStruct[], commonPublicKey?: IDkg.G2PointStruct): Promise<DeployedContracts> => {
     const [deployer] = await ethers.getSigners();
     const deployedContracts: DeployedContracts = {} as DeployedContracts;
-    let nodeIds: bigint[];
-    if (nodeList === undefined) {
-        ({ nodeList, nodeIds } = await fetchNodes());
-    } else {
-        nodeIds = nodeList.map(node => BigInt(node.id));
-    }
+    nodeList = nodeList || await fetchNodes();
+    const nodeIds = nodeList.map(node => BigInt(node.id));
     commonPublicKey = commonPublicKey || await fetchDkgCommonPublicKey();
 
     deployedContracts.MirageAccessManager = await deployMirageAccessManager(deployer);
     deployedContracts.Nodes = await deployNodes(
         deployedContracts.MirageAccessManager,
-        nodeList
+        nodeList.sort((a, b) => Number(a.id) - Number(b.id))
     );
     deployedContracts.Committee = await deployCommittee(
         deployedContracts.MirageAccessManager,
