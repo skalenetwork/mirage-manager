@@ -109,11 +109,9 @@ async function fetchDkgCommonPublicKey() {
 export const deploy = async (nodeList?: INodes.NodeStruct[], commonPublicKey?: IDkg.G2PointStruct): Promise<DeployedContracts> => {
     const [deployer] = await ethers.getSigners();
     const deployedContracts: DeployedContracts = {} as DeployedContracts;
-    const { nodeList: fetchedNodeList, nodeIds: fetchedNodeIds } = await fetchNodes();
     let nodeIds: bigint[];
     if (nodeList === undefined) {
-        nodeList = fetchedNodeList;
-        nodeIds = fetchedNodeIds;
+        ({ nodeList, nodeIds } = await fetchNodes());
     } else {
         nodeIds = nodeList.map(node => BigInt(node.id));
     }
