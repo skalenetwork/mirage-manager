@@ -48,6 +48,7 @@ contract DKG is AccessManagedUpgradeable, IDkg {
         Status status;
         NodeId[] nodes;
         G2Point publicKey;
+        uint256 startingBlockNumber;
         uint256 numberOfBroadcasted;
         bytes32[] hashedData;
         uint256 numberOfCompleted;
@@ -198,6 +199,7 @@ contract DKG is AccessManagedUpgradeable, IDkg {
             status: Status.BROADCAST,
             nodes: participants,
             publicKey: G2Operations.getG2Zero(),
+            startingBlockNumber: block.number,
             numberOfBroadcasted: 0,
             hashedData: new bytes32[](participants.length),
             numberOfCompleted: 0,
