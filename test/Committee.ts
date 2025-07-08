@@ -174,9 +174,7 @@ describe("Committee", () => {
    it("should select committee with custom rng", async function () {
         const {committee, nodesData, status} = await whitelistedAndStakedNodes();
         await committee.setCommitteeSize(5);
-        for (const node of nodesData.slice(0, 5)) {
-            await status.connect(node.wallet).alive();
-        }
+        await sendHeartbeat(status, nodesData.slice(0, 5));
         const activeCommitteeIndex = await committee.getActiveCommitteeIndex();
         const nextCommitteeIndex = activeCommitteeIndex + 1n;
         const rng = await ethers.deployContract("MockRNG");
