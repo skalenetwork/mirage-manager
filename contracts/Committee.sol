@@ -37,6 +37,7 @@ import { Duration, IStatus } from "@skalenetwork/professional-interfaces/IStatus
 import { TypedSet } from "./structs/typed/TypedSet.sol";
 import { G2Operations } from "./utils/fieldOperations/G2Operations.sol";
 import { PoolLibrary } from "./utils/Pool.sol";
+import { Precompiled } from "./utils/Precompiled.sol";
 import { IRandom, Random } from "./utils/Random.sol";
 
 
@@ -53,6 +54,7 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
     INodes public nodes;
     IStatus public status;
     IStaking public staking;
+    address public skaleRng;
 
     mapping (CommitteeIndex index => Committee committee) public committees;
     mapping (CommitteeIndex index => CommitteeAuxiliary committee) private _committeesAuxiliary;
@@ -65,6 +67,8 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
 
     event NodeBecomesEligible(NodeId indexed node);
     event NodeLosesEligibility(NodeId indexed node);
+    event SkaleRNGEnabled(address indexed rng);
+    event SkaleRNGDisabled();
 
     error SenderIsNotDkg(
         address sender
@@ -72,6 +76,7 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
     error CommitteeNotFound(
         CommitteeIndex index
     );
+    error InvalidSkaleRngContract(address rng);
 
     modifier onlyDkg() {
         require(msg.sender == address(dkg), SenderIsNotDkg(msg.sender));
@@ -92,15 +97,27 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
         committeeSize = 22;
         transitionDelay = Duration.wrap(1 days);
         nodes = nodesAddress;
-
+        skaleRng = address(0);
         _initializeCommittee(commonPublicKey, nodeIds);
     }
 
     function select() external override restricted {
-        IRandom.RandomGenerator memory generator = Random.create(uint256(blockhash(block.number - 1)));
+        IRandom.RandomGenerator memory generator = Random.create(_safeGetRandom());
         NodeId[] memory members = _pool.sample(committeeSize, generator);
         Committee storage committee = _createSuccessorCommittee(members);
         committee.dkg = dkg.generate(committee.nodes);
+    }
+
+    function setRNG(address newRNG) external override restricted {
+        require(newRNG != address(0), InvalidSkaleRngContract(newRNG));
+        skaleRng = newRNG;
+        require(_safeGetRandom() > 0, InvalidSkaleRngContract(newRNG));
+        emit SkaleRNGEnabled(newRNG);
+    }
+
+    function disableRNG() external override restricted {
+        skaleRng = address(0);
+        emit SkaleRNGDisabled();
     }
 
     function setDkg(IDkg dkgAddress) external override restricted {
@@ -307,6 +324,13 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
 
     function _committeeExists(CommitteeIndex index) private view returns (bool exists) {
         return !(CommitteeIndex.unwrap(lastCommitteeIndex) < CommitteeIndex.unwrap(index));
+    }
+
+    function _safeGetRandom() private view returns (uint256 randomNumber) {
+        if (skaleRng == address(0)) {
+            return block.prevrandao;
+        }
+        return Precompiled.getRandomNumber(skaleRng);
     }
 
     function _next(CommitteeIndex index) private pure returns (CommitteeIndex nextIndex) {
