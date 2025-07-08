@@ -81,7 +81,8 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
     function initialize(
         address initialAuthority,
         INodes nodesAddress,
-        IDkg.G2Point memory commonPublicKey
+        IDkg.G2Point memory commonPublicKey,
+        NodeId[] memory nodeIds
     )
         public
         initializer
@@ -92,7 +93,7 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
         transitionDelay = Duration.wrap(1 days);
         nodes = nodesAddress;
 
-        _initializeCommittee(commonPublicKey);
+        _initializeCommittee(commonPublicKey, nodeIds);
     }
 
     function select() external override restricted {
@@ -275,9 +276,9 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
     }
 
     function _initializeCommittee(
-        IDkg.G2Point memory commonPublicKey
+        IDkg.G2Point memory commonPublicKey,
+        NodeId[] memory nodeIds
     ) private {
-        NodeId[] memory nodeIds = nodes.getActiveNodeIds();
         committeeSize = nodeIds.length;
         Committee storage initialCommittee =
             _createCommittee(nodeIds, CommitteeIndex.wrap(0));
