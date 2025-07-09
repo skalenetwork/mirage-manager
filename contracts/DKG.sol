@@ -48,6 +48,7 @@ contract DKG is AccessManagedUpgradeable, IDkg {
         Status status;
         NodeId[] nodes;
         G2Point publicKey;
+        uint256 startingBlockNumber;
         uint256 numberOfBroadcasted;
         bytes32[] hashedData;
         uint256 numberOfCompleted;
@@ -95,11 +96,17 @@ contract DKG is AccessManagedUpgradeable, IDkg {
     error NodeIsAlreadyAlright(NodeId node);
 
     modifier onlyBroadcastingDkg(DkgId dkg) {
+        // the modifier checks that the DKG is only in BROADCAST stage
+        // disable the warning because of false positive
+        // slither-disable-next-line incorrect-equality
         require(rounds[dkg].status == Status.BROADCAST, DkgIsNotInBroadcastStage(dkg));
         _;
     }
 
     modifier onlyAlrightDkg(DkgId dkg) {
+        // the modifier checks that the DKG is only in ALRIGHT stage
+        // disable the warning because of false positive
+        // slither-disable-next-line incorrect-equality
         require(rounds[dkg].status == Status.ALRIGHT, DkgIsNotInAlrightStage(dkg));
         _;
     }
@@ -127,7 +134,7 @@ contract DKG is AccessManagedUpgradeable, IDkg {
         round.completed[index] = true;
         ++round.numberOfCompleted;
         emit AllDataReceived(dkg, node, index);
-        if (round.numberOfCompleted == n) {
+        if (round.numberOfCompleted + 1 > n) {
             _processSuccessfulDkg(dkg);
         }
     }
@@ -139,7 +146,13 @@ contract DKG is AccessManagedUpgradeable, IDkg {
     ) external onlyBroadcastingDkg(dkg) override {
         uint256 n = rounds[dkg].nodes.length;
         uint256 t = _getT(n);
+        // the verificationVector length should be strictly be equal t
+        // disable the warning because of false positive
+        // slither-disable-next-line incorrect-equality
         require(verificationVector.length == t, IncorrectVerificationsVectorQuantity(verificationVector.length, t));
+        // the secretKeyContribution length should be strictly be equal n
+        // disable the warning because of false positive
+        // slither-disable-next-line incorrect-equality
         require(
             secretKeyContribution.length == n,
             IncorrectSecretKeyContributionQuantity(secretKeyContribution.length, n)
@@ -150,7 +163,7 @@ contract DKG is AccessManagedUpgradeable, IDkg {
         require(!_isNodeBroadcasted(dkg, index), NodeAlreadyBroadcasted(node));
 
         ++round.numberOfBroadcasted;
-        if ( round.numberOfBroadcasted == n ) {
+        if ( round.numberOfBroadcasted + 1 > n ) {
             round.status = Status.ALRIGHT;
         }
         round.hashedData[index] = _hashData(secretKeyContribution, verificationVector);
@@ -178,6 +191,9 @@ contract DKG is AccessManagedUpgradeable, IDkg {
     }
 
     function getPublicKey(DkgId dkg) external view override returns (G2Point memory publicKey) {
+        // the should return the public key only if the DKG is successful
+        // disable the warning because of false positive
+        // slither-disable-next-line incorrect-equality
         require(rounds[dkg].status == Status.SUCCESS, DkgIsNotSuccessful(dkg));
         return rounds[dkg].publicKey;
     }
@@ -198,6 +214,7 @@ contract DKG is AccessManagedUpgradeable, IDkg {
             status: Status.BROADCAST,
             nodes: participants,
             publicKey: G2Operations.getG2Zero(),
+            startingBlockNumber: block.number,
             numberOfBroadcasted: 0,
             hashedData: new bytes32[](participants.length),
             numberOfCompleted: 0,

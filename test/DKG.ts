@@ -1,4 +1,4 @@
-import chai, { expect } from "chai";
+import chai, { assert, expect } from "chai";
 import { NodeData, registeredOnlyNodes } from "./tools/fixtures";
 import { loadFixture } from "@nomicfoundation/hardhat-network-helpers";
 import { DKG } from "../typechain-types";
@@ -76,9 +76,12 @@ describe("DKG", () => {
 
         it("should start DKG", async () => {
             const { dkg } = await registeredOnlyNodes();
-            await dkg.generate(committee);
+            const response = await dkg.generate(committee);
+            const receipt = await response.wait();
+            assert(receipt);
 
             (await dkg.rounds(1)).status.should.be.equal(DkgStatus.BROADCAST);
+            (await dkg.rounds(1)).startingBlockNumber.should.be.equal(receipt.blockNumber);
         });
 
         describe("generation is started", async () => {
