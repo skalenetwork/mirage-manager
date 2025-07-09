@@ -77,6 +77,7 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
         CommitteeIndex index
     );
     error InvalidSkaleRngContract(address rng);
+    error NodeNotActive(NodeId node);
 
     modifier onlyDkg() {
         require(msg.sender == address(dkg), SenderIsNotDkg(msg.sender));
@@ -86,7 +87,8 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
     function initialize(
         address initialAuthority,
         INodes nodesAddress,
-        IDkg.G2Point memory commonPublicKey
+        IDkg.G2Point memory commonPublicKey,
+        NodeId[] memory nodeIds
     )
         public
         initializer
@@ -97,7 +99,7 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
         transitionDelay = Duration.wrap(1 days);
         nodes = nodesAddress;
         skaleRng = address(0);
-        _initializeCommittee(commonPublicKey);
+        _initializeCommittee(commonPublicKey, nodeIds);
     }
 
     function select() external override restricted {
@@ -292,10 +294,17 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
     }
 
     function _initializeCommittee(
-        IDkg.G2Point memory commonPublicKey
+        IDkg.G2Point memory commonPublicKey,
+        NodeId[] memory nodeIds
     ) private {
-        NodeId[] memory nodeIds = nodes.getActiveNodeIds();
         committeeSize = nodeIds.length;
+        for (uint256 i = 0; i < committeeSize; ++i) {
+            // We know that number of nodes is reasonable small
+            // and this loop is executed only once on initialization
+            // so we disable the check to not over complicate the Node's code
+            // slither-disable-next-line calls-loop
+            require(nodes.activeNodeExists(nodeIds[i]), NodeNotActive(nodeIds[i]));
+        }
         Committee storage initialCommittee =
             _createCommittee(nodeIds, CommitteeIndex.wrap(0));
         initialCommittee.commonPublicKey = commonPublicKey;

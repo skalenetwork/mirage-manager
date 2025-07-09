@@ -69,12 +69,11 @@ async function fetchNodes() {
     const nodes = await skaleManagerInstance.getContract("Nodes") as unknown as INodesInSkaleManager;
     const schainsInternal = await skaleManagerInstance.getContract("SchainsInternal") as unknown as ISchainsInternal;
     const nodeIds = await schainsInternal.getNodesInGroup(mirageChainHash);
-    const nodeIdsSorted = nodeIds.map(Number).sort((a, b) => a - b);
-    if (nodeIdsSorted.includes(0)) {
+    if (nodeIds.includes(0n)) {
         throw new Error("Node IDs cannot contain 0");
     }
     const nodeList: INodes.NodeStruct[] = [];
-    for (const nodeId of nodeIdsSorted) {
+    for (const nodeId of nodeIds) {
         const [ip, domainName ,nodeAddress, port, publicKey] = await Promise.all([
             nodes.getNodeIP(nodeId),
             nodes.getNodeDomainName(nodeId),
@@ -110,17 +109,18 @@ export const deploy = async (nodeList?: INodes.NodeStruct[], commonPublicKey?: I
     const [deployer] = await ethers.getSigners();
     const deployedContracts: DeployedContracts = {} as DeployedContracts;
     nodeList = nodeList || await fetchNodes();
-    commonPublicKey = commonPublicKey ||  await fetchDkgCommonPublicKey();
+    commonPublicKey = commonPublicKey || await fetchDkgCommonPublicKey();
 
     deployedContracts.MirageAccessManager = await deployMirageAccessManager(deployer);
     deployedContracts.Nodes = await deployNodes(
         deployedContracts.MirageAccessManager,
-        nodeList
+        [...nodeList].sort((a, b) => Number(a.id) - Number(b.id))
     );
     deployedContracts.Committee = await deployCommittee(
         deployedContracts.MirageAccessManager,
         deployedContracts.Nodes,
-        commonPublicKey
+        commonPublicKey,
+        nodeList.map(node => BigInt(node.id))
     );
     deployedContracts.DKG = await deployDkg(
         deployedContracts.MirageAccessManager,
@@ -178,14 +178,16 @@ const deployMirageAccessManager = async (
 const deployCommittee = async (
     authority: MirageAccessManager,
     nodes: Nodes,
-    commonPublicKey: IDkg.G2PointStruct
+    commonPublicKey: IDkg.G2PointStruct,
+    nodeIds: bigint[]
 ): Promise<Committee> => {
     return await deployContract(
         "Committee",
         [
             await ethers.resolveAddress(authority),
             await ethers.resolveAddress(nodes),
-            commonPublicKey
+            commonPublicKey,
+            nodeIds
         ]
     ) as Committee;
 }
