@@ -298,7 +298,7 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
         NodeId[] memory nodeIds
     ) private {
         committeeSize = nodeIds.length;
-        for (uint256 i = 0; i < nodeIds.length; ++i) {
+        for (uint256 i = 0; i < committeeSize; ++i) {
             // slither-disable-next-line calls-inside-a-loop
             require(nodes.activeNodeExists(nodeIds[i]), NodeNotActive(nodeIds[i]));
         }
