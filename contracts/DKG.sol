@@ -128,7 +128,7 @@ contract DKG is AccessManagedUpgradeable, IDkg {
         round.completed[index] = true;
         ++round.numberOfCompleted;
         emit AllDataReceived(dkg, node, index);
-        if (round.numberOfCompleted == n) {
+        if (round.numberOfCompleted + 1 > n) {
             _processSuccessfulDkg(dkg);
         }
     }
@@ -140,7 +140,13 @@ contract DKG is AccessManagedUpgradeable, IDkg {
     ) external onlyBroadcastingDkg(dkg) override {
         uint256 n = rounds[dkg].nodes.length;
         uint256 t = _getT(n);
+        // the verificationVector length should be strictly be equal t
+        // disable the warning because of false positive
+        // slither-disable-next-line incorrect-equality
         require(verificationVector.length == t, IncorrectVerificationsVectorQuantity(verificationVector.length, t));
+        // the secretKeyContribution length should be strictly be equal n
+        // disable the warning because of false positive
+        // slither-disable-next-line incorrect-equality
         require(
             secretKeyContribution.length == n,
             IncorrectSecretKeyContributionQuantity(secretKeyContribution.length, n)
