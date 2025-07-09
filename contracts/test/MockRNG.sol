@@ -21,15 +21,19 @@
 
 pragma solidity ^0.8.24;
 interface IMockRNG {
-    receive() external payable;
-    fallback(bytes calldata) external payable returns (bytes memory result);
+    fallback(bytes calldata) external returns (bytes memory result);
     function burnEth() external;
 }
 contract MockRNG is IMockRNG{
 
-    receive() external payable override {}
-
-    fallback(bytes calldata) external payable override returns (bytes memory result) {
+    // If make fallback function payable
+    // compiler throws a warning to include a receive function.
+    // A receive function can't be defined
+    // because it will be called even when no ether is sent
+    // and the contract can't mock up the behavior of a predeployed contract
+    // because receive function can't return any value.
+    // solhint-disable-next-line payable-fallback
+    fallback(bytes calldata) external override returns (bytes memory result) {
         return abi.encode(block.timestamp);
     }
 
