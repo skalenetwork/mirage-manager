@@ -68,7 +68,7 @@ async function fetchNodes() {
     const skaleManagerInstance = await getSkaleManagerInstance();
     const nodes = await skaleManagerInstance.getContract("Nodes") as unknown as INodesInSkaleManager;
     const schainsInternal = await skaleManagerInstance.getContract("SchainsInternal") as unknown as ISchainsInternal;
-    const nodeIds = await schainsInternal.getNodesInGroup(mirageChainHash);
+    const nodeIds = await schainsInternal.getNodesInGroup(fairChainHash);
     if (nodeIds.includes(0n)) {
         throw new Error("Node IDs cannot contain 0");
     }

@@ -21,7 +21,7 @@
 
 pragma solidity ^0.8.24;
 
-import { IRandom } from "@skalenetwork/fair-interfaces/IRandom.sol";
+import { IRandom } from "@skalenetwork/fair-manager-interfaces/IRandom.sol";
 
 /**
  * @title Random

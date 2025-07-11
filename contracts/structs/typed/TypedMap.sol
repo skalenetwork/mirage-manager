@@ -21,8 +21,8 @@
 pragma solidity ^0.8.24;
 
 import { EnumerableMap } from "@openzeppelin/contracts/utils/structs/EnumerableMap.sol";
-import { NodeId } from "@skalenetwork/fair-interfaces/INodes.sol";
-import { Mirage } from "@skalenetwork/professional-interfaces/units.sol";
+import { NodeId } from "@skalenetwork/fair-manager-interfaces/INodes.sol";
+import { Fair } from "@skalenetwork/fair-manager-interfaces/units.sol";
 
 import { TypedSet } from "./TypedSet.sol";
 
@@ -37,7 +37,7 @@ library TypedMap {
         mapping(address => TypedSet.NodeIdSet) inner;
     }
 
-    struct NodeIdToMirageMap {
+    struct NodeIdToFairMap {
         EnumerableMap.UintToUintMap inner;
     }
 
@@ -64,13 +64,13 @@ library TypedMap {
         removed = map.inner[key].remove(nodeId);
     }
 
-    // NodeIdToMirageMap
+    // NodeIdToFairMap
 
-    function set(NodeIdToMirageMap storage map, NodeId key, Mirage value) internal returns (bool added) {
-        added = EnumerableMap.set(map.inner, NodeId.unwrap(key), Mirage.unwrap(value));
+    function set(NodeIdToFairMap storage map, NodeId key, Fair value) internal returns (bool added) {
+        added = EnumerableMap.set(map.inner, NodeId.unwrap(key), Fair.unwrap(value));
     }
 
-    function remove(NodeIdToMirageMap storage map, NodeId key) internal returns (bool removed) {
+    function remove(NodeIdToFairMap storage map, NodeId key) internal returns (bool removed) {
         removed = EnumerableMap.remove(map.inner, NodeId.unwrap(key));
     }
 
@@ -110,19 +110,19 @@ library TypedMap {
         result = map.inner[key].contains(nodeId);
     }
 
-    // NodeIdToMirageMap
+    // NodeIdToFairMap
 
-    function get(NodeIdToMirageMap storage map, NodeId key) internal view returns (Mirage value) {
-        return Mirage.wrap(EnumerableMap.get(map.inner, NodeId.unwrap(key)));
+    function get(NodeIdToFairMap storage map, NodeId key) internal view returns (Fair value) {
+        return Fair.wrap(EnumerableMap.get(map.inner, NodeId.unwrap(key)));
     }
 
-    function contains(NodeIdToMirageMap storage map, NodeId key) internal view returns (bool result) {
+    function contains(NodeIdToFairMap storage map, NodeId key) internal view returns (bool result) {
         result = EnumerableMap.contains(map.inner, NodeId.unwrap(key));
     }
 
-    function tryGet(NodeIdToMirageMap storage map, NodeId key) internal view returns (bool success, Mirage value) {
+    function tryGet(NodeIdToFairMap storage map, NodeId key) internal view returns (bool success, Fair value) {
         uint256 rawValue;
         (success, rawValue) = EnumerableMap.tryGet(map.inner, NodeId.unwrap(key));
-        value = Mirage.wrap(rawValue);
+        value = Fair.wrap(rawValue);
     }
 }

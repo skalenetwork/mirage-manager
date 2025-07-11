@@ -26,9 +26,9 @@ pragma solidity ^0.8.24;
 import {
     AccessManagedUpgradeable
 } from "@openzeppelin/contracts-upgradeable/access/manager/AccessManagedUpgradeable.sol";
-import {ICommittee} from "@skalenetwork/fair-interfaces/ICommittee.sol";
-import {DkgId, IDkg} from "@skalenetwork/fair-interfaces/IDkg.sol";
-import {INodes, NodeId} from "@skalenetwork/fair-interfaces/INodes.sol";
+import {ICommittee} from "@skalenetwork/fair-manager-interfaces/ICommittee.sol";
+import {DkgId, IDkg} from "@skalenetwork/fair-manager-interfaces/IDkg.sol";
+import {INodes, NodeId} from "@skalenetwork/fair-manager-interfaces/INodes.sol";
 
 import {G2Operations} from "./utils/fieldOperations/G2Operations.sol";
 

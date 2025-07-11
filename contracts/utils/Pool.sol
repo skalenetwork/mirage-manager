@@ -21,8 +21,8 @@
 
 pragma solidity ^0.8.24;
 
-import { NodeId } from "@skalenetwork/fair-interfaces/INodes.sol";
-import { IStatus } from "@skalenetwork/fair-interfaces/IStatus.sol";
+import { NodeId } from "@skalenetwork/fair-manager-interfaces/INodes.sol";
+import { IStatus } from "@skalenetwork/fair-manager-interfaces/IStatus.sol";
 import { SplayTree } from "../structs/SplayTree.sol";
 import { TypedSet } from "../structs/typed/TypedSet.sol";
 import { IRandom, Random } from "./Random.sol";

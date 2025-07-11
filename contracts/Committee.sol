@@ -28,11 +28,11 @@ import {
     CommitteeIndex,
     ICommittee,
     Timestamp
-} from "@skalenetwork/fair-interfaces/ICommittee.sol";
-import { DkgId, IDkg } from "@skalenetwork/fair-interfaces/IDkg.sol";
-import { INodes, NodeId } from "@skalenetwork/fair-interfaces/INodes.sol";
-import { IStaking } from "@skalenetwork/fair-interfaces/IStaking.sol";
-import { Duration, IStatus } from "@skalenetwork/fair-interfaces/IStatus.sol";
+} from "@skalenetwork/fair-manager-interfaces/ICommittee.sol";
+import { DkgId, IDkg } from "@skalenetwork/fair-manager-interfaces/IDkg.sol";
+import { INodes, NodeId } from "@skalenetwork/fair-manager-interfaces/INodes.sol";
+import { IStaking } from "@skalenetwork/fair-manager-interfaces/IStaking.sol";
+import { Duration, IStatus } from "@skalenetwork/fair-manager-interfaces/IStatus.sol";
 
 import { TypedSet } from "./structs/typed/TypedSet.sol";
 import { G2Operations } from "./utils/fieldOperations/G2Operations.sol";

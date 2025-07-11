@@ -27,9 +27,9 @@ import {
 import {
     Address
 } from "@openzeppelin/contracts/utils/Address.sol";
-import {ICommittee} from "@skalenetwork/fair-interfaces/ICommittee.sol";
-import {INodes, NodeId} from "@skalenetwork/fair-interfaces/INodes.sol";
-import {IStaking} from "@skalenetwork/fair-interfaces/IStaking.sol";
+import {ICommittee} from "@skalenetwork/fair-manager-interfaces/ICommittee.sol";
+import {INodes, NodeId} from "@skalenetwork/fair-manager-interfaces/INodes.sol";
+import {IStaking} from "@skalenetwork/fair-manager-interfaces/IStaking.sol";
 
 import {Nodes} from "./Nodes.sol";
 import {TypedMap} from "./structs/typed/TypedMap.sol";
@@ -41,15 +41,15 @@ contract Staking is AccessManagedUpgradeable, IStaking {
     using Address for address payable;
     using FundLibrary for FundLibrary.Fund;
     using TypedSet for TypedSet.NodeIdSet;
-    using TypedMap for TypedMap.NodeIdToMirageMap;
+    using TypedMap for TypedMap.NodeIdToFairMap;
 
     ICommittee public committee;
     INodes public nodes;
-    Mirage public totalDisabled;
+    Fair public totalDisabled;
     FundLibrary.Fund private _rootFund;
     mapping (NodeId node => FundLibrary.Fund nodeFund) private _nodesFunds;
     mapping (address holder => TypedSet.NodeIdSet nodeIds) private _stakedNodes;
-    TypedMap.NodeIdToMirageMap private _disabledNodesBalances;
+    TypedMap.NodeIdToFairMap private _disabledNodesBalances;
 
     event FeeClaimed(NodeId indexed node, address indexed to, Fair indexed amount);
     event Retrieved(address indexed sender, NodeId indexed node, Fair indexed amount);
@@ -83,8 +83,8 @@ contract Staking is AccessManagedUpgradeable, IStaking {
     }
 
     function disable(NodeId node) external override restricted {
-        Mirage balance = _getTotalBalance();
-        Mirage nodeFundBalance = _rootFund.getBalance(balance, FundLibrary.nodeToHolder(node));
+        Fair balance = _getTotalBalance();
+        Fair nodeFundBalance = _rootFund.getBalance(balance, FundLibrary.nodeToHolder(node));
         _rootFund.remove(
             balance,
             FundLibrary.nodeToHolder(node),
@@ -97,9 +97,9 @@ contract Staking is AccessManagedUpgradeable, IStaking {
     }
 
     function enable(NodeId node) external override restricted {
-        (bool wasDisabled, Mirage value) = _disabledNodesBalances.tryGet(node);
+        (bool wasDisabled, Fair value) = _disabledNodesBalances.tryGet(node);
         require(wasDisabled, NodeIsNotDisabled(node));
-        Mirage balance = _getTotalBalance();
+        Fair balance = _getTotalBalance();
         _rootFund.supply(
             balance,
             FundLibrary.nodeToHolder(node),
@@ -110,15 +110,15 @@ contract Staking is AccessManagedUpgradeable, IStaking {
         emit NodeEnabled(node);
     }
 
-    function retrieve(NodeId node, Mirage value) external override {
-        require(value > FundLibrary.ZERO_MIRAGE, ZeroAmount());
+    function retrieve(NodeId node, Fair value) external override {
+        require(value > FundLibrary.ZERO_FAIR, ZeroAmount());
         require(nodes.activeNodeExists(node), Nodes.NodeDoesNotExist(node));
         require(_stakedNodes[msg.sender].contains(node), ZeroStakeToNode(node));
         require(!committee.isNodeInCurrentOrNextCommittee(node), NodeInCommittee(node));
 
         bool nodeIsEnabled = !_disabledNodesBalances.contains(node);
         if (nodeIsEnabled) {
-            Mirage balance = _getTotalBalance();
+            Fair balance = _getTotalBalance();
             _nodesFunds[node].remove(
                 _rootFund.getBalance(balance, FundLibrary.nodeToHolder(node)),
                 FundLibrary.addressToHolder(msg.sender),
@@ -130,7 +130,7 @@ contract Staking is AccessManagedUpgradeable, IStaking {
                 value
             );
         } else {
-            Mirage nodeFundBalance = _disabledNodesBalances.get(node);
+            Fair nodeFundBalance = _disabledNodesBalances.get(node);
             _nodesFunds[node].remove(
                 nodeFundBalance,
                 FundLibrary.addressToHolder(msg.sender),
@@ -184,7 +184,7 @@ contract Staking is AccessManagedUpgradeable, IStaking {
                 amount
             );
         } else {
-            Mirage nodeFundBalance = _disabledNodesBalances.get(node);
+            Fair nodeFundBalance = _disabledNodesBalances.get(node);
             _nodesFunds[node].supply(
                 nodeFundBalance,
                 FundLibrary.addressToHolder(msg.sender),
@@ -273,8 +273,8 @@ contract Staking is AccessManagedUpgradeable, IStaking {
         return _stakedNodes[holder].values();
     }
 
-    function getStakedToNodeAmountFor(NodeId node, address holder) public view override returns (Mirage amount) {
-        Mirage nodeBalance;
+    function getStakedToNodeAmountFor(NodeId node, address holder) public view override returns (Fair amount) {
+        Fair nodeBalance;
         if (_disabledNodesBalances.contains(node)) {
             nodeBalance = _disabledNodesBalances.get(node);
         } else {
@@ -288,7 +288,7 @@ contract Staking is AccessManagedUpgradeable, IStaking {
 
     // Private
 
-    function _getTotalBalance() private view returns (Mirage balance) {
-        return Mirage.wrap(address(this).balance) - totalDisabled;
+    function _getTotalBalance() private view returns (Fair balance) {
+        return Fair.wrap(address(this).balance) - totalDisabled;
     }
 }

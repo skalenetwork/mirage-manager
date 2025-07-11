@@ -24,7 +24,7 @@
 
 pragma solidity ^0.8.24;
 
-import { IDkg } from "@skalenetwork/fair-interfaces/IDkg.sol";
+import { IDkg } from "@skalenetwork/fair-manager-interfaces/IDkg.sol";
 
 import { Precompiled } from "../Precompiled.sol";
 

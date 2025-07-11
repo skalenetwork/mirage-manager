@@ -21,7 +21,7 @@
 
 pragma solidity ^0.8.24;
 
-import {IDkg} from "@skalenetwork/fair-interfaces/IDkg.sol";
+import {IDkg} from "@skalenetwork/fair-manager-interfaces/IDkg.sol";
 
 import { Fp2Operations } from "../../utils/fieldOperations/Fp2Operations.sol";
 import { G2Operations } from "../../utils/fieldOperations/G2Operations.sol";

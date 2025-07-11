@@ -21,7 +21,7 @@
 
 pragma solidity ^0.8.24;
 
-import {NodeId} from "@skalenetwork/fair-interfaces/INodes.sol";
+import {NodeId} from "@skalenetwork/fair-manager-interfaces/INodes.sol";
 import {SplayTree} from "../../structs/SplayTree.sol";
 
 

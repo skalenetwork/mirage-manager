@@ -22,8 +22,8 @@
 pragma solidity ^0.8.24;
 
 import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
-import { NodeId } from "@skalenetwork/fair-interfaces/INodes.sol";
-import { Fair } from "@skalenetwork/fair-interfaces/units.sol";
+import { NodeId } from "@skalenetwork/fair-manager-interfaces/INodes.sol";
+import { Fair } from "@skalenetwork/fair-manager-interfaces/units.sol";
 
 type Credit is uint256;
 type Holder is uint256;
