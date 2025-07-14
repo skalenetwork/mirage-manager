@@ -82,6 +82,20 @@ describe("DKG", () => {
 
             (await dkg.rounds(1)).status.should.be.equal(DkgStatus.BROADCAST);
             (await dkg.rounds(1)).startingBlockNumber.should.be.equal(receipt.blockNumber);
+            (await dkg.getRound(1)).id.should.be.equal(1n);
+            (await dkg.getRound(1)).status.should.be.equal(DkgStatus.BROADCAST);
+            (await dkg.getRound(1)).startingBlockNumber.should.be.equal(receipt.blockNumber);
+            (await dkg.getRound(1)).nodes.should.be.deep.equal(committee);
+        });
+
+        it("should not get missing round", async () => {
+            const { dkg } = await registeredOnlyNodes();
+            await expect(dkg.getRound(0n))
+                .to.be.revertedWithCustomError(dkg, "RoundDoesNotExist")
+                .withArgs(0n);
+            await expect(dkg.getRound(1n))
+                .to.be.revertedWithCustomError(dkg, "RoundDoesNotExist")
+                .withArgs(1n);
         });
 
         describe("generation is started", async () => {
