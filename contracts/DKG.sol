@@ -36,25 +36,6 @@ import {G2Operations} from "./utils/fieldOperations/G2Operations.sol";
 contract DKG is AccessManagedUpgradeable, IDkg {
     using G2Operations for G2Point;
 
-    enum Status {
-        SUCCESS,
-        BROADCAST,
-        ALRIGHT,
-        FAILED
-    }
-
-    struct Round {
-        DkgId id;
-        Status status;
-        NodeId[] nodes;
-        G2Point publicKey;
-        uint256 startingBlockNumber;
-        uint256 numberOfBroadcasted;
-        bytes32[] hashedData;
-        uint256 numberOfCompleted;
-        bool[] completed;
-    }
-
     INodes public nodes;
     ICommittee public committee;
 
@@ -94,6 +75,7 @@ contract DKG is AccessManagedUpgradeable, IDkg {
     error NodeAlreadyBroadcasted(NodeId node);
     error IncorrectG2Point(G2Point value);
     error NodeIsAlreadyAlright(NodeId node);
+    error RoundDoesNotExist(DkgId dkg);
 
     modifier onlyBroadcastingDkg(DkgId dkg) {
         // the modifier checks that the DKG is only in BROADCAST stage
@@ -196,6 +178,12 @@ contract DKG is AccessManagedUpgradeable, IDkg {
         // slither-disable-next-line incorrect-equality
         require(rounds[dkg].status == Status.SUCCESS, DkgIsNotSuccessful(dkg));
         return rounds[dkg].publicKey;
+    }
+
+    function getRound(DkgId dkg) external view override returns (Round memory round) {
+        require(dkg != DkgId.wrap(0), RoundDoesNotExist(dkg));
+        require(rounds[dkg].id == dkg, RoundDoesNotExist(dkg));
+        return rounds[dkg];
     }
 
     // Private
