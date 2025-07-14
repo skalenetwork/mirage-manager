@@ -65,7 +65,7 @@ jobs:
         commit: ${{ github.sha }}
         tag: ${{ env.VERSION }}
         prerelease: ${{ env.PRERELEASE }}
-        artifacts: "data/mirage-manager-*-abi.json"
+        artifacts: "data/fair-manager-*-abi.json"
 
   abi:
     runs-on: ubuntu-latest

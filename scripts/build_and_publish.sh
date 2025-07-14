@@ -7,7 +7,7 @@ set -e
 : "${VERSION?Need to set VERSION}"
 : "${BRANCH?Need to set BRANCH}"
 
-NAME=professional
+NAME=fair-manager
 REPO_NAME=skalenetwork/$NAME
 IMAGE_NAME=$REPO_NAME:$VERSION
 LATEST_IMAGE_NAME=$REPO_NAME:$BRANCH-latest
