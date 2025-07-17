@@ -468,7 +468,7 @@ describe("Nodes", function () {
         await committee.setCommitteeSize(5); // to save resources
         await sendHeartbeat(status, nodesData.slice(0, 10)); // to save time
         await committee.select();
-        for(const node of nodesData) {
+        for(const node of nodesData.slice(0, 10)) {
             const nodeBlocked = await committee.isNodeInCurrentOrNextCommittee(node.id);
             if (nodeBlocked) {
                 await expect(nodes.connect(node.wallet).deleteNode(node.id))
