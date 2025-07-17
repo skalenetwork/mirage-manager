@@ -34,6 +34,7 @@ import {IStaking} from "@skalenetwork/fair-manager-interfaces/IStaking.sol";
 import {Nodes} from "./Nodes.sol";
 import {TypedMap} from "./structs/typed/TypedMap.sol";
 import {TypedSet} from "./structs/typed/TypedSet.sol";
+import {NotImplemented} from "./utils/errors.sol";
 import {Credit, FundLibrary, Fair} from "./utils/Fund.sol";
 
 
@@ -112,6 +113,10 @@ contract Staking is AccessManagedUpgradeable, IStaking {
         assert(_disabledNodesBalances.remove(node));
         totalDisabled = totalDisabled - value;
         emit NodeEnabled(node);
+    }
+
+    function payReward(NodeId) external payable override {
+        revert NotImplemented();
     }
 
     function setStakeLimit(Fair limit) external override restricted {
