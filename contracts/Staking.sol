@@ -34,7 +34,6 @@ import {IStaking} from "@skalenetwork/fair-manager-interfaces/IStaking.sol";
 import {Nodes} from "./Nodes.sol";
 import {TypedMap} from "./structs/typed/TypedMap.sol";
 import {TypedSet} from "./structs/typed/TypedSet.sol";
-import {NotImplemented} from "./utils/errors.sol";
 import {Credit, FundLibrary, Fair} from "./utils/Fund.sol";
 
 
@@ -54,6 +53,7 @@ contract Staking is AccessManagedUpgradeable, IStaking {
     Fair public stakeLimit;
 
     event FeeClaimed(NodeId indexed node, address indexed to, Fair indexed amount);
+    event NodeRewardReceived(NodeId indexed node, Fair indexed amount);
     event Retrieved(address indexed sender, NodeId indexed node, Fair indexed amount);
     event RewardReceived(address indexed sender, uint256 indexed amount);
     event Staked(address indexed sender, NodeId indexed node, Fair indexed amount);
@@ -115,8 +115,29 @@ contract Staking is AccessManagedUpgradeable, IStaking {
         emit NodeEnabled(node);
     }
 
-    function payReward(NodeId) external payable override {
-        revert NotImplemented();
+    function payReward(NodeId node) external payable override {
+        require(msg.value > 0, ZeroAmount());
+        require(nodes.activeNodeExists(node), Nodes.NodeDoesNotExist(node));
+        bool nodeIsEnabled = !_disabledNodesBalances.contains(node);
+        Fair amount = Fair.wrap(msg.value);
+        Fair balance = _getTotalBalance() - amount;
+        if (nodeIsEnabled) {
+            _rootFund.supply(
+                balance,
+                FundLibrary.nodeToHolder(node),
+                amount
+            );
+        } else {
+            assert(!_disabledNodesBalances.set(
+                node,
+                _disabledNodesBalances.get(node) + amount)
+            );
+        }
+        emit NodeRewardReceived(node, amount);
+
+        if (nodeIsEnabled) {
+            committee.updateWeight(node, Credit.unwrap(_rootFund.credits[FundLibrary.nodeToHolder(node)]));
+        }
     }
 
     function setStakeLimit(Fair limit) external override restricted {
