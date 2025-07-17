@@ -89,6 +89,10 @@ contract Status is AccessManagedUpgradeable, IStatus {
         committee.nodeBlacklisted(nodeId);
     }
 
+    function nodeRemoved(NodeId nodeId) external override restricted {
+        require(_whitelist.remove(nodeId), NodeNotWhitelisted(nodeId));
+    }
+
     function getNodesEligibleForCommittee() external view override returns (NodeId[] memory nodeIds) {
 
         uint256 whitelistedLength = _whitelist.length();

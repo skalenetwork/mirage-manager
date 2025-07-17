@@ -29,6 +29,8 @@ import {
     INodes,
     NodeId
 } from "@skalenetwork/fair-manager-interfaces/INodes.sol";
+import { IStaking } from "@skalenetwork/fair-manager-interfaces/IStaking.sol";
+import { IStatus } from "@skalenetwork/fair-manager-interfaces/IStatus.sol";
 
 import { TypedMap } from "./structs/typed/TypedMap.sol";
 import { TypedSet } from "./structs/typed/TypedSet.sol";
@@ -76,6 +78,8 @@ contract Nodes is AccessManagedUpgradeable, INodes {
     TypedSet.NodeIdSet private _activeNodeIds;
 
     error NodeIsInCommittee(NodeId nodeId);
+    error NodeIsNotActiveNode(NodeId nodeId);
+    error NodeHasDelegations(NodeId nodeId);
     error AddressIsAlreadyAssignedToNode(address nodeAddress);
     error AddressIsNotAssignedToAnyNode(address nodeAddress);
     error PassiveNodeAlreadyExistsForAddress(address nodeAddress, NodeId nodeId);
@@ -171,6 +175,21 @@ contract Nodes is AccessManagedUpgradeable, INodes {
             publicKey: publicKey
         });
         committeeContract.nodeCreated(nextNodeId);
+    }
+
+    function deleteNode(
+        NodeId nodeId
+    )
+        external
+        override
+        nodeExists(nodeId)
+        onlyNodeOwner(nodeId)
+    {
+        _deleteNode(nodeId);
+    }
+
+    function deleteNodeByFoundation(NodeId nodeId) external override nodeExists(nodeId) restricted {
+        _deleteNode(nodeId);
     }
 
     function requestChangeOwner(
@@ -308,12 +327,10 @@ contract Nodes is AccessManagedUpgradeable, INodes {
     }
 
     function getNodeId(address nodeAddress) external view override returns (NodeId nodeId) {
-        // Getter for active node
         require(
             _isAddressOfActiveNode(nodeAddress),
             AddressIsNotAssignedToAnyNode(nodeAddress)
         );
-
         nodeId = _activeNodesAddressToId.get(nodeAddress);
     }
 
@@ -373,6 +390,51 @@ contract Nodes is AccessManagedUpgradeable, INodes {
         emit NodeRegistered(nodeId, nodeAddress, ip, port);
     }
 
+    function _deleteNode(NodeId id) private {
+        if (_isActiveNode(id)) {
+            _deleteActiveNode(id);
+        }
+        else {
+            _deletePassiveNode(id);
+        }
+        Node storage node = nodes[id];
+        assert(_usedIps.remove(keccak256(node.ip)));
+        if (bytes(node.domainName).length > 0) {
+            bytes32 newName = keccak256(abi.encodePacked(node.domainName));
+            assert(_usedDomainNames.remove(newName));
+        }
+        emit NodeDeleted(id, node.nodeAddress, node.ip, node.port);
+        delete nodes[id];
+    }
+
+    function _deletePassiveNode(NodeId id) private {
+        Node storage node = nodes[id];
+        assert(_passiveNodeIds.remove(id));
+        assert(_passiveNodeAddresses.remove(node.nodeAddress));
+        assert(_passiveNodeIdByAddress.remove(node.nodeAddress, id));
+        delete ownerChangeRequests[node.id];
+    }
+
+    function _deleteActiveNode(
+        NodeId id
+    )
+        private
+        nodeNotInCurrentOrNextCommittee(id)
+    {
+        IStaking stakingContract = IStaking(committeeContract.staking());
+        IStatus statusContract = IStatus(committeeContract.status());
+        require(stakingContract.getNodeShare(id) == 0, NodeHasDelegations(id));
+        if (statusContract.isWhitelisted(id)) {
+            statusContract.nodeRemoved(id);
+        }
+        committeeContract.nodeRemoved(id);
+        Node storage node = nodes[id];
+
+        assert(_activeNodeIds.remove(id));
+        assert(_activeNodesAddressToId.remove(node.nodeAddress));
+
+    }
+
     function _addPassiveNodeId(NodeId nodeId) private {
         assert(_passiveNodeIds.add(nodeId));
     }
@@ -420,6 +482,14 @@ contract Nodes is AccessManagedUpgradeable, INodes {
                 domainName: initNode.domainName,
                 publicKey: initNode.publicKey
             });
+            if (bytes(initNode.domainName).length > 0){
+                bytes32 newName = keccak256(abi.encodePacked(initNode.domainName));
+                require(
+                    _usedDomainNames.add(newName),
+                    DomainNameAlreadyTaken(initNode.domainName)
+                );
+
+            }
         }
     }
 
