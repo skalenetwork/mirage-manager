@@ -25,10 +25,14 @@ import {
     AccessManagedUpgradeable
 } from "@openzeppelin/contracts-upgradeable/access/manager/AccessManagedUpgradeable.sol";
 import {
+    ReentrancyGuardUpgradeable
+} from "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
+import {
     Address
 } from "@openzeppelin/contracts/utils/Address.sol";
 import {ICommittee} from "@skalenetwork/fair-manager-interfaces/ICommittee.sol";
 import {INodes, NodeId} from "@skalenetwork/fair-manager-interfaces/INodes.sol";
+import {IRewardWallet} from "@skalenetwork/fair-manager-interfaces/IRewardWallet.sol";
 import {IStaking} from "@skalenetwork/fair-manager-interfaces/IStaking.sol";
 
 import {Nodes} from "./Nodes.sol";
@@ -37,7 +41,7 @@ import {TypedSet} from "./structs/typed/TypedSet.sol";
 import {Credit, FundLibrary, Fair} from "./utils/Fund.sol";
 
 
-contract Staking is AccessManagedUpgradeable, IStaking {
+contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaking {
     using Address for address payable;
     using FundLibrary for FundLibrary.Fund;
     using TypedSet for TypedSet.NodeIdSet;
@@ -45,9 +49,11 @@ contract Staking is AccessManagedUpgradeable, IStaking {
 
     ICommittee public committee;
     INodes public nodes;
+    IRewardWallet public rewardWalletReference;
     Fair public totalDisabled;
     FundLibrary.Fund private _rootFund;
     mapping (NodeId node => FundLibrary.Fund nodeFund) private _nodesFunds;
+    mapping (NodeId node => IRewardWallet rewardWallet) private _rewardWallets;
     mapping (address holder => TypedSet.NodeIdSet nodeIds) private _stakedNodes;
     TypedMap.NodeIdToFairMap private _disabledNodesBalances;
     Fair public stakeLimit;
@@ -72,10 +78,26 @@ contract Staking is AccessManagedUpgradeable, IStaking {
     error StakeLimitExceeded(Fair currentStake, Fair attemptedStake, Fair limit);
     error ZeroAddress();
 
-    function initialize(address initialAuthority, ICommittee committee_, INodes nodes_) public initializer override {
+    modifier flushedValidatorReward(NodeId node) {
+        _rewardWallets[node].flush();
+        _;
+    }
+
+    function initialize(
+        address initialAuthority,
+        ICommittee committee_,
+        INodes nodes_,
+        IRewardWallet rewardWalletReference_
+    )
+        public
+        initializer
+        override
+    {
         __AccessManaged_init(initialAuthority);
+        __ReentrancyGuard_init();
         committee = committee_;
         nodes = nodes_;
+        rewardWalletReference = rewardWalletReference_;
     }
 
     receive() external override payable {
@@ -87,6 +109,7 @@ contract Staking is AccessManagedUpgradeable, IStaking {
     }
 
     function disable(NodeId node) external override restricted {
+        _pullReward(node);
         Fair balance = _getTotalBalance();
         Fair nodeFundBalance = _rootFund.getBalance(balance, FundLibrary.nodeToHolder(node));
         _rootFund.remove(
@@ -104,6 +127,7 @@ contract Staking is AccessManagedUpgradeable, IStaking {
         require(nodes.activeNodeExists(node), Nodes.NodeDoesNotExist(node));
         (bool wasDisabled, Fair value) = _disabledNodesBalances.tryGet(node);
         require(wasDisabled, NodeIsNotDisabled(node));
+        _pullReward(node);
         Fair balance = _getTotalBalance();
         _rootFund.supply(
             balance,
@@ -149,6 +173,7 @@ contract Staking is AccessManagedUpgradeable, IStaking {
         require(value > FundLibrary.ZERO_FAIR, ZeroAmount());
         require(_stakedNodes[msg.sender].contains(node), ZeroStakeToNode(node));
 
+        _pullReward(node);
         bool nodeIsEnabled = isNodeEnabled(node);
         if (nodeIsEnabled) {
             Fair balance = _getTotalBalance();
@@ -205,6 +230,7 @@ contract Staking is AccessManagedUpgradeable, IStaking {
         require(nodes.activeNodeExists(node), Nodes.NodeDoesNotExist(node));
         bool nodeIsEnabled = isNodeEnabled(node);
         Fair amount = Fair.wrap(msg.value);
+        _pullReward(node);
         Fair balance = _getTotalBalance() - amount;
 
         _validateStakeLimit(node, amount, balance, nodeIsEnabled);
@@ -272,6 +298,7 @@ contract Staking is AccessManagedUpgradeable, IStaking {
     function claimFee(address payable to, Fair amount) public override {
         require(to != address(0), ZeroAddress());
         NodeId node = nodes.getNodeId(msg.sender);
+        _pullReward(node);
         Fair balance = _getTotalBalance();
         bool nodeIsEnabled = isNodeEnabled(node);
         if (nodeIsEnabled) {
@@ -304,11 +331,12 @@ contract Staking is AccessManagedUpgradeable, IStaking {
     }
 
     function getEarnedFeeAmount(NodeId node) public view override returns (Fair amount) {
+        Fair nonPulledReward = _getNonPulledReward(node);
         if (!isNodeEnabled(node)) {
-            return _nodesFunds[node].getEarnedFee(_disabledNodesBalances.get(node));
+            return _nodesFunds[node].getEarnedFee(_disabledNodesBalances.get(node) + nonPulledReward);
         }
         return _nodesFunds[node].getEarnedFee(
-            _rootFund.getBalance(_getTotalBalance(), FundLibrary.nodeToHolder(node))
+            _rootFund.getBalance(_getTotalBalance(), FundLibrary.nodeToHolder(node)) + nonPulledReward
         );
     }
 
@@ -326,10 +354,11 @@ contract Staking is AccessManagedUpgradeable, IStaking {
 
     function getStakedToNodeAmountFor(NodeId node, address holder) public view override returns (Fair amount) {
         Fair nodeBalance;
+        Fair nonPulledReward = _getNonPulledReward(node);
         if (!isNodeEnabled(node)) {
-            nodeBalance = _disabledNodesBalances.get(node);
+            nodeBalance = _disabledNodesBalances.get(node) + nonPulledReward;
         } else {
-            nodeBalance = _rootFund.getBalance(_getTotalBalance(), FundLibrary.nodeToHolder(node));
+            nodeBalance = _rootFund.getBalance(_getTotalBalance(), FundLibrary.nodeToHolder(node)) + nonPulledReward;
         }
         return _nodesFunds[node].getBalance(
             nodeBalance,
@@ -354,6 +383,16 @@ contract Staking is AccessManagedUpgradeable, IStaking {
                 StakeLimitExceeded(currentNodeStake, amount, stakeLimit)
             );
         }
+    }
+
+    function _pullReward(NodeId node) private nonReentrant {
+        if (address(_rewardWallets[node]).balance > 0) {
+            _rewardWallets[node].flush();
+        }
+    }
+
+    function _getNonPulledReward(NodeId node) private view returns (Fair nonPulledReward) {
+        return Fair.wrap(address(_rewardWallets[node]).balance);
     }
 
     function _getTotalBalance() private view returns (Fair balance) {

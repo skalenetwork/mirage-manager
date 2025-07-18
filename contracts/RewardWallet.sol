@@ -40,15 +40,16 @@ contract RewardWallet is AccessManagedUpgradeable, IRewardWallet {
     }
 
     receive() external payable override {
-        if (msg.value > 0) {
-            flush();
-        }
+        flush();
     }
 
     // Public
 
     function flush() public override {
         if (address(this).balance > 0) {
+            // Both staking and ownerNode is set during deployment
+            // by Staking contract so the warning is false positive
+            // slither-disable-next-line arbitrary-send-eth
             staking.payReward{value: address(this).balance}(ownerNode);
         }
     }

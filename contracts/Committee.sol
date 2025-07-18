@@ -33,6 +33,7 @@ import { DkgId, IDkg } from "@skalenetwork/fair-manager-interfaces/IDkg.sol";
 import { INodes, NodeId } from "@skalenetwork/fair-manager-interfaces/INodes.sol";
 import { IStaking } from "@skalenetwork/fair-manager-interfaces/IStaking.sol";
 import { Duration, IStatus } from "@skalenetwork/fair-manager-interfaces/IStatus.sol";
+
 import { TypedSet } from "./structs/typed/TypedSet.sol";
 import { G2Operations } from "./utils/fieldOperations/G2Operations.sol";
 import { FundLibrary } from "./utils/Fund.sol";
