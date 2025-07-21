@@ -306,6 +306,17 @@ const setupRoles = async (deployedContracts: DeployedContracts) => {
     await response.wait();
 }
 
+const verify = async (deployedContracts: DeployedContracts) => {
+    console.log("Verify contracts");
+    for (const contractName of contracts) {
+        try {
+            await verifyProxy(contractName, await ethers.resolveAddress(deployedContracts[contractName as keyof DeployedContracts]));
+        } catch (error) {
+            chalk.yellow(`Skipping verification for ${contractName}: ${error}`);
+        }
+    }
+}
+
 const main = async () => {
     const version = await getVersion();
 
@@ -317,11 +328,7 @@ const main = async () => {
 
     await storeAddresses(deployedContracts, version);
 
-    console.log("Verify contracts");
-
-    for (const contractName of contracts) {
-        await verifyProxy(contractName, await ethers.resolveAddress(deployedContracts[contractName as keyof DeployedContracts]));
-    }
+    await verify(deployedContracts);
 
     console.log("Done");
 };
