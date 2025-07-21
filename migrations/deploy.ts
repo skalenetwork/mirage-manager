@@ -312,7 +312,7 @@ const verify = async (deployedContracts: DeployedContracts) => {
         try {
             await verifyProxy(contractName, await ethers.resolveAddress(deployedContracts[contractName as keyof DeployedContracts]));
         } catch (error) {
-            chalk.yellow(`Skipping verification for ${contractName}: ${error}`);
+            console.log(chalk.yellow(`Skipping verification for ${contractName}: ${error}`));
         }
     }
 }
