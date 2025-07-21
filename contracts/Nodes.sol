@@ -396,12 +396,12 @@ contract Nodes is AccessManagedUpgradeable, INodes {
             assert(_usedDomainNames.remove(newName));
         }
         address nodeOwner = node.nodeAddress;
-        emit NodeDeleted(id, nodeOwner, node.ip, node.port);
         delete nodes[id];
         if (_isActiveNode(id)) {
             IStatus statusContract = IStatus(committeeContract.status());
             assert(_activeNodeIds.remove(id));
             assert(_activeNodesAddressToId.remove(nodeOwner));
+            emit ActiveNodeDeleted(id, nodeOwner, node.ip, node.port);
             if (statusContract.isWhitelisted(id)) {
                 statusContract.nodeRemoved(id);
             }
@@ -412,6 +412,7 @@ contract Nodes is AccessManagedUpgradeable, INodes {
             assert(_passiveNodeAddresses.remove(nodeOwner));
             assert(_passiveNodeIdByAddress.remove(nodeOwner, id));
             delete ownerChangeRequests[id];
+            emit PassiveNodeDeleted(id, nodeOwner, node.ip, node.port);
         }
     }
 
