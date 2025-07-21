@@ -106,7 +106,7 @@ describe("Nodes", function () {
 
         await nodesContract.deleteNode(nodeId);
 
-        const response = await accessManagerContract.grantRole(await accessManagerContract.COMMITEE_ROLE(), deployer, 0n);
+        const response = await accessManagerContract.grantRole(await accessManagerContract.COMMITTEE_ROLE(), deployer, 0n);
         await response.wait();
 
         await expect(stakingContract.enable(nodeId)).to.be.revertedWithCustomError(nodesContract, "NodeDoesNotExist");

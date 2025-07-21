@@ -295,7 +295,7 @@ const setupRoles = async (deployedContracts: DeployedContracts) => {
             staking.interface.getFunction("disable").selector,
             staking.interface.getFunction("enable").selector
         ],
-        await accessManager.COMMITEE_ROLE()
+        await accessManager.COMMITTEE_ROLE()
     );
     await response.wait();
 
@@ -318,7 +318,7 @@ const setupRoles = async (deployedContracts: DeployedContracts) => {
     response = await accessManager.grantRole(await accessManager.STAKING_ROLE(), await ethers.resolveAddress(staking), 0n);
     await response.wait();
 
-    response = await accessManager.grantRole(await accessManager.COMMITEE_ROLE(), await ethers.resolveAddress(committee), 0n);
+    response = await accessManager.grantRole(await accessManager.COMMITTEE_ROLE(), await ethers.resolveAddress(committee), 0n);
     await response.wait();
 }
 

@@ -265,7 +265,7 @@ describe("Staking", () => {
 
         // allow admin to disable nodes for testing
         const [admin,] = await ethers.getSigners();
-        const response = await accessManager.grantRole(await accessManager.COMMITEE_ROLE(), admin, 0n);
+        const response = await accessManager.grantRole(await accessManager.COMMITTEE_ROLE(), admin, 0n);
         await response.wait();
 
         const disabledNode = targetNodes.slice(-1)[0];
