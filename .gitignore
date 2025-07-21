@@ -131,3 +131,6 @@ venv/
 
 # SKALE files
 data/
+
+# OpenZeppelin
+.openzeppelin/unknown-*.json
