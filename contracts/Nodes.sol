@@ -388,7 +388,7 @@ contract Nodes is AccessManagedUpgradeable, INodes {
         emit NodeRegistered(nodeId, nodeAddress, ip, port);
     }
 
-    function _deleteNode(NodeId id) private {
+    function _deleteNode(NodeId id) private nodeNotInCurrentOrNextCommittee(id) {
         Node storage node = nodes[id];
         assert(_usedIps.remove(keccak256(node.ip)));
         if (bytes(node.domainName).length > 0) {
@@ -396,37 +396,23 @@ contract Nodes is AccessManagedUpgradeable, INodes {
             assert(_usedDomainNames.remove(newName));
         }
         address nodeOwner = node.nodeAddress;
-        emit NodeDeleted(id, node.nodeAddress, node.ip, node.port);
+        emit NodeDeleted(id, nodeOwner, node.ip, node.port);
         delete nodes[id];
         if (_isActiveNode(id)) {
-            _deleteActiveNode(id, nodeOwner);
+            IStatus statusContract = IStatus(committeeContract.status());
+            assert(_activeNodeIds.remove(id));
+            assert(_activeNodesAddressToId.remove(nodeOwner));
+            if (statusContract.isWhitelisted(id)) {
+                statusContract.nodeRemoved(id);
+            }
+            committeeContract.nodeRemoved(id);
         }
         else {
-            _deletePassiveNode(id, nodeOwner);
+            assert(_passiveNodeIds.remove(id));
+            assert(_passiveNodeAddresses.remove(nodeOwner));
+            assert(_passiveNodeIdByAddress.remove(nodeOwner, id));
+            delete ownerChangeRequests[id];
         }
-    }
-
-    function _deletePassiveNode(NodeId id, address nodeAddress) private {
-        assert(_passiveNodeIds.remove(id));
-        assert(_passiveNodeAddresses.remove(nodeAddress));
-        assert(_passiveNodeIdByAddress.remove(nodeAddress, id));
-        delete ownerChangeRequests[id];
-    }
-
-    function _deleteActiveNode(
-        NodeId id,
-        address nodeAddress
-    )
-        private
-        nodeNotInCurrentOrNextCommittee(id)
-    {
-        IStatus statusContract = IStatus(committeeContract.status());
-        assert(_activeNodeIds.remove(id));
-        assert(_activeNodesAddressToId.remove(nodeAddress));
-        if (statusContract.isWhitelisted(id)) {
-            statusContract.nodeRemoved(id);
-        }
-        committeeContract.nodeRemoved(id);
     }
 
     function _addPassiveNodeId(NodeId nodeId) private {
