@@ -2383,9 +2383,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@skalenetwork/upgrade-tools@npm:3.0.0-develop.42":
-  version: 3.0.0-develop.42
-  resolution: "@skalenetwork/upgrade-tools@npm:3.0.0-develop.42"
+"@skalenetwork/upgrade-tools@npm:3.0.0-develop.44":
+  version: 3.0.0-develop.44
+  resolution: "@skalenetwork/upgrade-tools@npm:3.0.0-develop.44"
   dependencies:
     "@safe-global/api-kit": "npm:^2.4.1"
     "@safe-global/protocol-kit": "npm:^5.0.1"
@@ -2396,13 +2396,12 @@ __metadata:
     semaphore-async-await: "npm:^1.5.1"
   peerDependencies:
     "@nomicfoundation/hardhat-ethers": ^3.0.0
-    "@nomicfoundation/hardhat-verify": ^2.0.0
+    "@nomicfoundation/hardhat-verify": ^2.0.13
     "@openzeppelin/hardhat-upgrades": ^3.1.1
     "@openzeppelin/upgrades-core": ^1.27.1
     "@types/mocha": ^9.1.0
-    ethers: ^6.13.4
     hardhat: ^2.9.9
-  checksum: 10c0/222e1bf68586c4e5eb5429386cb4ebfb803ba3d1b29a3f720faf668a3c317c7f3e1220ac3e38c3887287e0601ef67823f7a321eec04c3327aa166ae247a6ab78
+  checksum: 10c0/ec4ba0979698de20142696f091d44bea32633925d0f24351726efc3cebf89699b8bccb817cceb28753603f5f2a9fec65cd83388156227946543d2de439355959
   languageName: node
   linkType: hard
 
@@ -5099,7 +5098,7 @@ __metadata:
     "@skalenetwork/fair-manager-interfaces": "npm:0.1.0-develop.79"
     "@skalenetwork/skale-contracts-ethers-v6": "npm:1.0.2-develop.68"
     "@skalenetwork/skale-manager-interfaces": "npm:3.2.0-develop.3"
-    "@skalenetwork/upgrade-tools": "npm:3.0.0-develop.42"
+    "@skalenetwork/upgrade-tools": "npm:3.0.0-develop.44"
     "@typechain/ethers-v6": "npm:^0.5.0"
     "@typechain/hardhat": "npm:^9.0.0"
     "@types/chai": "npm:^4.2.0"

@@ -2,7 +2,8 @@ import chalk from "chalk";
 import { ethers, network, upgrades } from "hardhat";
 import { promises as fs } from 'fs';
 import {
-    getVersion
+    getVersion,
+    verifyProxy
 } from '@skalenetwork/upgrade-tools';
 import {
     Committee,
@@ -305,6 +306,17 @@ const setupRoles = async (deployedContracts: DeployedContracts) => {
     await response.wait();
 }
 
+const verify = async (deployedContracts: DeployedContracts) => {
+    console.log("Verify contracts");
+    for (const contractName of contracts) {
+        try {
+            await verifyProxy(contractName, await ethers.resolveAddress(deployedContracts[contractName as keyof DeployedContracts]));
+        } catch (error) {
+            console.log(chalk.yellow(`Skipping verification for ${contractName}: ${error}`));
+        }
+    }
+}
+
 const main = async () => {
     const version = await getVersion();
 
@@ -315,6 +327,8 @@ const main = async () => {
     console.log("Store addresses")
 
     await storeAddresses(deployedContracts, version);
+
+    await verify(deployedContracts);
 
     console.log("Done");
 };
