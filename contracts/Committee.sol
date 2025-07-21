@@ -33,6 +33,7 @@ import { DkgId, IDkg } from "@skalenetwork/fair-manager-interfaces/IDkg.sol";
 import { INodes, NodeId } from "@skalenetwork/fair-manager-interfaces/INodes.sol";
 import { IStaking } from "@skalenetwork/fair-manager-interfaces/IStaking.sol";
 import { Duration, IStatus } from "@skalenetwork/fair-manager-interfaces/IStatus.sol";
+import { Fair } from "@skalenetwork/fair-manager-interfaces/units.sol";
 
 import { TypedSet } from "./structs/typed/TypedSet.sol";
 import { G2Operations } from "./utils/fieldOperations/G2Operations.sol";
@@ -187,7 +188,7 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
                 _shareToWeight(staking.getNodeShare(node))
             );
         } else {
-            if (status.isWhitelisted(node) && staking.getNodeShare(node) > 0) {
+            if (status.isWhitelisted(node) && Fair.unwrap(staking.getNodeTotalStake(node)) > 0) {
                 _setEligible(node);
                 _pool.moveToFront(
                     node,
@@ -314,11 +315,17 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
     function _setEligible(NodeId node) private {
         _pool.add(node);
         emit NodeBecomesEligible(node);
+        if (!staking.isNodeEnabled(node)) {
+            staking.enable(node);
+        }
     }
 
     function _setIneligible(NodeId node) private {
         if (_pool.remove(node)) {
             emit NodeLosesEligibility(node);
+        }
+        if (staking.isNodeEnabled(node)) {
+            staking.disable(node);
         }
     }
 

@@ -29,7 +29,6 @@ import {
     INodes,
     NodeId
 } from "@skalenetwork/fair-manager-interfaces/INodes.sol";
-import { IStaking } from "@skalenetwork/fair-manager-interfaces/IStaking.sol";
 import { IStatus } from "@skalenetwork/fair-manager-interfaces/IStatus.sol";
 
 import { TypedMap } from "./structs/typed/TypedMap.sol";
@@ -79,7 +78,6 @@ contract Nodes is AccessManagedUpgradeable, INodes {
 
     error NodeIsInCommittee(NodeId nodeId);
     error NodeIsNotActiveNode(NodeId nodeId);
-    error NodeHasDelegations(NodeId nodeId);
     error AddressIsAlreadyAssignedToNode(address nodeAddress);
     error AddressIsNotAssignedToAnyNode(address nodeAddress);
     error PassiveNodeAlreadyExistsForAddress(address nodeAddress, NodeId nodeId);
@@ -422,9 +420,7 @@ contract Nodes is AccessManagedUpgradeable, INodes {
         private
         nodeNotInCurrentOrNextCommittee(id)
     {
-        IStaking stakingContract = IStaking(committeeContract.staking());
         IStatus statusContract = IStatus(committeeContract.status());
-        require(stakingContract.getNodeShare(id) == 0, NodeHasDelegations(id));
         assert(_activeNodeIds.remove(id));
         assert(_activeNodesAddressToId.remove(nodeAddress));
         if (statusContract.isWhitelisted(id)) {

@@ -97,6 +97,7 @@ contract Staking is AccessManagedUpgradeable, IStaking {
     }
 
     function enable(NodeId node) external override restricted {
+        require(nodes.activeNodeExists(node), Nodes.NodeDoesNotExist(node));
         (bool wasDisabled, Fair value) = _disabledNodesBalances.tryGet(node);
         require(wasDisabled, NodeIsNotDisabled(node));
         Fair balance = _getTotalBalance();
@@ -112,7 +113,6 @@ contract Staking is AccessManagedUpgradeable, IStaking {
 
     function retrieve(NodeId node, Fair value) external override {
         require(value > FundLibrary.ZERO_FAIR, ZeroAmount());
-        require(nodes.activeNodeExists(node), Nodes.NodeDoesNotExist(node));
         require(_stakedNodes[msg.sender].contains(node), ZeroStakeToNode(node));
         require(!committee.isNodeInCurrentOrNextCommittee(node), NodeInCommittee(node));
 
@@ -219,6 +219,18 @@ contract Staking is AccessManagedUpgradeable, IStaking {
 
     function getStakedNodes() external view override returns (NodeId[] memory stakedNodes) {
         return getStakedNodesFor(msg.sender);
+    }
+
+    function isNodeEnabled(NodeId node) external view override returns (bool enabled) {
+        return !_disabledNodesBalances.contains(node);
+    }
+
+    function getNodeTotalStake(NodeId node) external view override returns (Fair amount) {
+        if (_disabledNodesBalances.contains(node)) {
+            return _disabledNodesBalances.get(node);
+        }
+        Fair balance = _getTotalBalance();
+        amount = _rootFund.getBalance(balance, FundLibrary.nodeToHolder(node));
     }
 
     // Public

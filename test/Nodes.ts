@@ -1,7 +1,7 @@
 import { ethers } from "hardhat";
 import { expect } from "chai";
 import { cleanDeployment, sendHeartbeat, whitelistedAndStakedNodes } from "./tools/fixtures";
-import { Nodes } from "../typechain-types";
+import { FairAccessManager, Nodes, Staking } from "../typechain-types";
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers";
@@ -35,6 +35,8 @@ chai.use(chaiAsPromised)
 
 describe("Nodes", function () {
     let nodesContract: Nodes;
+    let accessManagerContract: FairAccessManager;
+    let stakingContract: Staking;
     let deployer: HardhatEthersSigner;
     let user1: HardhatEthersSigner;
     let user2: HardhatEthersSigner;
@@ -44,8 +46,10 @@ describe("Nodes", function () {
 
 
     beforeEach(async () => {
-        const {nodes} = await cleanDeployment();
+        const {nodes, accessManager, staking} = await cleanDeployment();
         nodesContract = nodes;
+        stakingContract = staking;
+        accessManagerContract = accessManager;
         [deployer, user1, user2] = await ethers.getSigners();
 
         [deployerPubKey, user1PubKey, user2PubKey] = await Promise.all(
@@ -93,6 +97,19 @@ describe("Nodes", function () {
         await expect(nodesContract.getNode(nodeId)).to.be.revertedWithCustomError(nodesContract, "NodeDoesNotExist");
         expect(await nodesContract.getActiveNodeIds()).to.not.include(nodeId);
         expect(await nodesContract.activeNodeExists(nodeId)).to.eql(false);
+    });
+
+    it("should not allow to enable a deleted Node", async () => {
+        await nodesContract.registerNode(MOCK_IP_0_BYTES, deployerPubKey, 8000);
+        const nodeId = await nodesContract.getNodeId(deployer.address) as BigNumberish;
+        expect(await stakingContract.isNodeEnabled(nodeId)).to.be.eql(true);
+
+        await nodesContract.deleteNode(nodeId);
+
+        const response = await accessManagerContract.grantRole(await accessManagerContract.COMMITEE_ROLE(), deployer, 0n);
+        await response.wait();
+
+        await expect(stakingContract.enable(nodeId)).to.be.revertedWithCustomError(nodesContract, "NodeDoesNotExist");
     });
 
     it("should not allow anyone other than Node owner or Foundation to delete nodes", async () => {

@@ -259,6 +259,7 @@ const setupRoles = async (deployedContracts: DeployedContracts) => {
 
     // set up roles
 
+    //Committee
     let response = await accessManager.setTargetFunctionRole(
         await ethers.resolveAddress(committee),
         [
@@ -287,6 +288,18 @@ const setupRoles = async (deployedContracts: DeployedContracts) => {
     );
     await response.wait();
 
+    //Staking
+    response = await accessManager.setTargetFunctionRole(
+        await ethers.resolveAddress(staking),
+        [
+            staking.interface.getFunction("disable").selector,
+            staking.interface.getFunction("enable").selector
+        ],
+        await accessManager.COMMITEE_ROLE()
+    );
+    await response.wait();
+
+    //Status
     response = await accessManager.setTargetFunctionRole(
         await ethers.resolveAddress(status),
         [status.interface.getFunction("nodeRemoved").selector],
@@ -305,6 +318,8 @@ const setupRoles = async (deployedContracts: DeployedContracts) => {
     response = await accessManager.grantRole(await accessManager.STAKING_ROLE(), await ethers.resolveAddress(staking), 0n);
     await response.wait();
 
+    response = await accessManager.grantRole(await accessManager.COMMITEE_ROLE(), await ethers.resolveAddress(committee), 0n);
+    await response.wait();
 }
 
 const verify = async (deployedContracts: DeployedContracts) => {

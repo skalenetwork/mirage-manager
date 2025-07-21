@@ -82,10 +82,13 @@ describe("Committee", () => {
 
     it("should select committee", async function () {
         this.timeout(600000); // 10 minutes timeout. DKG requires a lot of time
-        const {committee, dkg, nodesData} = await whitelistedAndStakedAndHealthyNodes();
+        const {committee, dkg, nodesData, status, staking} = await whitelistedAndStakedAndHealthyNodes();
         const activeCommitteeIndex = await committee.getActiveCommitteeIndex();
         const nextCommitteeIndex = activeCommitteeIndex + 1n;
-
+        for(const node of nodesData){
+            expect(await status.isHealthy(node.id)).to.be.eql(true);
+            expect(await staking.getNodeShare(node.id)).to.be.greaterThan(0n);
+        }
         await committee.select();
 
         let nextCommittee = await committee.getCommittee(nextCommitteeIndex);

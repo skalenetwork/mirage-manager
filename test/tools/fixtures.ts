@@ -92,6 +92,7 @@ const deployFixture = async () => {
         node.id = await contracts.Nodes.getNodeId(node.wallet.address);
     };
     return {
+        accessManager: contracts.FairAccessManager,
         committee: contracts.Committee,
         dkg: contracts.DKG,
         nodes: contracts.Nodes,
