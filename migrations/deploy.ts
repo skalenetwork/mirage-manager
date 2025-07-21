@@ -2,7 +2,8 @@ import chalk from "chalk";
 import { ethers, network, upgrades } from "hardhat";
 import { promises as fs } from 'fs';
 import {
-    getVersion
+    getVersion,
+    verifyProxy
 } from '@skalenetwork/upgrade-tools';
 import {
     Committee,
@@ -315,6 +316,12 @@ const main = async () => {
     console.log("Store addresses")
 
     await storeAddresses(deployedContracts, version);
+
+    console.log("Verify contracts");
+
+    for (const contractName of contracts) {
+        await verifyProxy(contractName, await ethers.resolveAddress(deployedContracts[contractName as keyof DeployedContracts]));
+    }
 
     console.log("Done");
 };
