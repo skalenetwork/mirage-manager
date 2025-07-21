@@ -116,7 +116,7 @@ contract Staking is AccessManagedUpgradeable, IStaking {
         require(_stakedNodes[msg.sender].contains(node), ZeroStakeToNode(node));
         require(!committee.isNodeInCurrentOrNextCommittee(node), NodeInCommittee(node));
 
-        bool nodeIsEnabled = !_disabledNodesBalances.contains(node);
+        bool nodeIsEnabled = isNodeEnabled(node);
         if (nodeIsEnabled) {
             Fair balance = _getTotalBalance();
             _nodesFunds[node].remove(
@@ -137,6 +137,7 @@ contract Staking is AccessManagedUpgradeable, IStaking {
                 value
             );
             assert(!_disabledNodesBalances.set(node, nodeFundBalance - value));
+            totalDisabled = totalDisabled - value;
         }
 
         if (_nodesFunds[node].credits[FundLibrary.addressToHolder(msg.sender)] == FundLibrary.ZERO_CREDIT) {
@@ -169,7 +170,7 @@ contract Staking is AccessManagedUpgradeable, IStaking {
     function stake(NodeId node) external payable override {
         require(msg.value > 0, ZeroAmount());
         require(nodes.activeNodeExists(node), Nodes.NodeDoesNotExist(node));
-        bool nodeIsEnabled = !_disabledNodesBalances.contains(node);
+        bool nodeIsEnabled = isNodeEnabled(node);
         Fair amount = Fair.wrap(msg.value);
         Fair balance = _getTotalBalance() - amount;
         if (nodeIsEnabled) {
@@ -191,6 +192,9 @@ contract Staking is AccessManagedUpgradeable, IStaking {
                 amount
             );
             assert(!_disabledNodesBalances.set(node, nodeFundBalance + amount));
+            unchecked {
+                totalDisabled = totalDisabled + amount;
+            }
         }
         if(_stakedNodes[msg.sender].add(node)) {
             emit StakedToNewNode(msg.sender, node);
@@ -203,7 +207,7 @@ contract Staking is AccessManagedUpgradeable, IStaking {
     }
 
     function getNodeShare(NodeId node) external view override returns (uint256 share) {
-        if (_disabledNodesBalances.contains(node)) {
+        if (!isNodeEnabled(node)) {
             return 0;
         }
         return Credit.unwrap(_rootFund.credits[FundLibrary.nodeToHolder(node)]);
@@ -221,12 +225,8 @@ contract Staking is AccessManagedUpgradeable, IStaking {
         return getStakedNodesFor(msg.sender);
     }
 
-    function isNodeEnabled(NodeId node) external view override returns (bool enabled) {
-        return !_disabledNodesBalances.contains(node);
-    }
-
     function getNodeTotalStake(NodeId node) external view override returns (Fair amount) {
-        if (_disabledNodesBalances.contains(node)) {
+        if (!isNodeEnabled(node)) {
             return _disabledNodesBalances.get(node);
         }
         Fair balance = _getTotalBalance();
@@ -238,7 +238,7 @@ contract Staking is AccessManagedUpgradeable, IStaking {
     function claimFee(address payable to, Fair amount) public override {
         NodeId node = nodes.getNodeId(msg.sender);
         Fair balance = _getTotalBalance();
-        bool nodeIsEnabled = !_disabledNodesBalances.contains(node);
+        bool nodeIsEnabled = isNodeEnabled(node);
         if (nodeIsEnabled) {
             _nodesFunds[node].claimFee(
                 _rootFund.getBalance(balance, FundLibrary.nodeToHolder(node)),
@@ -264,8 +264,12 @@ contract Staking is AccessManagedUpgradeable, IStaking {
         to.sendValue(Fair.unwrap(amount));
     }
 
+    function isNodeEnabled(NodeId node) public view override returns (bool enabled) {
+        return !_disabledNodesBalances.contains(node);
+    }
+
     function getEarnedFeeAmount(NodeId node) public view override returns (Fair amount) {
-        if (_disabledNodesBalances.contains(node)) {
+        if (!isNodeEnabled(node)) {
             return _nodesFunds[node].getEarnedFee(_disabledNodesBalances.get(node));
         }
         return _nodesFunds[node].getEarnedFee(
@@ -287,7 +291,7 @@ contract Staking is AccessManagedUpgradeable, IStaking {
 
     function getStakedToNodeAmountFor(NodeId node, address holder) public view override returns (Fair amount) {
         Fair nodeBalance;
-        if (_disabledNodesBalances.contains(node)) {
+        if (!isNodeEnabled(node)) {
             nodeBalance = _disabledNodesBalances.get(node);
         } else {
             nodeBalance = _rootFund.getBalance(_getTotalBalance(), FundLibrary.nodeToHolder(node));
