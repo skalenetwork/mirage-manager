@@ -90,7 +90,10 @@ contract Status is AccessManagedUpgradeable, IStatus {
     }
 
     function nodeRemoved(NodeId nodeId) external override restricted {
-        require(_whitelist.remove(nodeId), NodeNotWhitelisted(nodeId));
+        if(_whitelist.contains(nodeId)){
+            assert(_whitelist.remove(nodeId));
+        }
+        delete lastHeartbeatTimestamp[nodeId];
     }
 
     function getNodesEligibleForCommittee() external view override returns (NodeId[] memory nodeIds) {

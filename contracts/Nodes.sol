@@ -77,7 +77,6 @@ contract Nodes is AccessManagedUpgradeable, INodes {
     TypedSet.NodeIdSet private _activeNodeIds;
 
     error NodeIsInCommittee(NodeId nodeId);
-    error NodeIsNotActiveNode(NodeId nodeId);
     error AddressIsAlreadyAssignedToNode(address nodeAddress);
     error AddressIsNotAssignedToAnyNode(address nodeAddress);
     error PassiveNodeAlreadyExistsForAddress(address nodeAddress, NodeId nodeId);
@@ -376,6 +375,14 @@ contract Nodes is AccessManagedUpgradeable, INodes {
         _addActiveNodeId(nodeId);
         _setActiveNodeIdForAddress(nodeAddress, nodeId);
 
+        if (bytes(domainName).length > 0){
+            bytes32 hashedName = keccak256(abi.encodePacked(domainName));
+            require(
+                _usedDomainNames.add(hashedName),
+                DomainNameAlreadyTaken(domainName)
+            );
+        }
+
         nodes[nodeId] = Node({
             id: nodeId,
             publicKey: publicKey,
@@ -402,9 +409,7 @@ contract Nodes is AccessManagedUpgradeable, INodes {
             assert(_activeNodeIds.remove(id));
             assert(_activeNodesAddressToId.remove(nodeOwner));
             emit ActiveNodeDeleted(id, nodeOwner, node.ip, node.port);
-            if (statusContract.isWhitelisted(id)) {
-                statusContract.nodeRemoved(id);
-            }
+            statusContract.nodeRemoved(id);
             committeeContract.nodeRemoved(id);
         }
         else {
@@ -463,14 +468,6 @@ contract Nodes is AccessManagedUpgradeable, INodes {
                 domainName: initNode.domainName,
                 publicKey: initNode.publicKey
             });
-            if (bytes(initNode.domainName).length > 0){
-                bytes32 newName = keccak256(abi.encodePacked(initNode.domainName));
-                require(
-                    _usedDomainNames.add(newName),
-                    DomainNameAlreadyTaken(initNode.domainName)
-                );
-
-            }
         }
     }
 

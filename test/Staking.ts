@@ -81,6 +81,28 @@ describe("Staking", () => {
         expect(await staking.getNodeTotalStake(node)).to.be.eql(initialAmount - amount);
     });
 
+    it("should be possible to retrieve from deleted Node", async () => {
+        const {staking, nodesData, nodes} = await registeredOnlyNodes();
+        const [,user] = await ethers.getSigners();
+        const initialAmount = ethers.parseEther("3");
+        const amount = ethers.parseEther("1");
+        const node = nodesData[22]; // not in the current committee
+
+        await staking.connect(user).stake(node.id, {value: initialAmount});
+        (await staking.connect(user).getStakedAmount())
+            .should.be.equal(initialAmount);
+        expect(await staking.getNodeTotalStake(node.id)).to.be.eql(initialAmount);
+        await nodes.connect(node.wallet).deleteNode(node.id);
+        expect(await nodes.activeNodeExists(node.id)).to.be.eql(false);
+        expect(await staking.isNodeEnabled(node.id)).to.be.eql(false);
+        await staking.connect(user).retrieve(node.id, amount)
+            .should.changeEtherBalance(user, amount);
+        (await staking.connect(user).getStakedAmount())
+            .should.be.equal(initialAmount - amount);
+
+        expect(await staking.getNodeTotalStake(node.id)).to.be.eql(initialAmount - amount);
+    });
+
     it("should apply validator fee on rewards", async () => {
         const {staking, nodesData } = await registeredOnlyNodes();
         const [owner,user] = await ethers.getSigners();

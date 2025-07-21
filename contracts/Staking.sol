@@ -192,9 +192,7 @@ contract Staking is AccessManagedUpgradeable, IStaking {
                 amount
             );
             assert(!_disabledNodesBalances.set(node, nodeFundBalance + amount));
-            unchecked {
-                totalDisabled = totalDisabled + amount;
-            }
+            totalDisabled = totalDisabled + amount;
         }
         if(_stakedNodes[msg.sender].add(node)) {
             emit StakedToNewNode(msg.sender, node);
