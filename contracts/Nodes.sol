@@ -172,6 +172,7 @@ contract Nodes is AccessManagedUpgradeable, INodes {
             publicKey: publicKey
         });
         committeeContract.nodeCreated(nextNodeId);
+        committeeContract.staking().nodeCreated(nextNodeId);
     }
 
     function deleteNode(

@@ -13,7 +13,8 @@ import {
     Nodes,
     FairAccessManager,
     Staking,
-    Status
+    Status,
+    RewardWallet
 } from "../typechain-types";
 import { AddressLike } from "ethers";
 import { skaleContracts } from "@skalenetwork/skale-contracts-ethers-v6";
@@ -214,6 +215,13 @@ const deployDkg = async (authority: FairAccessManager, committee: Committee, nod
     ) as DKG;
 }
 
+const deployRewardWalletReference = async (): Promise<RewardWallet> => {
+    const factory = await ethers.getContractFactory("RewardWallet");
+    const instance = await factory.deploy();
+    await instance.waitForDeployment();
+    return instance as RewardWallet;
+}
+
 const deployStatus = async (authority: FairAccessManager, nodes: Nodes, committee: Committee): Promise<Status> => {
     return await deployContract(
         "Status",
@@ -231,7 +239,10 @@ const deployStaking = async (authority: FairAccessManager, committee: Committee,
         [
             await ethers.resolveAddress(authority),
             await ethers.resolveAddress(committee),
-            await ethers.resolveAddress(nodes)
+            await ethers.resolveAddress(nodes),
+            await ethers.resolveAddress(
+                await deployRewardWalletReference()
+            )
         ]
     ) as Staking;
 }
@@ -307,15 +318,32 @@ const setupRoles = async (deployedContracts: DeployedContracts) => {
     );
     await response.wait();
 
+    response = await accessManager.setTargetFunctionRole(
+        await ethers.resolveAddress(staking),
+        [staking.interface.getFunction("disable").selector],
+        await accessManager.COMMITTEE_ROLE()
+    );
+    await response.wait();
+
+    response = await accessManager.setTargetFunctionRole(
+        await ethers.resolveAddress(staking),
+        [staking.interface.getFunction("nodeCreated").selector],
+        await accessManager.NODES_ROLE()
+    );
+    await response.wait();
+
     // grant roles
+
+    response = await accessManager.grantRole(await accessManager.COMMITTEE_ROLE(), await ethers.resolveAddress(committee), 0n);
+    await response.wait();
 
     response = await accessManager.grantRole(await accessManager.NODES_ROLE(), await ethers.resolveAddress(nodes), 0n);
     await response.wait();
 
-    response = await accessManager.grantRole(await accessManager.STATUS_ROLE(), await ethers.resolveAddress(status), 0n);
+    response = await accessManager.grantRole(await accessManager.STAKING_ROLE(), await ethers.resolveAddress(staking), 0n);
     await response.wait();
 
-    response = await accessManager.grantRole(await accessManager.STAKING_ROLE(), await ethers.resolveAddress(staking), 0n);
+    response = await accessManager.grantRole(await accessManager.STATUS_ROLE(), await ethers.resolveAddress(status), 0n);
     await response.wait();
 
     response = await accessManager.grantRole(await accessManager.COMMITTEE_ROLE(), await ethers.resolveAddress(committee), 0n);

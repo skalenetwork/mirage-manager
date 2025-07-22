@@ -54,7 +54,7 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
     IDkg public dkg;
     INodes public nodes;
     IStatus public status;
-    IStaking public staking;
+    IStaking public override staking;
     address public skaleRng;
 
     mapping (CommitteeIndex index => Committee committee) public committees;
@@ -179,7 +179,6 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
         if (status.isWhitelisted(node) && staking.getNodeShare(node) > 0 && status.isHealthy(node)) {
             _setEligible(node);
         }
-        staking.nodeCreated(node);
     }
 
     function nodeRemoved(NodeId node) external override restricted {
