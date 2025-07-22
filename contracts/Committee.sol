@@ -179,6 +179,7 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
         if (status.isWhitelisted(node) && staking.getNodeShare(node) > 0 && status.isHealthy(node)) {
             _setEligible(node);
         }
+        staking.nodeCreated(node);
     }
 
     function nodeRemoved(NodeId node) external override restricted {

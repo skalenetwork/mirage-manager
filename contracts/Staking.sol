@@ -27,6 +27,11 @@ import {
 import {
     ReentrancyGuardUpgradeable
 } from "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
+import {ERC1967Utils} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Utils.sol";
+import {ProxyAdmin} from "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol";
+import {
+    TransparentUpgradeableProxy
+} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 import {
     Address
 } from "@openzeppelin/contracts/utils/Address.sol";
@@ -62,6 +67,7 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
     event NodeRewardReceived(NodeId indexed node, Fair indexed amount);
     event Retrieved(address indexed sender, NodeId indexed node, Fair indexed amount);
     event RewardReceived(address indexed sender, uint256 indexed amount);
+    event RewardWalletCreated(NodeId indexed node, IRewardWallet indexed rewardWallet);
     event Staked(address indexed sender, NodeId indexed node, Fair indexed amount);
     event StakedToNewNode(address indexed sender, NodeId indexed node);
     event StoppedStaking(address indexed sender, NodeId indexed node);
@@ -77,11 +83,7 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
     error NodeIsNotDisabled(NodeId node);
     error StakeLimitExceeded(Fair currentStake, Fair attemptedStake, Fair limit);
     error ZeroAddress();
-
-    modifier flushedValidatorReward(NodeId node) {
-        _rewardWallets[node].flush();
-        _;
-    }
+    error RewardWalletDoesNotExist(NodeId node);
 
     function initialize(
         address initialAuthority,
@@ -137,6 +139,12 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
         assert(_disabledNodesBalances.remove(node));
         totalDisabled = totalDisabled - value;
         emit NodeEnabled(node);
+    }
+
+    function nodeCreated(NodeId node) external override restricted {
+        if(_rewardWallets[node] == IRewardWallet(payable(0))) {
+            _deployRewardWallet(node);
+        }
     }
 
     function payReward(NodeId node) external payable override {
@@ -225,6 +233,10 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
         );
     }
 
+    function setRewardWalletReference(IRewardWallet rewardWalletReference_) external override restricted {
+        rewardWalletReference = rewardWalletReference_;
+    }
+
     function stake(NodeId node) external payable override {
         require(msg.value > 0, ZeroAmount());
         require(nodes.activeNodeExists(node), Nodes.NodeDoesNotExist(node));
@@ -271,6 +283,11 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
             return 0;
         }
         return Credit.unwrap(_rootFund.credits[FundLibrary.nodeToHolder(node)]);
+    }
+
+    function getRewardWallet(NodeId node) external view override returns (IRewardWallet rewardWallet) {
+        rewardWallet = _rewardWallets[node];
+        require(rewardWallet != IRewardWallet(payable(0)), RewardWalletDoesNotExist(node));
     }
 
     function getStakedAmount() external view override returns (Fair amount) {
@@ -383,6 +400,21 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
                 StakeLimitExceeded(currentNodeStake, amount, stakeLimit)
             );
         }
+    }
+
+    function _deployRewardWallet(NodeId node) private {
+        ProxyAdmin proxyAdmin = ProxyAdmin(ERC1967Utils.getAdmin());
+        _rewardWallets[node] = IRewardWallet(payable(new TransparentUpgradeableProxy(
+            address(rewardWalletReference),
+            proxyAdmin.owner(),
+            abi.encodeWithSelector(
+                IRewardWallet.initialize.selector,
+                authority(),
+                IStaking(payable(this)),
+                node
+            )
+        )));
+        emit RewardWalletCreated(node, _rewardWallets[node]);
     }
 
     function _pullReward(NodeId node) private nonReentrant {
