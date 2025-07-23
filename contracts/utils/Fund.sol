@@ -22,8 +22,11 @@
 pragma solidity ^0.8.24;
 
 import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
+
 import { NodeId } from "@skalenetwork/fair-manager-interfaces/INodes.sol";
 import { Fair } from "@skalenetwork/fair-manager-interfaces/units.sol";
+
+import { TypedMap } from "../structs/typed/TypedMap.sol";
 
 type Credit is uint256;
 type Holder is uint256;
@@ -37,11 +40,12 @@ using {
 
 
 library FundLibrary {
+    using TypedMap for TypedMap.HolderToCreditMap;
 
     struct Fund {
         Fair lastBalance;
         Credit totalCredits;
-        mapping (Holder holder => Credit share) credits;
+        TypedMap.HolderToCreditMap credits;
         Credit ownerCredits;
         uint16 feeRate; // 0 - 1000‰
     }
@@ -82,12 +86,18 @@ library FundLibrary {
     {
         _processBalanceChange(fund, balanceBeforeRemove);
         Credit credits = _toCreditsRoundedUp(fund, balanceBeforeRemove, amount);
-        if (fund.credits[holder] < credits) {
-            revert NotEnoughStaked(_toFairRoundedDown(fund, balanceBeforeRemove, ZERO_CREDIT, fund.credits[holder]));
+        (bool exists, Credit holderCredits) = fund.credits.tryGet(holder);
+        if (holderCredits < credits) {
+            revert NotEnoughStaked(_toFairRoundedDown(fund, balanceBeforeRemove, ZERO_CREDIT, holderCredits));
         }
-        fund.credits[holder] = fund.credits[holder] - credits;
+        assert(fund.credits.set(holder, holderCredits - credits) != exists);
         fund.totalCredits = fund.totalCredits - credits;
         fund.lastBalance = balanceBeforeRemove - amount;
+
+        if (fund.credits.get(holder) == ZERO_CREDIT) {
+            // Holders with Zero credits are always removed from the map.
+            assert(fund.credits.remove(holder));
+        }
     }
 
     function setFeeRate(
@@ -111,7 +121,8 @@ library FundLibrary {
     {
         _processBalanceChange(fund, balanceBeforeSupply);
         Credit credits = _toCreditsRoundedDown(fund, balanceBeforeSupply, amount);
-        fund.credits[holder] = fund.credits[holder] + credits;
+        (bool holderExists, Credit holderCredits) = fund.credits.tryGet(holder);
+        assert(fund.credits.set(holder, holderCredits + credits) != holderExists);
         fund.totalCredits = fund.totalCredits + credits;
         fund.lastBalance = balanceBeforeSupply + amount;
     }
@@ -128,9 +139,12 @@ library FundLibrary {
         if (fund.totalCredits == ZERO_CREDIT) {
             return ZERO_FAIR;
         }
+        (bool exists, Credit holderCredits) = fund.credits.tryGet(holder);
+        // If exists credits is 0, otherwise it is not.
+        assert(exists != (holderCredits == ZERO_CREDIT));
         return Fair.wrap(
             Fair.unwrap(balance)
-            * Credit.unwrap(fund.credits[holder])
+            * Credit.unwrap(holderCredits)
             / Credit.unwrap(fund.totalCredits + _getUncountedFeeCredits(fund, balance))
         );
     }
@@ -149,6 +163,13 @@ library FundLibrary {
         }
     }
 
+    function holderToAddress(Holder holder) internal pure returns (address holderAddress) {
+        return address(uint160(Holder.unwrap(holder)));
+    }
+
+    function holderToNode(Holder holder) internal pure returns (NodeId node) {
+        return NodeId.wrap(Holder.unwrap(holder));
+    }
 
     function addressToHolder(address holder) internal pure returns (Holder typedHolder) {
         return Holder.wrap(uint256(uint160(holder)));

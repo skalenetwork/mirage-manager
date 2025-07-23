@@ -29,6 +29,10 @@ library TypedSet {
         EnumerableSet.UintSet inner;
     }
 
+    //-- internal --//
+
+    // NodeIdSet
+
     function add(NodeIdSet storage set, NodeId nodeId) internal returns (bool added) {
         added = EnumerableSet.add(set.inner, NodeId.unwrap(nodeId));
     }
@@ -40,6 +44,10 @@ library TypedSet {
     function remove(NodeIdSet storage set, NodeId nodeId) internal returns (bool removed) {
         removed = EnumerableSet.remove(set.inner, NodeId.unwrap(nodeId));
     }
+
+    //-- internal views --//
+
+    // NodeIdSet
 
     function contains(NodeIdSet storage set, NodeId nodeId) internal view returns (bool exists) {
         exists = EnumerableSet.contains(set.inner, NodeId.unwrap(nodeId));
