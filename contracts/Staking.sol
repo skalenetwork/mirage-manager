@@ -64,7 +64,6 @@ contract Staking is AccessManagedUpgradeable, IStaking {
     error OnlyFeeReductionIsAllowed(uint16 currentRate, uint16 newRate);
     error ZeroAmount();
     error ZeroStakeToNode(NodeId node);
-    error NodeInCommittee(NodeId node);
     error NodeIsAlreadyDisabled(NodeId node);
     error NodeIsNotDisabled(NodeId node);
 
@@ -114,7 +113,6 @@ contract Staking is AccessManagedUpgradeable, IStaking {
     function retrieve(NodeId node, Fair value) external override {
         require(value > FundLibrary.ZERO_FAIR, ZeroAmount());
         require(_stakedNodes[msg.sender].contains(node), ZeroStakeToNode(node));
-        require(!committee.isNodeInCurrentOrNextCommittee(node), NodeInCommittee(node));
 
         bool nodeIsEnabled = isNodeEnabled(node);
         if (nodeIsEnabled) {

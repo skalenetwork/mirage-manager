@@ -252,16 +252,23 @@ describe("Staking", () => {
             .should.be.equal(amount2 + node2Reward + roundingError);
     });
 
-    it("should not allow to retrieve from a node from committee", async () => {
+    it("should allow to retrieve from a node from committee", async () => {
         const {committee, staking} = await stakedNodes();
+        const [, user] = await ethers.getSigners();
         const activeCommittee = await committee.getCommittee(await committee.getActiveCommitteeIndex());
-        for (const node of activeCommittee.nodes) {
-            await staking.retrieve(node, 1)
-                .should.be.revertedWithCustomError(
-                    staking,
-                    "NodeInCommittee"
-                ).withArgs(node);
-        }
+        const amount = ethers.parseEther("1");
+        const retrieveAmount = ethers.parseEther("0.5");
+
+        // stake to a committee node
+        const committeeNode = activeCommittee.nodes[0];
+        await staking.connect(user).stake(committeeNode, {value: amount});
+
+        // should allow retrieval from committee node
+        await staking.connect(user).retrieve(committeeNode, retrieveAmount)
+            .should.changeEtherBalance(user, retrieveAmount);
+
+        (await staking.connect(user).getStakedAmount())
+            .should.be.equal(amount - retrieveAmount);
     });
 
     it("should not pay rewards to stakers of unhealthy nodes", async () => {
