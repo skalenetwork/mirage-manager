@@ -29,6 +29,7 @@ import {
     INodes,
     NodeId
 } from "@skalenetwork/fair-manager-interfaces/INodes.sol";
+import { IStatus } from "@skalenetwork/fair-manager-interfaces/IStatus.sol";
 
 import { TypedMap } from "./structs/typed/TypedMap.sol";
 import { TypedSet } from "./structs/typed/TypedSet.sol";
@@ -173,6 +174,21 @@ contract Nodes is AccessManagedUpgradeable, INodes {
         committeeContract.nodeCreated(nextNodeId);
     }
 
+    function deleteNode(
+        NodeId nodeId
+    )
+        external
+        override
+        nodeExists(nodeId)
+        onlyNodeOwner(nodeId)
+    {
+        _deleteNode(nodeId);
+    }
+
+    function deleteNodeByFoundation(NodeId nodeId) external override nodeExists(nodeId) restricted {
+        _deleteNode(nodeId);
+    }
+
     function requestChangeOwner(
         NodeId nodeId,
         address newOwner
@@ -308,12 +324,10 @@ contract Nodes is AccessManagedUpgradeable, INodes {
     }
 
     function getNodeId(address nodeAddress) external view override returns (NodeId nodeId) {
-        // Getter for active node
         require(
             _isAddressOfActiveNode(nodeAddress),
             AddressIsNotAssignedToAnyNode(nodeAddress)
         );
-
         nodeId = _activeNodesAddressToId.get(nodeAddress);
     }
 
@@ -361,6 +375,14 @@ contract Nodes is AccessManagedUpgradeable, INodes {
         _addActiveNodeId(nodeId);
         _setActiveNodeIdForAddress(nodeAddress, nodeId);
 
+        if (bytes(domainName).length > 0){
+            bytes32 hashedName = keccak256(abi.encodePacked(domainName));
+            require(
+                _usedDomainNames.add(hashedName),
+                DomainNameAlreadyTaken(domainName)
+            );
+        }
+
         nodes[nodeId] = Node({
             id: nodeId,
             publicKey: publicKey,
@@ -371,6 +393,32 @@ contract Nodes is AccessManagedUpgradeable, INodes {
         });
 
         emit NodeRegistered(nodeId, nodeAddress, ip, port);
+    }
+
+    function _deleteNode(NodeId id) private nodeNotInCurrentOrNextCommittee(id) {
+        Node storage node = nodes[id];
+        assert(_usedIps.remove(keccak256(node.ip)));
+        if (bytes(node.domainName).length > 0) {
+            bytes32 newName = keccak256(abi.encodePacked(node.domainName));
+            assert(_usedDomainNames.remove(newName));
+        }
+        address nodeOwner = node.nodeAddress;
+        delete nodes[id];
+        if (_isActiveNode(id)) {
+            IStatus statusContract = IStatus(committeeContract.status());
+            assert(_activeNodeIds.remove(id));
+            assert(_activeNodesAddressToId.remove(nodeOwner));
+            emit ActiveNodeDeleted(id, nodeOwner, node.ip, node.port);
+            statusContract.nodeRemoved(id);
+            committeeContract.nodeRemoved(id);
+        }
+        else {
+            assert(_passiveNodeIds.remove(id));
+            assert(_passiveNodeAddresses.remove(nodeOwner));
+            assert(_passiveNodeIdByAddress.remove(nodeOwner, id));
+            delete ownerChangeRequests[id];
+            emit PassiveNodeDeleted(id, nodeOwner, node.ip, node.port);
+        }
     }
 
     function _addPassiveNodeId(NodeId nodeId) private {

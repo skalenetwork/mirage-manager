@@ -1,7 +1,7 @@
 import { ethers } from "hardhat";
 import { expect } from "chai";
 import { cleanDeployment, sendHeartbeat, whitelistedAndStakedNodes } from "./tools/fixtures";
-import { Nodes } from "../typechain-types";
+import { FairAccessManager, Nodes, Staking } from "../typechain-types";
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers";
@@ -35,6 +35,8 @@ chai.use(chaiAsPromised)
 
 describe("Nodes", function () {
     let nodesContract: Nodes;
+    let accessManagerContract: FairAccessManager;
+    let stakingContract: Staking;
     let deployer: HardhatEthersSigner;
     let user1: HardhatEthersSigner;
     let user2: HardhatEthersSigner;
@@ -44,8 +46,10 @@ describe("Nodes", function () {
 
 
     beforeEach(async () => {
-        const {nodes} = await cleanDeployment();
+        const {nodes, accessManager, staking} = await cleanDeployment();
         nodesContract = nodes;
+        stakingContract = staking;
+        accessManagerContract = accessManager;
         [deployer, user1, user2] = await ethers.getSigners();
 
         [deployerPubKey, user1PubKey, user2PubKey] = await Promise.all(
@@ -74,6 +78,63 @@ describe("Nodes", function () {
 
     });
 
+    it("should register and delete Active Nodes", async () => {
+        await nodesContract.registerNode(MOCK_IP_0_BYTES, deployerPubKey, 8000);
+        const nodeId = await nodesContract.getNodeId(deployer.address) as BigNumberish;
+        const node = await nodesContract.getNode(nodeId);
+        expect(node.id).to.equal(nodeId);
+        expect(node.port).to.equal(8000n);
+        expect(Buffer.from(getBytes(node.ip))).to.eql(MOCK_IP_0_BYTES);
+        expect(node.nodeAddress).to.equal(deployer.address);
+        expect(node.publicKey).to.eql(deployerPubKey);
+
+        expect(await nodesContract.getNodeId(deployer.address)).to.equal(nodeId);
+        expect(await nodesContract.getActiveNodeIds()).to.include(nodeId);
+        expect(await nodesContract.activeNodeExists(nodeId)).to.eql(true);
+
+        await nodesContract.connect(deployer).deleteNode(nodeId);
+
+        await expect(nodesContract.getNode(nodeId)).to.be.revertedWithCustomError(nodesContract, "NodeDoesNotExist");
+        expect(await nodesContract.getActiveNodeIds()).to.not.include(nodeId);
+        expect(await nodesContract.activeNodeExists(nodeId)).to.eql(false);
+    });
+
+    it("should not allow to enable a deleted Node", async () => {
+        await nodesContract.registerNode(MOCK_IP_0_BYTES, deployerPubKey, 8000);
+        const nodeId = await nodesContract.getNodeId(deployer.address) as BigNumberish;
+        expect(await stakingContract.isNodeEnabled(nodeId)).to.be.eql(true);
+
+        await nodesContract.deleteNode(nodeId);
+
+        const response = await accessManagerContract.grantRole(await accessManagerContract.COMMITTEE_ROLE(), deployer, 0n);
+        await response.wait();
+
+        await expect(stakingContract.enable(nodeId)).to.be.revertedWithCustomError(nodesContract, "NodeDoesNotExist");
+    });
+
+    it("should not allow anyone other than Node owner or Foundation to delete nodes", async () => {
+        await nodesContract.connect(user1).registerNode(MOCK_IP_0_BYTES, user1PubKey, 8000);
+        const nodeId = await nodesContract.getNodeId(user1.address) as BigNumberish;
+        await nodesContract.connect(user1).setDomainName(nodeId, MOCK_DOMAIN_NAME_0);
+        await expect(nodesContract.connect(deployer).deleteNode(nodeId)).to.be.revertedWithCustomError(nodesContract, "SenderIsNotNodeOwner");
+
+        await nodesContract.connect(user1).deleteNode(nodeId);
+        await expect(nodesContract.getNode(nodeId)).to.be.revertedWithCustomError(nodesContract, "NodeDoesNotExist");
+        expect(await nodesContract.getActiveNodeIds()).to.not.include(nodeId);
+        expect(await nodesContract.activeNodeExists(nodeId)).to.eql(false);
+
+        await nodesContract.connect(user1).registerNode(MOCK_IP_0_BYTES, user1PubKey, 8000);
+        const nodeIdV2 = await nodesContract.getNodeId(user1.address) as BigNumberish;
+        await nodesContract.connect(user1).setDomainName(nodeIdV2, MOCK_DOMAIN_NAME_0);
+
+        await expect(nodesContract.connect(user1).deleteNodeByFoundation(nodeIdV2)).to.be.reverted;
+        await nodesContract.connect(deployer).deleteNodeByFoundation(nodeIdV2);
+
+        await expect(nodesContract.getNode(nodeIdV2)).to.be.revertedWithCustomError(nodesContract, "NodeDoesNotExist");
+        expect(await nodesContract.getActiveNodeIds()).to.not.include(nodeIdV2);
+        expect(await nodesContract.activeNodeExists(nodeIdV2)).to.eql(false);
+    });
+
     it("should register Passive Nodes", async () => {
 
         await nodesContract.registerPassiveNode(MOCK_IPV6_BYTES, 8000);
@@ -97,7 +158,28 @@ describe("Nodes", function () {
         expect(allPassiveNodeIds).to.eql(nodesDeployer.concat(nodesUser1));
     });
 
-    it("should revert when node does not exist", async () => {
+    it("should register and delete passive Nodes", async () => {
+        await nodesContract.registerPassiveNode(MOCK_IPV6_BYTES, 8000);
+        const [passiveNodeId] = await nodesContract.getPassiveNodeIdsForAddress(deployer.address);
+        const passiveNode = await nodesContract.getNode(passiveNodeId);
+        expect(passiveNode.id).to.equal(passiveNodeId);
+        expect(passiveNode.port).to.equal(8000n);
+        expect(Buffer.from(getBytes(passiveNode.ip))).to.eql(MOCK_IPV6_BYTES);
+        expect(passiveNode.nodeAddress).to.equal(deployer.address);
+        expect(await nodesContract.getPassiveNodeIdsForAddress(deployer.address)).to.include(passiveNodeId);
+
+        await nodesContract.connect(deployer).deleteNode(passiveNodeId);
+        await expect(nodesContract.getNode(passiveNodeId)).to.be.revertedWithCustomError(nodesContract, "NodeDoesNotExist");
+
+        await expect(nodesContract.getPassiveNodeIdsForAddress(deployer.address)).to.be
+        .revertedWithCustomError(nodesContract, "AddressIsNotAssignedToAnyNode");
+
+        const allPassiveNodeIds = await nodesContract.getPassiveNodeIds();
+        expect(allPassiveNodeIds.length).to.eql(0);
+
+    });
+
+    it("getNode should revert when node does not exist", async () => {
         await expect(nodesContract.getNode(0))
         .to.be.reverted;
 
@@ -398,4 +480,27 @@ describe("Nodes", function () {
 
     });
 
+    it("should should not allow deleting node if node in current or next committee or has stake", async () => {
+        const {committee, nodesData, nodes, status, staking} = await whitelistedAndStakedNodes();
+        await committee.setCommitteeSize(5); // to save resources
+        await sendHeartbeat(status, nodesData.slice(0, 10)); // to save time
+        await committee.select();
+        for(const node of nodesData.slice(0, 10)) {
+            const nodeBlocked = await committee.isNodeInCurrentOrNextCommittee(node.id);
+            if (nodeBlocked) {
+                await expect(nodes.connect(node.wallet).deleteNode(node.id))
+                .to.be.revertedWithCustomError(nodes, "NodeIsInCommittee");
+            }
+            else {
+                const amount = await staking.getStakedToNodeAmount(node.id);
+                if (amount > 0) {
+                    await expect(nodes.connect(node.wallet).deleteNode(node.id))
+                    .to.be.revertedWithCustomError(nodes, "NodeHasDelegations");
+                    await staking.retrieve(node.id, amount);
+                }
+                await nodes.connect(node.wallet).deleteNode(node.id);
+            }
+        }
+
+    });
 });

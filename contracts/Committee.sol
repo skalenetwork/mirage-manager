@@ -33,9 +33,9 @@ import { DkgId, IDkg } from "@skalenetwork/fair-manager-interfaces/IDkg.sol";
 import { INodes, NodeId } from "@skalenetwork/fair-manager-interfaces/INodes.sol";
 import { IStaking } from "@skalenetwork/fair-manager-interfaces/IStaking.sol";
 import { Duration, IStatus } from "@skalenetwork/fair-manager-interfaces/IStatus.sol";
-
 import { TypedSet } from "./structs/typed/TypedSet.sol";
 import { G2Operations } from "./utils/fieldOperations/G2Operations.sol";
+import { FundLibrary } from "./utils/Fund.sol";
 import { PoolLibrary } from "./utils/Pool.sol";
 import { Precompiled } from "./utils/Precompiled.sol";
 import { IRandom, Random } from "./utils/Random.sol";
@@ -167,11 +167,10 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
 
     function nodeRemoved(NodeId node) external override restricted {
         _setIneligible(node);
-
     }
 
     function nodeWhitelisted(NodeId node) external override restricted {
-        if (staking.getNodeShare(node) > 0 && status.isHealthy(node)) {
+        if (staking.getNodeTotalStake(node) > FundLibrary.ZERO_FAIR && status.isHealthy(node)) {
             _setEligible(node);
         }
     }
@@ -187,7 +186,7 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
                 _shareToWeight(staking.getNodeShare(node))
             );
         } else {
-            if (status.isWhitelisted(node) && staking.getNodeShare(node) > 0) {
+            if (status.isWhitelisted(node) && staking.getNodeTotalStake(node) > FundLibrary.ZERO_FAIR) {
                 _setEligible(node);
                 _pool.moveToFront(
                     node,
@@ -314,11 +313,17 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
     function _setEligible(NodeId node) private {
         _pool.add(node);
         emit NodeBecomesEligible(node);
+        if (!staking.isNodeEnabled(node)) {
+            staking.enable(node);
+        }
     }
 
     function _setIneligible(NodeId node) private {
         if (_pool.remove(node)) {
             emit NodeLosesEligibility(node);
+        }
+        if (staking.isNodeEnabled(node)) {
+            staking.disable(node);
         }
     }
 

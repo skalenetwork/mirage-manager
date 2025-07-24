@@ -82,10 +82,13 @@ describe("Committee", () => {
 
     it("should select committee", async function () {
         this.timeout(600000); // 10 minutes timeout. DKG requires a lot of time
-        const {committee, dkg, nodesData} = await whitelistedAndStakedAndHealthyNodes();
+        const {committee, dkg, nodesData, status, staking} = await whitelistedAndStakedAndHealthyNodes();
         const activeCommitteeIndex = await committee.getActiveCommitteeIndex();
         const nextCommitteeIndex = activeCommitteeIndex + 1n;
-
+        for(const node of nodesData){
+            expect(await status.isHealthy(node.id)).to.be.eql(true);
+            expect(await staking.getNodeShare(node.id)).to.be.greaterThan(0n);
+        }
         await committee.select();
 
         let nextCommittee = await committee.getCommittee(nextCommitteeIndex);
@@ -205,7 +208,9 @@ describe("Committee", () => {
     });
 
     it("should set transition delay", async () => {
-        const {committee, dkg, nodesData} = await whitelistedAndStakedAndHealthyNodes();
+        const {committee, status, dkg, nodesData} = await whitelistedAndStakedNodes();
+        const subset = nodesData.slice(0, 5);
+        await sendHeartbeat(status, subset);
         const activeCommitteeIndex = await committee.getActiveCommitteeIndex();
         const nextCommitteeIndex = activeCommitteeIndex + 1n;
         const newTransitionDelay = 0xd2n;
@@ -383,7 +388,8 @@ describe("Committee", () => {
     });
 
     it("should emit proper error when there are eligible nodes but all of them are not healthy", async () => {
-        const {committee, status} = await whitelistedAndStakedAndHealthyNodes();
+        const {committee, status, nodesData} = await whitelistedAndStakedNodes();
+        await sendHeartbeat(status, nodesData.slice(0, Number(await committee.committeeSize())));
         await skipTime(await status.heartbeatInterval());
         await committee.select()
             .should.be.revertedWithCustomError(committee, "TooFewCandidates")

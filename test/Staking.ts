@@ -1,4 +1,4 @@
-import chai, { assert } from "chai";
+import chai, { assert, expect } from "chai";
 import { registeredOnlyNodes, stakedNodes } from "./tools/fixtures";
 import { ethers } from "hardhat";
 import { zip } from "lodash";
@@ -16,6 +16,8 @@ describe("Staking", () => {
         await staking.connect(user).stake(node, {value: amount});
         (await staking.connect(user).getStakedAmount())
             .should.be.equal(amount);
+        expect(await staking.getNodeTotalStake(node)).to.be.eql(amount);
+
     });
 
     it("should distribute rewards proportionally to stake", async () => {
@@ -27,7 +29,7 @@ describe("Staking", () => {
 
         await staking.connect(user1).stake(node, {value: amount1});
         await staking.connect(user2).stake(node, {value: amount2});
-
+        expect(await staking.getNodeTotalStake(node)).to.be.eql(amount1 + amount2);
         // Pay reward
         await owner.sendTransaction({to: staking, value: reward});
 
@@ -35,6 +37,8 @@ describe("Staking", () => {
             .should.be.equal(amount1 + reward * amount1 / (amount1 + amount2));
         (await staking.connect(user2).getStakedAmount())
             .should.be.equal(amount2 + reward * amount2 / (amount1 + amount2));
+
+        expect(await staking.getNodeTotalStake(node)).to.be.eql(amount1 + amount2 + reward);
     });
 
     it("should be able to stake to multiple nodes", async () => {
@@ -67,10 +71,36 @@ describe("Staking", () => {
         await staking.connect(user).stake(node, {value: initialAmount});
         (await staking.connect(user).getStakedAmount())
             .should.be.equal(initialAmount);
+        expect(await staking.getNodeTotalStake(node)).to.be.eql(initialAmount);
+
         await staking.connect(user).retrieve(node, amount)
             .should.changeEtherBalance(user, amount);
         (await staking.connect(user).getStakedAmount())
             .should.be.equal(initialAmount - amount);
+
+        expect(await staking.getNodeTotalStake(node)).to.be.eql(initialAmount - amount);
+    });
+
+    it("should be possible to retrieve from deleted Node", async () => {
+        const {staking, nodesData, nodes} = await registeredOnlyNodes();
+        const [,user] = await ethers.getSigners();
+        const initialAmount = ethers.parseEther("3");
+        const amount = ethers.parseEther("1");
+        const node = nodesData[22]; // not in the current committee
+
+        await staking.connect(user).stake(node.id, {value: initialAmount});
+        (await staking.connect(user).getStakedAmount())
+            .should.be.equal(initialAmount);
+        expect(await staking.getNodeTotalStake(node.id)).to.be.eql(initialAmount);
+        await nodes.connect(node.wallet).deleteNode(node.id);
+        expect(await nodes.activeNodeExists(node.id)).to.be.eql(false);
+        expect(await staking.isNodeEnabled(node.id)).to.be.eql(false);
+        await staking.connect(user).retrieve(node.id, amount)
+            .should.changeEtherBalance(user, amount);
+        (await staking.connect(user).getStakedAmount())
+            .should.be.equal(initialAmount - amount);
+
+        expect(await staking.getNodeTotalStake(node.id)).to.be.eql(initialAmount - amount);
     });
 
     it("should apply validator fee on rewards", async () => {
@@ -92,8 +122,13 @@ describe("Staking", () => {
 
         await staking.connect(nodeWallet).claimAllFee(nodeWallet)
             .should.changeEtherBalance(nodeWallet, reward / 2n);
+
+        expect(await staking.getNodeTotalStake(node)).to.be.eql(amount + reward / 2n);
+
         await staking.connect(user).retrieve(node, amount + reward / 2n)
             .should.changeEtherBalance(user, amount + reward / 2n);
+
+        expect(await staking.getNodeTotalStake(node)).to.be.eql(0n);
 
         (await staking.getEarnedFeeAmount(node))
             .should.be.equal(0n);
@@ -230,7 +265,7 @@ describe("Staking", () => {
     });
 
     it("should not pay rewards to stakers of unhealthy nodes", async () => {
-        const {staking, nodesData } = await registeredOnlyNodes();
+        const {staking, nodesData, accessManager } = await registeredOnlyNodes();
         const [owner, ...allUsers] = await ethers.getSigners();
         const amounts = [2, 3, 5].map(String).map(ethers.parseEther);
         const users = allUsers.slice(0, amounts.length);
@@ -247,7 +282,13 @@ describe("Staking", () => {
         for (const [user, node, amount] of zip(users, targetNodes, amounts)) {
             assert(node);
             await staking.connect(user).stake(node.id, {value: amount});
+            expect(await staking.getNodeTotalStake(node.id)).to.be.eql(amount);
         }
+
+        // allow admin to disable nodes for testing
+        const [admin,] = await ethers.getSigners();
+        const response = await accessManager.grantRole(await accessManager.COMMITTEE_ROLE(), admin, 0n);
+        await response.wait();
 
         const disabledNode = targetNodes.slice(-1)[0];
         const delegatorOfDisabledNode = users.slice(-1)[0];
