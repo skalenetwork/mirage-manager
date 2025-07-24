@@ -1,5 +1,5 @@
 import chai, { assert, expect } from "chai";
-import { registeredOnlyNodes, stakedNodes } from "./tools/fixtures";
+import { registeredOnlyNodes } from "./tools/fixtures";
 import { ethers } from "hardhat";
 import { zip } from "lodash";
 
