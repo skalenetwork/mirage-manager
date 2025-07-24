@@ -23,6 +23,7 @@ import {
     INodes as INodesInSkaleManager,
     ISchainsInternal,
 } from "../typechain-types/@skalenetwork/skale-manager-interfaces";
+import { configurePermissions } from "./permissions";
 
 
 export const contracts = [
@@ -34,7 +35,7 @@ export const contracts = [
     "Staking"
 ];
 
-interface DeployedContracts {
+export interface DeployedContracts {
     Committee: Committee,
     DKG: DKG,
     Nodes: Nodes,
@@ -153,7 +154,7 @@ export const deploy = async (nodeList?: INodes.NodeStruct[], commonPublicKey?: I
 
     await (await deployedContracts.Committee.setVersion(await getVersion())).wait();
 
-    await setupRoles(deployedContracts);
+    await configurePermissions(deployedContracts);
 
     return deployedContracts;
 }
@@ -257,97 +258,6 @@ const storeAddresses = async (deployedContracts: DeployedContracts, version: str
     await fs.writeFile(
         `data/fair-manager-${version}-${network.name}-contracts.json`,
         JSON.stringify(addresses, null, 4));
-}
-
-const setupRoles = async (deployedContracts: DeployedContracts) => {
-    const {
-        Committee: committee,
-        FairAccessManager: accessManager,
-        Nodes: nodes,
-        Staking: staking,
-        Status: status
-    } = deployedContracts;
-
-    // set up roles
-
-    //Committee
-    let response = await accessManager.setTargetFunctionRole(
-        await ethers.resolveAddress(committee),
-        [
-            committee.interface.getFunction("nodeCreated").selector,
-            committee.interface.getFunction("nodeRemoved").selector
-        ],
-        await accessManager.NODES_ROLE()
-    );
-    await response.wait();
-
-    response = await accessManager.setTargetFunctionRole(
-        await ethers.resolveAddress(committee),
-        [
-            committee.interface.getFunction("nodeBlacklisted").selector,
-            committee.interface.getFunction("nodeWhitelisted").selector,
-            committee.interface.getFunction("processHeartbeat").selector
-        ],
-        await accessManager.STATUS_ROLE()
-    );
-    await response.wait();
-
-    response = await accessManager.setTargetFunctionRole(
-        await ethers.resolveAddress(committee),
-        [committee.interface.getFunction("updateWeight").selector],
-        await accessManager.STAKING_ROLE()
-    );
-    await response.wait();
-
-    //Staking
-    response = await accessManager.setTargetFunctionRole(
-        await ethers.resolveAddress(staking),
-        [
-            staking.interface.getFunction("disable").selector,
-            staking.interface.getFunction("enable").selector
-        ],
-        await accessManager.COMMITTEE_ROLE()
-    );
-    await response.wait();
-
-    //Status
-    response = await accessManager.setTargetFunctionRole(
-        await ethers.resolveAddress(status),
-        [status.interface.getFunction("nodeRemoved").selector],
-        await accessManager.NODES_ROLE()
-    );
-    await response.wait();
-
-    response = await accessManager.setTargetFunctionRole(
-        await ethers.resolveAddress(staking),
-        [staking.interface.getFunction("disable").selector],
-        await accessManager.COMMITTEE_ROLE()
-    );
-    await response.wait();
-
-    response = await accessManager.setTargetFunctionRole(
-        await ethers.resolveAddress(staking),
-        [staking.interface.getFunction("nodeCreated").selector],
-        await accessManager.NODES_ROLE()
-    );
-    await response.wait();
-
-    // grant roles
-
-    response = await accessManager.grantRole(await accessManager.COMMITTEE_ROLE(), await ethers.resolveAddress(committee), 0n);
-    await response.wait();
-
-    response = await accessManager.grantRole(await accessManager.NODES_ROLE(), await ethers.resolveAddress(nodes), 0n);
-    await response.wait();
-
-    response = await accessManager.grantRole(await accessManager.STAKING_ROLE(), await ethers.resolveAddress(staking), 0n);
-    await response.wait();
-
-    response = await accessManager.grantRole(await accessManager.STATUS_ROLE(), await ethers.resolveAddress(status), 0n);
-    await response.wait();
-
-    response = await accessManager.grantRole(await accessManager.COMMITTEE_ROLE(), await ethers.resolveAddress(committee), 0n);
-    await response.wait();
 }
 
 const verify = async (deployedContracts: DeployedContracts) => {
