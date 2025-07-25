@@ -50,6 +50,7 @@ contract Staking is AccessManagedUpgradeable, IStaking {
     mapping (NodeId node => FundLibrary.Fund nodeFund) private _nodesFunds;
     mapping (address holder => TypedSet.NodeIdSet nodeIds) private _stakedNodes;
     TypedMap.NodeIdToFairMap private _disabledNodesBalances;
+    mapping (NodeId node => Fair limit) private _nodeStakeLimits;
 
     event FeeClaimed(NodeId indexed node, address indexed to, Fair indexed amount);
     event Retrieved(address indexed sender, NodeId indexed node, Fair indexed amount);
