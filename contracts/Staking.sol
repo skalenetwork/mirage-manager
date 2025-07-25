@@ -60,6 +60,7 @@ contract Staking is AccessManagedUpgradeable, IStaking {
     event StoppedStaking(address indexed sender, NodeId indexed node);
     event NodeDisabled(NodeId indexed node);
     event NodeEnabled(NodeId indexed node);
+    event NodeStakeLimitUpdated(NodeId indexed node, Fair indexed newLimit);
 
     error FeeRateIsIncorrect(uint16 feeRate);
     error OnlyFeeReductionIsAllowed(uint16 currentRate, uint16 newRate);
@@ -67,6 +68,7 @@ contract Staking is AccessManagedUpgradeable, IStaking {
     error ZeroStakeToNode(NodeId node);
     error NodeIsAlreadyDisabled(NodeId node);
     error NodeIsNotDisabled(NodeId node);
+    error NodeStakeLimitExceeded(NodeId node, Fair currentStake, Fair attemptedStake, Fair limit);
 
     function initialize(address initialAuthority, ICommittee committee_, INodes nodes_) public initializer override {
         __AccessManaged_init(initialAuthority);
