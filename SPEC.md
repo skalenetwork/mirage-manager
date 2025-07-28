@@ -192,7 +192,7 @@ As described, Active Nodes can be healthy or unhealthy, depending on whether the
 
 The Committee smart contract is also the central contract of FAIR-manager, and thus holds the `version` of the project.
 
-It actively maintains a **Pool** of nodes that are eligible to join the next Committee. The contract, using the [`Pool.sol`]() //TODO library, is also capable of creating samples of nodes based on their amount of stake to form a Committee.
+It actively maintains a **Pool** of nodes that are eligible to join the next Committee. The contract, using the `Pool.sol` library, is also capable of creating samples of nodes based on their amount of stake to form a Committee.
 
 A Committee is a set of Active Nodes that take part in consensus while the Committee is active, associated with a specific DKG round. After a Committee is created, the DKG round must complete. The successful DKG round with the previously assigned DkgID will include the commonPublicKey and be assigned to the Committee, which will then become a *valid* Committee and be assigned a startingTimestamp.
 
@@ -247,7 +247,7 @@ Although accounts with DEFAULT_ADMIN_ROLE are not automatically granted access t
 
 ## Custom Libraries & Data Structures
 
-### `SplayTree.sol`
+### [`SplayTree.sol`](./contracts/structs/SplayTree.sol)
 
 The `SplayTree` library implements a self-adjusting binary search tree (splay tree) for efficient management and weighted selection of nodes, using `NodeId` as keys. It is designed for use in scenarios where fast access, insertion, removal, and weighted random selection are required, such as node pools in committee selection.
 
@@ -274,7 +274,7 @@ The Key of the Nodes in the Splay Tree is not explicitly represented, but indire
 - Efficiently supports insertion, removal, and search of nodes in O(log n) amortized time.
 - Used in FAIR-manager for managing node pools and committee selection where node weights (e.g., stake) and their liveliness are relevant.
 
-### `TypedSet.sol`
+### [`TypedSet.sol`](./contracts/structs/typed/TypedSet.sol)
 
 The `TypedSet` library provides type-safe wrappers around OpenZeppelin's `EnumerableSet` for use with custom types such as `NodeId` and `Holder`. It enables efficient set operations (add, remove, contains, length, values, at) for these types, ensuring type safety and reducing boilerplate in contract code.
 
@@ -282,7 +282,7 @@ The `TypedSet` library provides type-safe wrappers around OpenZeppelin's `Enumer
 
 These sets are used throughout the FAIR-manager contracts to manage collections of nodes and holders in a type-safe manner.
 
-### `TypedMap.sol`
+### [`TypedMap.sol`](./contracts/structs/typed/TypedMap.sol)
 
 The `TypedMap` library provides type-safe wrappers around OpenZeppelin's `EnumerableMap` or standard `map` for mapping between addresses, `NodeId`, and `Fair` values. It simplifies and secures the use of mappings with custom types.
 
@@ -290,7 +290,7 @@ The `TypedMap` library provides type-safe wrappers around OpenZeppelin's `Enumer
 - **AddressToNodeIdSetMap**: Maps addresses to TypedSets of `NodeId` values.
 - **NodeIdToFairMap**: Maps `NodeId` values to `Fair` values.
 
-### `Pool.sol`
+### [`Pool.sol`](./contracts/utils/Pool.sol)
 
 The `PoolLibrary` provides a robust abstraction for managing a dynamic pool of nodes, supporting efficient weighted random sampling, insertion, removal, and liveliness tracking. It is a core utility for committee selection and node management in FAIR-manager, leveraging the `SplayTree` and `TypedSet` libraries for performance and flexibility.
 
