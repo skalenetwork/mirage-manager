@@ -4,6 +4,21 @@
 
 FAIR-manager smart contracts are a pivotal component in the orchestration and governance of the FAIR network, providing a permissionless and decentralized mechanism for managing the network's operational facets. The project is designed to handle critical functionality such as node operations (registration, deletion, liveliness, etc.), DKG (Distributed Key Generation), committee rotation, and staking — ensuring the scalability, security, and overall efficiency of the network.
 
+## Index
+
+- [Architecture and Components](#architecture-and-components)
+  - [Nodes.sol](#nodessol)
+  - [Status.sol](#statussol)
+  - [DKG.sol](#dkgsol)
+  - [Staking.sol](#stakingsol)
+  - [Committee.sol](#committeesol)
+- [Permission & Control](#permission--control)
+- [Custom Libraries & Data Structures](#custom-libraries--data-structures)
+  - [SplayTree.sol](#splaytreesol)
+  - [TypedSet.sol](#typedsetsol)
+  - [TypedMap.sol](#typedmapsol)
+  - [Pool.sol](#poolsol)
+
 ## Architecture and Components
 
 All main smart contracts use the TUPP (Transparent Upgradeable Proxy Pattern) from OpenZeppelin. According to the latest changes in the pattern, each smart contract has its own ProxyAdmin Contract, Proxy Contract, and Implementation Contract: `"@openzeppelin/contracts": "^5.3.0"`.
