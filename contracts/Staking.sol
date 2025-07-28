@@ -190,9 +190,17 @@ contract Staking is AccessManagedUpgradeable, IStaking {
         Fair balance = _getTotalBalance() - amount;
 
         if (Fair.unwrap(stakeLimit) > 0) {
+            Fair currentStake;
+            if (!nodeIsEnabled) {
+                currentStake = _disabledNodesBalances.get(node);
+            } else {
+                currentStake = _rootFund.getBalance(balance, FundLibrary.nodeToHolder(node));
+            }
+
+            Fair newTotalStake = currentStake + amount;
             require(
-                Fair.unwrap(amount) <= Fair.unwrap(stakeLimit),
-                NodeStakeLimitExceeded(node, amount, amount, stakeLimit)
+                Fair.unwrap(newTotalStake) <= Fair.unwrap(stakeLimit),
+                NodeStakeLimitExceeded(node, currentStake, amount, stakeLimit)
             );
         }
 
