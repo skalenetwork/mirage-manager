@@ -18,7 +18,7 @@ With the exception of `FairAccessManager.sol`, which inherits from `@openzeppeli
 FAIR supports two types of nodes: Passive and Active Nodes.
 
 - **Active Nodes**: Actively contribute to the functioning and security of the network. The registered owner of an Active Node cannot own any other node (Active or Passive). Active nodes cannot change ownership.
-- **Passive Nodes**: Do not actively contribute. The owner of a Passive Node can own multiple Passive Nodes. Passive odes can freely change ownership.
+- **Passive Nodes**: Do not actively contribute. The owner of a Passive Node can own multiple Passive Nodes. Passive Nodes can freely change ownership.
 
 ```solidity
 struct Node {
