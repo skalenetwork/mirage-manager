@@ -113,6 +113,12 @@ contract Staking is AccessManagedUpgradeable, IStaking {
         emit NodeEnabled(node);
     }
 
+    function setNodeStakeLimit(NodeId node, Fair limit) external restricted {
+        require(nodes.activeNodeExists(node), Nodes.NodeDoesNotExist(node));
+        _nodeStakeLimits[node] = limit;
+        emit NodeStakeLimitUpdated(node, limit);
+    }
+
     function retrieve(NodeId node, Fair value) external override {
         require(value > FundLibrary.ZERO_FAIR, ZeroAmount());
         require(_stakedNodes[msg.sender].contains(node), ZeroStakeToNode(node));
