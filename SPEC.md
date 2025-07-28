@@ -149,13 +149,13 @@ Although the same structure is reused, there are two distinct types of funds:
 - The **root fund**: `Fund private _rootFund;` In the root fund, Holders represent Nodes (IDs). There is no feeRate. It is used to track the Credits (share) of each Node. The amount of FAIR staked to a node is equal to the total FAIR balance of `Staking.sol` times the amount of credits it holds, divided by the total amount of credits.
 
 $$
-\text{StakedFAIR}_{\text{Node}} = \frac{\text{TotalStakedFAIR}}{\text{TotalNumberOfCredits}_{\text{rootFund}}} \times \text{Credits}_{\text{Node}}
+\text{StakedFAIR}\_{Node} = \frac{\text{TotalStakedFAIR}}{\text{TotalNumberOfCredits}\_{rootFund}} \times \text{Credits}\_{Node}
 $$
 
 - **Node-specific funds**: For each node, a Fund is created. Each node will have its feeRate, and Holders represent addresses that have staked in this node. Using the same method as above, the amount of FAIR staked by a user to a node can be computed.
 
 $$
-\text{StakedFAIR}_{(\text{Node},\text{User})} = \frac{\text{StakedFAIR}_{\text{Node}}}{\text{TotalNumberOfCredits}_{\text{NodeFund}}} \times \text{Credits}_{(\text{Node}, \text{User})}
+\text{StakedFAIR}\_{(Node,User)} = \frac{\text{StakedFAIR}\_{Node}}{\text{TotalNumberOfCredits}\_{NodeFund}} \times \text{Credits}\_{(Node, User)}
 $$
 
 Node fees are not *claimed* automatically. Node owners can claim fees at any time, or let them accumulate and compound over time.
