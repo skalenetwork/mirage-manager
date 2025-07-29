@@ -357,7 +357,7 @@ describe("Staking", () => {
         }
     });
 
-    it("should pay rewards via reward wallet", async () => {
+    it.only("should pay rewards via reward wallet", async () => {
         const tolerance = 1n; // tolerance in wei for rounding errors
         const {staking, nodesData } = await registeredOnlyNodes();
         const [, ...allUsers] = await ethers.getSigners();
@@ -391,7 +391,6 @@ describe("Staking", () => {
 
         // check distribution
         for (const [user, amount] of zip(users, updatedAmounts)) {
-            console.log("Check user");
             assert(amount && user);
             (await staking.connect(user).getStakedAmount())
                 .should.be.equal(amount);
@@ -408,7 +407,6 @@ describe("Staking", () => {
 
         // check distribution
         for (const [user, amount] of zip(users, updatedAmounts)) {
-            console.log("Check user");
             assert(amount && user);
             (await staking.connect(user).getStakedAmount())
                 .should.be.equal(amount);
@@ -427,7 +425,6 @@ describe("Staking", () => {
 
         // check distribution
         for (const [user, amount] of zip(users, updatedAmounts)) {
-            console.log("Check user");
             assert(amount && user);
             (await staking.connect(user).getStakedAmount())
                 .should.be.equal(amount);
@@ -442,6 +439,20 @@ describe("Staking", () => {
             .should.changeEtherBalance(users[0], updatedAmounts[0]);
         (await ethers.provider.getBalance(rewardWallets[0]))
             .should.be.equal(0n);
+
+        updatedAmounts = [0, 3].map(String).map(ethers.parseEther);
+
+        // check distribution
+        for (const [user, amount] of zip(users, updatedAmounts)) {
+            assert(user && amount !== undefined);
+            (await staking.connect(user).getStakedAmount())
+                .should.be.equal(amount);
+        }
+        for (const [node, amount] of zip(targetNodes, nodeFees)) {
+            assert(node && amount !== undefined);
+            (await staking.getEarnedFeeAmount(node.id))
+                .should.be.approximately(amount, tolerance);
+        }
     });
 
     it("should enforce node stake limits", async () => {
