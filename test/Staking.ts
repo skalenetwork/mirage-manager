@@ -368,6 +368,11 @@ describe("Staking", () => {
 
         // Verify limit is set
         expect(await staking.getNodeStakeLimit(node.id)).to.be.equal(stakeLimit);
+
+        // Stake 9 ETH (should succeed)
+        const initialStake = ethers.parseEther("9");
+        await staking.connect(user).stake(node.id, {value: initialStake});
+        expect(await staking.getNodeTotalStake(node.id)).to.be.equal(initialStake);
     });
 
 });
