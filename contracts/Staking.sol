@@ -190,11 +190,11 @@ contract Staking is AccessManagedUpgradeable, IStaking {
         Fair balance = _getTotalBalance() - amount;
 
         if (Fair.unwrap(stakeLimit) > 0) {
-            Fair currentStake;
+            Fair currentNodeStake;
             if (nodeIsEnabled) {
-                currentStake = _rootFund.getBalance(balance, FundLibrary.nodeToHolder(node));
+                currentNodeStake = _rootFund.getBalance(balance, FundLibrary.nodeToHolder(node));
             } else {
-                currentStake = _disabledNodesBalances.get(node);
+                currentNodeStake = _disabledNodesBalances.get(node);
             }
 
             Fair newTotalStake = currentStake + amount;
