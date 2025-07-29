@@ -388,7 +388,15 @@ describe("Staking", () => {
             .should.be.revertedWithCustomError(
                 staking,
                 "NodeStakeLimitExceeded"
+            ).withArgs(
+                node.id,
+                expectedTotalAfterReward,
+                additionalStake,
+                stakeLimit
             );
+
+        // Verify total stake hasn't changed
+        expect(await staking.getNodeTotalStake(node.id)).to.be.equal(expectedTotalAfterReward);
     });
 
 });
