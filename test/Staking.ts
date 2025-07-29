@@ -397,6 +397,14 @@ describe("Staking", () => {
 
         // Verify total stake hasn't changed
         expect(await staking.getNodeTotalStake(node.id)).to.be.equal(expectedTotalAfterReward);
+
+        // Remove the limit and try staking again (should succeed)
+        await staking.connect(admin).removeNodeStakeLimit(node.id);
+        expect(await staking.getNodeStakeLimit(node.id)).to.be.equal(0);
+
+        // Now we can stake the additional amount
+        await staking.connect(user).stake(node.id, {value: additionalStake});
+        expect(await staking.getNodeTotalStake(node.id)).to.be.equal(expectedTotalAfterReward + additionalStake);
     });
 
 });
