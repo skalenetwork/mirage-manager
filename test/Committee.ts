@@ -207,6 +207,14 @@ describe("Committee", () => {
         nextCommittee.nodes.length.should.be.equal(newSize);
     });
 
+    it("should not allow to set low transition delays", async () => {
+        const {committee} = await cleanDeployment();
+        await expect(committee.setTransitionDelay(501n)).to.be.revertedWithCustomError(committee, "TransitionDelayTooShort");
+        await committee.setHardMinTransitionDelay(500n);
+        await committee.setTransitionDelay(501n); // should be ok
+        await expect(committee.setTransitionDelay(400n)).to.be.revertedWithCustomError(committee, "TransitionDelayTooShort");
+    });
+
     it("should set transition delay", async () => {
         const {committee, status, dkg, nodesData} = await whitelistedAndStakedNodes();
         const subset = nodesData.slice(0, 5);
@@ -231,14 +239,6 @@ describe("Committee", () => {
         nextCommittee.startingTimestamp.should.be.equal(
             BigInt(lastTransactionTimestamp) + newTransitionDelay
         );
-    });
-
-    it("should not allow to set low transition delays", async () => {
-        const {committee} = await cleanDeployment();
-        await expect(committee.setTransitionDelay(501n)).to.be.revertedWithCustomError(committee, "TransitionDelayTooShort");
-        await committee.setHardMinTransitionDelay(500n);
-        await committee.setTransitionDelay(501n); // should be ok
-        await expect(committee.setTransitionDelay(400n)).to.be.revertedWithCustomError(committee, "TransitionDelayTooShort");
     });
 
     it("should check if a node in the committee or will be there soon", async () => {
