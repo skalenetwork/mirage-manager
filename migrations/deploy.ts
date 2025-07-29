@@ -16,7 +16,7 @@ import {
     Status,
     RewardWallet
 } from "../typechain-types";
-import { AddressLike } from "ethers";
+import { AddressLike, BigNumberish } from "ethers";
 import { skaleContracts } from "@skalenetwork/skale-contracts-ethers-v6";
 import {
     IKeyStorage,
@@ -138,7 +138,8 @@ export const deploy = async (nodeList?: INodes.NodeStruct[], commonPublicKey?: I
     deployedContracts.Staking = await deployStaking(
         deployedContracts.FairAccessManager,
         deployedContracts.Committee,
-        deployedContracts.Nodes
+        deployedContracts.Nodes,
+        nodeList.map(node => node.id)
     );
 
     let response = await deployedContracts.Committee.setDkg(deployedContracts.DKG);
@@ -234,8 +235,13 @@ const deployStatus = async (authority: FairAccessManager, nodes: Nodes, committe
     ) as Status;
 }
 
-const deployStaking = async (authority: FairAccessManager, committee: Committee, nodes: Nodes): Promise<Staking> => {
-    return await deployContract(
+const deployStaking = async (
+    authority: FairAccessManager,
+    committee: Committee,
+    nodes: Nodes,
+    initialNodes: BigNumberish[]
+): Promise<Staking> => {
+    const staking = await deployContract(
         "Staking",
         [
             await ethers.resolveAddress(authority),
@@ -246,6 +252,20 @@ const deployStaking = async (authority: FairAccessManager, committee: Committee,
             )
         ]
     ) as Staking;
+
+    // Nodes contract is deployed before Staking
+    // so the Staking contract can't be notified about initially existing nodes
+    // Providing this list to the initializer does not work
+    // because proxy admin address is not accessible in the initializer
+    // and corresponding RewardWallets can't be deployed
+    // To workaround this issue manually notify Staking about initial nodes
+
+    for (const nodeId of initialNodes) {
+        const response = await staking.nodeCreated(nodeId);
+        await response.wait();
+    }
+
+    return staking;
 }
 
 const storeAddresses = async (deployedContracts: DeployedContracts, version: string) => {
