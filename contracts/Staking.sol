@@ -197,10 +197,10 @@ contract Staking is AccessManagedUpgradeable, IStaking {
                 currentNodeStake = _disabledNodesBalances.get(node);
             }
 
-            Fair newTotalStake = currentStake + amount;
+            Fair newNodeStake = currentNodeStake + amount;
             require(
-                Fair.unwrap(newTotalStake) <= Fair.unwrap(stakeLimit),
-                NodeStakeLimitExceeded(node, currentStake, amount, stakeLimit)
+                Fair.unwrap(newNodeStake) <= Fair.unwrap(stakeLimit),
+                NodeStakeLimitExceeded(node, currentNodeStake, amount, stakeLimit)
             );
         }
 
