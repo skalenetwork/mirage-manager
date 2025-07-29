@@ -213,7 +213,7 @@ describe("Committee", () => {
         await sendHeartbeat(status, subset);
         const activeCommitteeIndex = await committee.getActiveCommitteeIndex();
         const nextCommitteeIndex = activeCommitteeIndex + 1n;
-        const newTransitionDelay = 0xd2n;
+        const newTransitionDelay = 0x259n; // 601 seconds (Minimum is 600 seconds)
         await committee.setCommitteeSize(2); // to save resources
 
         await committee.setTransitionDelay(newTransitionDelay);
@@ -231,6 +231,14 @@ describe("Committee", () => {
         nextCommittee.startingTimestamp.should.be.equal(
             BigInt(lastTransactionTimestamp) + newTransitionDelay
         );
+    });
+
+    it("should not allow to set low transition delays", async () => {
+        const {committee} = await cleanDeployment();
+        await expect(committee.setTransitionDelay(501n)).to.be.revertedWithCustomError(committee, "TransitionDelayTooShort");
+        await committee.setHardMinTransitionDelay(500n);
+        await committee.setTransitionDelay(501n); // should be ok
+        await expect(committee.setTransitionDelay(400n)).to.be.revertedWithCustomError(committee, "TransitionDelayTooShort");
     });
 
     it("should check if a node in the committee or will be there soon", async () => {
