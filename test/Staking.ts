@@ -373,6 +373,14 @@ describe("Staking", () => {
         const initialStake = ethers.parseEther("9");
         await staking.connect(user).stake(node.id, {value: initialStake});
         expect(await staking.getNodeTotalStake(node.id)).to.be.equal(initialStake);
+
+        // Pay 2 ETH rewards
+        const reward = ethers.parseEther("2");
+        await admin.sendTransaction({to: staking, value: reward});
+
+        // Check that node total stake is now 11 ETH (9 + 2 reward)
+        const expectedTotalAfterReward = initialStake + reward;
+        expect(await staking.getNodeTotalStake(node.id)).to.be.equal(expectedTotalAfterReward);
     });
 
 });
