@@ -2,6 +2,7 @@ import chai, { assert, expect } from "chai";
 import { registeredOnlyNodes, stakedNodes } from "./tools/fixtures";
 import { ethers } from "hardhat";
 import { zip } from "lodash";
+import { setBalance } from "@nomicfoundation/hardhat-network-helpers";
 
 chai.should();
 
@@ -354,6 +355,93 @@ describe("Staking", () => {
             (await staking.connect(node.wallet).claimAllFee(node.wallet))
                 .should.changeEtherBalance(node.wallet, currentFee);
         }
+    });
+
+    it("should pay rewards via reward wallet", async () => {
+        const tolerance = 1n; // tolerance in wei for rounding errors
+        const {staking, nodesData } = await registeredOnlyNodes();
+        const [, ...allUsers] = await ethers.getSigners();
+        const amounts = [2, 3].map(String).map(ethers.parseEther);
+        const users = allUsers.slice(0, amounts.length);
+        const targetNodes = nodesData.slice(0, amounts.length);
+        const feeRate = 500; // Yes, Eddie, half
+        const rewardWallets = await Promise.all(
+            (await Promise.all(
+                targetNodes.map(node => staking.getRewardWallet(node.id))
+            )).map(rewardWalletAddress => ethers.getContractAt("RewardWallet", rewardWalletAddress))
+        );
+
+        // set fee
+        for (const node of targetNodes) {
+            await staking.connect(node.wallet).setFeeRate(feeRate);
+        }
+
+        // stake to nodes
+        for (const [user, node, amount] of zip(users, targetNodes, amounts)) {
+            assert(node);
+            await staking.connect(user).stake(node.id, {value: amount});
+            expect(await staking.getNodeTotalStake(node.id)).to.be.eql(amount);
+        }
+
+        const reward = ethers.parseEther("2");
+        await setBalance(await ethers.resolveAddress(rewardWallets[0]), reward);
+
+        let updatedAmounts = [3, 3].map(String).map(ethers.parseEther);
+        let nodeFees = [1, 0].map(String).map(ethers.parseEther);
+
+        // check distribution
+        for (const [user, amount] of zip(users, updatedAmounts)) {
+            console.log("Check user");
+            assert(amount && user);
+            (await staking.connect(user).getStakedAmount())
+                .should.be.equal(amount);
+        }
+        for (const [node, amount] of zip(targetNodes, nodeFees)) {
+            assert(node && amount !== undefined);
+            (await staking.getEarnedFeeAmount(node.id))
+                .should.be.approximately(amount, tolerance);
+        }
+
+        await rewardWallets[0].flush();
+        (await ethers.provider.getBalance(rewardWallets[0]))
+            .should.be.equal(0n);
+
+        // check distribution
+        for (const [user, amount] of zip(users, updatedAmounts)) {
+            console.log("Check user");
+            assert(amount && user);
+            (await staking.connect(user).getStakedAmount())
+                .should.be.equal(amount);
+        }
+        for (const [node, amount] of zip(targetNodes, nodeFees)) {
+            assert(node && amount !== undefined);
+            (await staking.getEarnedFeeAmount(node.id))
+                .should.be.approximately(amount, tolerance);
+        }
+
+        // Pay more rewards
+        await setBalance(await ethers.resolveAddress(rewardWallets[0]), reward);
+
+        updatedAmounts = [4, 3].map(String).map(ethers.parseEther);
+        nodeFees = [2, 0].map(String).map(ethers.parseEther);
+
+        // check distribution
+        for (const [user, amount] of zip(users, updatedAmounts)) {
+            console.log("Check user");
+            assert(amount && user);
+            (await staking.connect(user).getStakedAmount())
+                .should.be.equal(amount);
+        }
+        for (const [node, amount] of zip(targetNodes, nodeFees)) {
+            assert(node && amount !== undefined);
+            (await staking.getEarnedFeeAmount(node.id))
+                .should.be.approximately(amount, tolerance);
+        }
+
+        await staking.connect(users[0]).retrieve(targetNodes[0].id, updatedAmounts[0])
+            .should.changeEtherBalance(users[0], updatedAmounts[0]);
+        (await ethers.provider.getBalance(rewardWallets[0]))
+            .should.be.equal(0n);
     });
 
     it("should enforce node stake limits", async () => {
