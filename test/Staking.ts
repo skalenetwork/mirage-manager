@@ -381,6 +381,14 @@ describe("Staking", () => {
         // Check that node total stake is now 11 ETH (9 + 2 reward)
         const expectedTotalAfterReward = initialStake + reward;
         expect(await staking.getNodeTotalStake(node.id)).to.be.equal(expectedTotalAfterReward);
+
+        // Try to stake 1 more ETH (should fail because 11 + 1 = 12 > 10 limit)
+        const additionalStake = ethers.parseEther("1");
+        await staking.connect(user).stake(node.id, {value: additionalStake})
+            .should.be.revertedWithCustomError(
+                staking,
+                "NodeStakeLimitExceeded"
+            );
     });
 
 });
