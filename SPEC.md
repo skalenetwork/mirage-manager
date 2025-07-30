@@ -47,6 +47,7 @@ struct Node {
 ```
 
 #### Invariants
+
 - Node IDs are unique.
 - Active Node owners cannot own any other Node.
 - Passive Node owners can own multiple Passive Nodes.
@@ -54,11 +55,13 @@ struct Node {
 - Domain names can be empty, but if not empty, they must be unique.
 
 #### Data Validation
+
 - IPs must be non-empty and have the size of IPv4 or IPv6.
 - Node addresses must correspond to the node's public key (address is computable using the public key).
 - Node ports must not be 0.
 
-#### Main Functions
+#### Nodes Main Functions
+
 - `registerNode(address owner, bytes publicKey, ...)`: Registers a new Active Node.
 - `registerPassiveNode(address owner, bytes publicKey, ...)`: Registers a new Passive Node.
 - `deleteNode(NodeId id)`: Deletes both Active and Passive Nodes.
@@ -75,13 +78,15 @@ struct Node {
 - `activeNodeExists(NodeId nodeId)`: Returns a boolean stating if a NodeId corresponds to an Active Node.
 
 #### Permissions
+
 - Only node owners can change node details (IP, domain name, etc.).
 - Anyone can register a node.
 - Only DEFAULT_ADMIN can change the committeeContract address.
 - Only node owners can delete a node.
 - DEFAULT_ADMIN can delete nodes in V1 of FAIR-manager, but this option may be removed or changed in the future.
 
-#### Integration Points
+#### Nodes Integration Points
+
 - `Nodes.sol` interacts with `Committee.sol` to inform of registration and deletion of Active Nodes.
 - `Nodes.sol` interacts with `Status.sol` to inform of deletion of Active Nodes.
 
@@ -92,9 +97,10 @@ Nodes that are actively contributing to the network should periodically send a t
 For the first version of FAIR, a whitelist of nodes is maintained. Status stores this whitelist, which effectively limits the nodes allowed to join a Committee.
 
 A node is considered **healthy** if the last `alive()` transaction was sent less than `Duration public heartbeatInterval` ago.
-A node is considered **eligible** for Committee if it is **healthy** and whitelisted.
+A node is considered **eligible** for Committee if it is **healthy**, whitelisted and staked.
 
-#### Main Functions
+#### Status Main Functions
+
 - `alive()`: Allows Active Node owners to prove liveliness.
 - `setHeartbeatInterval(Duration interval)`: Allows DEFAULT_ADMIN to set the maximum interval nodes are considered healthy after the last alive transaction.
 - `whitelistNode(NodeId nodeId)`: Allows DEFAULT_ADMIN to whitelist a node.
@@ -105,7 +111,8 @@ A node is considered **eligible** for Committee if it is **healthy** and whiteli
 - `getWhitelistedNodes()`: Returns the list of all whitelisted nodes.
 - `isWhitelisted(NodeId nodeId)`: Returns a boolean stating if a node is whitelisted.
 
-#### Integration Points
+#### Status Integration Points
+
 - `Status.sol` interacts with `Committee.sol` to inform of whitelisted and blacklisted nodes.
 - `Status.sol` interacts with `Committee.sol` to notify of every heartbeat sent by a node (node's position is updated in the Node Pool in `Committee.sol`).
 - `Status.sol` queries `Nodes.sol` to get node data.
@@ -115,12 +122,14 @@ A node is considered **eligible** for Committee if it is **healthy** and whiteli
 The `DKG` contract implements the Distributed Key Generation protocol for the FAIR network. It coordinates the secure, decentralized generation of cryptographic keys among a committee of nodes, ensuring that no single party controls the resulting key. The contract manages DKG rounds, tracks node participation, and enforces protocol stages.
 
 #### Key Responsibilities
+
 - Orchestrates DKG rounds for each committee, including participant management and round status.
 - Handles the broadcast and aggregation of key shares and verification vectors from participating nodes.
 - Tracks completion and success of DKG rounds, emitting events for off-chain monitoring.
 - Provides access to the generated public key and round data for `Committee.sol` contract.
 
-#### Main Functions
+#### DKG Main Functions
+
 - `generate(NodeId[] participants)`: Starts a new DKG round with the given participants.
 - `broadcast(DkgId dkg, G2Point[] verificationVector, KeyShare[] secretKeyContribution)`: Allows a node to broadcast its key share and verification vector during the BROADCAST stage.
 - `alright(DkgId dkg)`: Marks a node as having completed all required data submission in the ALRIGHT stage.
@@ -129,7 +138,8 @@ The `DKG` contract implements the Distributed Key Generation protocol for the FA
 - `getRound(DkgId dkg)`: Returns all round data for a given DKG round.
 - `isNodeBroadcasted(DkgId dkg, NodeId node)`: Checks if a node has broadcasted its data in a round.
 
-#### Integration Points
+#### DKG Integration Points
+
 - Interacts with `Committee.sol` to notify of successful DKG rounds.
 - Uses `Nodes.sol` for node identity and ownership verification.
 
@@ -161,6 +171,7 @@ struct Fund {
 ```
 
 Although the same structure is reused, there are two distinct types of funds:
+
 - The **root fund**: `Fund private _rootFund;` In the root fund, Holders represent Nodes (IDs). There is no feeRate. It is used to track the Credits (share) of each Node. The amount of FAIR staked to a node is equal to the total FAIR balance of `Staking.sol` times the amount of credits it holds, divided by the total amount of credits.
 
 $$
@@ -177,7 +188,8 @@ Node fees are not *claimed* automatically. Node owners can claim fees at any tim
 
 As described, Active Nodes can be healthy or unhealthy, depending on whether they actively send `alive()` transactions to `Status.sol`. `Committee.sol` can remove nodes from the Pool, and then set them as *disabled* in `Staking.sol`. A *disabled* node does not receive rewards, but users can still stake or unstake FAIR to them. When a node is *deleted*, it becomes disabled and can never become *enabled* again.
 
-#### Main Functions
+#### Staking Main Functions
+
 - `claimAllFee(address payable to)`: Allows Node Owners to collect all pending fees.
 - `claimFee(address payable to, Fair amount)`: Allows Node Owners to withdraw a specific amount of fees.
 - `retrieve(NodeId node, Fair value)`: Allows any user to unstake an amount of FAIR from a node.
@@ -194,10 +206,12 @@ As described, Active Nodes can be healthy or unhealthy, depending on whether the
 - `getStakedToNodeAmountFor(NodeId node, address holder)`: Returns the amount of FAIR a user has staked to a Node.
 - `isNodeEnabled(NodeId node)`: Returns a boolean indicating if a Node is enabled or disabled.
 
-#### Integration Points
+#### Staking Integration Points
+
 - `Staking.sol` interacts with `Committee.sol` to update node weights each time an operation that changes the total staking share of a node is performed.
 
-#### Permissions
+#### Staking Permissions
+
 - Only node owners can change their fee rate.
 - Only COMMITTEE_ROLE can change node eligibility.
 
@@ -221,6 +235,7 @@ struct Committee {
 ```
 
 #### Main Functions
+
 - `ejectUnhealthyNode()`: Selects one of (or the) nodes with the oldest heartbeats and removes it if it is **unhealthy** according to `Status.sol`.
 - `select()`: Selects a set of eligible nodes and creates a Committee and DKG round.
 - `setCommitteeSize(uint256 size)`: Sets the number of nodes to include in Committees.
@@ -231,7 +246,8 @@ struct Committee {
 - `isNodeInCurrentOrNextCommittee(NodeId node)`: Returns a boolean indicating if a node is in the current or the next committee.
 - `getCommittee(CommitteeIndex committeeIndex)`: Returns a Committee corresponding to a given index, if it exists.
 
-#### Permissions
+#### Committee Permissions
+
 - Only NODES_ROLE can notify of created and removed nodes.
 - Only STATUS_ROLE can notify of whitelisted nodes, blacklisted nodes, and heartbeat signals sent by nodes.
 - Only the `IDkg public dkg;` address can notify of a successful DKG round.
@@ -240,17 +256,19 @@ struct Committee {
 - Only STAKING_ROLE can update the weight of nodes in the Pool for weighted-random selection of committee.
 
 #### Integration Points
+
 - `Committee.sol` interacts with `Staking.sol` to communicate changes in the eligibility state of nodes.
 - `Committee.sol` queries `Staking.sol` to get up-to-date data about node staking.
 - `Committee.sol` interacts with `DKG.sol` to notify of newly created Committees, create DKG rounds, and get DKG round data such as the publicKey of a DKG round.
 - `Committee.sol` queries `Status.sol` to get up-to-date data about node liveliness.
-- `Committee.sol` may query a skaleRng contract to get random numbers. More info about skale RNG [here](https://docs.skale.space/building-applications/random-number-generation/).
+- `Committee.sol` may query a skaleRng contract to get random numbers. More info about skale RNG in the [docs](https://docs.skale.space/building-applications/random-number-generation/).
 
 ## Permission & Control
 
 `FairAccessManager.sol` is the first smart contract deployed, and DEFAULT_ADMIN_ROLE is given to the deployer account.
 
 The following roles are created:
+
 - `NODES_ROLE`: Assigned to `Nodes.sol` contract
 - `STATUS_ROLE`: Assigned to `Status.sol` contract
 - `STAKING_ROLE`: Assigned to `Staking.sol` contract
@@ -269,9 +287,11 @@ The `SplayTree` library implements a self-adjusting binary search tree (splay tr
 The Key of the Nodes in the Splay Tree is not explicitly represented, but indirectly represents the liveliness of Nodes. This means that *healthy* nodes are usually higher up in the Tree, whereas *unhealthy* nodes are at the bottom of the tree.
 
 #### Key Data Structures
+
 - **Node**: Stores the node's `NodeId`, parent, left and right children, and the total weight of the subtree rooted at this node.
 
-#### Main Functions
+#### SplayTree Main Functions
+
 - `insertSmallest`: Inserts a new node as the root of the tree.
 - `remove`: Removes a node from the tree, maintaining the splay tree properties.
 - `setWeight`: Updates the weight of a node.
@@ -280,12 +300,14 @@ The Key of the Nodes in the Splay Tree is not explicitly represented, but indire
 - `splay`: Splays (brings to root) the specified node.
 
 #### Internal Helpers
+
 - `_createNode`: Initializes a new node in storage.
 - `_splay`, `_leftZig`, `_rightZig`, `_leftZigZig`, `_rightZigZig`, `_leftZigZag`, `_rightZigZag`: Internal splay and rotation operations.
 - `getBiggestChild`: Returns the rightmost child of a subtree.
 - `hasLeft`, `hasRight`: Checks for left/right children.
 
 #### Usage
+
 - Efficiently supports insertion, removal, and search of nodes in O(log n) amortized time.
 - Used in FAIR-manager for managing node pools and committee selection where node weights (e.g., stake) and their liveliness are relevant.
 
@@ -309,12 +331,14 @@ The `TypedMap` library provides type-safe wrappers around OpenZeppelin's `Enumer
 
 The `PoolLibrary` provides a robust abstraction for managing a dynamic pool of nodes, supporting efficient weighted random sampling, insertion, removal, and liveliness tracking. It is a core utility for committee selection and node management in FAIR-manager, leveraging the `SplayTree` and `TypedSet` libraries for performance and flexibility.
 
-#### Key Data Structures
+#### Pool Key Data Structures
+
 - **Pool**: Contains a splay tree (`tree`) for weighted node management, a root node, two sets for present and incoming nodes, and a reference to the `IStatus` contract for liveliness checks.
 - **presentNodes**: Set of nodes currently eligible for sampling.
 - **incomingNodes**: Set of nodes pending eligibility or recently added.
 
-#### Main Functions
+#### Pool Main Functions
+
 - `add`: Adds a node to the pool's incoming set.
 - `moveToFront`: Moves a node to the front (root) of the pool, updating its weight and eligibility.
 - `remove`: Removes a node from the pool, updating both the splay tree and node sets.
@@ -325,10 +349,11 @@ The `PoolLibrary` provides a robust abstraction for managing a dynamic pool of n
 - `length`: Returns the total number of nodes in the pool.
 
 #### Internal Logic
+
 - `_findLastHealthyNode`: Finds the rightmost healthy node in the splay tree.
 
-#### Usage
+#### Pool Usage
+
 - Enables efficient, fair, and secure committee selection by supporting weighted random sampling and dynamic pool updates.
 - Integrates with `Status.sol` to ensure only healthy nodes are considered for selection.
 - Used by `Committee.sol` to manage node eligibility and rotation.
-

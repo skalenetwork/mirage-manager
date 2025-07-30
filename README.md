@@ -1,5 +1,6 @@
 # FAIR Manager
-A smart contract system that orchestrates and operates a chain. For more details of each smart contract, check [SPEC.md](./SPEC.md)
+
+A smart contract system that orchestrates and operates the FAIR chain. For more details of each smart contract, check [SPEC.md](./SPEC.md)
 
 ## Install & Compile
 
@@ -8,11 +9,11 @@ A smart contract system that orchestrates and operates a chain. For more details
 
 ## Deployment
 
-FAIR Manager is started from a [skale-manager](https://github.com/skalenetwork/skale-manager) instance. We recommend using the default parameters if you are simply testing deployment of FAIR Manager.
+FAIR Manager is started from a [fair-boot](https://github.com/skalenetwork/skale-manager) instance. We recommend using the default parameters if you are simply testing deployment of FAIR Manager.
 
 Create a `.env` file in the project root directory with the following data:
 
-```
+```bash
 MAINNET_ENDPOINT="https://your.endpoint.to.eth.mainnet.com"
 TARGET="production"
 CHAIN_NAME="affectionate-immediate-pollux"
@@ -24,7 +25,7 @@ Instead of the previous steps, you can simply run `bash scripts/test_deploy.sh`.
 
 If you want to deploy to another network other than the Hardhat local network, set the extra variables in the `.env` file:
 
-```
+```bash
 PRIVATE_KEY="{your private key}"
 ENDPOINT="https://endpoint.to.destination.network.com"
 ```
