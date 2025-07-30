@@ -113,7 +113,7 @@ contract Staking is AccessManagedUpgradeable, IStaking {
         emit NodeEnabled(node);
     }
 
-    function setNodeStakeLimit(NodeId node, Fair limit) external restricted {
+    function setStakeLimit(NodeId node, Fair limit) external restricted {
         require(nodes.activeNodeExists(node), Nodes.NodeDoesNotExist(node));
         _nodeStakeLimits[node] = limit;
         emit NodeStakeLimitUpdated(node, limit);
@@ -183,12 +183,10 @@ contract Staking is AccessManagedUpgradeable, IStaking {
     function stake(NodeId node) external payable override {
         require(msg.value > 0, ZeroAmount());
         require(nodes.activeNodeExists(node), Nodes.NodeDoesNotExist(node));
-
         Fair stakeLimit = _nodeStakeLimits[node];
         bool nodeIsEnabled = isNodeEnabled(node);
         Fair amount = Fair.wrap(msg.value);
         Fair balance = _getTotalBalance() - amount;
-
         if (Fair.unwrap(stakeLimit) > 0) {
             Fair currentNodeStake;
             if (nodeIsEnabled) {
@@ -199,11 +197,10 @@ contract Staking is AccessManagedUpgradeable, IStaking {
 
             Fair newNodeStake = currentNodeStake + amount;
             require(
-                Fair.unwrap(newNodeStake) <= Fair.unwrap(stakeLimit),
+                !(Fair.unwrap(newNodeStake) > Fair.unwrap(stakeLimit)),
                 NodeStakeLimitExceeded(node, currentNodeStake, amount, stakeLimit)
             );
         }
-
         if (nodeIsEnabled) {
             _nodesFunds[node].supply(
                 _rootFund.getBalance(balance, FundLibrary.nodeToHolder(node)),

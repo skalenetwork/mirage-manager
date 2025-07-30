@@ -364,7 +364,7 @@ describe("Staking", () => {
 
         // Set stake limit to 10 ETH
         const stakeLimit = ethers.parseEther("10");
-        await staking.connect(admin).setNodeStakeLimit(node.id, stakeLimit);
+        await staking.connect(admin).setStakeLimit(node.id, stakeLimit);
 
         // Verify limit is set
         expect(await staking.getNodeStakeLimit(node.id)).to.be.equal(stakeLimit);
