@@ -399,7 +399,7 @@ describe("Staking", () => {
         expect(await staking.getNodeTotalStake(node.id)).to.be.equal(expectedTotalAfterReward);
 
         // Remove the limit and try staking again (should succeed)
-        await staking.connect(admin).removeNodeStakeLimit(node.id);
+        await staking.connect(admin).removeStakeLimit(node.id);
         expect(await staking.getNodeStakeLimit(node.id)).to.be.equal(0);
 
         // Now we can stake the additional amount
