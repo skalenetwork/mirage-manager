@@ -328,7 +328,7 @@ contract Staking is AccessManagedUpgradeable, IStaking {
         );
     }
 
-    function getNodeStakeLimit(NodeId node) public view returns (Fair limit) {
+    function getStakeLimit(NodeId node) public view returns (Fair limit) {
         return _nodeStakeLimits[node];
     }
 

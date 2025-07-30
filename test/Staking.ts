@@ -367,7 +367,7 @@ describe("Staking", () => {
         await staking.connect(admin).setStakeLimit(node.id, stakeLimit);
 
         // Verify limit is set
-        expect(await staking.getNodeStakeLimit(node.id)).to.be.equal(stakeLimit);
+        expect(await staking.getStakeLimit(node.id)).to.be.equal(stakeLimit);
 
         // Stake 9 ETH (should succeed)
         const initialStake = ethers.parseEther("9");
@@ -400,7 +400,7 @@ describe("Staking", () => {
 
         // Remove the limit and try staking again (should succeed)
         await staking.connect(admin).removeStakeLimit(node.id);
-        expect(await staking.getNodeStakeLimit(node.id)).to.be.equal(0);
+        expect(await staking.getStakeLimit(node.id)).to.be.equal(0);
 
         // Now we can stake the additional amount
         await staking.connect(user).stake(node.id, {value: additionalStake});
