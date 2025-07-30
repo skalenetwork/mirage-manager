@@ -356,19 +356,19 @@ describe("Staking", () => {
     it("should enforce node stake limits", async () => {
         const {staking, nodesData} = await registeredOnlyNodes();
         const [admin, user] = await ethers.getSigners();
-        const node = nodesData[22]; // not in the current committee
+        const node = nodesData[0].id;
 
         // Set stake limit to 10 ETH
         const stakeLimit = ethers.parseEther("10");
-        await staking.connect(admin).setStakeLimit(node.id, stakeLimit);
+        await staking.connect(admin).setStakeLimit(node, stakeLimit);
 
         // Verify limit is set
-        expect(await staking.getStakeLimit(node.id)).to.be.equal(stakeLimit);
+        expect(await staking.getStakeLimit(node)).to.be.equal(stakeLimit);
 
         // Stake 9 ETH (should succeed)
         const initialStake = ethers.parseEther("9");
-        await staking.connect(user).stake(node.id, {value: initialStake});
-        expect(await staking.getNodeTotalStake(node.id)).to.be.equal(initialStake);
+        await staking.connect(user).stake(node, {value: initialStake});
+        expect(await staking.getNodeTotalStake(node)).to.be.equal(initialStake);
 
         // Pay 2 ETH rewards
         const reward = ethers.parseEther("2");
@@ -376,31 +376,31 @@ describe("Staking", () => {
 
         // Check that node total stake is now 11 ETH (9 + 2 reward)
         const expectedTotalAfterReward = initialStake + reward;
-        expect(await staking.getNodeTotalStake(node.id)).to.be.equal(expectedTotalAfterReward);
+        expect(await staking.getNodeTotalStake(node)).to.be.equal(expectedTotalAfterReward);
 
         // Try to stake 1 more ETH (should fail because 11 + 1 = 12 > 10 limit)
         const additionalStake = ethers.parseEther("1");
-        await staking.connect(user).stake(node.id, {value: additionalStake})
+        await staking.connect(user).stake(node, {value: additionalStake})
             .should.be.revertedWithCustomError(
                 staking,
                 "NodeStakeLimitExceeded"
             ).withArgs(
-                node.id,
+                node,
                 expectedTotalAfterReward,
                 additionalStake,
                 stakeLimit
             );
 
         // Verify total stake hasn't changed
-        expect(await staking.getNodeTotalStake(node.id)).to.be.equal(expectedTotalAfterReward);
+        expect(await staking.getNodeTotalStake(node)).to.be.equal(expectedTotalAfterReward);
 
         // Remove the limit and try staking again (should succeed)
-        await staking.connect(admin).removeStakeLimit(node.id);
-        expect(await staking.getStakeLimit(node.id)).to.be.equal(0);
+        await staking.connect(admin).removeStakeLimit(node);
+        expect(await staking.getStakeLimit(node)).to.be.equal(0);
 
         // Now we can stake the additional amount
-        await staking.connect(user).stake(node.id, {value: additionalStake});
-        expect(await staking.getNodeTotalStake(node.id)).to.be.equal(expectedTotalAfterReward + additionalStake);
+        await staking.connect(user).stake(node, {value: additionalStake});
+        expect(await staking.getNodeTotalStake(node)).to.be.equal(expectedTotalAfterReward + additionalStake);
     });
 
 });
