@@ -358,10 +358,6 @@ describe("Staking", () => {
         const [admin, user] = await ethers.getSigners();
         const node = nodesData[22]; // not in the current committee
 
-        // Grant admin role to set stake limits
-        const response = await accessManager.grantRole(await accessManager.COMMITTEE_ROLE(), admin, 0n);
-        await response.wait();
-
         // Set stake limit to 10 ETH
         const stakeLimit = ethers.parseEther("10");
         await staking.connect(admin).setStakeLimit(node.id, stakeLimit);
