@@ -21,10 +21,9 @@ FAIR-manager smart contracts are a pivotal component in the orchestration and go
 
 ## Architecture and Components
 
-All main smart contracts use the TUPP (Transparent Upgradeable Proxy Pattern) from OpenZeppelin. According to the latest changes in the pattern, each smart contract has its own ProxyAdmin Contract, Proxy Contract, and Implementation Contract: `"@openzeppelin/contracts": "^5.3.0"`.
+All main smart contracts use the TUPP (Transparent Upgradeable Proxy Pattern) from OpenZeppelin. Each smart contract has its own ProxyAdmin Contract, Proxy Contract, and Implementation Contract.
 
-All main smart contracts inherit from `@openzeppelin/contracts-upgradeable/access/manager/AccessManagedUpgradeable.sol`, using `"@openzeppelin/contracts-upgradeable": "^5.3.0"`.
-With the exception of `FairAccessManager.sol`, which inherits from `@openzeppelin/contracts-upgradeable/access/manager/AccessManagerUpgradeable.sol` and acts as the central AccessManager for all contracts. Roles are thus centralized in `FairAccessManager.sol`.
+All main smart contracts are [AccessManaged](https://github.com/OpenZeppelin/openzeppelin-contracts-upgradeable/blob/master/contracts/access/manager/AccessManagedUpgradeable.sol). Roles are thus centralized in `FairAccessManager.sol`.
 
 ### [`Nodes.sol`](./contracts/Nodes.sol)
 
