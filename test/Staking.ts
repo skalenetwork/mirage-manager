@@ -354,7 +354,7 @@ describe("Staking", () => {
     });
 
     it("should enforce node stake limits", async () => {
-        const {staking, nodesData, accessManager} = await registeredOnlyNodes();
+        const {staking, nodesData} = await registeredOnlyNodes();
         const [admin, user] = await ethers.getSigners();
         const node = nodesData[22]; // not in the current committee
 
