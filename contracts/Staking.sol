@@ -321,10 +321,6 @@ contract Staking is AccessManagedUpgradeable, IStaking {
         );
     }
 
-    function getStakeLimit(NodeId node) public view override returns (Fair limit) {
-        return _nodeStakeLimits[node];
-    }
-
     // Private
 
     function _getTotalBalance() private view returns (Fair balance) {
