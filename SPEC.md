@@ -240,6 +240,7 @@ struct Committee {
 - `setCommitteeSize(uint256 size)`: Sets the number of nodes to include in Committees.
 - `setRNG(address newRNG)`: Sets the address of the Random Number Generator contract. Details in [RNG](https://docs.skale.space/building-applications/random-number-generation/).
 - `disableRNG()`: Sets the address of the Random Number Generator contract to address(0), effectively disabling the use of RNG and using `block.prevrandao` as the source of randomness for committee creation.
+- `setMinTransitionDelay`: Sets minimum value of the transition delay that can be set between committee rotations
 - `setTransitionDelay(Duration delay)`: Sets the variable transitionDelay. Committee startingTimestamp equals block.timestamp + transitionDelay. This is useful for off-chain components; the delay allows nodes to process and prepare for the new Committee after its creation.
 - `setVersion(string calldata newVersion)`: Sets the version of FAIR-manager.
 - `isNodeInCurrentOrNextCommittee(NodeId node)`: Returns a boolean indicating if a node is in the current or the next committee.

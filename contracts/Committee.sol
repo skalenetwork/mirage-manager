@@ -61,6 +61,7 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
     CommitteeIndex public lastCommitteeIndex;
     uint256 public committeeSize;
     Duration public transitionDelay;
+    Duration public minTransitionDelay;
     string public version;
 
     PoolLibrary.Pool private _pool;
@@ -69,6 +70,8 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
     event NodeLosesEligibility(NodeId indexed node);
     event SkaleRNGEnabled(address indexed rng);
     event SkaleRNGDisabled();
+    event TransitionDelayUpdated(Duration oldDelay, Duration newDelay);
+    event MinTransitionDelayUpdated(Duration oldDelay, Duration newDelay);
 
     error SenderIsNotDkg(
         address sender
@@ -78,6 +81,7 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
     );
     error InvalidSkaleRngContract(address rng);
     error NodeNotActive(NodeId node);
+    error TransitionDelayTooShort();
 
     modifier onlyDkg() {
         require(msg.sender == address(dkg), SenderIsNotDkg(msg.sender));
@@ -99,6 +103,7 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
         transitionDelay = Duration.wrap(1 days);
         nodes = nodesAddress;
         skaleRng = address(0);
+        minTransitionDelay = Duration.wrap(10 minutes);
         _initializeCommittee(commonPublicKey, nodeIds);
     }
 
@@ -107,6 +112,11 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
         NodeId[] memory members = _pool.sample(committeeSize, generator);
         Committee storage committee = _createSuccessorCommittee(members);
         committee.dkg = dkg.generate(committee.nodes);
+    }
+
+    function setMinTransitionDelay(Duration delay) external override restricted {
+        emit MinTransitionDelayUpdated(minTransitionDelay, delay);
+        minTransitionDelay = delay;
     }
 
     function setRNG(address newRNG) external override restricted {
@@ -156,6 +166,11 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
     }
 
     function setTransitionDelay(Duration delay) external override restricted {
+        require(
+            Duration.unwrap(delay) + 1 > Duration.unwrap(minTransitionDelay),
+            TransitionDelayTooShort()
+        );
+        emit TransitionDelayUpdated(transitionDelay, delay);
         transitionDelay = delay;
     }
 
