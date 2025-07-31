@@ -114,7 +114,7 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
         committee.dkg = dkg.generate(committee.nodes);
     }
 
-    function setHardMinTransitionDelay(Duration delay) external override restricted {
+    function setMinTransitionDelay(Duration delay) external override restricted {
         emit MinTransitionDelayUpdated(minTransitionDelay, delay);
         minTransitionDelay = delay;
     }
