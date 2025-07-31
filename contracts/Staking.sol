@@ -113,7 +113,7 @@ contract Staking is AccessManagedUpgradeable, IStaking {
         emit NodeEnabled(node);
     }
 
-    function setStakeLimit(Fair limit) external restricted {
+    function setStakeLimit(Fair limit) external override restricted {
         emit StakeLimitUpdated(limit);
         stakeLimit = limit;
     }
