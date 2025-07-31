@@ -69,6 +69,7 @@ contract Staking is AccessManagedUpgradeable, IStaking {
     error NodeIsAlreadyDisabled(NodeId node);
     error NodeIsNotDisabled(NodeId node);
     error StakeLimitExceeded(Fair currentStake, Fair attemptedStake, Fair limit);
+    error ZeroAddress();
 
     function initialize(address initialAuthority, ICommittee committee_, INodes nodes_) public initializer override {
         __AccessManaged_init(initialAuthority);
@@ -243,6 +244,7 @@ contract Staking is AccessManagedUpgradeable, IStaking {
     // Public
 
     function claimFee(address payable to, Fair amount) public override {
+        require(to != address(0), ZeroAddress());
         NodeId node = nodes.getNodeId(msg.sender);
         Fair balance = _getTotalBalance();
         bool nodeIsEnabled = isNodeEnabled(node);
