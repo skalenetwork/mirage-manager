@@ -50,6 +50,7 @@ contract Staking is AccessManagedUpgradeable, IStaking {
     mapping (NodeId node => FundLibrary.Fund nodeFund) private _nodesFunds;
     mapping (address holder => TypedSet.NodeIdSet nodeIds) private _stakedNodes;
     TypedMap.NodeIdToFairMap private _disabledNodesBalances;
+    Fair public stakeLimit;
 
     event FeeClaimed(NodeId indexed node, address indexed to, Fair indexed amount);
     event Retrieved(address indexed sender, NodeId indexed node, Fair indexed amount);
@@ -59,6 +60,7 @@ contract Staking is AccessManagedUpgradeable, IStaking {
     event StoppedStaking(address indexed sender, NodeId indexed node);
     event NodeDisabled(NodeId indexed node);
     event NodeEnabled(NodeId indexed node);
+    event StakeLimitUpdated(Fair indexed newLimit);
 
     error FeeRateIsIncorrect(uint16 feeRate);
     error OnlyFeeReductionIsAllowed(uint16 currentRate, uint16 newRate);
@@ -66,6 +68,7 @@ contract Staking is AccessManagedUpgradeable, IStaking {
     error ZeroStakeToNode(NodeId node);
     error NodeIsAlreadyDisabled(NodeId node);
     error NodeIsNotDisabled(NodeId node);
+    error StakeLimitExceeded(Fair currentStake, Fair attemptedStake, Fair limit);
 
     function initialize(address initialAuthority, ICommittee committee_, INodes nodes_) public initializer override {
         __AccessManaged_init(initialAuthority);
@@ -108,6 +111,11 @@ contract Staking is AccessManagedUpgradeable, IStaking {
         assert(_disabledNodesBalances.remove(node));
         totalDisabled = totalDisabled - value;
         emit NodeEnabled(node);
+    }
+
+    function setStakeLimit(Fair limit) external override restricted {
+        emit StakeLimitUpdated(limit);
+        stakeLimit = limit;
     }
 
     function retrieve(NodeId node, Fair value) external override {
@@ -171,6 +179,9 @@ contract Staking is AccessManagedUpgradeable, IStaking {
         bool nodeIsEnabled = isNodeEnabled(node);
         Fair amount = Fair.wrap(msg.value);
         Fair balance = _getTotalBalance() - amount;
+
+        _validateStakeLimit(node, amount, balance, nodeIsEnabled);
+
         if (nodeIsEnabled) {
             _nodesFunds[node].supply(
                 _rootFund.getBalance(balance, FundLibrary.nodeToHolder(node)),
@@ -299,6 +310,23 @@ contract Staking is AccessManagedUpgradeable, IStaking {
     }
 
     // Private
+
+    function _validateStakeLimit(NodeId node, Fair amount, Fair balance, bool nodeIsEnabled) private view {
+        if (Fair.unwrap(stakeLimit) > 0) {
+            Fair currentNodeStake;
+            if (nodeIsEnabled) {
+                currentNodeStake = _rootFund.getBalance(balance, FundLibrary.nodeToHolder(node));
+            } else {
+                currentNodeStake = _disabledNodesBalances.get(node);
+            }
+
+            Fair newNodeStake = currentNodeStake + amount;
+            require(
+                !(newNodeStake > stakeLimit),
+                StakeLimitExceeded(currentNodeStake, amount, stakeLimit)
+            );
+        }
+    }
 
     function _getTotalBalance() private view returns (Fair balance) {
         return Fair.wrap(address(this).balance) - totalDisabled;
