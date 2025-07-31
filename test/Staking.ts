@@ -360,10 +360,10 @@ describe("Staking", () => {
 
         // Set stake limit to 10 ETH
         const stakeLimit = ethers.parseEther("10");
-        await staking.connect(admin).setStakeLimit(node, stakeLimit);
+        await staking.connect(admin).setStakeLimit(stakeLimit);
 
         // Verify limit is set
-        expect(await staking.getStakeLimit(node)).to.be.equal(stakeLimit);
+        expect(await staking.stakeLimit()).to.be.equal(stakeLimit);
 
         // Stake 9 ETH (should succeed)
         const initialStake = ethers.parseEther("9");
@@ -383,9 +383,8 @@ describe("Staking", () => {
         await staking.connect(user).stake(node, {value: additionalStake})
             .should.be.revertedWithCustomError(
                 staking,
-                "NodeStakeLimitExceeded"
+                "StakeLimitExceeded"
             ).withArgs(
-                node,
                 expectedTotalAfterReward,
                 additionalStake,
                 stakeLimit
@@ -395,8 +394,8 @@ describe("Staking", () => {
         expect(await staking.getNodeTotalStake(node)).to.be.equal(expectedTotalAfterReward);
 
         // Remove the limit and try staking again (should succeed)
-        await staking.connect(admin).removeStakeLimit(node);
-        expect(await staking.getStakeLimit(node)).to.be.equal(0);
+        await staking.connect(admin).setStakeLimit(0);
+        expect(await staking.stakeLimit()).to.be.equal(0);
 
         // Now we can stake the additional amount
         await staking.connect(user).stake(node, {value: additionalStake});
