@@ -397,6 +397,11 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
         return Precompiled.getRandomNumber(skaleRng);
     }
 
+    function _isCommitteeRotationInProgress() private view returns (bool inProgress) {
+        Committee storage latestCommittee = _getCommittee(lastCommitteeIndex);
+        return Timestamp.unwrap(latestCommittee.startingTimestamp) == type(uint256).max;
+    }
+
     function _next(CommitteeIndex index) private pure returns (CommitteeIndex nextIndex) {
         return CommitteeIndex.wrap(CommitteeIndex.unwrap(index) + 1);
     }
@@ -410,8 +415,4 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
         return share;
     }
 
-    function _isCommitteeRotationInProgress() private view returns (bool inProgress) {
-        Committee storage latestCommittee = _getCommittee(lastCommitteeIndex);
-        return Timestamp.unwrap(latestCommittee.startingTimestamp) == type(uint256).max;
-    }
 }
