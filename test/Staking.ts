@@ -120,6 +120,9 @@ describe("Staking", () => {
         (await staking.getStakedAmountFor(user))
             .should.be.equal(amount + reward / 2n);
 
+        await staking.connect(nodeWallet).claimAllFee(ethers.ZeroAddress)
+            .should.be.revertedWithCustomError(staking, "ZeroAddress");
+
         await staking.connect(nodeWallet).claimAllFee(nodeWallet)
             .should.changeEtherBalance(nodeWallet, reward / 2n);
 
