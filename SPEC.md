@@ -206,9 +206,9 @@ As described, Active Nodes can be healthy or unhealthy, depending on whether the
 - `isNodeEnabled(NodeId node)`: Returns a boolean indicating if a Node is enabled or disabled.
 - `setStakeLimit(Fair limit)`: Allows authorized administrators to set a global maximum stake limit that applies to all nodes.
 
-#### Node Stake Limits
+#### Stake Limits
 
-FAIR-manager supports setting maximum stake limits for individual nodes to prevent excessive concentration of stake on any single node. This feature helps maintain network decentralization and security by distributing stake more evenly across participating nodes.
+FAIR-manager supports setting a global maximum stake limit that applies to all nodes to prevent excessive concentration of stake. This feature helps maintain network decentralization and security by limiting the total amount of stake that can be delegated across the network.
 
 #### Staking Integration Points
 
