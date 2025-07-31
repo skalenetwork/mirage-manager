@@ -176,24 +176,12 @@ contract Staking is AccessManagedUpgradeable, IStaking {
     function stake(NodeId node) external payable override {
         require(msg.value > 0, ZeroAmount());
         require(nodes.activeNodeExists(node), Nodes.NodeDoesNotExist(node));
-        Fair stakeLimit = _nodeStakeLimits[node];
         bool nodeIsEnabled = isNodeEnabled(node);
         Fair amount = Fair.wrap(msg.value);
         Fair balance = _getTotalBalance() - amount;
-        if (Fair.unwrap(stakeLimit) > 0) {
-            Fair currentNodeStake;
-            if (nodeIsEnabled) {
-                currentNodeStake = _rootFund.getBalance(balance, FundLibrary.nodeToHolder(node));
-            } else {
-                currentNodeStake = _disabledNodesBalances.get(node);
-            }
 
-            Fair newNodeStake = currentNodeStake + amount;
-            require(
-                !(Fair.unwrap(newNodeStake) > Fair.unwrap(stakeLimit)),
-                NodeStakeLimitExceeded(node, currentNodeStake, amount, stakeLimit)
-            );
-        }
+        _validateStakeLimit(node, amount, balance, nodeIsEnabled);
+
         if (nodeIsEnabled) {
             _nodesFunds[node].supply(
                 _rootFund.getBalance(balance, FundLibrary.nodeToHolder(node)),
@@ -322,6 +310,23 @@ contract Staking is AccessManagedUpgradeable, IStaking {
     }
 
     // Private
+
+    function _validateStakeLimit(NodeId node, Fair amount, Fair balance, bool nodeIsEnabled) private view {
+        if (Fair.unwrap(stakeLimit) > 0) {
+            Fair currentNodeStake;
+            if (nodeIsEnabled) {
+                currentNodeStake = _rootFund.getBalance(balance, FundLibrary.nodeToHolder(node));
+            } else {
+                currentNodeStake = _disabledNodesBalances.get(node);
+            }
+
+            Fair newNodeStake = currentNodeStake + amount;
+            require(
+                !(Fair.unwrap(newNodeStake) > Fair.unwrap(stakeLimit)),
+                StakeLimitExceeded(node, currentNodeStake, amount, stakeLimit)
+            );
+        }
+    }
 
     function _getTotalBalance() private view returns (Fair balance) {
         return Fair.wrap(address(this).balance) - totalDisabled;
