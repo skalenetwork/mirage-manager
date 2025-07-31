@@ -68,7 +68,7 @@ contract Staking is AccessManagedUpgradeable, IStaking {
     error ZeroStakeToNode(NodeId node);
     error NodeIsAlreadyDisabled(NodeId node);
     error NodeIsNotDisabled(NodeId node);
-    error StakeLimitExceeded(NodeId node, Fair currentStake, Fair attemptedStake, Fair limit);
+    error StakeLimitExceeded(Fair currentStake, Fair attemptedStake, Fair limit);
 
     function initialize(address initialAuthority, ICommittee committee_, INodes nodes_) public initializer override {
         __AccessManaged_init(initialAuthority);
@@ -323,7 +323,7 @@ contract Staking is AccessManagedUpgradeable, IStaking {
             Fair newNodeStake = currentNodeStake + amount;
             require(
                 !(Fair.unwrap(newNodeStake) > Fair.unwrap(stakeLimit)),
-                StakeLimitExceeded(node, currentNodeStake, amount, stakeLimit)
+                StakeLimitExceeded(currentNodeStake, amount, stakeLimit)
             );
         }
     }
