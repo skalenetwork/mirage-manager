@@ -322,7 +322,7 @@ contract Staking is AccessManagedUpgradeable, IStaking {
 
             Fair newNodeStake = currentNodeStake + amount;
             require(
-                !(Fair.unwrap(newNodeStake) > Fair.unwrap(stakeLimit)),
+                !(newNodeStake > stakeLimit),
                 StakeLimitExceeded(currentNodeStake, amount, stakeLimit)
             );
         }
