@@ -241,6 +241,31 @@ describe("Committee", () => {
         );
     });
 
+    it.only("should not allow to set transition delay during committee rotation", async () => {
+        const {committee, status, dkg, nodesData} = await whitelistedAndStakedNodes();
+        const subset = nodesData.slice(0, 5);
+        await sendHeartbeat(status, subset);
+
+        await committee.setCommitteeSize(2);
+
+        // Start a committee rotation by calling select()
+        await committee.select();
+
+        // Now try to change transition delay while rotation is in progress
+        const newTransitionDelay = 700n;
+        await expect(committee.setTransitionDelay(newTransitionDelay))
+            .to.be.revertedWithCustomError(committee, "CommitteeRotationInProgress");
+
+        // Complete the DKG process
+        const nextCommitteeIndex = await committee.getActiveCommitteeIndex() + 1n;
+        const nextCommittee = await committee.getCommittee(nextCommitteeIndex);
+        await runDkg(dkg, nodesData, nextCommittee.dkg);
+
+        // Now setting transition delay should work again
+        await committee.setTransitionDelay(newTransitionDelay);
+        (await committee.transitionDelay()).should.be.equal(newTransitionDelay);
+    });
+
     it("should check if a node in the committee or will be there soon", async () => {
         const {committee, dkg, nodesData, status} = await whitelistedAndStakedNodes();
         await committee.setCommitteeSize(5); // to save time
