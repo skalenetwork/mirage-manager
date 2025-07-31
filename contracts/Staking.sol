@@ -50,7 +50,7 @@ contract Staking is AccessManagedUpgradeable, IStaking {
     mapping (NodeId node => FundLibrary.Fund nodeFund) private _nodesFunds;
     mapping (address holder => TypedSet.NodeIdSet nodeIds) private _stakedNodes;
     TypedMap.NodeIdToFairMap private _disabledNodesBalances;
-    mapping (NodeId node => Fair limit) private _nodeStakeLimits;
+    Fair public stakeLimit;
 
     event FeeClaimed(NodeId indexed node, address indexed to, Fair indexed amount);
     event Retrieved(address indexed sender, NodeId indexed node, Fair indexed amount);
@@ -60,7 +60,7 @@ contract Staking is AccessManagedUpgradeable, IStaking {
     event StoppedStaking(address indexed sender, NodeId indexed node);
     event NodeDisabled(NodeId indexed node);
     event NodeEnabled(NodeId indexed node);
-    event NodeStakeLimitUpdated(NodeId indexed node, Fair indexed newLimit);
+    event StakeLimitUpdated(Fair indexed newLimit);
 
     error FeeRateIsIncorrect(uint16 feeRate);
     error OnlyFeeReductionIsAllowed(uint16 currentRate, uint16 newRate);
@@ -68,7 +68,7 @@ contract Staking is AccessManagedUpgradeable, IStaking {
     error ZeroStakeToNode(NodeId node);
     error NodeIsAlreadyDisabled(NodeId node);
     error NodeIsNotDisabled(NodeId node);
-    error NodeStakeLimitExceeded(NodeId node, Fair currentStake, Fair attemptedStake, Fair limit);
+    error StakeLimitExceeded(NodeId node, Fair currentStake, Fair attemptedStake, Fair limit);
 
     function initialize(address initialAuthority, ICommittee committee_, INodes nodes_) public initializer override {
         __AccessManaged_init(initialAuthority);
