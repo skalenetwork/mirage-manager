@@ -167,7 +167,7 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
 
     function setTransitionDelay(Duration delay) external override restricted {
         require(
-            Duration.unwrap(delay) > Duration.unwrap(minTransitionDelay),
+            Duration.unwrap(delay) + 1 > Duration.unwrap(minTransitionDelay),
             TransitionDelayTooShort()
         );
         emit TransitionDelayUpdated(transitionDelay, delay);
