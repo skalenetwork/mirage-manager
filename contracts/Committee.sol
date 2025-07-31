@@ -84,6 +84,7 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
     error InvalidSkaleRngContract(address rng);
     error NodeNotActive(NodeId node);
     error TransitionDelayTooShort();
+    error CommitteeRotationInProgress();
 
     modifier onlyDkg() {
         require(msg.sender == address(dkg), SenderIsNotDkg(msg.sender));
@@ -172,6 +173,10 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
         require(
             Duration.unwrap(delay) + 1 > Duration.unwrap(minTransitionDelay),
             TransitionDelayTooShort()
+        );
+        require(
+            !_isCommitteeRotationInProgress(),
+            CommitteeRotationInProgress()
         );
         emit TransitionDelayUpdated(transitionDelay, delay);
         transitionDelay = delay;
@@ -403,5 +408,10 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
     function _shareToWeight(uint256 share) private pure returns (uint256 weight)
     {
         return share;
+    }
+
+    function _isCommitteeRotationInProgress() private view returns (bool inProgress) {
+        Committee storage latestCommittee = _getCommittee(lastCommitteeIndex);
+        return Timestamp.unwrap(latestCommittee.startingTimestamp) == type(uint256).max;
     }
 }
