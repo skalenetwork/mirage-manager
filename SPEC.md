@@ -204,9 +204,7 @@ As described, Active Nodes can be healthy or unhealthy, depending on whether the
 - `getStakedToNodeAmount(NodeId node)`: Returns the amount of FAIR the sender has staked to a Node.
 - `getStakedToNodeAmountFor(NodeId node, address holder)`: Returns the amount of FAIR a user has staked to a Node.
 - `isNodeEnabled(NodeId node)`: Returns a boolean indicating if a Node is enabled or disabled.
-- `setStakeLimit(NodeId node, Fair limit)`: Allows authorized administrators to set a maximum stake limit for a specific node.
-- `removeStakeLimit(NodeId node)`: Allows authorized administrators to remove the stake limit for a specific node (sets limit to 0).
-- `getNodeStakeLimit(NodeId node)`: Returns the current stake limit for a specific node (0 means no limit).
+- `setStakeLimit(Fair limit)`: Allows authorized administrators to set a global maximum stake limit that applies to all nodes.
 
 #### Node Stake Limits
 
@@ -220,7 +218,7 @@ FAIR-manager supports setting maximum stake limits for individual nodes to preve
 
 - Only node owners can change their fee rate.
 - Only COMMITTEE_ROLE can change node eligibility.
-- Only authorized administrators can set, update, or remove node stake limits.
+- Only authorized administrators can set stake limits.
 
 ### [`Committee.sol`](./contracts/Committee.sol)
 
