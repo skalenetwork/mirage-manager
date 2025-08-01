@@ -217,7 +217,7 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
     }
 
     function updateWeight(NodeId node, uint256 share) external override restricted {
-        _updateWeight(node, share);
+        _updateWeight(node, share, status.isWhitelisted(node));
     }
 
     function getCommittee(
@@ -333,12 +333,12 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
         }
     }
 
-    function _updateWeight(NodeId node, uint256 share) private {
+    function _updateWeight(NodeId node, uint256 share, bool isWhitelisted) private {
         uint256 weight = _shareToWeight(share);
         if (weight > 0) {
             if (_pool.contains(node)) {
                 _pool.setWeight(node, weight);
-            } else if (status.isWhitelisted(node)) {
+            } else if (isWhitelisted) {
                 _pool.add(node);
                 emit NodeBecomesEligible(node);
             }
@@ -365,7 +365,8 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
             if (address(rewardWallet).balance > 0) {
                 _updateWeight(
                     node,
-                    staking.getNodeShare(node)
+                    staking.getNodeShare(node),
+                    status.isWhitelisted(node)
                 );
             }
         }
