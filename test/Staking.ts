@@ -357,7 +357,7 @@ describe("Staking", () => {
         }
     });
 
-    it.only("should pay rewards via reward wallet", async () => {
+    it("should pay rewards via reward wallet", async () => {
         const tolerance = 1n; // tolerance in wei for rounding errors
         const {staking, nodesData } = await registeredOnlyNodes();
         const [, ...allUsers] = await ethers.getSigners();
