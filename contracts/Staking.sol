@@ -283,7 +283,19 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
         if (!isNodeEnabled(node)) {
             return 0;
         }
-        return Credit.unwrap(_rootFund.credits[FundLibrary.nodeToHolder(node)]);
+        Fair totalBalance = _getTotalBalance();
+        assert((totalBalance == FundLibrary.ZERO_FAIR) == (_rootFund.totalCredits == FundLibrary.ZERO_CREDIT));
+        uint256 unPulledCredits = 0;
+        uint256 rewardWalletBalance = address(_rewardWallets[node]).balance;
+        if (rewardWalletBalance > 0) {
+            if (totalBalance > FundLibrary.ZERO_FAIR) {
+                unPulledCredits = rewardWalletBalance *
+                    Credit.unwrap(_rootFund.totalCredits) / Fair.unwrap(totalBalance);
+            } else {
+                unPulledCredits = rewardWalletBalance;
+            }
+        }
+        return Credit.unwrap(_rootFund.credits[FundLibrary.nodeToHolder(node)]) + unPulledCredits;
     }
 
     function getRewardWallet(NodeId node) external view override returns (IRewardWallet rewardWallet) {
@@ -304,11 +316,13 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
     }
 
     function getNodeTotalStake(NodeId node) external view override returns (Fair amount) {
-        if (!isNodeEnabled(node)) {
-            return _disabledNodesBalances.get(node);
+        if (isNodeEnabled(node)) {
+            Fair balance = _getTotalBalance();
+            amount = _rootFund.getBalance(balance, FundLibrary.nodeToHolder(node));
+        } else {
+            amount = _disabledNodesBalances.get(node);
         }
-        Fair balance = _getTotalBalance();
-        amount = _rootFund.getBalance(balance, FundLibrary.nodeToHolder(node));
+        amount = amount + _getNonPulledReward(node);
     }
 
     // Public

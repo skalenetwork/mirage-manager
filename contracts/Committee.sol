@@ -217,19 +217,7 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
     }
 
     function updateWeight(NodeId node, uint256 share) external override restricted {
-        uint256 weight = _shareToWeight(share);
-        if (weight > 0) {
-            if (_pool.contains(node)) {
-                _pool.setWeight(node, weight);
-            } else if (status.isWhitelisted(node)) {
-                _pool.add(node);
-                emit NodeBecomesEligible(node);
-            }
-        } else {
-            if (_pool.remove(node)) {
-                emit NodeLosesEligibility(node);
-            }
-        }
+        _updateWeight(node, share);
     }
 
     function getCommittee(
@@ -345,6 +333,22 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
         }
     }
 
+    function _updateWeight(NodeId node, uint256 share) private {
+        uint256 weight = _shareToWeight(share);
+        if (weight > 0) {
+            if (_pool.contains(node)) {
+                _pool.setWeight(node, weight);
+            } else if (status.isWhitelisted(node)) {
+                _pool.add(node);
+                emit NodeBecomesEligible(node);
+            }
+        } else {
+            if (_pool.remove(node)) {
+                emit NodeLosesEligibility(node);
+            }
+        }
+    }
+
     function _flushReceivedRewards() private {
         Committee storage activeCommittee = _getCommittee(getActiveCommitteeIndex());
         uint256 committeeSize_ = activeCommittee.nodes.length;
@@ -352,7 +356,10 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
             NodeId node = activeCommittee.nodes[i];
             IRewardWallet rewardWallet = staking.getRewardWallet(node);
             if (address(rewardWallet).balance > 0) {
-                rewardWallet.flush();
+                _updateWeight(
+                    node,
+                    staking.getNodeShare(node)
+                );
             }
         }
     }
