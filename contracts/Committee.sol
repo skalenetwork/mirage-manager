@@ -174,10 +174,6 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
             Duration.unwrap(delay) + 1 > Duration.unwrap(minTransitionDelay),
             TransitionDelayTooShort()
         );
-        require(
-            !_isCommitteeRotationInProgress(),
-            CommitteeRotationInProgress()
-        );
         emit TransitionDelayUpdated(transitionDelay, delay);
         transitionDelay = delay;
     }
