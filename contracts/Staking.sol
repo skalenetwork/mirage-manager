@@ -67,7 +67,7 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
     event NodeRewardReceived(NodeId indexed node, Fair indexed amount);
     event Retrieved(address indexed sender, NodeId indexed node, Fair indexed amount);
     event RewardReceived(address indexed sender, uint256 indexed amount);
-    event RewardWalletCreated(NodeId indexed node, IRewardWallet indexed rewardWallet);
+    event RewardWalletCreated(NodeId indexed node);
     event Staked(address indexed sender, NodeId indexed node, Fair indexed amount);
     event StakedToNewNode(address indexed sender, NodeId indexed node);
     event StoppedStaking(address indexed sender, NodeId indexed node);
@@ -181,6 +181,8 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
         require(value > FundLibrary.ZERO_FAIR, ZeroAmount());
         require(_stakedNodes[msg.sender].contains(node), ZeroStakeToNode(node));
 
+        emit Retrieved(msg.sender, node, value);
+
         _pullReward(node);
         bool nodeIsEnabled = isNodeEnabled(node);
         if (nodeIsEnabled) {
@@ -210,7 +212,6 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
             assert(_stakedNodes[msg.sender].remove(node));
             emit StoppedStaking(msg.sender, node);
         }
-        emit Retrieved(msg.sender, node, value);
 
         if (nodeIsEnabled) {
             committee.updateWeight(node, Credit.unwrap(_rootFund.credits[FundLibrary.nodeToHolder(node)]));
@@ -242,6 +243,7 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
         require(nodes.activeNodeExists(node), Nodes.NodeDoesNotExist(node));
         bool nodeIsEnabled = isNodeEnabled(node);
         Fair amount = Fair.wrap(msg.value);
+        emit Staked(msg.sender, node, amount);
         _pullReward(node);
         Fair balance = _getTotalBalance() - amount;
 
@@ -271,7 +273,6 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
         if(_stakedNodes[msg.sender].add(node)) {
             emit StakedToNewNode(msg.sender, node);
         }
-        emit Staked(msg.sender, node, amount);
 
         if (nodeIsEnabled) {
             committee.updateWeight(node, Credit.unwrap(_rootFund.credits[FundLibrary.nodeToHolder(node)]));
@@ -315,6 +316,7 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
     function claimFee(address payable to, Fair amount) public override {
         require(to != address(0), ZeroAddress());
         NodeId node = nodes.getNodeId(msg.sender);
+        emit FeeClaimed(node, to, amount);
         _pullReward(node);
         Fair balance = _getTotalBalance();
         bool nodeIsEnabled = isNodeEnabled(node);
@@ -334,8 +336,6 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
                 amount
             );
         }
-
-        emit FeeClaimed(node, to, amount);
 
         if (nodeIsEnabled) {
             committee.updateWeight(node, Credit.unwrap(_rootFund.credits[FundLibrary.nodeToHolder(node)]));
@@ -387,6 +387,7 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
 
     function _deployRewardWallet(NodeId node) private {
         ProxyAdmin proxyAdmin = ProxyAdmin(ERC1967Utils.getAdmin());
+        emit RewardWalletCreated(node);
         _rewardWallets[node] = IRewardWallet(payable(new TransparentUpgradeableProxy(
             address(rewardWalletReference),
             proxyAdmin.owner(),
@@ -397,12 +398,17 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
                 node
             )
         )));
-        emit RewardWalletCreated(node, _rewardWallets[node]);
     }
+
 
     function _pullReward(NodeId node) private nonReentrant {
         if (address(_rewardWallets[node]).balance > 0) {
+            // Reward wallet is considered as a part of Staking contract.
+            // The code is trusted and effects are known.
+            // slither-disable-start reentrancy-events
+            // slither-disable-next-line reentrancy-benign reentrancy-events
             _rewardWallets[node].flush();
+            // slither-disable-end reentrancy-events
         }
     }
 
