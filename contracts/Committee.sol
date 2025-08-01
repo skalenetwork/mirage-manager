@@ -393,9 +393,10 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
         return Precompiled.getRandomNumber(skaleRng);
     }
 
-    function _isCommitteeRotationInProgress() private view returns (bool inProgress) {
-        Committee storage latestCommittee = _getCommittee(lastCommitteeIndex);
-        return Timestamp.unwrap(latestCommittee.startingTimestamp) == type(uint256).max;
+    function _canSelectNewCommittee() private view returns (bool canSelect) {
+        Committee memory latestCommittee = _getCommittee(lastCommitteeIndex);
+        return Timestamp.unwrap(latestCommittee.startingTimestamp) == type(uint256).max ||
+            latestCommittee.startingTimestamp < Timestamp.wrap(block.timestamp);
     }
 
     function _next(CommitteeIndex index) private pure returns (CommitteeIndex nextIndex) {
