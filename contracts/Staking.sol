@@ -385,23 +385,6 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
 
     // Private
 
-    function _validateStakeLimit(NodeId node, Fair amount, Fair balance, bool nodeIsEnabled) private view {
-        if (Fair.unwrap(stakeLimit) > 0) {
-            Fair currentNodeStake;
-            if (nodeIsEnabled) {
-                currentNodeStake = _rootFund.getBalance(balance, FundLibrary.nodeToHolder(node));
-            } else {
-                currentNodeStake = _disabledNodesBalances.get(node);
-            }
-
-            Fair newNodeStake = currentNodeStake + amount;
-            require(
-                !(newNodeStake > stakeLimit),
-                StakeLimitExceeded(currentNodeStake, amount, stakeLimit)
-            );
-        }
-    }
-
     function _deployRewardWallet(NodeId node) private {
         ProxyAdmin proxyAdmin = ProxyAdmin(ERC1967Utils.getAdmin());
         _rewardWallets[node] = IRewardWallet(payable(new TransparentUpgradeableProxy(
@@ -429,5 +412,22 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
 
     function _getTotalBalance() private view returns (Fair balance) {
         return Fair.wrap(address(this).balance) - totalDisabled;
+    }
+
+    function _validateStakeLimit(NodeId node, Fair amount, Fair balance, bool nodeIsEnabled) private view {
+        if (Fair.unwrap(stakeLimit) > 0) {
+            Fair currentNodeStake;
+            if (nodeIsEnabled) {
+                currentNodeStake = _rootFund.getBalance(balance, FundLibrary.nodeToHolder(node));
+            } else {
+                currentNodeStake = _disabledNodesBalances.get(node);
+            }
+
+            Fair newNodeStake = currentNodeStake + amount;
+            require(
+                !(newNodeStake > stakeLimit),
+                StakeLimitExceeded(currentNodeStake, amount, stakeLimit)
+            );
+        }
     }
 }
