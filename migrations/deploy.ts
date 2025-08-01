@@ -3,6 +3,7 @@ import { ethers, network, upgrades } from "hardhat";
 import { promises as fs } from 'fs';
 import {
     getVersion,
+    verify as verifyImplementation,
     verifyProxy
 } from '@skalenetwork/upgrade-tools';
 import {
@@ -31,6 +32,7 @@ export const contracts = [
     "DKG",
     "Nodes",
     "FairAccessManager",
+    "RewardWallet",
     "Status",
     "Staking"
 ];
@@ -282,12 +284,21 @@ const storeAddresses = async (deployedContracts: DeployedContracts, version: str
 
 const verify = async (deployedContracts: DeployedContracts) => {
     console.log("Verify contracts");
-    for (const contractName of contracts) {
+    for (const contractName in deployedContracts) {
         try {
             await verifyProxy(contractName, await ethers.resolveAddress(deployedContracts[contractName as keyof DeployedContracts]));
         } catch (error) {
             console.log(chalk.yellow(`Skipping verification for ${contractName}: ${error}`));
         }
+    }
+    try {
+        const rewardWalletAddress = await deployedContracts.Staking.rewardWalletReference();
+        await verifyImplementation(
+            "RewardWallet",
+            rewardWalletAddress
+        );
+    } catch (error) {
+        console.log(chalk.yellow(`Skipping verification for RewardWallet: ${error}`));
     }
 }
 
