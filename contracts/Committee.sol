@@ -352,6 +352,13 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
     function _flushReceivedRewards() private {
         Committee storage activeCommittee = _getCommittee(getActiveCommitteeIndex());
         uint256 committeeSize_ = activeCommittee.nodes.length;
+        // Block creation rewards are sent to reward wallets
+        // without executing smart contract code
+        // because of that we have to update weights
+        // to properly select the next committee
+        // The loop does external calls
+        // but number of iterations is reasonably small
+        // slither-disable-start calls-loop
         for (uint256 i = 0; i < committeeSize_; ++i) {
             NodeId node = activeCommittee.nodes[i];
             IRewardWallet rewardWallet = staking.getRewardWallet(node);
@@ -362,6 +369,7 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
                 );
             }
         }
+        // slither-disable-end calls-loop
     }
 
     function _isEligible(NodeId node) private view returns (bool eligible) {
