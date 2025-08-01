@@ -111,6 +111,10 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
     }
 
     function select() external override restricted {
+        require(
+            _canSelectNewCommittee(),
+            CommitteeRotationInProgress()
+        );
         _flushReceivedRewards();
         IRandom.RandomGenerator memory generator = Random.create(_safeGetRandom());
         NodeId[] memory members = _pool.sample(committeeSize, generator);
