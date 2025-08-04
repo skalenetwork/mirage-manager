@@ -29,19 +29,27 @@ import {
 import {ICommittee} from "@skalenetwork/fair-manager-interfaces/ICommittee.sol";
 import {DkgId, IDkg} from "@skalenetwork/fair-manager-interfaces/IDkg.sol";
 import {INodes, NodeId} from "@skalenetwork/fair-manager-interfaces/INodes.sol";
+import { TypedMap } from "./structs/typed/TypedMap.sol";
 
 import {G2Operations} from "./utils/fieldOperations/G2Operations.sol";
 
 
 contract DKG is AccessManagedUpgradeable, IDkg {
     using G2Operations for G2Point;
+    using TypedMap for TypedMap.NodeIdToUintMap;
+
+    struct RoundAuxiliary {
+        TypedMap.NodeIdToUintMap nodeIndexes;
+    }
 
     INodes public nodes;
     ICommittee public committee;
 
+    DkgId public lastDkgId;
+
     mapping(DkgId dkg => Round round) public rounds;
 
-    DkgId public lastDkgId;
+    mapping(DkgId dkg => RoundAuxiliary roundAuxiliary) private nodeIndexesInRound;
 
     event BroadcastAndKeyShare(
         DkgId dkg,
@@ -197,6 +205,7 @@ contract DKG is AccessManagedUpgradeable, IDkg {
     function _createRound(NodeId[] calldata participants) private returns (DkgId id) {
         lastDkgId = DkgId.wrap(DkgId.unwrap(lastDkgId) + 1);
         id = lastDkgId;
+        uint256 numNodes = participants.length;
         rounds[id] = Round({
             id: id,
             status: Status.BROADCAST,
@@ -208,6 +217,9 @@ contract DKG is AccessManagedUpgradeable, IDkg {
             numberOfCompleted: 0,
             completed: new bool[](participants.length)
         });
+        for (uint256 i = 0; i < numNodes; ++i) {
+            nodeIndexesInRound[id].nodeIndexes.set(participants[i], i);
+        }
     }
 
     function _contributeToPublicKey(Round storage round, G2Point memory value) private {
@@ -216,13 +228,9 @@ contract DKG is AccessManagedUpgradeable, IDkg {
     }
 
     function _getIndex(DkgId dkg, NodeId node) private view returns (uint256 index) {
-        uint256 length = rounds[dkg].nodes.length;
-        for (index = 0; index < length; ++index) {
-            if (rounds[dkg].nodes[index] == node) {
-                return index;
-            }
-        }
-        revert NodeDoesNotParticipateInDkg(node);
+        (bool exists, uint256 idx) = nodeIndexesInRound[dkg].nodeIndexes.tryGet(node);
+        require(exists, NodeDoesNotParticipateInDkg(node));
+        return idx;
     }
 
     function _isNodeBroadcasted(DkgId dkg, uint256 index) private view returns (bool broadcasted) {

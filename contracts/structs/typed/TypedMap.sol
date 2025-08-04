@@ -41,6 +41,10 @@ library TypedMap {
         EnumerableMap.UintToUintMap inner;
     }
 
+    struct NodeIdToUintMap {
+        EnumerableMap.UintToUintMap inner;
+    }
+
     // ----------
     //  Internal
     // ----------
@@ -72,6 +76,12 @@ library TypedMap {
 
     function remove(NodeIdToFairMap storage map, NodeId key) internal returns (bool removed) {
         removed = EnumerableMap.remove(map.inner, NodeId.unwrap(key));
+    }
+
+    // NodeIdToFairMap
+
+    function set(NodeIdToUintMap storage map, NodeId key, uint256 value) internal returns (bool added) {
+        added = EnumerableMap.set(map.inner, NodeId.unwrap(key), value);
     }
 
     // --------------
@@ -124,5 +134,11 @@ library TypedMap {
         uint256 rawValue;
         (success, rawValue) = EnumerableMap.tryGet(map.inner, NodeId.unwrap(key));
         value = Fair.wrap(rawValue);
+    }
+
+    // NodeIdToUintMap
+
+    function tryGet(NodeIdToUintMap storage map, NodeId key) internal view returns (bool success, uint256 value) {
+        (success, value) = EnumerableMap.tryGet(map.inner, NodeId.unwrap(key));
     }
 }
