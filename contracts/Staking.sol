@@ -420,7 +420,7 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
             // Reward wallet is considered as a part of Staking contract.
             // The code is trusted and effects are known.
             // slither-disable-start reentrancy-events
-            // slither-disable-next-line reentrancy-benign reentrancy-events
+            // slither-disable-next-line reentrancy-benign
             _rewardWallets[node].flush();
             // slither-disable-end reentrancy-events
         }

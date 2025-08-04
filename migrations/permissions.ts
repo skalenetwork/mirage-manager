@@ -93,9 +93,6 @@ const grantRoles = async (deployedContracts: DeployedContracts) => {
 
     response = await accessManager.grantRole(await accessManager.STATUS_ROLE(), await ethers.resolveAddress(status), 0n);
     await response.wait();
-
-    response = await accessManager.grantRole(await accessManager.COMMITTEE_ROLE(), await ethers.resolveAddress(committee), 0n);
-    await response.wait();
 }
 
 export const configurePermissions = async (deployedContracts: DeployedContracts) => {
