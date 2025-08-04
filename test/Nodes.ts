@@ -459,7 +459,10 @@ describe("Nodes", function () {
         .to.be.revertedWithCustomError(nodesContract, "PassiveNodeAlreadyExistsForAddress");
     });
 
-    it("should should not allow changing nodes data if node in current or next committee", async () => {
+    it("should should not allow changing nodes data if node in current or next committee", async function () {
+        // TODO: this test is taking too long only on old versions of nodejs
+        // remove custom timeout after deprecation of nodejs 18
+        this.timeout(60000); // 1 minutes
         const {committee, nodesData, nodes, status} = await whitelistedAndStakedNodes();
         await committee.setCommitteeSize(5); // to save resources
         await sendHeartbeat(status, nodesData.slice(0, 10)); // to save time
@@ -480,13 +483,10 @@ describe("Nodes", function () {
 
     });
 
-    it("should should not allow deleting node if node in current or next committee or has stake", async function () {
-        // TODO: this test is taking too long only on old versions of nodejs
-        // remove custom timeout after deprecation of nodejs 18
-        this.timeout(120000); // 2 minutes
+    it("should should not allow deleting node if node in current or next committee or has stake", async () => {
         const {committee, nodesData, nodes, status, staking} = await whitelistedAndStakedNodes();
-        await committee.setCommitteeSize(3); // to save resources
-        await sendHeartbeat(status, nodesData.slice(0, 4)); // to save time
+        await committee.setCommitteeSize(5); // to save resources
+        await sendHeartbeat(status, nodesData.slice(0, 10)); // to save time
         await committee.select();
         for(const node of nodesData.slice(0, 10)) {
             const nodeBlocked = await committee.isNodeInCurrentOrNextCommittee(node.id);
