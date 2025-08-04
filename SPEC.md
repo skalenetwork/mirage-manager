@@ -228,12 +228,14 @@ FAIR-manager supports setting a maximum stake limit that applies to each nodes t
 
 - `Staking.sol` interacts with `Committee.sol` to update node weights each time an operation that changes the total staking share of a node is performed.
 - `Staking.sol` interacts with `RewardWallet.sol` instances to flush rewards that may have been given from consensus layer.
+- `Staking.sol` reads data from `Nodes.sol`.
 
 #### Staking Permissions
 
-- Only node owners can change their fee rate.
+- Only node owners can change their fee rate and change accounts allowed to set fees.
 - Only COMMITTEE_ROLE can change node eligibility.
 - Only authorized administrators can set stake limits.
+- Only receivers authorized by node owners can claim nodeFees.
 
 ### [`Committee.sol`](./contracts/Committee.sol)
 

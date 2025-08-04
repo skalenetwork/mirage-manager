@@ -37,6 +37,7 @@ import {
 } from "@openzeppelin/contracts/utils/Address.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
+import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 import {ICommittee} from "@skalenetwork/fair-manager-interfaces/ICommittee.sol";
 import {INodes, NodeId} from "@skalenetwork/fair-manager-interfaces/INodes.sol";
 import {IRewardWallet} from "@skalenetwork/fair-manager-interfaces/IRewardWallet.sol";
@@ -93,10 +94,16 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
     error NodeIsAlreadyDisabled(NodeId node);
     error NodeIsNotDisabled(NodeId node);
     error NotAllowedToClaimRewards(address sender);
+    error GlobalStakeLimitExceeded(Fair currentStake, Fair attemptedStake, Fair limit);
     error StakeLimitExceeded(Fair currentStake, Fair attemptedStake, Fair limit);
     error ReceiverIsAlreadyAllowed(address receiver);
     error ReceiverWasNotAllowed(address receiver);
     error RewardWalletDoesNotExist(NodeId node);
+
+    modifier validNode(NodeId node) {
+        require(nodes.activeNodeExists(node), Nodes.NodeDoesNotExist(node));
+        _;
+    }
 
     function initialize(
         address initialAuthority,
@@ -153,8 +160,14 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
         committee.updateWeight(node, 0);
     }
 
-    function enable(NodeId node) external override restricted {
-        require(nodes.activeNodeExists(node), Nodes.NodeDoesNotExist(node));
+    function enable(
+        NodeId node
+    )
+        external
+        override
+        restricted
+        validNode(node)
+    {
         (bool wasDisabled, Fair value) = _disabledNodesBalances.tryGet(node);
         require(wasDisabled, NodeIsNotDisabled(node));
         _pullReward(node);
@@ -178,9 +191,15 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
         assert(_nodesAllowedReceivers[node].add(nodes.getNode(node).nodeAddress));
     }
 
-    function payReward(NodeId node) external payable override {
+    function payReward(
+        NodeId node
+    )
+        external
+        payable
+        override
+        validNode(node)
+    {
         require(msg.value > 0, ZeroAmount());
-        require(nodes.activeNodeExists(node), Nodes.NodeDoesNotExist(node));
         bool nodeIsEnabled = !_disabledNodesBalances.contains(node);
         Fair amount = Fair.wrap(msg.value);
         Fair balance = _getTotalBalance() - amount;
@@ -269,9 +288,8 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
         rewardWalletReference = rewardWalletReference_;
     }
 
-    function stake(NodeId node) external payable override {
+    function stake(NodeId node) external payable override validNode(node) {
         require(msg.value > 0, ZeroAmount());
-        require(nodes.activeNodeExists(node), Nodes.NodeDoesNotExist(node));
         bool nodeIsEnabled = isNodeEnabled(node);
         Fair amount = Fair.wrap(msg.value);
         emit Staked(msg.sender, node, amount);
@@ -306,6 +324,7 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
         }
 
         if (nodeIsEnabled) {
+            // Reward Wallet already flushed
             committee.updateWeight(node, Credit.unwrap(_getNodeCredits(node)));
         }
     }
@@ -320,10 +339,14 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
         uint256 rewardWalletBalance = address(_rewardWallets[node]).balance;
         if (rewardWalletBalance > 0) {
             if (totalBalance > FundLibrary.ZERO_FAIR) {
-                unPulledCredits = rewardWalletBalance *
-                    Credit.unwrap(_rootFund.totalCredits) / Fair.unwrap(totalBalance);
+                unPulledCredits = Math.mulDiv(
+                    rewardWalletBalance,
+                    Credit.unwrap(_rootFund.totalCredits),
+                    Fair.unwrap(totalBalance),
+                    Math.Rounding.Floor
+                );
             } else {
-                unPulledCredits = rewardWalletBalance;
+                unPulledCredits = rewardWalletBalance * FundLibrary.CREDIT_PRECISION;
             }
         }
         return Credit.unwrap(_getNodeCredits(node)) + unPulledCredits;

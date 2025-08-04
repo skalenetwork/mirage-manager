@@ -8,7 +8,13 @@ chai.should();
 
 const sumBigInt = (arr: bigint[]) => arr.reduce((acc, val) => acc + val, 0n);
 
+const ALLOWED_ERROR = 10n**9n; // 1 wei tolerance for rounding errors
+const N_PRECISION_BITS = 80;
+const PRECISION = 1n << BigInt(N_PRECISION_BITS); // 1 << 80
+const HUGE_AMMOUNT_OF_FAIR = 10n**38n // 100 Billions of FAIR in wei
+
 describe("Staking", () => {
+
     it("should allow holder to stake", async () => {
         const {staking, nodesData } = await registeredOnlyNodes();
         const [,user] = await ethers.getSigners();
@@ -214,7 +220,6 @@ describe("Staking", () => {
         const amount1 = ethers.parseEther("2");
         const amount2 = ethers.parseEther("3");
         const reward = ethers.parseEther("10");
-        const roundingError = 1n;
         const feeRate = 500; // Yes, Eddie, half
         const [{id: node1, wallet: node1Wallet}, {id: node2, wallet: node2Wallet}] = nodesData.slice(22); // not in the current committee
 
@@ -301,13 +306,14 @@ describe("Staking", () => {
 
         (await staking.getEarnedFeeAmount(node1))
             .should.be.equal(0n);
-        (await staking.getStakedToNodeAmountFor(node1, user))
-            .should.be.equal(stakedToNode1 - roundingError);
-        (await staking.getStakedAmountFor(user))
-            .should.be.equal(stakedToNode1 + amount2 + node2Reward - roundingError);
 
-        await staking.connect(user).retrieve(node1, stakedToNode1 - roundingError)
-            .should.changeEtherBalance(user, stakedToNode1 - roundingError);
+        const amount = await staking.getStakedToNodeAmountFor(node1, user);
+        expect(amount).to.be.closeTo(stakedToNode1, ALLOWED_ERROR);
+        (await staking.getStakedAmountFor(user))
+            .should.be.closeTo(stakedToNode1 + amount2 + node2Reward, ALLOWED_ERROR);
+
+        await staking.connect(user).retrieve(node1, amount)
+            .should.changeEtherBalance(user, amount);
         // root pool:
         //     total: 9 Fair, 3 credits
         //     node 1 pool:  0 Fair, 0 credits
@@ -326,7 +332,7 @@ describe("Staking", () => {
         (await staking.getStakedToNodeAmountFor(node1, user))
             .should.be.equal(0n);
         (await staking.getStakedAmountFor(user))
-            .should.be.equal(amount2 + node2Reward + roundingError);
+            .should.be.equal(amount2 + node2Reward);
     });
 
     it("should allow only allowed receivers to claim fees", async () => {
@@ -649,4 +655,146 @@ describe("Staking", () => {
         expect(await staking.getNodeFeeRate(nodeId)).to.be.equal(1000);
     });
 
+    it("should not create rounding errors bigger than MAX_ALLOWED_ERROR under defined precision", async () => {
+        const {staking, nodesData, status} = await whitelistedNodes();
+        const [, hacker, user] = await ethers.getSigners();
+        const node = nodesData[0].id;
+        const sufficientlyHighAmount = (HUGE_AMMOUNT_OF_FAIR - ethers.parseEther("1")) / 100000n;
+
+        await setBalance(hacker.address, sufficientlyHighAmount * 10n);
+        await setBalance(user.address,  sufficientlyHighAmount * 10n);
+
+        // Hacker 1 deposits 1 WEI
+        await staking.connect(hacker).stake(node, {value: 1n});
+
+        // eligible and fee rate to 0
+        await status.connect(nodesData[0].wallet).alive();
+        await staking.connect(nodesData[0].wallet).setFeeRate(0);
+
+        // Hacker inflates Staking balance
+        expect(await staking.getNodeTotalStake(node)).to.be.eql(1n);
+        expect(await staking.getNodeShare(node)).to.be.eql(PRECISION);
+        await hacker.sendTransaction({to: staking, value: sufficientlyHighAmount});
+        expect(await staking.getNodeShare(node)).to.be.eql(PRECISION);
+        expect(await staking.getNodeTotalStake(node)).to.be.eql(sufficientlyHighAmount + 1n);
+
+        // user deposits almostHalfMax ETH
+        await staking.connect(user).stake(node, {value: sufficientlyHighAmount});
+
+        expect(await staking.getStakedToNodeAmountFor(node, user)).to.be.closeTo(sufficientlyHighAmount, ALLOWED_ERROR);
+        expect(await staking.getStakedToNodeAmountFor(node, hacker)).to.be.closeTo(sufficientlyHighAmount + 1n, ALLOWED_ERROR);
+
+        expect(await staking.getNodeTotalStake(node)).to.be.equal(2n * sufficientlyHighAmount + 1n);
+
+
+        // If we withdraw the other way around, 1wei will be lost :O //TODO: check this
+        await staking.connect(hacker).retrieve(node, sufficientlyHighAmount + 1n);
+        await staking.connect(user).retrieve(node, sufficientlyHighAmount);
+
+        expect(await staking.getNodeTotalStake(node)).to.be.equal(0n);
+        // With fees
+        const feeRate = 500; // Yes, Eddie, half
+        await staking.connect(nodesData[0].wallet).setFeeRate(feeRate);
+        await staking.connect(hacker).stake(node, {value: 1n});
+        await staking.connect(user).stake(node, {value: 1n});
+        await hacker.sendTransaction({to: staking, value: 1n});
+        expect(await staking.getNodeTotalStake(node)).to.be.equal(3n);
+
+        // Half of 1n should be rounded to 0
+        expect(await staking.getEarnedFeeAmount(node)).to.be.equal(0n);
+        expect(await staking.getStakedToNodeAmountFor(node, user)).to.be.equal(1n);
+        expect(await staking.getStakedToNodeAmountFor(node, hacker)).to.be.equal(1n);
+
+        await hacker.sendTransaction({to: staking, value: 1n});
+
+        // Half of 2n should be 1n, but in fact it is not because of how rewards are calculated.
+        // Each user has 1 Credit. The reward credits will be 2/3... When calculating the amount of FAIR using Credits roundedDown, it will be 0.99999 which is 0.
+        // Reward credits are, however, updated to 2/3 rounded down (With Credit precision).
+        expect(await staking.getEarnedFeeAmount(node)).to.be.equal(0n);
+        expect(await staking.getStakedToNodeAmountFor(node, user)).to.be.equal(1n);
+        expect(await staking.getStakedToNodeAmountFor(node, hacker)).to.be.equal(1n);
+
+        await hacker.sendTransaction({to: staking, value: 1n});
+
+        // now with earned feed slightly higher than 1, we have 1n rewards
+        expect(await staking.getEarnedFeeAmount(node)).to.be.equal(1n);
+
+        // Lets try with huge rewards
+        const totalRewards = (sufficientlyHighAmount + 3n);
+        await hacker.sendTransaction({to: staking, value: sufficientlyHighAmount});
+        expect(await staking.getEarnedFeeAmount(node)).to.be.closeTo(totalRewards/2n, ALLOWED_ERROR);
+        expect(await staking.getStakedToNodeAmountFor(node, user)).to.be.closeTo(1n + totalRewards/4n, ALLOWED_ERROR);
+        expect(await staking.getStakedToNodeAmountFor(node, hacker)).to.be.closeTo(1n + totalRewards/4n, ALLOWED_ERROR);
+    });
+
+    it("should not allow rounding errors bigger than MAX_ALLOWED_ERROR if precision changes", async () => {
+        const {staking, nodesData, status} = await whitelistedNodes();
+        const [, hacker, user] = await ethers.getSigners();
+        const node = nodesData[0].id;
+
+        const sufficientlyHighAmount = (HUGE_AMMOUNT_OF_FAIR - ethers.parseEther("1")) / 100000n;
+
+        await setBalance(hacker.address, sufficientlyHighAmount * 10n);
+        await setBalance(user.address,  sufficientlyHighAmount * 10n);
+
+        // Hacker 1 deposits 1 WEI
+        await staking.connect(hacker).stake(node, {value: 1n});
+
+        // eligible and fee rate to 0
+        await status.connect(nodesData[0].wallet).alive();
+        await staking.connect(nodesData[0].wallet).setFeeRate(0);
+
+        // Hacker reduces its credits, affecting the precision
+        for (let index = 0; index < N_PRECISION_BITS; index++) {
+            await hacker.sendTransaction({to: staking, value: 1n});
+            await staking.connect(hacker).retrieve(node, 1n);
+        }
+
+        // Precision should be low enough, exactly 1 Credits instead of 1 << 80
+        expect(await staking.getNodeShare(node)).to.be.equal(1n);
+
+        // Hacker inflates Staking balance
+        await hacker.sendTransaction({to: staking, value: sufficientlyHighAmount});
+
+        // User is protected from depositing and losing ALL funds
+        await expect(staking.connect(user).stake(node, {value: sufficientlyHighAmount}))
+        .to.be.revertedWithCustomError(staking, "RoundingErrorTooHigh").withArgs(sufficientlyHighAmount);
+    });
+
+    it("All calculations should not overflow with MAX_STAKED_FAIR", async () => {
+        const {staking, nodesData, status} = await whitelistedNodes();
+        const [admin, user] = await ethers.getSigners();
+        const stakeLimit = HUGE_AMMOUNT_OF_FAIR - 1n;
+        // inflate user balance
+
+        await setBalance(user.address, stakeLimit + ethers.parseEther("1"));
+        const node = nodesData[0].id;
+
+        // Stake MAX (should succeed)
+        const initialStake = stakeLimit;
+        await staking.connect(user).stake(node, {value: initialStake});
+
+        // eligible and fee rate to 0
+        await status.connect(nodesData[0].wallet).alive();
+        await staking.connect(nodesData[0].wallet).setFeeRate(0);
+
+        // No Math should not overflow
+        expect(await staking.getNodeTotalStake(node)).to.be.equal(initialStake);
+        expect(await staking.getStakedAmountFor(user)).to.be.equal(initialStake);
+        expect(await staking.getStakedToNodeAmountFor(node, user)).to.be.equal(initialStake);
+        expect(await staking.getNodeShare(node)).to.be.equal(initialStake * (PRECISION));
+        expect(initialStake * (PRECISION)).to.be.lessThan((1n << 256n));
+
+        await staking.connect(user).retrieve(node, 1n);
+        await admin.sendTransaction({to: staking, value: 1n});
+        // share is removed on retrieve but not changed when rewards were payed
+        expect(await staking.getNodeShare(node)).to.be.equal((initialStake - 1n) * (PRECISION));
+
+        // No Math should fail, rewards are given in full to the user
+        expect(await staking.getNodeTotalStake(node)).to.be.equal(initialStake);
+        expect(await staking.getStakedAmountFor(user)).to.be.equal(initialStake);
+        expect(await staking.getStakedToNodeAmountFor(node, user)).to.be.equal(initialStake);
+
+        await staking.connect(user).retrieve(node, initialStake);
+    });
 });
