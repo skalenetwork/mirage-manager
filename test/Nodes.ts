@@ -461,8 +461,8 @@ describe("Nodes", function () {
 
     it("should should not allow changing nodes data if node in current or next committee", async () => {
         const {committee, nodesData, nodes, status} = await whitelistedAndStakedNodes();
-        await committee.setCommitteeSize(4); // to save resources
-        await sendHeartbeat(status, nodesData.slice(0, 5)); // to save time
+        await committee.setCommitteeSize(3); // to save resources
+        await sendHeartbeat(status, nodesData.slice(0, 4)); // to save time
         await committee.select();
 
         for(const node of nodesData) {
