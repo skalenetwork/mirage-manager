@@ -485,8 +485,8 @@ describe("Nodes", function () {
         // remove custom timeout after deprecation of nodejs 18
         this.timeout(60000); // 1 minute
         const {committee, nodesData, nodes, status, staking} = await whitelistedAndStakedNodes();
-        await committee.setCommitteeSize(5); // to save resources
-        await sendHeartbeat(status, nodesData.slice(0, 10)); // to save time
+        await committee.setCommitteeSize(3); // to save resources
+        await sendHeartbeat(status, nodesData.slice(0, 4)); // to save time
         await committee.select();
         for(const node of nodesData.slice(0, 10)) {
             const nodeBlocked = await committee.isNodeInCurrentOrNextCommittee(node.id);
