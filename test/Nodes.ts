@@ -483,7 +483,10 @@ describe("Nodes", function () {
 
     });
 
-    it("should should not allow deleting node if node in current or next committee or has stake", async () => {
+    it("should should not allow deleting node if node in current or next committee or has stake", async function () {
+        // TODO: this test is taking too long only on old versions of nodejs
+        // remove custom timeout after deprecation of nodejs 18
+        this.timeout(60000); // 1 minutes
         const {committee, nodesData, nodes, status, staking} = await whitelistedAndStakedNodes();
         await committee.setCommitteeSize(5); // to save resources
         await sendHeartbeat(status, nodesData.slice(0, 10)); // to save time
