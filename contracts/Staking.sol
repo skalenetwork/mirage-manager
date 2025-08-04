@@ -145,6 +145,8 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
         if(_rewardWallets[node] == IRewardWallet(payable(0))) {
             _deployRewardWallet(node);
         }
+        uint16 defaultFeeRate = 1000;
+        _updateNodeFeeRate(node, defaultFeeRate);
     }
 
     function payReward(NodeId node) external payable override {
