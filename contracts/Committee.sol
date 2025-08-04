@@ -31,8 +31,10 @@ import {
 } from "@skalenetwork/fair-manager-interfaces/ICommittee.sol";
 import { DkgId, IDkg } from "@skalenetwork/fair-manager-interfaces/IDkg.sol";
 import { INodes, NodeId } from "@skalenetwork/fair-manager-interfaces/INodes.sol";
+import { IRewardWallet } from "@skalenetwork/fair-manager-interfaces/IRewardWallet.sol";
 import { IStaking } from "@skalenetwork/fair-manager-interfaces/IStaking.sol";
 import { Duration, IStatus } from "@skalenetwork/fair-manager-interfaces/IStatus.sol";
+
 import { TypedSet } from "./structs/typed/TypedSet.sol";
 import { G2Operations } from "./utils/fieldOperations/G2Operations.sol";
 import { FundLibrary } from "./utils/Fund.sol";
@@ -53,7 +55,7 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
     IDkg public dkg;
     INodes public nodes;
     IStatus public status;
-    IStaking public staking;
+    IStaking public override staking;
     address public skaleRng;
 
     mapping (CommitteeIndex index => Committee committee) public committees;
@@ -108,6 +110,7 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
     }
 
     function select() external override restricted {
+        _flushReceivedRewards();
         IRandom.RandomGenerator memory generator = Random.create(_safeGetRandom());
         NodeId[] memory members = _pool.sample(committeeSize, generator);
         Committee storage committee = _createSuccessorCommittee(members);
@@ -214,19 +217,7 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
     }
 
     function updateWeight(NodeId node, uint256 share) external override restricted {
-        uint256 weight = _shareToWeight(share);
-        if (weight > 0) {
-            if (_pool.contains(node)) {
-                _pool.setWeight(node, weight);
-            } else if (status.isWhitelisted(node)) {
-                _pool.add(node);
-                emit NodeBecomesEligible(node);
-            }
-        } else {
-            if (_pool.remove(node)) {
-                emit NodeLosesEligibility(node);
-            }
-        }
+        _updateWeight(node, share, status.isWhitelisted(node));
     }
 
     function getCommittee(
@@ -340,6 +331,46 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
         if (staking.isNodeEnabled(node)) {
             staking.disable(node);
         }
+    }
+
+    function _updateWeight(NodeId node, uint256 share, bool isWhitelisted) private {
+        uint256 weight = _shareToWeight(share);
+        if (weight > 0) {
+            if (_pool.contains(node)) {
+                _pool.setWeight(node, weight);
+            } else if (isWhitelisted) {
+                _pool.add(node);
+                emit NodeBecomesEligible(node);
+            }
+        } else {
+            if (_pool.remove(node)) {
+                emit NodeLosesEligibility(node);
+            }
+        }
+    }
+
+    function _flushReceivedRewards() private {
+        Committee storage activeCommittee = _getCommittee(getActiveCommitteeIndex());
+        uint256 committeeSize_ = activeCommittee.nodes.length;
+        // Block creation rewards are sent to reward wallets
+        // without executing smart contract code
+        // because of that we have to update weights
+        // to properly select the next committee
+        // The loop does external calls
+        // but number of iterations is reasonably small
+        // slither-disable-start calls-loop
+        for (uint256 i = 0; i < committeeSize_; ++i) {
+            NodeId node = activeCommittee.nodes[i];
+            IRewardWallet rewardWallet = staking.getRewardWallet(node);
+            if (address(rewardWallet).balance > 0) {
+                _updateWeight(
+                    node,
+                    staking.getNodeShare(node),
+                    status.isWhitelisted(node)
+                );
+            }
+        }
+        // slither-disable-end calls-loop
     }
 
     function _isEligible(NodeId node) private view returns (bool eligible) {

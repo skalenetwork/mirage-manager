@@ -91,6 +91,8 @@ const deployFixture = async () => {
     for (const node of nodesData) {
         node.id = await contracts.Nodes.getNodeId(node.wallet.address);
     };
+    const [deployer] = await ethers.getSigners();
+    await contracts.FairAccessManager.grantRole(await contracts.FairAccessManager.COMMITTEE_ROLE(), deployer, 0n);
     return {
         accessManager: contracts.FairAccessManager,
         committee: contracts.Committee,
