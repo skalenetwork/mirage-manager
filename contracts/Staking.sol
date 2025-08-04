@@ -222,7 +222,7 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
     }
 
     function setFeeRate(uint16 feeRate) external override {
-        require(!(1000 < feeRate), FeeRateIsIncorrect(feeRate));
+        require(!(feeRate > 1000), FeeRateIsIncorrect(feeRate));
         NodeId node = nodes.getNodeId(msg.sender);
         uint16 currentFeeRate = _nodesFunds[node].feeRate;
         require(
