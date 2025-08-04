@@ -228,10 +228,7 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
             OnlyFeeReductionIsAllowed(currentFeeRate, feeRate)
         );
 
-        _nodesFunds[node].setFeeRate(
-            _rootFund.getBalance(_getTotalBalance(), FundLibrary.nodeToHolder(node)),
-            feeRate
-        );
+        _updateNodeFeeRate(node, feeRate);
     }
 
     function setRewardWalletReference(IRewardWallet rewardWalletReference_) external override restricted {
@@ -450,4 +447,12 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
             );
         }
     }
+
+    function _updateNodeFeeRate(NodeId node, uint16 feeRate) private {
+        _nodesFunds[node].setFeeRate(
+            _rootFund.getBalance(_getTotalBalance(), FundLibrary.nodeToHolder(node)),
+            feeRate
+        );
+    }
+
 }
