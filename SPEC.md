@@ -148,6 +148,14 @@ Staking is a core feature of FAIR-manager. To incentivize network participation,
 In FAIR, anyone is allowed to stake to a node and rewards are automatically restaked. Users can unstake their tokens or add stake to a node at any time (i.e., there is no epoch).
 Nodes can define their fee up to 100%. Once a fee is set, it can only be decreased.
 
+There are 2 ways to pay rewards:
+
+1. sending funds to `Staking` contract causes the reward distribution across all enabled nodes
+2. it's possible to reward delegators of the particular node by calling `payReward` function.
+Alternative way is to use Reward wallet. Each node has separate instance of it. Sending funds to it's balance automatically calls the `payReward` function.
+
+It's important for integration with other off-chain components of the system that both ways work correctly when balances of `Staking` or `RewardWallet` are increased without transaction and smart contract execution.
+
 For calculations, we introduce the concept of **Credits**. Each time a user stakes/unstakes FAIR, instead of updating the staked balance, the amount of credits that this user owns is updated. The exchange rate between Credits and FAIR is not fixed and can change over time due to staking rewards.
 
 $$
@@ -191,6 +199,8 @@ As described, Active Nodes can be healthy or unhealthy, depending on whether the
 
 - `claimAllFee(address payable to)`: Allows Node Owners to collect all pending fees.
 - `claimFee(address payable to, Fair amount)`: Allows Node Owners to withdraw a specific amount of fees.
+- `nodeCreated(NodeId node)`: internal function that is called by `Nodes` when a new node is created
+- `payReward(NodeId node)`: pays rewards to delegators of the specified nodes
 - `retrieve(NodeId node, Fair value)`: Allows any user to unstake an amount of FAIR from a node.
 - `setFeeRate(uint16 feeRate)`: Allows a Node owner to set the fee rate.
 - `stake(NodeId node)`: Allows any user to add stake to a node.
