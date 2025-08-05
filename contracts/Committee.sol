@@ -84,6 +84,7 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
     error InvalidSkaleRngContract(address rng);
     error NodeNotActive(NodeId node);
     error TransitionDelayTooShort();
+    error CommitteeRotationInProgress();
 
     modifier onlyDkg() {
         require(msg.sender == address(dkg), SenderIsNotDkg(msg.sender));
@@ -110,6 +111,10 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
     }
 
     function select() external override restricted {
+        require(
+            _canSelectNewCommittee(),
+            CommitteeRotationInProgress()
+        );
         _flushReceivedRewards();
         IRandom.RandomGenerator memory generator = Random.create(_safeGetRandom());
         NodeId[] memory members = _pool.sample(committeeSize, generator);
@@ -392,6 +397,12 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
         return Precompiled.getRandomNumber(skaleRng);
     }
 
+    function _canSelectNewCommittee() private view returns (bool canSelect) {
+        Committee memory latestCommittee = _getCommittee(lastCommitteeIndex);
+        return Timestamp.unwrap(latestCommittee.startingTimestamp) == type(uint256).max ||
+            latestCommittee.startingTimestamp < Timestamp.wrap(block.timestamp);
+    }
+
     function _next(CommitteeIndex index) private pure returns (CommitteeIndex nextIndex) {
         return CommitteeIndex.wrap(CommitteeIndex.unwrap(index) + 1);
     }
@@ -404,4 +415,5 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
     {
         return share;
     }
+
 }

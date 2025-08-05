@@ -241,6 +241,40 @@ describe("Committee", () => {
         );
     });
 
+    it("should not allow to select committee after successful DKG but before committee starts", async () => {
+        const {committee, status, dkg, nodesData} = await whitelistedAndStakedNodes();
+        const subset = nodesData.slice(0, 5);
+        await sendHeartbeat(status, subset);
+
+        await committee.setCommitteeSize(2);
+
+        // Start a committee rotation by calling select()
+        await committee.select();
+
+        // Complete the DKG process
+        const nextCommitteeIndex = await committee.getActiveCommitteeIndex() + 1n;
+        const nextCommittee = await committee.getCommittee(nextCommitteeIndex);
+        await runDkg(dkg, nodesData, nextCommittee.dkg);
+
+        // Now try to select a new committee after DKG completed but before committee starts
+        // This should fail because off-chain components have already scheduled migration
+        await expect(committee.select())
+            .to.be.revertedWithCustomError(committee, "CommitteeRotationInProgress");
+
+        // Wait for the committee to start
+        await skipTime(await committee.transitionDelay());
+
+        // Ensure nodes are still healthy after the delay
+        await sendHeartbeat(status, subset);
+
+        // Now selecting a new committee should work again
+        await committee.select();
+        const anotherCommitteeIndex = nextCommitteeIndex + 1n;
+        const anotherCommittee = await committee.getCommittee(anotherCommitteeIndex);
+        anotherCommittee.dkg.should.not.be.equal(0n);
+        anotherCommittee.startingTimestamp.should.be.equal(2n ** 256n - 1n);
+    });
+
     it("should check if a node in the committee or will be there soon", async () => {
         const {committee, dkg, nodesData, status} = await whitelistedAndStakedNodes();
         await committee.setCommitteeSize(5); // to save time
