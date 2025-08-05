@@ -84,6 +84,7 @@ contract DKG is AccessManagedUpgradeable, IDkg {
         uint256 actual,
         uint256 expected
     );
+    error DuplicatedNodeId(NodeId node);
     error NodeDoesNotParticipateInDkg(NodeId node);
     error NodeAlreadyBroadcasted(NodeId node);
     error IncorrectG2Point(G2Point value);
@@ -235,7 +236,7 @@ contract DKG is AccessManagedUpgradeable, IDkg {
         id = lastDkgId;
         _rounds[id].id = id;
         for (uint256 i = 0; i < n; ++i) {
-            _rounds[id].nodes.add(participants[i]);
+            require(_rounds[id].nodes.add(participants[i]), DuplicatedNodeId(participants[i]));
         }
         _rounds[id].status = Status.BROADCAST;
         _rounds[id].hashedData.clear();
