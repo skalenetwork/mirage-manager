@@ -504,4 +504,31 @@ describe("Staking", () => {
         expect(await staking.getNodeTotalStake(node)).to.be.equal(expectedTotalAfterReward + additionalStake);
     });
 
+    it("should set default fee rate to 1000 during node creation", async () => {
+        const {nodes, staking} = await registeredOnlyNodes();
+
+        // Create a new node wallet
+        const nodeWallet = ethers.Wallet.createRandom().connect(ethers.provider);
+        const [owner] = await ethers.getSigners();
+        await owner.sendTransaction({
+            to: nodeWallet.address,
+            value: ethers.parseEther("1")
+        });
+
+        // Get a proper public key using the helper function
+        const publicKey = await import("./tools/signatures").then(mod => mod.getPublicKey(nodeWallet));
+
+        // Register the node (this should trigger nodeCreated in Staking)
+        await nodes.connect(nodeWallet).registerNode(
+            ethers.randomBytes(4),
+            publicKey,
+            8000
+        );
+
+        const nodeId = await nodes.getNodeId(nodeWallet.address);
+
+        // Check that the fee rate is set to 1000 (100%)
+        expect(await (staking as any).getNodeFeeRate(nodeId)).to.be.equal(1000);
+    });
+
 });
