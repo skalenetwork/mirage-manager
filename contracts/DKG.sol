@@ -218,7 +218,7 @@ contract DKG is AccessManagedUpgradeable, IDkg {
             completed: new bool[](participants.length)
         });
         for (uint256 i = 0; i < numNodes; ++i) {
-            nodeIndexesInRound[id].nodeIndexes.set(participants[i], i);
+            assert(nodeIndexesInRound[id].nodeIndexes.set(participants[i], i));
         }
     }
 
