@@ -80,8 +80,6 @@ describe("DKG", () => {
             const receipt = await response.wait();
             assert(receipt);
 
-            (await dkg.rounds(1)).status.should.be.equal(DkgStatus.BROADCAST);
-            (await dkg.rounds(1)).startingBlockNumber.should.be.equal(receipt.blockNumber);
             (await dkg.getRound(1)).id.should.be.equal(1n);
             (await dkg.getRound(1)).status.should.be.equal(DkgStatus.BROADCAST);
             (await dkg.getRound(1)).startingBlockNumber.should.be.equal(receipt.blockNumber);
@@ -203,14 +201,14 @@ describe("DKG", () => {
                     await expect(dkg.connect(firstNode.wallet).alright(
                         dkgId
                     )).to.emit(dkg, "AllDataReceived")
-                        .withArgs(dkgId, firstNode.id, 0);
+                        .withArgs(dkgId, firstNode.id);
                 });
 
                 it("should send alright from 2 node", async () => {
                     await expect(dkg.connect(secondNode.wallet).alright(
                         dkgId
                     )).to.emit(dkg, "AllDataReceived")
-                        .withArgs(dkgId, secondNode.id, 1);
+                        .withArgs(dkgId, secondNode.id);
                 });
 
                 it("should not send alright from random node", async () => {

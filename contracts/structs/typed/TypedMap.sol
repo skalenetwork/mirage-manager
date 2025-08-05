@@ -37,6 +37,10 @@ library TypedMap {
         mapping(address => TypedSet.NodeIdSet) inner;
     }
 
+    struct NodeIdToBytes32Map {
+        EnumerableMap.UintToBytes32Map inner;
+    }
+
     struct NodeIdToFairMap {
         EnumerableMap.UintToUintMap inner;
     }
@@ -62,6 +66,16 @@ library TypedMap {
 
     function remove(AddressToNodeIdSetMap storage map, address key, NodeId nodeId) internal returns (bool removed) {
         removed = map.inner[key].remove(nodeId);
+    }
+
+    // NodeIdToBytes32Map
+
+    function clear(NodeIdToBytes32Map storage map) internal {
+        EnumerableMap.clear(map.inner);
+    }
+
+    function set(NodeIdToBytes32Map storage map, NodeId key, bytes32 value) internal returns (bool added) {
+        added = EnumerableMap.set(map.inner, NodeId.unwrap(key), value);
     }
 
     // NodeIdToFairMap
@@ -108,6 +122,20 @@ library TypedMap {
 
     function isSet(AddressToNodeIdSetMap storage map, address key, NodeId nodeId) internal view returns (bool result) {
         result = map.inner[key].contains(nodeId);
+    }
+
+    // NodeIdToBytes32Map
+
+    function contains(NodeIdToBytes32Map storage map, NodeId key) internal view returns (bool result) {
+        result = EnumerableMap.contains(map.inner, NodeId.unwrap(key));
+    }
+
+    function length(NodeIdToBytes32Map storage map) internal view returns (uint256 len) {
+        len = EnumerableMap.length(map.inner);
+    }
+
+    function tryGet(NodeIdToBytes32Map storage map, NodeId key) internal view returns (bool success, bytes32 value) {
+        (success, value) = EnumerableMap.tryGet(map.inner, NodeId.unwrap(key));
     }
 
     // NodeIdToFairMap
