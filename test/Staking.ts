@@ -518,7 +518,7 @@ describe("Staking", () => {
         // Get a proper public key using the helper function
         const publicKey = await import("./tools/signatures").then(mod => mod.getPublicKey(nodeWallet));
 
-        // Register the node (this should trigger nodeCreated in Staking)
+        // Register the node
         await nodes.connect(nodeWallet).registerNode(
             ethers.randomBytes(4),
             publicKey,
@@ -528,7 +528,7 @@ describe("Staking", () => {
         const nodeId = await nodes.getNodeId(nodeWallet.address);
 
         // Check that the fee rate is set to 1000 (100%)
-        expect(await (staking as any).getNodeFeeRate(nodeId)).to.be.equal(1000);
+        expect(await staking.getNodeFeeRate(nodeId)).to.be.equal(1000);
     });
 
 });
