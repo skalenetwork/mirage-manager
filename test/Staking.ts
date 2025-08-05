@@ -28,6 +28,9 @@ describe("Staking", () => {
         const reward = ethers.parseEther("5");
         const node = nodesData[0].id;
 
+        // Set fee rate to 0 for proportional distribution
+        await staking.connect(nodesData[0].wallet).setFeeRate(0);
+
         await staking.connect(user1).stake(node, {value: amount1});
         await staking.connect(user2).stake(node, {value: amount2});
         expect(await staking.getNodeTotalStake(node)).to.be.eql(amount1 + amount2);
@@ -148,9 +151,10 @@ describe("Staking", () => {
         const reward = ethers.parseEther("10");
         const roundingError = 1n;
         const feeRate = 500; // Yes, Eddie, half
-        const [{id: node1, wallet: node1Wallet}, {id: node2}] = nodesData.slice(22); // not in the current committee
+        const [{id: node1, wallet: node1Wallet}, {id: node2, wallet: node2Wallet}] = nodesData.slice(22); // not in the current committee
 
         await staking.connect(node1Wallet).setFeeRate(feeRate);
+        await staking.connect(node2Wallet).setFeeRate(0);
         // root pool:
         //     total: 0 Fair, 0 credits
         //     node 1 pool:  0 Fair, 0 credits
