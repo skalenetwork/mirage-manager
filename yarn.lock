@@ -2326,10 +2326,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@skalenetwork/fair-manager-interfaces@npm:0.1.0-100-set-setfeerate-value-as-1000-by-default-on-staking-contract.0":
-  version: 0.1.0-100-set-setfeerate-value-as-1000-by-default-on-staking-contract.0
-  resolution: "@skalenetwork/fair-manager-interfaces@npm:0.1.0-100-set-setfeerate-value-as-1000-by-default-on-staking-contract.0"
-  checksum: 10c0/cf414738e17e6ce367f0b6e18fde132d151029cc180d2d0ea96092ddc515995fc17f4623b7230ef86efb44dd61074550ae022af315951747502da91c6b925531
+"@skalenetwork/fair-manager-interfaces@npm:0.1.0-default-fee-rate.0":
+  version: 0.1.0-default-fee-rate.0
+  resolution: "@skalenetwork/fair-manager-interfaces@npm:0.1.0-default-fee-rate.0"
+  checksum: 10c0/1e8d58892a4b61d49bcd4c480948d7068e80f3ef032ab051c0dbb4b88f9527a0678879dd4633a10dcee6b634c016d4a11fb0a179efa922c13a9eca792b527079
   languageName: node
   linkType: hard
 
@@ -5095,7 +5095,7 @@ __metadata:
     "@openzeppelin/contracts-upgradeable": "npm:^5.3.0"
     "@openzeppelin/hardhat-upgrades": "npm:^3.9.0"
     "@openzeppelin/upgrades-core": "npm:^1.42.2"
-    "@skalenetwork/fair-manager-interfaces": "npm:0.1.0-100-set-setfeerate-value-as-1000-by-default-on-staking-contract.0"
+    "@skalenetwork/fair-manager-interfaces": "npm:0.1.0-default-fee-rate.0"
     "@skalenetwork/skale-contracts-ethers-v6": "npm:1.0.2-develop.68"
     "@skalenetwork/skale-manager-interfaces": "npm:3.2.0-develop.3"
     "@skalenetwork/upgrade-tools": "npm:3.0.0-develop.44"
