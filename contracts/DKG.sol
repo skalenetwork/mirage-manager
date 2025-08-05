@@ -49,7 +49,7 @@ contract DKG is AccessManagedUpgradeable, IDkg {
 
     mapping(DkgId dkg => Round round) public rounds;
 
-    mapping(DkgId dkg => RoundAuxiliary roundAuxiliary) private nodeIndexesInRound;
+    mapping(DkgId dkg => RoundAuxiliary roundAuxiliary) private _roundAuxiliary;
 
     event BroadcastAndKeyShare(
         DkgId dkg,
@@ -218,7 +218,7 @@ contract DKG is AccessManagedUpgradeable, IDkg {
             completed: new bool[](participants.length)
         });
         for (uint256 i = 0; i < numNodes; ++i) {
-            assert(nodeIndexesInRound[id].nodeIndexes.set(participants[i], i));
+            assert(_roundAuxiliary[id].nodeIndexes.set(participants[i], i));
         }
     }
 
@@ -228,7 +228,7 @@ contract DKG is AccessManagedUpgradeable, IDkg {
     }
 
     function _getIndex(DkgId dkg, NodeId node) private view returns (uint256 index) {
-        (bool exists, uint256 idx) = nodeIndexesInRound[dkg].nodeIndexes.tryGet(node);
+        (bool exists, uint256 idx) = _roundAuxiliary[dkg].nodeIndexes.tryGet(node);
         require(exists, NodeDoesNotParticipateInDkg(node));
         return idx;
     }
