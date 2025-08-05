@@ -500,7 +500,7 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
     function _getNodeCredits(NodeId node) private view returns (Credit credits) {
         (bool exists, Credit c) = _rootFund.credits.tryGet(FundLibrary.nodeToHolder(node));
         credits = c;
-        // If exists credits is 0, otherwise it is not.
+        // If exists credits is not 0, otherwise it is 0.
         assert(exists != (credits == FundLibrary.ZERO_CREDIT));
     }
 

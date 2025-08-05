@@ -90,14 +90,16 @@ library FundLibrary {
         if (holderCredits < credits) {
             revert NotEnoughStaked(_toFairRoundedDown(fund, balanceBeforeRemove, ZERO_CREDIT, holderCredits));
         }
-        assert(fund.credits.set(holder, holderCredits - credits) != exists);
+        if (holderCredits - credits == ZERO_CREDIT) {
+            // Holders with Zero credits are always removed from the map.
+            assert(fund.credits.remove(holder) == exists);
+        }
+        else {
+            // Set must return false because holder already exists in the map.
+            assert(!fund.credits.set(holder, holderCredits - credits));
+        }
         fund.totalCredits = fund.totalCredits - credits;
         fund.lastBalance = balanceBeforeRemove - amount;
-
-        if (fund.credits.get(holder) == ZERO_CREDIT) {
-            // Holders with Zero credits are always removed from the map.
-            assert(fund.credits.remove(holder));
-        }
     }
 
     function setFeeRate(
@@ -122,6 +124,8 @@ library FundLibrary {
         _processBalanceChange(fund, balanceBeforeSupply);
         Credit credits = _toCreditsRoundedDown(fund, balanceBeforeSupply, amount);
         (bool holderExists, Credit holderCredits) = fund.credits.tryGet(holder);
+        // If holder does not exist, it is added with the credits.
+        // If it does exist, set() must return false and value is updated.
         assert(fund.credits.set(holder, holderCredits + credits) != holderExists);
         fund.totalCredits = fund.totalCredits + credits;
         fund.lastBalance = balanceBeforeSupply + amount;

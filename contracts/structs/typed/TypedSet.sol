@@ -29,7 +29,9 @@ library TypedSet {
         EnumerableSet.UintSet inner;
     }
 
-    //-- internal --//
+    // ----------
+    //  Internal
+    // ----------
 
     // NodeIdSet
 
@@ -45,7 +47,9 @@ library TypedSet {
         removed = EnumerableSet.remove(set.inner, NodeId.unwrap(nodeId));
     }
 
-    //-- internal views --//
+    // ----------
+    //  Internal views
+    // ----------
 
     // NodeIdSet
 
