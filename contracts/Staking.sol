@@ -324,6 +324,10 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
         amount = amount + _getNonPulledReward(node);
     }
 
+    function getNodeFeeRate(NodeId node) external view returns (uint16 feeRate) {
+        return _nodesFunds[node].feeRate;
+    }
+
     // Public
 
     function claimFee(address payable to, Fair amount) public override {
