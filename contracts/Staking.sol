@@ -324,7 +324,7 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
         amount = amount + _getNonPulledReward(node);
     }
 
-    function getNodeFeeRate(NodeId node) external view returns (uint16 feeRate) {
+    function getNodeFeeRate(NodeId node) external view override returns (uint16 feeRate) {
         return _nodesFunds[node].feeRate;
     }
 
@@ -429,6 +429,13 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
         }
     }
 
+    function _updateNodeFeeRate(NodeId node, uint16 feeRate) private {
+        _nodesFunds[node].setFeeRate(
+            _rootFund.getBalance(_getTotalBalance(), FundLibrary.nodeToHolder(node)),
+            feeRate
+        );
+    }
+
     function _getNonPulledReward(NodeId node) private view returns (Fair nonPulledReward) {
         return Fair.wrap(address(_rewardWallets[node]).balance);
     }
@@ -452,13 +459,6 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
                 StakeLimitExceeded(currentNodeStake, amount, stakeLimit)
             );
         }
-    }
-
-    function _updateNodeFeeRate(NodeId node, uint16 feeRate) private {
-        _nodesFunds[node].setFeeRate(
-            _rootFund.getBalance(_getTotalBalance(), FundLibrary.nodeToHolder(node)),
-            feeRate
-        );
     }
 
 }
