@@ -229,6 +229,7 @@ FAIR-manager supports setting a global maximum stake limit that applies to all n
 #### Staking Integration Points
 
 - `Staking.sol` interacts with `Committee.sol` to update node weights each time an operation that changes the total staking share of a node is performed.
+- `Staking.sol` interacts with `RewardWallet.sol` instances to flush rewards that may have been given from consensus layer.
 
 #### Staking Permissions
 
