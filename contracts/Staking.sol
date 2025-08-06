@@ -147,6 +147,7 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
             _deployRewardWallet(node);
         }
         _updateNodeFeeRate(node, DEFAULT_FEE_RATE);
+        assert(_disabledNodesBalances.set(node, FundLibrary.ZERO_FAIR));
     }
 
     function payReward(NodeId node) external payable override {

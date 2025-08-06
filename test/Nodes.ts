@@ -102,7 +102,9 @@ describe("Nodes", function () {
     it("should not allow to enable a deleted Node", async () => {
         await nodesContract.registerNode(MOCK_IP_0_BYTES, deployerPubKey, 8000);
         const nodeId = await nodesContract.getNodeId(deployer.address) as BigNumberish;
-        expect(await stakingContract.isNodeEnabled(nodeId)).to.be.eql(true);
+
+        // Node is disabled by default
+        expect(await stakingContract.isNodeEnabled(nodeId)).to.be.eql(false);
 
         await nodesContract.deleteNode(nodeId);
 

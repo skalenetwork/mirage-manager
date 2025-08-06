@@ -171,8 +171,9 @@ contract Nodes is AccessManagedUpgradeable, INodes {
             domainName: "",
             publicKey: publicKey
         });
-        committeeContract.nodeCreated(nextNodeId);
+        // Node is first disabled by default. Then committee will enable it if eligible.
         committeeContract.staking().nodeCreated(nextNodeId);
+        committeeContract.nodeCreated(nextNodeId);
     }
 
     function deleteNode(
