@@ -217,10 +217,6 @@ As described, Active Nodes can be healthy or unhealthy, depending on whether the
 - `getRewardWallet(NodeId node)`: Returns the reward wallet address for a node.
 - `getDelegatorsToNode(NodeId node)`: Returns the list of delegator addresses for a node.
 - `getDelegatorsToNodeCount(NodeId node)`: Returns the number of delegators for a node.
-- `getDisabledNodesWithStake()`: Returns the list of disabled nodes with a nonzero stake.
-- `getDisabledNodesWithStakeCount()`: Returns the count of disabled nodes with a nonzero stake.
-- `getEnabledNodesWithStake()`: Returns the list of enabled nodes with a nonzero stake.
-- `getEnabledNodesWithStakeCount()`: Returns the count of enabled nodes with a nonzero stake.
 
 #### Stake Limits
 

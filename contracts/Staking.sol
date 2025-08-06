@@ -347,48 +347,6 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
         count = _nodesFunds[node].credits.length();
     }
 
-    function getDisabledNodesWithStake() external view override returns (NodeId[] memory nodesIds){
-        uint256 count = 0;
-        NodeId[] memory disabled = _disabledNodesBalances.keys();
-        uint256 loops = disabled.length;
-        for (uint256 i = 0; i < loops; ++i) {
-            if (_disabledNodesBalances.get(disabled[i]) > FundLibrary.ZERO_FAIR) {
-                ++count;
-            }
-        }
-        nodesIds = new NodeId[](count);
-        for (uint256 i = disabled.length; i > 0; --i) {
-            NodeId node = disabled[i - 1];
-            if (_disabledNodesBalances.get(node) > FundLibrary.ZERO_FAIR) {
-                nodesIds[--count] = node;
-            }
-        }
-    }
-
-    function getDisabledNodesWithStakeCount() external view override returns (uint256 count){
-        count = 0;
-        NodeId[] memory disabled = _disabledNodesBalances.keys();
-        uint256 loops = disabled.length;
-        for (uint256 i = 0; i < loops; ++i) {
-            if (_disabledNodesBalances.get(disabled[i]) > FundLibrary.ZERO_FAIR) {
-                ++count;
-            }
-        }
-    }
-
-    function getEnabledNodesWithStake() external view override returns (NodeId[] memory nodesIds){
-        Holder[] memory holders = _rootFund.credits.keys();
-        nodesIds = new NodeId[](holders.length);
-        uint256 loops = nodesIds.length;
-        for (uint256 i = 0; i < loops; ++i) {
-            nodesIds[i] = FundLibrary.holderToNode(holders[i]);
-        }
-    }
-
-    function getEnabledNodesWithStakeCount() external view override returns (uint256 count){
-        count = _rootFund.credits.length();
-    }
-
     // Public
 
     function claimFee(address payable to, Fair amount) public override {

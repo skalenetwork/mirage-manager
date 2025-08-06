@@ -20,11 +20,7 @@ describe("Staking", () => {
         expect(await staking.getNodeTotalStake(node)).to.be.eql(amount);
 
         // No heartbeats, so node was not set as disabled yet even thought it's not healthy or whitelisted
-        expect(await staking.getEnabledNodesWithStakeCount()).to.be.eql(1n);
-        expect(await staking.getDisabledNodesWithStakeCount()).to.be.eql(0n);
         expect(await staking.getDelegatorsToNodeCount(node)).to.be.eql(1n);
-        expect(await staking.getEnabledNodesWithStake()).to.be.eql([node]);
-        expect(await staking.getDisabledNodesWithStake()).to.be.eql([]);
         expect(await staking.getDelegatorsToNode(node)).to.be.eql([user.address]);
 
     });
@@ -54,11 +50,7 @@ describe("Staking", () => {
 
         expect(await staking.getNodeTotalStake(node)).to.be.eql(amount1 + amount2 + reward);
 
-        expect(await staking.getEnabledNodesWithStakeCount()).to.be.eql(1n);
-        expect(await staking.getDisabledNodesWithStakeCount()).to.be.eql(0n);
         expect(await staking.getDelegatorsToNodeCount(node)).to.be.eql(2n);
-        expect(await staking.getEnabledNodesWithStake()).to.be.eql([node]);
-        expect(await staking.getDisabledNodesWithStake()).to.be.eql([]);
         expect(await staking.getDelegatorsToNode(node)).to.be.eql([user1.address, user2.address]);
     });
 
@@ -81,13 +73,9 @@ describe("Staking", () => {
         (await staking.connect(user).getStakedToNodeAmount(node2))
             .should.be.equal(amount2);
 
-        expect(await staking.getEnabledNodesWithStakeCount()).to.be.eql(2n);
-        expect(await staking.getDisabledNodesWithStakeCount()).to.be.eql(0n);
         expect(await staking.getDelegatorsToNodeCount(node1)).to.be.eql(1n);
         expect(await staking.getDelegatorsToNodeCount(node2)).to.be.eql(1n);
 
-        expect(await staking.getEnabledNodesWithStake()).to.be.eql([node1, node2]);
-        expect(await staking.getDisabledNodesWithStake()).to.be.eql([]);
         expect(await staking.getDelegatorsToNode(node1)).to.be.eql([user.address]);
         expect(await staking.getDelegatorsToNode(node2)).to.be.eql([user.address]);
     });
@@ -111,11 +99,7 @@ describe("Staking", () => {
 
         expect(await staking.getNodeTotalStake(node)).to.be.eql(initialAmount - amount);
 
-        expect(await staking.getEnabledNodesWithStakeCount()).to.be.eql(1n);
-        expect(await staking.getDisabledNodesWithStakeCount()).to.be.eql(0n);
         expect(await staking.getDelegatorsToNodeCount(node)).to.be.eql(1n);
-        expect(await staking.getEnabledNodesWithStake()).to.be.eql([node]);
-        expect(await staking.getDisabledNodesWithStake()).to.be.eql([]);
         expect(await staking.getDelegatorsToNode(node)).to.be.eql([user.address]);
 
         await staking.connect(user).retrieve(node, initialAmount - amount)
@@ -123,11 +107,7 @@ describe("Staking", () => {
         (await staking.connect(user).getStakedAmount())
             .should.be.equal(0n);
 
-        expect(await staking.getEnabledNodesWithStakeCount()).to.be.eql(0n);
-        expect(await staking.getDisabledNodesWithStakeCount()).to.be.eql(0n);
         expect(await staking.getDelegatorsToNodeCount(node)).to.be.eql(0n);
-        expect(await staking.getEnabledNodesWithStake()).to.be.eql([]);
-        expect(await staking.getDisabledNodesWithStake()).to.be.eql([]);
         expect(await staking.getDelegatorsToNode(node)).to.be.eql([]);
     });
 
@@ -143,22 +123,14 @@ describe("Staking", () => {
             .should.be.equal(initialAmount);
 
         expect(await staking.getNodeTotalStake(node.id)).to.be.eql(initialAmount);
-        expect(await staking.getEnabledNodesWithStakeCount()).to.be.eql(1n);
-        expect(await staking.getDisabledNodesWithStakeCount()).to.be.eql(0n);
         expect(await staking.getDelegatorsToNodeCount(node.id)).to.be.eql(1n);
-        expect(await staking.getEnabledNodesWithStake()).to.be.eql([node.id]);
-        expect(await staking.getDisabledNodesWithStake()).to.be.eql([]);
         expect(await staking.getDelegatorsToNode(node.id)).to.be.eql([user.address]);
 
         await nodes.connect(node.wallet).deleteNode(node.id);
         expect(await nodes.activeNodeExists(node.id)).to.be.eql(false);
         expect(await staking.isNodeEnabled(node.id)).to.be.eql(false);
         expect(await staking.getNodeTotalStake(node.id)).to.be.eql(initialAmount);
-        expect(await staking.getEnabledNodesWithStakeCount()).to.be.eql(0n);
-        expect(await staking.getDisabledNodesWithStakeCount()).to.be.eql(1n);
         expect(await staking.getDelegatorsToNodeCount(node.id)).to.be.eql(1n);
-        expect(await staking.getEnabledNodesWithStake()).to.be.eql([]);
-        expect(await staking.getDisabledNodesWithStake()).to.be.eql([node.id]);
         expect(await staking.getDelegatorsToNode(node.id)).to.be.eql([user.address]);
 
         await staking.connect(user).retrieve(node.id, amount)
@@ -172,11 +144,7 @@ describe("Staking", () => {
             .should.changeEtherBalance(user, initialAmount - amount);
 
         expect(await staking.getNodeTotalStake(node.id)).to.be.eql(0n);
-        expect(await staking.getEnabledNodesWithStakeCount()).to.be.eql(0n);
-        expect(await staking.getDisabledNodesWithStakeCount()).to.be.eql(0n);
         expect(await staking.getDelegatorsToNodeCount(node.id)).to.be.eql(0n);
-        expect(await staking.getEnabledNodesWithStake()).to.be.eql([]);
-        expect(await staking.getDisabledNodesWithStake()).to.be.eql([]);
         expect(await staking.getDelegatorsToNode(node.id)).to.be.eql([]);
     });
 
@@ -200,11 +168,7 @@ describe("Staking", () => {
 
         await staking.connect(nodeWallet).claimAllFee(ethers.ZeroAddress)
             .should.be.revertedWithCustomError(staking, "ZeroAddress");
-        expect(await staking.getEnabledNodesWithStakeCount()).to.be.eql(1n);
-        expect(await staking.getDisabledNodesWithStakeCount()).to.be.eql(0n);
         expect(await staking.getDelegatorsToNodeCount(node)).to.be.eql(1n);
-        expect(await staking.getEnabledNodesWithStake()).to.be.eql([node]);
-        expect(await staking.getDisabledNodesWithStake()).to.be.eql([]);
         expect(await staking.getDelegatorsToNode(node)).to.be.eql([user.address]);
 
         expect(await staking.getNodeTotalStake(node)).to.be.eql(amount + reward);
@@ -215,11 +179,7 @@ describe("Staking", () => {
         await staking.connect(user).retrieve(node, amount)
             .should.changeEtherBalance(user, amount);
         expect(await staking.getNodeTotalStake(node)).to.be.eql(reward / 2n);
-        expect(await staking.getEnabledNodesWithStakeCount()).to.be.eql(1n); // uncollected fees
-        expect(await staking.getDisabledNodesWithStakeCount()).to.be.eql(0n);
         expect(await staking.getDelegatorsToNodeCount(node)).to.be.eql(0n);
-        expect(await staking.getEnabledNodesWithStake()).to.be.eql([node]); // uncollected fees
-        expect(await staking.getDisabledNodesWithStake()).to.be.eql([]);
         expect(await staking.getDelegatorsToNode(node)).to.be.eql([]);
 
         await staking.connect(nodeWallet).claimAllFee(nodeWallet)
@@ -230,11 +190,7 @@ describe("Staking", () => {
         (await staking.getStakedAmountFor(user))
             .should.be.equal(0n);
 
-        expect(await staking.getEnabledNodesWithStakeCount()).to.be.eql(0n);
-        expect(await staking.getDisabledNodesWithStakeCount()).to.be.eql(0n);
         expect(await staking.getDelegatorsToNodeCount(node)).to.be.eql(0n);
-        expect(await staking.getEnabledNodesWithStake()).to.be.eql([]);
-        expect(await staking.getDisabledNodesWithStake()).to.be.eql([]);
         expect(await staking.getDelegatorsToNode(node)).to.be.eql([]);
     });
 
