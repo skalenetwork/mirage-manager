@@ -90,7 +90,7 @@ library FundLibrary {
         if (holderCredits < credits) {
             revert NotEnoughStaked(_toFairRoundedDown(fund, balanceBeforeRemove, ZERO_CREDIT, holderCredits));
         }
-        if (holderCredits - credits == ZERO_CREDIT) {
+        if (holderCredits == credits) {
             // Holders with Zero credits are always removed from the map.
             assert(fund.credits.remove(holder) == exists);
         }
