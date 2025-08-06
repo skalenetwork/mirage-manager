@@ -171,7 +171,6 @@ struct Fund {
     Fair lastBalance;
     Credit totalCredits;
     TypedMap.HolderToCreditMap credits;
-    TypedSet.HolderSet holders;
     Credit ownerCredits;
     uint16 feeRate; // 0 - 1000‰
 }
