@@ -2326,10 +2326,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@skalenetwork/fair-manager-interfaces@npm:0.1.0-add-staking-views.5":
-  version: 0.1.0-add-staking-views.5
-  resolution: "@skalenetwork/fair-manager-interfaces@npm:0.1.0-add-staking-views.5"
-  checksum: 10c0/5b5750ebc03177b75099107a6e15aa1d72ce2df7ad279792f2f9586b50879e105bb7b753a649fe790bba8a1a7f2595ad60328edb96565b334d00ee2f49cd555e
+"@skalenetwork/fair-manager-interfaces@npm:0.1.0-add-staking-views.6":
+  version: 0.1.0-add-staking-views.6
+  resolution: "@skalenetwork/fair-manager-interfaces@npm:0.1.0-add-staking-views.6"
+  checksum: 10c0/9b7acd6312c04c9ca7869704d0da961d837fc4fba1717987de087f9c799a319eb3d2476d26c0c6a664a450bfe810ff1bba5cc1bbed051ef342be185b3c57899a
   languageName: node
   linkType: hard
 
@@ -5095,7 +5095,7 @@ __metadata:
     "@openzeppelin/contracts-upgradeable": "npm:^5.3.0"
     "@openzeppelin/hardhat-upgrades": "npm:^3.9.0"
     "@openzeppelin/upgrades-core": "npm:^1.42.2"
-    "@skalenetwork/fair-manager-interfaces": "npm:0.1.0-add-staking-views.5"
+    "@skalenetwork/fair-manager-interfaces": "npm:0.1.0-add-staking-views.6"
     "@skalenetwork/skale-contracts-ethers-v6": "npm:1.0.2-develop.68"
     "@skalenetwork/skale-manager-interfaces": "npm:3.2.0-develop.3"
     "@skalenetwork/upgrade-tools": "npm:3.0.0-develop.44"
