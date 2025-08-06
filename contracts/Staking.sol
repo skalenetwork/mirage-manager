@@ -62,6 +62,7 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
     mapping (address holder => TypedSet.NodeIdSet nodeIds) private _stakedNodes;
     TypedMap.NodeIdToFairMap private _disabledNodesBalances;
     Fair public stakeLimit;
+    uint16 public constant DEFAULT_FEE_RATE = 1000;
 
     event FeeClaimed(NodeId indexed node, address indexed to, Fair indexed amount);
     event NodeRewardReceived(NodeId indexed node, Fair indexed amount);
@@ -145,6 +146,7 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
         if(_rewardWallets[node] == IRewardWallet(payable(0))) {
             _deployRewardWallet(node);
         }
+        _updateNodeFeeRate(node, DEFAULT_FEE_RATE);
     }
 
     function payReward(NodeId node) external payable override {
@@ -220,7 +222,7 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
     }
 
     function setFeeRate(uint16 feeRate) external override {
-        require(!(1000 < feeRate), FeeRateIsIncorrect(feeRate));
+        require(!(feeRate > 1000), FeeRateIsIncorrect(feeRate));
         NodeId node = nodes.getNodeId(msg.sender);
         uint16 currentFeeRate = _nodesFunds[node].feeRate;
         require(
@@ -228,10 +230,7 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
             OnlyFeeReductionIsAllowed(currentFeeRate, feeRate)
         );
 
-        _nodesFunds[node].setFeeRate(
-            _rootFund.getBalance(_getTotalBalance(), FundLibrary.nodeToHolder(node)),
-            feeRate
-        );
+        _updateNodeFeeRate(node, feeRate);
     }
 
     function setRewardWalletReference(IRewardWallet rewardWalletReference_) external override restricted {
@@ -323,6 +322,10 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
             amount = _disabledNodesBalances.get(node);
         }
         amount = amount + _getNonPulledReward(node);
+    }
+
+    function getNodeFeeRate(NodeId node) external view override returns (uint16 feeRate) {
+        return _nodesFunds[node].feeRate;
     }
 
     // Public
@@ -426,6 +429,13 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
         }
     }
 
+    function _updateNodeFeeRate(NodeId node, uint16 feeRate) private {
+        _nodesFunds[node].setFeeRate(
+            _rootFund.getBalance(_getTotalBalance(), FundLibrary.nodeToHolder(node)),
+            feeRate
+        );
+    }
+
     function _getNonPulledReward(NodeId node) private view returns (Fair nonPulledReward) {
         return Fair.wrap(address(_rewardWallets[node]).balance);
     }
@@ -450,4 +460,5 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
             );
         }
     }
+
 }

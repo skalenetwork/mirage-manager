@@ -28,6 +28,9 @@ describe("Staking", () => {
         const reward = ethers.parseEther("5");
         const node = nodesData[0].id;
 
+        // Set fee rate to 0 for proportional distribution
+        await staking.connect(nodesData[0].wallet).setFeeRate(0);
+
         await staking.connect(user1).stake(node, {value: amount1});
         await staking.connect(user2).stake(node, {value: amount2});
         expect(await staking.getNodeTotalStake(node)).to.be.eql(amount1 + amount2);
@@ -148,9 +151,10 @@ describe("Staking", () => {
         const reward = ethers.parseEther("10");
         const roundingError = 1n;
         const feeRate = 500; // Yes, Eddie, half
-        const [{id: node1, wallet: node1Wallet}, {id: node2}] = nodesData.slice(22); // not in the current committee
+        const [{id: node1, wallet: node1Wallet}, {id: node2, wallet: node2Wallet}] = nodesData.slice(22); // not in the current committee
 
         await staking.connect(node1Wallet).setFeeRate(feeRate);
+        await staking.connect(node2Wallet).setFeeRate(0);
         // root pool:
         //     total: 0 Fair, 0 credits
         //     node 1 pool:  0 Fair, 0 credits
@@ -502,6 +506,33 @@ describe("Staking", () => {
         // Now we can stake the additional amount
         await staking.connect(user).stake(node, {value: additionalStake});
         expect(await staking.getNodeTotalStake(node)).to.be.equal(expectedTotalAfterReward + additionalStake);
+    });
+
+    it("should set default fee rate to 1000 during node creation", async () => {
+        const {nodes, staking} = await registeredOnlyNodes();
+
+        // Create a new node wallet
+        const nodeWallet = ethers.Wallet.createRandom().connect(ethers.provider);
+        const [owner] = await ethers.getSigners();
+        await owner.sendTransaction({
+            to: nodeWallet.address,
+            value: ethers.parseEther("1")
+        });
+
+        // Get a proper public key using the helper function
+        const publicKey = await import("./tools/signatures").then(mod => mod.getPublicKey(nodeWallet));
+
+        // Register the node
+        await nodes.connect(nodeWallet).registerNode(
+            ethers.randomBytes(4),
+            publicKey,
+            8000
+        );
+
+        const nodeId = await nodes.getNodeId(nodeWallet.address);
+
+        // Check that the fee rate is set to 1000 (100%)
+        expect(await staking.getNodeFeeRate(nodeId)).to.be.equal(1000);
     });
 
 });
