@@ -62,6 +62,7 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
     mapping (address holder => TypedSet.NodeIdSet nodeIds) private _stakedNodes;
     TypedMap.NodeIdToFairMap private _disabledNodesBalances;
     Fair public stakeLimit;
+    uint16 public constant defaultFeeRate = 1000;
 
     event FeeClaimed(NodeId indexed node, address indexed to, Fair indexed amount);
     event NodeRewardReceived(NodeId indexed node, Fair indexed amount);
@@ -145,7 +146,6 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
         if(_rewardWallets[node] == IRewardWallet(payable(0))) {
             _deployRewardWallet(node);
         }
-        uint16 defaultFeeRate = 1000;
         _updateNodeFeeRate(node, defaultFeeRate);
     }
 
