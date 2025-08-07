@@ -73,6 +73,8 @@ contract DKG is AccessManagedUpgradeable, IDkg {
         DkgId dkg
     );
 
+    event DkgRoundCreated(DkgId indexed dkgId, NodeId[] participants, uint256 startingBlockNumber);
+
     error DkgIsNotSuccessful(DkgId id);
     error DkgIsNotInBroadcastStage(DkgId id);
     error DkgIsNotInAlrightStage(DkgId id);
@@ -243,6 +245,7 @@ contract DKG is AccessManagedUpgradeable, IDkg {
         _rounds[id].completed.clear();
         _rounds[id].publicKey = G2Operations.getG2Zero();
         _rounds[id].startingBlockNumber = block.number;
+        emit DkgRoundCreated(id, participants, block.number);
     }
 
     function _contributeToPublicKey(RoundData storage round, G2Point memory value) private {
