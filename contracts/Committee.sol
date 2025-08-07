@@ -74,6 +74,13 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
     event SkaleRNGDisabled();
     event TransitionDelayUpdated(Duration oldDelay, Duration newDelay);
     event MinTransitionDelayUpdated(Duration oldDelay, Duration newDelay);
+    event CommitteeSelected(CommitteeIndex indexed committeeIndex, NodeId[] nodes, DkgId indexed dkgId);
+    event CommitteeSizeUpdated(uint256 oldSize, uint256 newSize);
+    event DkgUpdated(IDkg indexed oldDkg, IDkg indexed newDkg);
+    event NodesUpdated(INodes indexed oldNodes, INodes indexed newNodes);
+    event StatusUpdated(IStatus indexed oldStatus, IStatus indexed newStatus);
+    event StakingUpdated(IStaking indexed oldStaking, IStaking indexed newStaking);
+    event CommitteeDkgCompleted(CommitteeIndex indexed committeeIndex, DkgId indexed dkgId, Timestamp startingTimestamp);
 
     error SenderIsNotDkg(
         address sender
@@ -120,6 +127,7 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
         NodeId[] memory members = _pool.sample(committeeSize, generator);
         Committee storage committee = _createSuccessorCommittee(members);
         committee.dkg = dkg.generate(committee.nodes);
+        emit CommitteeSelected(lastCommitteeIndex, committee.nodes, committee.dkg);
     }
 
     function setMinTransitionDelay(Duration delay) external override restricted {
@@ -140,19 +148,23 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
     }
 
     function setDkg(IDkg dkgAddress) external override restricted {
+        emit DkgUpdated(dkg, dkgAddress);
         dkg = dkgAddress;
     }
 
     function setNodes(INodes nodesAddress) external override restricted {
+        emit NodesUpdated(nodes, nodesAddress);
         nodes = nodesAddress;
     }
 
     function setStatus(IStatus statusAddress) external override restricted {
+        emit StatusUpdated(status, statusAddress);
         status = statusAddress;
         _pool.status = statusAddress;
     }
 
     function setStaking(IStaking stakingAddress) external override restricted {
+        emit StakingUpdated(staking, stakingAddress);
         staking = stakingAddress;
     }
 
@@ -166,10 +178,12 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
         if (committee.dkg == round) {
             committee.commonPublicKey = dkg.getPublicKey(round);
             committee.startingTimestamp = Timestamp.wrap(block.timestamp + Duration.unwrap(transitionDelay));
+            emit CommitteeDkgCompleted(lastCommitteeIndex, round, committee.startingTimestamp);
         }
     }
 
     function setCommitteeSize(uint256 size) external override restricted {
+        emit CommitteeSizeUpdated(committeeSize, size);
         committeeSize = size;
     }
 
