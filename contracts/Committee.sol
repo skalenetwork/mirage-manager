@@ -75,12 +75,16 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
     event TransitionDelayUpdated(Duration oldDelay, Duration newDelay);
     event MinTransitionDelayUpdated(Duration oldDelay, Duration newDelay);
     event CommitteeSelected(CommitteeIndex indexed committeeIndex, NodeId[] nodes, DkgId indexed dkgId);
-    event CommitteeSizeUpdated(uint256 oldSize, uint256 newSize);
+    event CommitteeSizeUpdated(uint256 indexed oldSize, uint256 indexed newSize);
     event DkgUpdated(IDkg indexed oldDkg, IDkg indexed newDkg);
     event NodesUpdated(INodes indexed oldNodes, INodes indexed newNodes);
     event StatusUpdated(IStatus indexed oldStatus, IStatus indexed newStatus);
     event StakingUpdated(IStaking indexed oldStaking, IStaking indexed newStaking);
-    event CommitteeDkgCompleted(CommitteeIndex indexed committeeIndex, DkgId indexed dkgId, Timestamp startingTimestamp);
+    event CommitteeDkgCompleted(
+        CommitteeIndex indexed committeeIndex,
+        DkgId indexed dkgId,
+        Timestamp startingTimestamp
+    );
 
     error SenderIsNotDkg(
         address sender
