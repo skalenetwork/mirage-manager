@@ -1,5 +1,5 @@
 import chai, { assert, expect } from "chai";
-import { registeredOnlyNodes, stakedNodes } from "./tools/fixtures";
+import { registeredOnlyNodes, sendHeartbeat, stakedNodes, whitelistedNodes } from "./tools/fixtures";
 import { ethers } from "hardhat";
 import { zip } from "lodash";
 import { setBalance } from "@nomicfoundation/hardhat-network-helpers";
@@ -22,7 +22,7 @@ describe("Staking", () => {
     });
 
     it("should distribute rewards proportionally to stake", async () => {
-        const {staking, nodesData } = await registeredOnlyNodes();
+        const {staking, status, nodesData } = await whitelistedNodes();
         const [owner, user1, user2] = await ethers.getSigners();
         const [amount1, amount2] = [ethers.parseEther("2"), ethers.parseEther("3")];
         const reward = ethers.parseEther("5");
@@ -33,6 +33,8 @@ describe("Staking", () => {
 
         await staking.connect(user1).stake(node, {value: amount1});
         await staking.connect(user2).stake(node, {value: amount2});
+        await sendHeartbeat(status, [nodesData[0]]); // Enable the node
+
         expect(await staking.getNodeTotalStake(node)).to.be.eql(amount1 + amount2);
         // Pay reward
         await owner.sendTransaction({to: staking, value: reward});
@@ -108,7 +110,7 @@ describe("Staking", () => {
     });
 
     it("should apply validator fee on rewards", async () => {
-        const {staking, nodesData } = await registeredOnlyNodes();
+        const {staking, status, nodesData } = await whitelistedNodes();
         const [owner,user] = await ethers.getSigners();
         const amount = ethers.parseEther("1");
         const reward = ethers.parseEther("2");
@@ -117,6 +119,7 @@ describe("Staking", () => {
 
         await staking.connect(nodeWallet).setFeeRate(feeRate);
         await staking.connect(user).stake(node, {value: amount});
+        await sendHeartbeat(status, [nodesData[22]]); // Enable the node
         await owner.sendTransaction({to: staking, value: reward});
 
         (await staking.getEarnedFeeAmount(node))
@@ -144,7 +147,7 @@ describe("Staking", () => {
     });
 
     it("should apply validator fee on rewards when there are multiple nodes", async () => {
-        const {staking, nodesData } = await registeredOnlyNodes();
+        const {staking, status, nodesData } = await whitelistedNodes();
         const [owner,user] = await ethers.getSigners();
         const amount1 = ethers.parseEther("2");
         const amount2 = ethers.parseEther("3");
@@ -178,6 +181,10 @@ describe("Staking", () => {
         //     total:   0 Fair, 0 node 2 credits
         //     node 2:  0 Fair, 0 node 2 credits
         await staking.connect(user).stake(node2, {value: amount2});
+
+        // Enable all nodes
+        await sendHeartbeat(status, nodesData.slice(22));
+
         // root pool:
         //     total: 5 Fair, 5 credits
         //     node 1 pool:  2 Fair, 2 credits
@@ -280,7 +287,7 @@ describe("Staking", () => {
     });
 
     it("should not pay rewards to stakers of unhealthy nodes", async () => {
-        const {staking, nodesData, accessManager } = await registeredOnlyNodes();
+        const {staking, status, nodesData, accessManager } = await whitelistedNodes();
         const [owner, ...allUsers] = await ethers.getSigners();
         const amounts = [2, 3, 5].map(String).map(ethers.parseEther);
         const users = allUsers.slice(0, amounts.length);
@@ -299,6 +306,8 @@ describe("Staking", () => {
             await staking.connect(user).stake(node.id, {value: amount});
             expect(await staking.getNodeTotalStake(node.id)).to.be.eql(amount);
         }
+
+        await sendHeartbeat(status, targetNodes); // Enable all nodes
 
         // allow admin to disable nodes for testing
         const [admin,] = await ethers.getSigners();
@@ -460,7 +469,7 @@ describe("Staking", () => {
     });
 
     it("should enforce node stake limits", async () => {
-        const {staking, nodesData} = await registeredOnlyNodes();
+        const {staking, status, nodesData} = await whitelistedNodes();
         const [admin, user] = await ethers.getSigners();
         const node = nodesData[0].id;
 
@@ -474,6 +483,7 @@ describe("Staking", () => {
         // Stake 9 ETH (should succeed)
         const initialStake = ethers.parseEther("9");
         await staking.connect(user).stake(node, {value: initialStake});
+        await sendHeartbeat(status, [nodesData[0]]); // Enable the node
         expect(await staking.getNodeTotalStake(node)).to.be.equal(initialStake);
 
         // Pay 2 ETH rewards

@@ -183,7 +183,11 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
     }
 
     function nodeCreated(NodeId node) external override restricted {
-        if (status.isWhitelisted(node) && staking.getNodeShare(node) > 0 && status.isHealthy(node)) {
+        if (
+            status.isWhitelisted(node) &&
+            staking.getNodeTotalStake(node) > FundLibrary.ZERO_FAIR &&
+            status.isHealthy(node)
+        ) {
             _setEligible(node);
         }
     }
