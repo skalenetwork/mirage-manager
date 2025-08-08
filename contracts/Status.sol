@@ -42,6 +42,12 @@ contract Status is AccessManagedUpgradeable, IStatus {
     ICommittee public committee;
     INodes public nodes;
 
+    event HeartbeatIntervalUpdated(Duration oldInterval, Duration newInterval);
+    event NodeWhitelisted(NodeId indexed nodeId);
+    event NodeRemovedFromWhitelist(NodeId indexed nodeId);
+    event NodeDataRemoved(NodeId indexed nodeId);
+    event HeartbeatReceived(NodeId indexed nodeId, uint256 timestamp);
+
     error NodeAlreadyWhitelisted(NodeId nodeId);
     error NodeNotWhitelisted(NodeId nodeId);
     error NodeDoesNotExist(NodeId nodeId);
@@ -70,22 +76,27 @@ contract Status is AccessManagedUpgradeable, IStatus {
         NodeId nodeId = nodes.getNodeId(msg.sender);
 
         lastHeartbeatTimestamp[nodeId] = block.timestamp;
+        emit HeartbeatReceived(nodeId, block.timestamp);
 
         if (isWhitelisted(nodeId)) {
             committee.processHeartbeat(nodeId);
         }
     }
     function setHeartbeatInterval(Duration interval) external override restricted {
+        Duration oldInterval = heartbeatInterval;
         heartbeatInterval = interval;
+        emit HeartbeatIntervalUpdated(oldInterval, interval);
     }
 
     function whitelistNode(NodeId nodeId) external override restricted nodeExists(nodeId) {
         require(_whitelist.add(nodeId), NodeAlreadyWhitelisted(nodeId));
+        emit NodeWhitelisted(nodeId);
         committee.nodeWhitelisted(nodeId);
     }
 
     function removeNodeFromWhitelist(NodeId nodeId) external override restricted {
         require(_whitelist.remove(nodeId), NodeNotWhitelisted(nodeId));
+        emit NodeRemovedFromWhitelist(nodeId);
         committee.nodeBlacklisted(nodeId);
     }
 
@@ -94,6 +105,7 @@ contract Status is AccessManagedUpgradeable, IStatus {
             assert(_whitelist.remove(nodeId));
         }
         delete lastHeartbeatTimestamp[nodeId];
+        emit NodeDataRemoved(nodeId);
     }
 
     function getNodesEligibleForCommittee() external view override returns (NodeId[] memory nodeIds) {

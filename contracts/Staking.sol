@@ -75,6 +75,8 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
     event NodeDisabled(NodeId indexed node);
     event NodeEnabled(NodeId indexed node);
     event StakeLimitUpdated(Fair indexed newLimit);
+    event NodeFeeRateUpdated(NodeId indexed node, uint16 oldFeeRate, uint16 newFeeRate);
+    event RewardWalletReferenceUpdated(IRewardWallet indexed oldReference, IRewardWallet indexed newReference);
 
     error FeeRateIsIncorrect(uint16 feeRate);
     error OnlyFeeReductionIsAllowed(uint16 currentRate, uint16 newRate);
@@ -231,10 +233,12 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
             OnlyFeeReductionIsAllowed(currentFeeRate, feeRate)
         );
 
+        emit NodeFeeRateUpdated(node, currentFeeRate, feeRate);
         _updateNodeFeeRate(node, feeRate);
     }
 
     function setRewardWalletReference(IRewardWallet rewardWalletReference_) external override restricted {
+        emit RewardWalletReferenceUpdated(rewardWalletReference, rewardWalletReference_);
         rewardWalletReference = rewardWalletReference_;
     }
 
