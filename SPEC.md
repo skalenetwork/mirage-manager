@@ -170,8 +170,7 @@ Staking smart contract has a dedicated structure to store Credits of Holders: `F
 struct Fund {
     Fair lastBalance;
     Credit totalCredits;
-    mapping (Holder holder => Credit share) credits;
-    TypedSet.HolderSet holders;
+    TypedMap.HolderToCreditMap credits;
     Credit ownerCredits;
     uint16 feeRate; // 0 - 1000‰
 }
@@ -215,6 +214,9 @@ As described, Active Nodes can be healthy or unhealthy, depending on whether the
 - `getStakedToNodeAmountFor(NodeId node, address holder)`: Returns the amount of FAIR a user has staked to a Node.
 - `isNodeEnabled(NodeId node)`: Returns a boolean indicating if a Node is enabled or disabled.
 - `setStakeLimit(Fair limit)`: Allows authorized administrators to set a global maximum stake limit that applies to all nodes.
+- `getRewardWallet(NodeId node)`: Returns the reward wallet address for a node.
+- `getDelegatorsToNode(NodeId node)`: Returns the list of delegator addresses for a node.
+- `getDelegatorsToNodeCount(NodeId node)`: Returns the number of delegators for a node.
 
 #### Stake Limits
 
@@ -223,6 +225,7 @@ FAIR-manager supports setting a global maximum stake limit that applies to all n
 #### Staking Integration Points
 
 - `Staking.sol` interacts with `Committee.sol` to update node weights each time an operation that changes the total staking share of a node is performed.
+- `Staking.sol` interacts with `RewardWallet.sol` instances to flush rewards that may have been given from consensus layer.
 
 #### Staking Permissions
 
@@ -337,11 +340,12 @@ These sets are used throughout the FAIR-manager contracts to manage collections 
 
 ### [`TypedMap.sol`](./contracts/structs/typed/TypedMap.sol)
 
-The `TypedMap` library provides type-safe wrappers around OpenZeppelin's `EnumerableMap` or standard `map` for mapping between addresses, `NodeId`, and `Fair` values. It simplifies and secures the use of mappings with custom types.
+The `TypedMap` library provides type-safe wrappers around OpenZeppelin's `EnumerableMap` or standard `map` for mapping between native and domain-specific data of FAIR Manager.
 
 - **AddressToNodeIdMap**: Maps addresses to `NodeId` values.
 - **AddressToNodeIdSetMap**: Maps addresses to TypedSets of `NodeId` values.
 - **NodeIdToFairMap**: Maps `NodeId` values to `Fair` values.
+- **HolderToCreditMap**: Maps `Holder` values to `Credit` values
 
 ### [`Pool.sol`](./contracts/utils/Pool.sol)
 

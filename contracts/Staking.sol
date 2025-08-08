@@ -43,13 +43,14 @@ import {IStaking} from "@skalenetwork/fair-manager-interfaces/IStaking.sol";
 import {Nodes} from "./Nodes.sol";
 import {TypedMap} from "./structs/typed/TypedMap.sol";
 import {TypedSet} from "./structs/typed/TypedSet.sol";
-import {Credit, FundLibrary, Fair} from "./utils/Fund.sol";
+import {Credit, FundLibrary, Fair, Holder} from "./utils/Fund.sol";
 
 
 contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaking {
     using Address for address payable;
     using FundLibrary for FundLibrary.Fund;
     using TypedSet for TypedSet.NodeIdSet;
+    using TypedMap for TypedMap.HolderToCreditMap;
     using TypedMap for TypedMap.NodeIdToFairMap;
 
     ICommittee public committee;
@@ -173,7 +174,7 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
         emit NodeRewardReceived(node, amount);
 
         if (nodeIsEnabled) {
-            committee.updateWeight(node, Credit.unwrap(_rootFund.credits[FundLibrary.nodeToHolder(node)]));
+            committee.updateWeight(node, Credit.unwrap(_rootFund.credits.get(FundLibrary.nodeToHolder(node))));
         }
     }
 
@@ -212,14 +213,14 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
             assert(!_disabledNodesBalances.set(node, nodeFundBalance - value));
             totalDisabled = totalDisabled - value;
         }
-
-        if (_nodesFunds[node].credits[FundLibrary.addressToHolder(msg.sender)] == FundLibrary.ZERO_CREDIT) {
-            assert(_stakedNodes[msg.sender].remove(node));
+        (bool exists, Credit holderCredits) = _nodesFunds[node].credits.tryGet(FundLibrary.addressToHolder(msg.sender));
+        if (holderCredits == FundLibrary.ZERO_CREDIT) {
+            assert(_stakedNodes[msg.sender].remove(node) && !exists);
             emit StoppedStaking(msg.sender, node);
         }
 
         if (nodeIsEnabled) {
-            committee.updateWeight(node, Credit.unwrap(_rootFund.credits[FundLibrary.nodeToHolder(node)]));
+            committee.updateWeight(node, Credit.unwrap(_getNodeCredits(node)));
         }
         payable(msg.sender).sendValue(Fair.unwrap(value));
     }
@@ -279,7 +280,7 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
         }
 
         if (nodeIsEnabled) {
-            committee.updateWeight(node, Credit.unwrap(_rootFund.credits[FundLibrary.nodeToHolder(node)]));
+            committee.updateWeight(node, Credit.unwrap(_getNodeCredits(node)));
         }
     }
 
@@ -299,7 +300,7 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
                 unPulledCredits = rewardWalletBalance;
             }
         }
-        return Credit.unwrap(_rootFund.credits[FundLibrary.nodeToHolder(node)]) + unPulledCredits;
+        return Credit.unwrap(_getNodeCredits(node)) + unPulledCredits;
     }
 
     function getRewardWallet(NodeId node) external view override returns (IRewardWallet rewardWallet) {
@@ -333,6 +334,19 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
         return _nodesFunds[node].feeRate;
     }
 
+    function getDelegatorsToNode(NodeId node) external view override returns (address[] memory delegators) {
+        Holder[] memory holders = _nodesFunds[node].credits.keys();
+        delegators = new address[](holders.length);
+        uint256 loops = holders.length;
+        for (uint256 i = 0; i < loops; ++i) {
+            delegators[i] = FundLibrary.holderToAddress(holders[i]);
+        }
+    }
+
+    function getDelegatorsToNodeCount(NodeId node) external view override returns (uint256 count) {
+        count = _nodesFunds[node].credits.length();
+    }
+
     // Public
 
     function claimFee(address payable to, Fair amount) public override {
@@ -360,7 +374,7 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
         }
 
         if (nodeIsEnabled) {
-            committee.updateWeight(node, Credit.unwrap(_rootFund.credits[FundLibrary.nodeToHolder(node)]));
+            committee.updateWeight(node, Credit.unwrap(_getNodeCredits(node)));
         }
         to.sendValue(Fair.unwrap(amount));
     }
@@ -439,6 +453,13 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
             _rootFund.getBalance(_getTotalBalance(), FundLibrary.nodeToHolder(node)),
             feeRate
         );
+    }
+
+    function _getNodeCredits(NodeId node) private view returns (Credit credits) {
+        (bool exists, Credit amount) = _rootFund.credits.tryGet(FundLibrary.nodeToHolder(node));
+        credits = amount;
+        // If exists credits is not 0, otherwise it is 0.
+        assert(exists != (credits == FundLibrary.ZERO_CREDIT));
     }
 
     function _getNonPulledReward(NodeId node) private view returns (Fair nonPulledReward) {
