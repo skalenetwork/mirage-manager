@@ -82,7 +82,6 @@ async function fetchNodes() {
         throw new Error("Node IDs cannot contain 0");
     }
     const nodeList: NodeStruct[] = [];
-    const publicKeys: [BytesLike, BytesLike][] = []
     for (const nodeId of nodeIds) {
         const [ip, domainName ,nodeAddress, port, publicKey] = await Promise.all([
             nodes.getNodeIP(nodeId),
@@ -91,7 +90,6 @@ async function fetchNodes() {
             nodes.getNodePort(nodeId),
             nodes.getNodePublicKey(nodeId)
         ]);
-        publicKeys.push(publicKey);
         nodeList.push({
             id: nodeId,
             ip,
