@@ -31,7 +31,7 @@ All main smart contracts are [AccessManaged](https://github.com/OpenZeppelin/ope
 
 FAIR supports two types of nodes: Passive and Active Nodes.
 
-- **Active Nodes**: Actively contribute to the functioning and security of the network. The registered owner of an Active Node cannot own any other node (Active or Passive). Active nodes cannot change ownership.
+- **Active Nodes**: Actively contribute to the functioning and security of the network. The registered owner of an Active Node cannot own any other node (Active or Passive). Active nodes cannot change ownership. Public keys of active nodes will be used to verify blocks, thus these must be available forever, even after node deletion.
 - **Passive Nodes**: Do not actively contribute. The owner of a Passive Node can own multiple Passive Nodes. Passive Nodes can freely change ownership.
 
 ```solidity
@@ -48,7 +48,7 @@ struct Node {
 #### Invariants
 
 - Node IDs are unique.
-- Active Node owners cannot own any other Node.
+- Active Node owners cannot own any other Node, **even if the active node is deleted**.
 - Passive Node owners can own multiple Passive Nodes.
 - Registered node IPs must be unique.
 - Domain names can be empty, but if not empty, they must be unique.

@@ -17,7 +17,7 @@ import {
     Status,
     RewardWallet
 } from "../typechain-types";
-import { AddressLike, BigNumberish } from "ethers";
+import { AddressLike, BigNumberish, BytesLike, toNumber } from "ethers";
 import { skaleContracts } from "@skalenetwork/skale-contracts-ethers-v6";
 import {
     IKeyStorage,
@@ -78,6 +78,7 @@ async function fetchNodes() {
         throw new Error("Node IDs cannot contain 0");
     }
     const nodeList: INodes.NodeStruct[] = [];
+    const publicKeys: [BytesLike, BytesLike][] = []
     for (const nodeId of nodeIds) {
         const [ip, domainName ,nodeAddress, port, publicKey] = await Promise.all([
             nodes.getNodeIP(nodeId),
@@ -86,16 +87,16 @@ async function fetchNodes() {
             nodes.getNodePort(nodeId),
             nodes.getNodePublicKey(nodeId)
         ]);
+        publicKeys.push(publicKey);
         nodeList.push({
             id: nodeId,
             ip,
             domainName,
             nodeAddress,
             port,
-            publicKey
         });
     }
-    return nodeList;
+    return {nodeList, publicKeys};
 }
 
 async function fetchDkgCommonPublicKey() {
@@ -110,16 +111,24 @@ async function fetchDkgCommonPublicKey() {
     return commonPublicKey;
 }
 
-export const deploy = async (nodeList?: INodes.NodeStruct[], commonPublicKey?: IDkg.G2PointStruct): Promise<DeployedContracts> => {
+export const deploy = async (nodeList?: INodes.NodeStruct[], publicKeys?: [BytesLike, BytesLike][], commonPublicKey?: IDkg.G2PointStruct): Promise<DeployedContracts> => {
     const [deployer] = await ethers.getSigners();
     const deployedContracts: DeployedContracts = {} as DeployedContracts;
-    nodeList = nodeList || await fetchNodes();
+    if (!nodeList || !publicKeys) {
+        ({nodeList, publicKeys} = await fetchNodes());
+    }
     commonPublicKey = commonPublicKey || await fetchDkgCommonPublicKey();
 
     deployedContracts.FairAccessManager = await deployFairAccessManager(deployer);
+    publicKeys = publicKeys
+        .map((val, idx) => ({ val, key: toNumber(nodeList[idx].id)}))
+        .sort((a, b) => a.key - b.key)
+        .map(item => item.val);
+
     deployedContracts.Nodes = await deployNodes(
         deployedContracts.FairAccessManager,
-        [...nodeList].sort((a, b) => Number(a.id) - Number(b.id))
+        [...nodeList].sort((a, b) => Number(a.id) - Number(b.id)),
+        publicKeys
     );
     deployedContracts.Committee = await deployCommittee(
         deployedContracts.FairAccessManager,
@@ -198,12 +207,13 @@ const deployCommittee = async (
     ) as Committee;
 }
 
-const deployNodes = async (accessManager: FairAccessManager, nodeList: INodes.NodeStruct[]): Promise<Nodes> => {
+const deployNodes = async (accessManager: FairAccessManager, nodeList: INodes.NodeStruct[], publicKeys: [BytesLike, BytesLike][]): Promise<Nodes> => {
     return await deployContract(
         "Nodes",
         [
             await ethers.resolveAddress(accessManager),
-            nodeList
+            nodeList,
+            publicKeys
         ]
     ) as Nodes;
 }

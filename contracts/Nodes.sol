@@ -42,6 +42,10 @@ contract Nodes is AccessManagedUpgradeable, INodes {
     using TypedMap for TypedMap.AddressToNodeIdMap;
     using TypedMap for TypedMap.AddressToNodeIdSetMap;
 
+    struct NodeInfo {
+        bytes32[2] publicKey;
+    }
+
     bytes4 public constant ZERO_IPV4 = bytes4(0);
     bytes16 public constant ZERO_IPV6 = bytes16(0);
 
@@ -53,7 +57,10 @@ contract Nodes is AccessManagedUpgradeable, INodes {
 
     ICommittee public committeeContract;
 
-    //Maps addresses to NodeIds
+    // Mapping from node ID to publicKey - only for active nodes, including deleted
+    mapping(NodeId nodeId => NodeInfo nodeInfo) private _nodesInfo;
+
+    //Maps addresses to NodeIds, includes deleted
     TypedMap.AddressToNodeIdMap private _activeNodesAddressToId;
 
     //Maps addresses to NodeIds
@@ -77,7 +84,7 @@ contract Nodes is AccessManagedUpgradeable, INodes {
     TypedSet.NodeIdSet private _activeNodeIds;
 
     error NodeIsInCommittee(NodeId nodeId);
-    error AddressIsAlreadyAssignedToNode(address nodeAddress);
+    error AddressWasAlreadyAssignedToNode(address nodeAddress);
     error AddressIsNotAssignedToAnyNode(address nodeAddress);
     error PassiveNodeAlreadyExistsForAddress(address nodeAddress, NodeId nodeId);
     error AddressInUseByPassiveNodes(address nodeAddress);
@@ -89,6 +96,8 @@ contract Nodes is AccessManagedUpgradeable, INodes {
     error IpIsNotAvailable(bytes ip);
     error DomainNameAlreadyTaken(string domainName);
     error NodeDoesNotExist(NodeId nodeId);
+    error NodeWasDeleted(NodeId nodeId);
+    error NodeWasNeverRegistered(NodeId nodeId);
     error PortShouldNotBeZero();
     error SenderIsNotNodeOwner();
     error SenderIsNotNewNodeOwner();
@@ -137,9 +146,17 @@ contract Nodes is AccessManagedUpgradeable, INodes {
         _;
     }
 
-    function initialize(address initialAuthority, Node[] calldata initialNodes) public override initializer {
+    function initialize(
+        address initialAuthority,
+        Node[] calldata initialNodes,
+        bytes32[2][] calldata nodesPublicKeys
+    )
+        public
+        override
+        initializer
+    {
         __AccessManaged_init(initialAuthority);
-        _initializeGroup(initialNodes);
+        _initializeGroup(initialNodes, nodesPublicKeys);
     }
 
     function setCommittee(ICommittee committeeAddress) external override restricted {
@@ -203,9 +220,9 @@ contract Nodes is AccessManagedUpgradeable, INodes {
         require(_isPassiveNode(nodeId), ActiveNodesCannotChangeOwnership());
         require(
             !_isAddressOfActiveNode(newOwner),
-            AddressIsAlreadyAssignedToNode(newOwner)
+            AddressWasAlreadyAssignedToNode(newOwner)
         );
-
+        emit NodeOwnerChangeRequested(nodeId, msg.sender, newOwner);
         ownerChangeRequests[nodeId] = newOwner;
     }
 
@@ -260,7 +277,6 @@ contract Nodes is AccessManagedUpgradeable, INodes {
 
         nodes[nodeId] = Node({
             id: nodeId,
-            publicKey: [bytes32(0),bytes32(0)],
             port: port,
             nodeAddress: msg.sender,
             ip: ip,
@@ -331,6 +347,10 @@ contract Nodes is AccessManagedUpgradeable, INodes {
             AddressIsNotAssignedToAnyNode(nodeAddress)
         );
         nodeId = _activeNodesAddressToId.get(nodeAddress);
+
+        // Address may have been assigned to an active node in the past, but the node may have been deleted
+        // We do not allow active nodes with duplicate addresses, even if the old was deleted
+        require(_isActiveNode(nodeId), NodeWasDeleted(nodeId));
     }
 
     function getPassiveNodeIdsForAddress(
@@ -350,6 +370,11 @@ contract Nodes is AccessManagedUpgradeable, INodes {
 
     function getPassiveNodeIds() external view override returns (NodeId[] memory nodeIds) {
         nodeIds = _passiveNodeIds.values();
+    }
+
+    function getPublicKeyForNodeId(NodeId nodeId) external view override returns (bytes32[2] memory publicKey) {
+        publicKey = _nodesInfo[nodeId].publicKey;
+        require(publicKey[0] != bytes32(0) && publicKey[1] != bytes32(0), NodeWasNeverRegistered(nodeId));
     }
 
     function getActiveNodeIds() external view override returns (NodeId[] memory nodeIds) {
@@ -387,11 +412,14 @@ contract Nodes is AccessManagedUpgradeable, INodes {
 
         nodes[nodeId] = Node({
             id: nodeId,
-            publicKey: publicKey,
             port: port,
             nodeAddress: nodeAddress,
             ip: ip,
             domainName: domainName
+        });
+
+        _nodesInfo[nodeId] = NodeInfo({
+            publicKey: publicKey
         });
 
         emit NodeRegistered(nodeId, nodeAddress, ip, port);
@@ -409,7 +437,6 @@ contract Nodes is AccessManagedUpgradeable, INodes {
         if (_isActiveNode(id)) {
             IStatus statusContract = IStatus(committeeContract.status());
             assert(_activeNodeIds.remove(id));
-            assert(_activeNodesAddressToId.remove(nodeOwner));
             emit ActiveNodeDeleted(id, nodeOwner, node.ip, node.port);
             statusContract.nodeRemoved(id);
             committeeContract.nodeRemoved(id);
@@ -438,14 +465,14 @@ contract Nodes is AccessManagedUpgradeable, INodes {
         );
         require(
             _activeNodesAddressToId.set(nodeAddress, nodeId),
-            AddressIsAlreadyAssignedToNode(nodeAddress)
+            AddressWasAlreadyAssignedToNode(nodeAddress)
         );
     }
 
     function _setPassiveNodeIdForAddress(address nodeAddress, NodeId nodeId) private {
         require(
             !_isAddressOfActiveNode(nodeAddress),
-            AddressIsAlreadyAssignedToNode(nodeAddress)
+            AddressWasAlreadyAssignedToNode(nodeAddress)
         );
 
         require(
@@ -458,7 +485,7 @@ contract Nodes is AccessManagedUpgradeable, INodes {
         }
     }
 
-    function _initializeGroup(Node[] calldata initialNodes) private {
+    function _initializeGroup(Node[] calldata initialNodes, bytes32[2][] calldata publicKeys) private {
         uint256 length = initialNodes.length;
         for (uint256 i; i < length; ++i) {
             Node calldata initNode = initialNodes[i];
@@ -468,7 +495,7 @@ contract Nodes is AccessManagedUpgradeable, INodes {
                 ip: initNode.ip,
                 port: initNode.port,
                 domainName: initNode.domainName,
-                publicKey: initNode.publicKey
+                publicKey: publicKeys[i]
             });
         }
     }
