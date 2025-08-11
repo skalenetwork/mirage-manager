@@ -482,6 +482,8 @@ describe("Nodes", function () {
 
         await expect(nodesContract.connect(user1).requestChangeOwner(passiveNode, deployer.address))
         .to.be.revertedWithCustomError(nodesContract, "AddressWasAlreadyAssignedToNode");
+
+        await expect(nodesContract.getPublicKeyForNodeId(passiveNode + 1n)).to.be.revertedWithCustomError(nodesContract, "ActiveNodeWasNeverRegistered");
     });
 
     it("should should not allow changing nodes data if node in current or next committee", async function () {

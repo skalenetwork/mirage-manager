@@ -97,7 +97,7 @@ contract Nodes is AccessManagedUpgradeable, INodes {
     error DomainNameAlreadyTaken(string domainName);
     error NodeDoesNotExist(NodeId nodeId);
     error NodeWasDeleted(NodeId nodeId);
-    error NodeWasNeverRegistered(NodeId nodeId);
+    error ActiveNodeWasNeverRegistered(NodeId nodeId);
     error PortShouldNotBeZero();
     error SenderIsNotNodeOwner();
     error SenderIsNotNewNodeOwner();
@@ -374,7 +374,7 @@ contract Nodes is AccessManagedUpgradeable, INodes {
 
     function getPublicKeyForNodeId(NodeId nodeId) external view override returns (bytes32[2] memory publicKey) {
         publicKey = _nodesInfo[nodeId].publicKey;
-        require(publicKey[0] != bytes32(0) && publicKey[1] != bytes32(0), NodeWasNeverRegistered(nodeId));
+        require(publicKey[0] != bytes32(0) && publicKey[1] != bytes32(0), ActiveNodeWasNeverRegistered(nodeId));
     }
 
     function getActiveNodeIds() external view override returns (NodeId[] memory nodeIds) {
