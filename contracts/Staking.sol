@@ -35,6 +35,8 @@ import {
 import {
     Address
 } from "@openzeppelin/contracts/utils/Address.sol";
+import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+
 import {ICommittee} from "@skalenetwork/fair-manager-interfaces/ICommittee.sol";
 import {INodes, NodeId} from "@skalenetwork/fair-manager-interfaces/INodes.sol";
 import {IRewardWallet} from "@skalenetwork/fair-manager-interfaces/IRewardWallet.sol";
@@ -48,6 +50,7 @@ import {Credit, FundLibrary, Fair, Holder} from "./utils/Fund.sol";
 
 contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaking {
     using Address for address payable;
+    using EnumerableSet for EnumerableSet.AddressSet;
     using FundLibrary for FundLibrary.Fund;
     using TypedSet for TypedSet.NodeIdSet;
     using TypedMap for TypedMap.HolderToCreditMap;
@@ -60,11 +63,14 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
     FundLibrary.Fund private _rootFund;
     mapping (NodeId node => FundLibrary.Fund nodeFund) private _nodesFunds;
     mapping (NodeId node => IRewardWallet rewardWallet) private _rewardWallets;
+    mapping (NodeId node => EnumerableSet.AddressSet allowedReceivers) private _nodesAllowedReceivers;
     mapping (address holder => TypedSet.NodeIdSet nodeIds) private _stakedNodes;
     TypedMap.NodeIdToFairMap private _disabledNodesBalances;
     Fair public stakeLimit;
     uint16 public constant DEFAULT_FEE_RATE = 1000;
 
+    event AllowedReceiverAdded(NodeId indexed node, address indexed receiver);
+    event AllowedReceiverRemoved(NodeId indexed node, address indexed receiver);
     event FeeClaimed(NodeId indexed node, address indexed to, Fair indexed amount);
     event NodeRewardReceived(NodeId indexed node, Fair indexed amount);
     event Retrieved(address indexed sender, NodeId indexed node, Fair indexed amount);
@@ -79,14 +85,17 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
     event NodeFeeRateUpdated(NodeId indexed node, uint16 oldFeeRate, uint16 newFeeRate);
     event RewardWalletReferenceUpdated(IRewardWallet indexed oldReference, IRewardWallet indexed newReference);
 
+    error CannotRemoveOwner();
     error FeeRateIsIncorrect(uint16 feeRate);
     error OnlyFeeReductionIsAllowed(uint16 currentRate, uint16 newRate);
     error ZeroAmount();
     error ZeroStakeToNode(NodeId node);
     error NodeIsAlreadyDisabled(NodeId node);
     error NodeIsNotDisabled(NodeId node);
+    error NotAllowedToClaimRewards(address sender);
     error StakeLimitExceeded(Fair currentStake, Fair attemptedStake, Fair limit);
-    error ZeroAddress();
+    error ReceiverIsAlreadyAllowed(address receiver);
+    error ReceiverWasNotAllowed(address receiver);
     error RewardWalletDoesNotExist(NodeId node);
 
     function initialize(
@@ -110,8 +119,23 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
         emit RewardReceived(msg.sender, msg.value);
     }
 
-    function claimAllFee(address payable to) external override {
-        claimFee(to, getEarnedFeeAmount(nodes.getNodeId(msg.sender)));
+    function addAllowedReceiver(address receiver) external override {
+        NodeId node = nodes.getNodeId(msg.sender);
+        bool added = _nodesAllowedReceivers[node].add(receiver);
+        require(added, ReceiverIsAlreadyAllowed(receiver));
+        emit AllowedReceiverAdded(node, receiver);
+    }
+
+    function removeAllowedReceiver(address receiver) external override {
+        NodeId node = nodes.getNodeId(msg.sender);
+        require(receiver != msg.sender, CannotRemoveOwner());
+        bool removed = _nodesAllowedReceivers[node].remove(receiver);
+        require(removed, ReceiverWasNotAllowed(receiver));
+        emit AllowedReceiverRemoved(node, receiver);
+    }
+
+    function claimAllFee(NodeId node) external override {
+        claimFee(node, getEarnedFeeAmount(node));
     }
 
     function disable(NodeId node) external override restricted {
@@ -151,6 +175,7 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
         }
         _updateNodeFeeRate(node, DEFAULT_FEE_RATE);
         assert(_disabledNodesBalances.set(node, FundLibrary.ZERO_FAIR));
+        assert(_nodesAllowedReceivers[node].add(nodes.getNode(node).nodeAddress));
     }
 
     function payReward(NodeId node) external payable override {
@@ -350,10 +375,13 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
 
     // Public
 
-    function claimFee(address payable to, Fair amount) public override {
-        require(to != address(0), ZeroAddress());
-        NodeId node = nodes.getNodeId(msg.sender);
-        emit FeeClaimed(node, to, amount);
+    function claimFee(NodeId node, Fair amount) public override {
+
+        emit FeeClaimed(node, msg.sender, amount);
+        require(
+            _nodesAllowedReceivers[node].contains(msg.sender),
+            NotAllowedToClaimRewards(msg.sender)
+        );
         _pullReward(node);
         Fair balance = _getTotalBalance();
         bool nodeIsEnabled = isNodeEnabled(node);
@@ -381,7 +409,7 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
         if (nodeIsEnabled) {
             committee.updateWeight(node, Credit.unwrap(_getNodeCredits(node)));
         }
-        to.sendValue(Fair.unwrap(amount));
+        payable(msg.sender).sendValue(Fair.unwrap(amount));
     }
 
     function isNodeEnabled(NodeId node) public view override returns (bool enabled) {
@@ -443,7 +471,9 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
 
 
     function _pullReward(NodeId node) private nonReentrant {
-        if (address(_rewardWallets[node]).balance > 0) {
+
+        // Should not try to flush rewards for deleted nodes
+        if (nodes.activeNodeExists(node) && address(_rewardWallets[node]).balance > 0) {
             // Reward wallet is considered as a part of Staking contract.
             // The code is trusted and effects are known.
             // slither-disable-start reentrancy-events
