@@ -195,8 +195,10 @@ As described, Active Nodes can be healthy or unhealthy, depending on whether the
 
 #### Staking Main Functions
 
-- `claimAllFee(address payable to)`: Allows Node Owners to collect all pending fees.
-- `claimFee(address payable to, Fair amount)`: Allows Node Owners to withdraw a specific amount of fees.
+- `claimAllFee(NodeId node)`: Allows the sender (if allowed) to collect all pending fees for a node to their own address.
+- `claimFee(NodeId node, Fair amount)`: Allows the sender (if allowed) to withdraw a specific amount of fees for a node to their own address.
+- `addAllowedReceiver(address receiver)`: Allows a Node Owner to add an address to the list of allowed fee receivers for their node.
+- `removeAllowedReceiver(address receiver)`: Allows a Node Owner to remove an address from the list of allowed fee receivers for their node.
 - `nodeCreated(NodeId node)`: internal function that is called by `Nodes` when a new node is created
 - `payReward(NodeId node)`: pays rewards to delegators of the specified nodes
 - `retrieve(NodeId node, Fair value)`: Allows any user to unstake an amount of FAIR from a node.

@@ -167,6 +167,9 @@ describe("Staking", () => {
         // TODO: uncomment after fixing the issue with claiming fees from deleted nodes
         // await staking.connect(node.wallet).claimFee(node.wallet.address, amount / 2n).should.changeEtherBalance(node.wallet.address, amount / 2n);
         // expect(await staking.getNodeTotalStake(node.id)).to.be.eql(100n); // 100 wei lost in reward wallet
+        await staking.connect(node.wallet).claimAllFee(node.id).should.changeEtherBalance(node.wallet.address, amount / 2n);
+
+        expect(await staking.getNodeTotalStake(node.id)).to.be.eql(0n); // 100 wei lost in reward wallet
     });
 
     it("should apply validator fee on rewards", async () => {
@@ -202,7 +205,7 @@ describe("Staking", () => {
         expect(await staking.getDelegatorsToNodeCount(node)).to.be.eql(0n);
         expect(await staking.getDelegatorsToNode(node)).to.be.eql([]);
 
-        await staking.connect(nodeWallet).claimAllFee(nodeWallet.address)
+        await staking.connect(nodeWallet).claimAllFee(node)
             .should.changeEtherBalance(nodeWallet, reward / 2n);
 
         (await staking.getEarnedFeeAmount(node))
@@ -289,7 +292,7 @@ describe("Staking", () => {
         (await staking.getStakedToNodeAmountFor(node2, user))
             .should.be.equal(amount2 + node2Reward);
 
-        await staking.connect(node1Wallet).claimAllFee(node1Wallet.address)
+        await staking.connect(node1Wallet).claimAllFee(node1)
             .should.changeEtherBalance(node1Wallet, node1Fee);
         // root pool:
         //     total: 13 Fair, 4.(3) credits
@@ -333,6 +336,48 @@ describe("Staking", () => {
             .should.be.equal(0n);
         (await staking.getStakedAmountFor(user))
             .should.be.equal(amount2 + node2Reward);
+    });
+
+    it("should allow only allowed receivers to claim fees", async () => {
+
+        const {staking, nodesData, nodes} = await registeredOnlyNodes();
+        const [,user, receiver] = await ethers.getSigners();
+        const initialAmount = ethers.parseEther("3");
+        const amount = ethers.parseEther("1");
+        const node = nodesData[22]; // not in the current committee
+        const feeRate = 500; // Yes, Eddie, half
+        await staking.connect(node.wallet).setFeeRate(feeRate);
+        await staking.connect(user).stake(node.id, {value: initialAmount});
+        await staking.connect(user).payReward(node.id, {value: amount});
+
+        // only node owner can add receivers
+        await expect(staking.addAllowedReceiver(receiver.address)).to.be.revertedWithCustomError(nodes, "AddressIsNotAssignedToAnyNode");
+
+        await staking.connect(node.wallet).addAllowedReceiver(receiver.address);
+
+        // node owner is registered by default
+        await expect(staking.connect(node.wallet).addAllowedReceiver(node.wallet))
+        .to.be.revertedWithCustomError(staking, "ReceiverIsAlreadyAllowed")
+
+        // node owner cannot be removed
+        await expect(staking.connect(node.wallet).removeAllowedReceiver(node.wallet))
+        .to.be.revertedWithCustomError(staking, "CannotRemoveOwner")
+
+        // unauthorized users cannot claim fees
+        await expect(staking.connect(user).claimAllFee(node.id)).to.be.revertedWithCustomError(staking, "NotAllowedToClaimRewards");
+
+
+        // should allow receiver to collect fees
+        const unclaimedFees = await staking.getEarnedFeeAmount(node.id);
+        await staking.connect(receiver).claimAllFee(node.id).should.changeEtherBalance(receiver, unclaimedFees);
+
+        expect(await staking.getEarnedFeeAmount(node.id)).to.be.eql(0n);
+
+        await nodes.connect(node.wallet).deleteNode(node.id);
+
+        // Should not allow changing allowed list after node deletion
+        await staking.connect(node.wallet).removeAllowedReceiver(receiver).should.be.reverted;
+
     });
 
     it("should allow to retrieve from a node from committee", async () => {
@@ -402,7 +447,7 @@ describe("Staking", () => {
             const currentFee = node === disabledNode ? 0 : amount;
             (await staking.getEarnedFeeAmount(node.id))
                 .should.be.equal(currentFee);
-            (await staking.connect(node.wallet).claimAllFee(node.wallet.address))
+            (await staking.connect(node.wallet).claimAllFee(node.id))
                 .should.changeEtherBalance(node.wallet, currentFee);
         }
 
@@ -433,7 +478,7 @@ describe("Staking", () => {
             const currentFee = node === disabledNode ? amount : amount * 2n;
             (await staking.getEarnedFeeAmount(node.id))
                 .should.be.approximately(currentFee, tolerance);
-            (await staking.connect(node.wallet).claimAllFee(node.wallet.address))
+            (await staking.connect(node.wallet).claimAllFee(node.id))
                 .should.changeEtherBalance(node.wallet, currentFee);
         }
     });
