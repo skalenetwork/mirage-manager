@@ -3,10 +3,10 @@
 import {
     loadFixture
 } from "@nomicfoundation/hardhat-network-helpers";
-import { deploy } from "../../migrations/deploy";
-import { HDNodeWallet, BytesLike, Wallet } from "ethers";
+import { deploy, NodeStruct } from "../../migrations/deploy";
+import { HDNodeWallet, Wallet } from "ethers";
 import { ethers } from "hardhat";
-import { INodes, IDkg, Nodes, Status, Staking } from "../../typechain-types";
+import { IDkg, Nodes, Status, Staking } from "../../typechain-types";
 import { getPublicKey } from "./signatures";
 
 // Parameters
@@ -28,9 +28,8 @@ export const commonPublicKey: IDkg.G2PointStruct = {
 
 // Auxiliary functions
 
-export interface NodeData extends INodes.NodeStruct {
+export interface NodeData extends NodeStruct {
     wallet: HDNodeWallet;
-    publicKey: [BytesLike, BytesLike];
 }
 
 const getIp = (): Uint8Array => ethers.randomBytes(4);
@@ -56,7 +55,7 @@ const generateRandomNodes = async (initialNumberOfNodes?: number) => {
         });
 
     }
-    return {nodesData, publicKeys: nodesData.map(node => node.publicKey)};
+    return nodesData;
 }
 
 const registerNodes = async (nodes: Nodes, nodesData: NodeData[]) => {
@@ -88,8 +87,8 @@ const stake = async (staking: Staking, nodesData: NodeData[]) => {
 // Fixtures
 
 const deployFixture = async () => {
-    const {nodesData, publicKeys} = await generateRandomNodes(initialNumberOfNodes);
-    const contracts = await deploy(nodesData, publicKeys, commonPublicKey);
+    const nodesData = await generateRandomNodes(initialNumberOfNodes);
+    const contracts = await deploy(nodesData, commonPublicKey);
     for (const node of nodesData) {
         node.id = await contracts.Nodes.getNodeId(node.wallet.address);
     };
@@ -109,7 +108,7 @@ const deployFixture = async () => {
 const registeredOnlyNodesFixture = async () => {
     const contracts = await cleanDeployment();
     const { nodes } = contracts;
-    const {nodesData} = await generateRandomNodes(numberOfNodes - initialNumberOfNodes);
+    const nodesData = await generateRandomNodes(numberOfNodes - initialNumberOfNodes);
 
     await registerNodes(nodes, nodesData);
 

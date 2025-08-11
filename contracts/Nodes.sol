@@ -372,7 +372,7 @@ contract Nodes is AccessManagedUpgradeable, INodes {
         nodeIds = _passiveNodeIds.values();
     }
 
-    function getPublicKeyForNodeId(NodeId nodeId) external view override returns (bytes32[2] memory publicKey) {
+    function getPublicKey(NodeId nodeId) external view override returns (bytes32[2] memory publicKey) {
         publicKey = _nodesInfo[nodeId].publicKey;
         require(publicKey[0] != bytes32(0) && publicKey[1] != bytes32(0), ActiveNodeWasNeverRegistered(nodeId));
     }
