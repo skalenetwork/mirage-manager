@@ -499,7 +499,7 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
     }
 
     function _getNonPulledReward(NodeId node) private view returns (Fair nonPulledReward) {
-        // If the node was deleted, rewards can't ever be fushed, so the balance should not count
+        // If the node was deleted, rewards can't ever be flushed, so the balance should not count
         if (nodes.activeNodeExists(node)) {
             return Fair.wrap(address(_rewardWallets[node]).balance);
         }
