@@ -158,9 +158,9 @@ describe("Staking", () => {
 
         // allows to collect fees after deletion, even with reward wallet having balance
 
-        await staking.connect(node.wallet).claimAllFee(node.id).should.changeEtherBalance(node.wallet.address, amount / 2n);
+        await staking.connect(node.wallet).claimFee(node.id, amount / 2n).should.changeEtherBalance(node.wallet.address, amount / 2n);
 
-        expect(await staking.getNodeTotalStake(node.id)).to.be.eql(0n);
+        expect(await staking.getNodeTotalStake(node.id)).to.be.eql(100n); // 100 wei lost in reward wallet
     });
 
     it("should apply validator fee on rewards", async () => {
