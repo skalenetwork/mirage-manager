@@ -67,7 +67,7 @@ describe("Nodes", function () {
         expect(node.port).to.equal(8000n);
         expect(Buffer.from(getBytes(node.ip))).to.eql(MOCK_IP_0_BYTES);
         expect(node.nodeAddress).to.equal(deployer.address);
-        expect(node.publicKey).to.eql(deployerPubKey);
+        expect(await nodesContract.getPublicKey(nodeId)).to.eql(deployerPubKey);
 
         expect(await nodesContract.getNodeId(deployer.address)).to.equal(nodeId);
 
@@ -86,7 +86,7 @@ describe("Nodes", function () {
         expect(node.port).to.equal(8000n);
         expect(Buffer.from(getBytes(node.ip))).to.eql(MOCK_IP_0_BYTES);
         expect(node.nodeAddress).to.equal(deployer.address);
-        expect(node.publicKey).to.eql(deployerPubKey);
+        expect(await nodesContract.getPublicKey(nodeId)).to.eql(deployerPubKey);
 
         expect(await nodesContract.getNodeId(deployer.address)).to.equal(nodeId);
         expect(await nodesContract.getActiveNodeIds()).to.include(nodeId);
@@ -125,11 +125,11 @@ describe("Nodes", function () {
         expect(await nodesContract.getActiveNodeIds()).to.not.include(nodeId);
         expect(await nodesContract.activeNodeExists(nodeId)).to.eql(false);
 
-        await nodesContract.connect(user1).registerNode(MOCK_IP_0_BYTES, user1PubKey, 8000);
-        const nodeIdV2 = await nodesContract.getNodeId(user1.address) as BigNumberish;
-        await nodesContract.connect(user1).setDomainName(nodeIdV2, MOCK_DOMAIN_NAME_0);
+        await nodesContract.connect(user2).registerNode(MOCK_IP_0_BYTES, user2PubKey, 8000);
+        const nodeIdV2 = await nodesContract.getNodeId(user2.address) as BigNumberish;
+        await nodesContract.connect(user2).setDomainName(nodeIdV2, MOCK_DOMAIN_NAME_0);
 
-        await expect(nodesContract.connect(user1).deleteNodeByFoundation(nodeIdV2)).to.be.reverted;
+        await expect(nodesContract.connect(user2).deleteNodeByFoundation(nodeIdV2)).to.be.reverted;
         await nodesContract.connect(deployer).deleteNodeByFoundation(nodeIdV2);
 
         await expect(nodesContract.getNode(nodeIdV2)).to.be.revertedWithCustomError(nodesContract, "NodeDoesNotExist");
@@ -229,9 +229,9 @@ describe("Nodes", function () {
 
         // Node address is taken by active node
         await expect(nodesContract.registerPassiveNode(MOCK_IP_1_BYTES, 8000))
-        .to.be.revertedWithCustomError(nodesContract, "AddressIsAlreadyAssignedToNode");
+        .to.be.revertedWithCustomError(nodesContract, "AddressWasAlreadyAssignedToNode");
         await expect(nodesContract.registerNode(MOCK_IP_1_BYTES, deployerPubKey, 8000))
-        .to.be.revertedWithCustomError(nodesContract, "AddressIsAlreadyAssignedToNode");
+        .to.be.revertedWithCustomError(nodesContract, "AddressWasAlreadyAssignedToNode");
 
         // IP address is taken by active node
         await expect(nodesContract.connect(user1).registerPassiveNode(MOCK_IP_0_BYTES, 8000))
@@ -351,7 +351,7 @@ describe("Nodes", function () {
         await nodesContract.connect(user1).registerNode(MOCK_IP_1_BYTES, user1PubKey, 8000);
 
         await expect(nodesContract.requestChangeOwner(firstNodeId, user1.address))
-        .to.be.revertedWithCustomError(nodesContract, "AddressIsAlreadyAssignedToNode");
+        .to.be.revertedWithCustomError(nodesContract, "AddressWasAlreadyAssignedToNode");
     });
 
     it("should allow only new Node owner to submit Node address change", async () => {
@@ -399,7 +399,7 @@ describe("Nodes", function () {
         await nodesContract.connect(user1).registerNode(MOCK_IP_1_BYTES, user1PubKey, 8000);
 
         await expect(nodesContract.connect(user1).confirmOwnerChange(nodeId))
-        .to.be.revertedWithCustomError(nodesContract, "AddressIsAlreadyAssignedToNode");
+        .to.be.revertedWithCustomError(nodesContract, "AddressWasAlreadyAssignedToNode");
 
         const node = await nodesContract.getNode(nodeId);
         expect(node.nodeAddress).to.equal(deployer.address);
@@ -459,6 +459,31 @@ describe("Nodes", function () {
 
         await expect(nodesContract.confirmOwnerChange(firstNodeId))
         .to.be.revertedWithCustomError(nodesContract, "PassiveNodeAlreadyExistsForAddress");
+    });
+
+    it("should never allow duplicate public keys from active nodes even after deletion", async function () {
+        await nodesContract.registerNode(MOCK_IP_0_BYTES, deployerPubKey , 8000);
+        const node = await nodesContract.getNodeId(deployer.address);
+        await nodesContract.deleteNode(node);
+        await expect(nodesContract.getNodeId(deployer.address)).to.be.revertedWithCustomError(nodesContract, "NodeWasDeleted");
+        expect(await nodesContract.getPublicKey(node)).to.be.eql(deployerPubKey);
+
+        await expect(nodesContract.registerNode(MOCK_IP_0_BYTES, deployerPubKey , 8000))
+        .to.be.revertedWithCustomError(nodesContract, "AddressWasAlreadyAssignedToNode");
+
+        await expect(nodesContract.registerPassiveNode(MOCK_IP_0_BYTES, 8000))
+        .to.be.revertedWithCustomError(nodesContract, "AddressWasAlreadyAssignedToNode");
+
+        expect(await nodesContract.getPublicKey(node)).to.be.eql(deployerPubKey);
+
+        await nodesContract.connect(user1).registerPassiveNode(MOCK_IP_1_BYTES, 8000);
+
+        const [passiveNode] = await nodesContract.getPassiveNodeIdsForAddress(user1.address);
+
+        await expect(nodesContract.connect(user1).requestChangeOwner(passiveNode, deployer.address))
+        .to.be.revertedWithCustomError(nodesContract, "AddressWasAlreadyAssignedToNode");
+
+        await expect(nodesContract.getPublicKey(passiveNode + 1n)).to.be.revertedWithCustomError(nodesContract, "ActiveNodeWasNeverRegistered");
     });
 
     it("should should not allow changing nodes data if node in current or next committee", async function () {

@@ -3,10 +3,10 @@
 import {
     loadFixture
 } from "@nomicfoundation/hardhat-network-helpers";
-import { deploy } from "../../migrations/deploy";
+import { deploy, NodeStruct } from "../../migrations/deploy";
 import { HDNodeWallet, Wallet } from "ethers";
 import { ethers } from "hardhat";
-import { INodes, IDkg, Nodes, Status, Staking } from "../../typechain-types";
+import { IDkg, Nodes, Status, Staking } from "../../typechain-types";
 import { getPublicKey } from "./signatures";
 
 // Parameters
@@ -28,7 +28,7 @@ export const commonPublicKey: IDkg.G2PointStruct = {
 
 // Auxiliary functions
 
-export interface NodeData extends INodes.NodeStruct {
+export interface NodeData extends NodeStruct {
     wallet: HDNodeWallet;
 }
 
@@ -53,6 +53,7 @@ const generateRandomNodes = async (initialNumberOfNodes?: number) => {
             wallet: wallet,
             publicKey: await getPublicKey(wallet)
         });
+
     }
     return nodesData;
 }

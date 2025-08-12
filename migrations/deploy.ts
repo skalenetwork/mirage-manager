@@ -17,7 +17,7 @@ import {
     Status,
     RewardWallet
 } from "../typechain-types";
-import { AddressLike, BigNumberish } from "ethers";
+import { AddressLike, BigNumberish, BytesLike } from "ethers";
 import { skaleContracts } from "@skalenetwork/skale-contracts-ethers-v6";
 import {
     IKeyStorage,
@@ -36,6 +36,10 @@ export const contracts = [
     "Status",
     "Staking"
 ];
+
+export interface NodeStruct extends INodes.NodeStruct {
+    publicKey: [BytesLike, BytesLike];
+}
 
 export interface DeployedContracts {
     Committee: Committee,
@@ -77,7 +81,7 @@ async function fetchNodes() {
     if (nodeIds.includes(0n)) {
         throw new Error("Node IDs cannot contain 0");
     }
-    const nodeList: INodes.NodeStruct[] = [];
+    const nodeList: NodeStruct[] = [];
     for (const nodeId of nodeIds) {
         const [ip, domainName ,nodeAddress, port, publicKey] = await Promise.all([
             nodes.getNodeIP(nodeId),
@@ -110,10 +114,12 @@ async function fetchDkgCommonPublicKey() {
     return commonPublicKey;
 }
 
-export const deploy = async (nodeList?: INodes.NodeStruct[], commonPublicKey?: IDkg.G2PointStruct): Promise<DeployedContracts> => {
+export const deploy = async (nodeList?: NodeStruct[], commonPublicKey?: IDkg.G2PointStruct): Promise<DeployedContracts> => {
     const [deployer] = await ethers.getSigners();
     const deployedContracts: DeployedContracts = {} as DeployedContracts;
-    nodeList = nodeList || await fetchNodes();
+    if (!nodeList) {
+        nodeList = await fetchNodes();
+    }
     commonPublicKey = commonPublicKey || await fetchDkgCommonPublicKey();
 
     deployedContracts.FairAccessManager = await deployFairAccessManager(deployer);
@@ -198,12 +204,13 @@ const deployCommittee = async (
     ) as Committee;
 }
 
-const deployNodes = async (accessManager: FairAccessManager, nodeList: INodes.NodeStruct[]): Promise<Nodes> => {
+const deployNodes = async (accessManager: FairAccessManager, nodeList: NodeStruct[]): Promise<Nodes> => {
     return await deployContract(
         "Nodes",
         [
             await ethers.resolveAddress(accessManager),
-            nodeList
+            nodeList,
+            nodeList.map(node => node.publicKey)
         ]
     ) as Nodes;
 }
