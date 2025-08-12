@@ -2383,9 +2383,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@skalenetwork/upgrade-tools@npm:3.0.0-develop.44":
-  version: 3.0.0-develop.44
-  resolution: "@skalenetwork/upgrade-tools@npm:3.0.0-develop.44"
+"@skalenetwork/upgrade-tools@npm:3.0.0-408-add-etherscan-config-section-to-hardhat-config.5":
+  version: 3.0.0-408-add-etherscan-config-section-to-hardhat-config.5
+  resolution: "@skalenetwork/upgrade-tools@npm:3.0.0-408-add-etherscan-config-section-to-hardhat-config.5"
   dependencies:
     "@safe-global/api-kit": "npm:^2.4.1"
     "@safe-global/protocol-kit": "npm:^5.0.1"
@@ -2401,7 +2401,7 @@ __metadata:
     "@openzeppelin/upgrades-core": ^1.27.1
     "@types/mocha": ^9.1.0
     hardhat: ^2.9.9
-  checksum: 10c0/ec4ba0979698de20142696f091d44bea32633925d0f24351726efc3cebf89699b8bccb817cceb28753603f5f2a9fec65cd83388156227946543d2de439355959
+  checksum: 10c0/7b40a0d70529f89a0ad365015a3cff73abace11652fe352b170f57da4aa06957b7791cf0fc9c5ba6bc7a5651240c18e37b32096c05ab50c0d259ca136bccc65a
   languageName: node
   linkType: hard
 
@@ -5098,7 +5098,7 @@ __metadata:
     "@skalenetwork/fair-manager-interfaces": "npm:0.1.0-develop.86"
     "@skalenetwork/skale-contracts-ethers-v6": "npm:1.0.2-develop.68"
     "@skalenetwork/skale-manager-interfaces": "npm:3.2.0-develop.3"
-    "@skalenetwork/upgrade-tools": "npm:3.0.0-develop.44"
+    "@skalenetwork/upgrade-tools": "npm:3.0.0-408-add-etherscan-config-section-to-hardhat-config.5"
     "@typechain/ethers-v6": "npm:^0.5.0"
     "@typechain/hardhat": "npm:^9.0.0"
     "@types/chai": "npm:^4.2.0"

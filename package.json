@@ -57,7 +57,7 @@
     "@skalenetwork/fair-manager-interfaces": "0.1.0-develop.86",
     "@skalenetwork/skale-contracts-ethers-v6": "1.0.2-develop.68",
     "@skalenetwork/skale-manager-interfaces": "3.2.0-develop.3",
-    "@skalenetwork/upgrade-tools": "3.0.0-develop.44",
+    "@skalenetwork/upgrade-tools": "3.0.0-408-add-etherscan-config-section-to-hardhat-config.5",
     "chalk": "^4",
     "dotenv": "^16.5.0",
     "hardhat-dependency-compiler": "^1.2.1"
