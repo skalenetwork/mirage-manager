@@ -4,6 +4,8 @@ name: Get linked issues
 on:
   pull_request:
     types: [ edited, synchronize, opened, reopened ]
+  issues:
+    types: [ pinned, unpinned ]
 
 jobs:
   check-linked-issues:
