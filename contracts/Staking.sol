@@ -317,6 +317,7 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
         Fair totalBalance = _getTotalBalance();
         assert((totalBalance == FundLibrary.ZERO_FAIR) == (_rootFund.totalCredits == FundLibrary.ZERO_CREDIT));
         uint256 unPulledCredits = 0;
+        // This is safe because nodes are disabled if deleted
         uint256 rewardWalletBalance = address(_rewardWallets[node]).balance;
         if (rewardWalletBalance > 0) {
             if (totalBalance > FundLibrary.ZERO_FAIR) {
@@ -472,8 +473,8 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
 
     function _pullReward(NodeId node) private nonReentrant {
 
-        // Should not try to flush rewards for deleted nodes
-        if (nodes.activeNodeExists(node) && address(_rewardWallets[node]).balance > 0) {
+        // getter returns 0 for deleted nodes, even if reward wallet has balance
+        if (_getNonPulledReward(node) > FundLibrary.ZERO_FAIR) {
             // Reward wallet is considered as a part of Staking contract.
             // The code is trusted and effects are known.
             // slither-disable-start reentrancy-events
@@ -498,7 +499,11 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
     }
 
     function _getNonPulledReward(NodeId node) private view returns (Fair nonPulledReward) {
-        return Fair.wrap(address(_rewardWallets[node]).balance);
+        // If the node was deleted, rewards can't ever be fushed, so the balance should not count
+        if (nodes.activeNodeExists(node)) {
+            return Fair.wrap(address(_rewardWallets[node]).balance);
+        }
+        return FundLibrary.ZERO_FAIR;
     }
 
     function _getTotalBalance() private view returns (Fair balance) {

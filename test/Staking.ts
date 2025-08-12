@@ -153,6 +153,11 @@ describe("Staking", () => {
 
         expect(await staking.getNodeTotalStake(node.id)).to.be.eql(amount / 2n);
 
+        // Set some balance to reward wallet
+        await setBalance(await staking.getRewardWallet(node.id), 100);
+
+        // allows to collect fees after deletion, even with reward wallet having balance
+
         await staking.connect(node.wallet).claimAllFee(node.id).should.changeEtherBalance(node.wallet.address, amount / 2n);
 
         expect(await staking.getNodeTotalStake(node.id)).to.be.eql(0n);
