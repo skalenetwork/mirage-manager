@@ -36,6 +36,24 @@ Then run `yarn hardhat run migrations/deploy.ts --network custom`
 
 You can run tests locally without any extra setup. Simply run: `yarn test`
 
+## Verification
+
+Contract verification allows you to verify deployed smart contracts on block explorers using Hardhat's verification plugin via command line interface.
+
+### Required Environment Variables
+
+```bash
+ENDPOINT="https://endpoint.to.destination.network"
+CHAIN_ID="your_chain_id"
+EXPLORER_URL="https://your.explorer.url.com"
+```
+
+### Usage
+
+```bash
+yarn hardhat verify --network custom <ContractAddress>
+```
+
 ## License
 
 [![License](https://img.shields.io/github/license/skalenetwork/fair-manager.svg)](LICENSE)
