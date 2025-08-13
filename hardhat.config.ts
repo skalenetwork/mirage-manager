@@ -10,6 +10,8 @@ import "hardhat-dependency-compiler";
 import "@nomicfoundation/hardhat-verify";
 import * as dotenv from "dotenv";
 
+// Cspell:words sourcify
+
 dotenv.config();
 
 const config: HardhatUserConfig = {
