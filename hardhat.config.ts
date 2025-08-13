@@ -28,6 +28,21 @@ const config: HardhatUserConfig = {
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
     }
   },
+  etherscan: {
+    apiKey: {
+      custom: 'custom'
+    },
+    customChains: [
+      {
+        network: "custom",
+        chainId: Number(process.env.CHAIN_ID),
+        urls: {
+          apiURL: `${process.env.EXPLORER_URL}/api`,
+          browserURL: `${process.env.EXPLORER_URL}`
+        }
+      }
+    ]
+  },
   sourcify: {
     enabled: false
   },
