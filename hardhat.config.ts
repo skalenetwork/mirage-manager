@@ -28,6 +28,9 @@ const config: HardhatUserConfig = {
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
     }
   },
+  sourcify: {
+    enabled: false
+  },
   dependencyCompiler: {
     paths: [
       '@skalenetwork/skale-manager-interfaces/INodes.sol',
