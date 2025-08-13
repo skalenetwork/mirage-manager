@@ -1,12 +1,12 @@
 import { HardhatUserConfig } from "hardhat/config";
-import '@nomicfoundation/hardhat-chai-matchers';
+import "@nomicfoundation/hardhat-chai-matchers";
 import "@nomicfoundation/hardhat-ethers";
 import "@nomicfoundation/hardhat-network-helpers";
 import "@nomicfoundation/hardhat-chai-matchers";
-import '@openzeppelin/hardhat-upgrades';
-import 'solidity-coverage'
-import '@typechain/hardhat';
-import 'hardhat-dependency-compiler';
+import "@openzeppelin/hardhat-upgrades";
+import "solidity-coverage"
+import "@typechain/hardhat";
+import "hardhat-dependency-compiler";
 import "@nomicfoundation/hardhat-verify";
 import * as dotenv from "dotenv";
 
@@ -30,7 +30,7 @@ const config: HardhatUserConfig = {
   },
   etherscan: {
     apiKey: {
-      custom: 'custom'
+      custom: "custom"
     },
     customChains: [
       {
@@ -48,9 +48,9 @@ const config: HardhatUserConfig = {
   },
   dependencyCompiler: {
     paths: [
-      '@skalenetwork/skale-manager-interfaces/INodes.sol',
-      '@skalenetwork/skale-manager-interfaces/ISchainsInternal.sol',
-      '@skalenetwork/skale-manager-interfaces/IKeyStorage.sol'
+      "@skalenetwork/skale-manager-interfaces/INodes.sol",
+      "@skalenetwork/skale-manager-interfaces/ISchainsInternal.sol",
+      "@skalenetwork/skale-manager-interfaces/IKeyStorage.sol"
     ],
     keep: true
   }
