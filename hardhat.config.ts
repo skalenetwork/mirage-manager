@@ -1,13 +1,16 @@
 import { HardhatUserConfig } from "hardhat/config";
-import '@nomicfoundation/hardhat-chai-matchers';
+import "@nomicfoundation/hardhat-chai-matchers";
 import "@nomicfoundation/hardhat-ethers";
 import "@nomicfoundation/hardhat-network-helpers";
 import "@nomicfoundation/hardhat-chai-matchers";
-import '@openzeppelin/hardhat-upgrades';
-import 'solidity-coverage'
-import '@typechain/hardhat';
-import 'hardhat-dependency-compiler';
+import "@openzeppelin/hardhat-upgrades";
+import "solidity-coverage"
+import "@typechain/hardhat";
+import "hardhat-dependency-compiler";
+import "@nomicfoundation/hardhat-verify";
 import * as dotenv from "dotenv";
+
+// Cspell:words sourcify
 
 dotenv.config();
 
@@ -27,11 +30,29 @@ const config: HardhatUserConfig = {
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
     }
   },
+  etherscan: {
+    apiKey: {
+      custom: "custom"
+    },
+    customChains: [
+      {
+        network: "custom",
+        chainId: Number(process.env.CHAIN_ID),
+        urls: {
+          apiURL: `${process.env.EXPLORER_URL}/api`,
+          browserURL: `${process.env.EXPLORER_URL}`
+        }
+      }
+    ]
+  },
+  sourcify: {
+    enabled: false
+  },
   dependencyCompiler: {
     paths: [
-      '@skalenetwork/skale-manager-interfaces/INodes.sol',
-      '@skalenetwork/skale-manager-interfaces/ISchainsInternal.sol',
-      '@skalenetwork/skale-manager-interfaces/IKeyStorage.sol'
+      "@skalenetwork/skale-manager-interfaces/INodes.sol",
+      "@skalenetwork/skale-manager-interfaces/ISchainsInternal.sol",
+      "@skalenetwork/skale-manager-interfaces/IKeyStorage.sol"
     ],
     keep: true
   }
