@@ -277,8 +277,8 @@ describe("Committee", () => {
 
     it("should check if a node in the committee or will be there soon", async () => {
         const {committee, dkg, nodesData, status} = await whitelistedAndStakedNodes();
-        await committee.setCommitteeSize(5); // to save time
-        await sendHeartbeat(status, nodesData.slice(0, 10)); // to save time
+        await committee.setCommitteeSize(4); // to save time
+        await sendHeartbeat(status, nodesData.slice(0, 8)); // to save time
 
         await committee.select();
         await runDkg(
