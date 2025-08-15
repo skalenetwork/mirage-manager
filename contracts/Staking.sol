@@ -170,6 +170,7 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
                 node,
                 _disabledNodesBalances.get(node) + amount)
             );
+            totalDisabled = totalDisabled + amount;
         }
         emit NodeRewardReceived(node, amount);
 
@@ -367,10 +368,14 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
                 amount
             );
         } else {
+            Fair nodeBalance = _disabledNodesBalances.get(node);
             _nodesFunds[node].claimFee(
-                _disabledNodesBalances.get(node),
+                nodeBalance,
                 amount
             );
+            // node is already disabled, should return false
+            assert(!_disabledNodesBalances.set(node, nodeBalance - amount));
+            totalDisabled = totalDisabled - amount;
         }
 
         if (nodeIsEnabled) {
