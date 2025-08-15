@@ -233,7 +233,6 @@ FAIR-manager supports setting a maximum stake limit that applies to each nodes t
 - Only node owners can change their fee rate.
 - Only COMMITTEE_ROLE can change node eligibility.
 - Only authorized administrators can set stake limits.
-- Only receivers authorized by node owners can claim nodeFees.
 
 ### [`Committee.sol`](./contracts/Committee.sol)
 

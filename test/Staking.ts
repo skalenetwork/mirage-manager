@@ -11,7 +11,7 @@ const sumBigInt = (arr: bigint[]) => arr.reduce((acc, val) => acc + val, 0n);
 const ALLOWED_ERROR = 10n**9n; // 1 wei tolerance for rounding errors
 const N_PRECISION_BITS = 80;
 const PRECISION = 1n << BigInt(N_PRECISION_BITS); // 1 << 80
-const HUGE_AMMOUNT_OF_FAIR = 10n**38n // 100 Billions of FAIR in wei
+const HUGE_AMOUNT_OF_FAIR = 10n**38n // 100 Billions of FAIR in wei
 
 describe("Staking", () => {
 
@@ -659,7 +659,7 @@ describe("Staking", () => {
         const {staking, nodesData, status} = await whitelistedNodes();
         const [, hacker, user] = await ethers.getSigners();
         const node = nodesData[0].id;
-        const sufficientlyHighAmount = (HUGE_AMMOUNT_OF_FAIR - ethers.parseEther("1")) / 100000n;
+        const sufficientlyHighAmount = (HUGE_AMOUNT_OF_FAIR - ethers.parseEther("1")) / 100000n;
 
         await setBalance(hacker.address, sufficientlyHighAmount * 10n);
         await setBalance(user.address,  sufficientlyHighAmount * 10n);
@@ -732,7 +732,7 @@ describe("Staking", () => {
         const [, hacker, user] = await ethers.getSigners();
         const node = nodesData[0].id;
 
-        const sufficientlyHighAmount = (HUGE_AMMOUNT_OF_FAIR - ethers.parseEther("1")) / 100000n;
+        const sufficientlyHighAmount = (HUGE_AMOUNT_OF_FAIR - ethers.parseEther("1")) / 100000n;
 
         await setBalance(hacker.address, sufficientlyHighAmount * 10n);
         await setBalance(user.address,  sufficientlyHighAmount * 10n);
@@ -764,7 +764,7 @@ describe("Staking", () => {
     it("All calculations should not overflow with MAX_STAKED_FAIR", async () => {
         const {staking, nodesData, status} = await whitelistedNodes();
         const [admin, user] = await ethers.getSigners();
-        const stakeLimit = HUGE_AMMOUNT_OF_FAIR - 1n;
+        const stakeLimit = HUGE_AMOUNT_OF_FAIR - 1n;
         // inflate user balance
 
         await setBalance(user.address, stakeLimit + ethers.parseEther("1"));
