@@ -220,12 +220,13 @@ As described, Active Nodes can be healthy or unhealthy, depending on whether the
 
 #### Stake Limits
 
-FAIR-manager supports setting a global maximum stake limit that applies to all nodes to prevent excessive concentration of stake. This feature helps maintain network decentralization and security by limiting the total amount of stake that can be delegated across the network.
+FAIR-manager supports setting a maximum stake limit that applies to each nodes to prevent excessive concentration of stake. This feature helps maintain network decentralization and security by limiting the total amount of stake that can be delegated across the network.
 
 #### Staking Integration Points
 
 - `Staking.sol` interacts with `Committee.sol` to update node weights each time an operation that changes the total staking share of a node is performed.
 - `Staking.sol` interacts with `RewardWallet.sol` instances to flush rewards that may have been given from consensus layer.
+- `Staking.sol` reads data from `Nodes.sol`.
 
 #### Staking Permissions
 

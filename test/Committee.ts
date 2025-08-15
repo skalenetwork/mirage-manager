@@ -174,6 +174,14 @@ describe("Committee", () => {
         expect(await committee.skaleRng()).to.equal(ethers.ZeroAddress);
     });
 
+    it("should not allow to set low transition delays", async () => {
+        const {committee} = await cleanDeployment();
+        await expect(committee.setTransitionDelay(501n)).to.be.revertedWithCustomError(committee, "TransitionDelayTooShort");
+        await committee.setMinTransitionDelay(500n);
+        await committee.setTransitionDelay(501n); // should be ok
+        await expect(committee.setTransitionDelay(400n)).to.be.revertedWithCustomError(committee, "TransitionDelayTooShort");
+    });
+
    it("should select committee with custom rng", async function () {
         const {committee, nodesData, status} = await whitelistedAndStakedNodes();
         await committee.setCommitteeSize(5);
@@ -205,14 +213,6 @@ describe("Committee", () => {
 
         const nextCommittee = await committee.getCommittee(await committee.getActiveCommitteeIndex() + 1n);
         nextCommittee.nodes.length.should.be.equal(newSize);
-    });
-
-    it("should not allow to set low transition delays", async () => {
-        const {committee} = await cleanDeployment();
-        await expect(committee.setTransitionDelay(501n)).to.be.revertedWithCustomError(committee, "TransitionDelayTooShort");
-        await committee.setMinTransitionDelay(500n);
-        await committee.setTransitionDelay(501n); // should be ok
-        await expect(committee.setTransitionDelay(400n)).to.be.revertedWithCustomError(committee, "TransitionDelayTooShort");
     });
 
     it("should set transition delay", async () => {
@@ -277,8 +277,9 @@ describe("Committee", () => {
 
     it("should check if a node in the committee or will be there soon", async () => {
         const {committee, dkg, nodesData, status} = await whitelistedAndStakedNodes();
-        await committee.setCommitteeSize(5); // to save time
-        await sendHeartbeat(status, nodesData.slice(0, 10)); // to save time
+        await committee.setCommitteeSize(4); // to save time
+        const healthyNodes = nodesData.slice(0, 4); // to save time
+        await sendHeartbeat(status, healthyNodes);
 
         await committee.select();
         await runDkg(
@@ -287,7 +288,7 @@ describe("Committee", () => {
             (await committee.getCommittee(await committee.getActiveCommitteeIndex() + 1n)).dkg
         );
         await skipTime(await committee.transitionDelay());
-        await sendHeartbeat(status, nodesData.slice(0, 10)); // not all nodes to save time
+        await sendHeartbeat(status, healthyNodes); // not all nodes to save time
         await committee.select();
 
         const activeCommitteeIndex = await committee.getActiveCommitteeIndex();
@@ -309,6 +310,7 @@ describe("Committee", () => {
         seedrandom('d2-d2', { global: true });
         const _lodash = _.runInContext();
         const {committee, nodesData, status} = await stakedNodes();
+        await committee.setCommitteeSize(5); // to save time
         const whitelistedNodes = _lodash.sampleSize(nodesData, Number(await committee.committeeSize()));
         for (const node of whitelistedNodes) {
             await status.whitelistNode(node.id);
@@ -331,10 +333,9 @@ describe("Committee", () => {
         seedrandom('d2-d2', { global: true });
         const _lodash = _.runInContext();
         const {committee, nodesData, status} = await whitelistedAndStakedNodes();
+        await committee.setCommitteeSize(5); // to save time
         const healthyNodes = _lodash.sampleSize(nodesData, Number(await committee.committeeSize()));
-        for (const node of healthyNodes) {
-            await status.connect(node.wallet).alive();
-        }
+        await sendHeartbeat(status, healthyNodes)
 
         await committee.select();
         const nextCommittee = await committee.getCommittee(await committee.getActiveCommitteeIndex() + 1n);

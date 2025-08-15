@@ -50,12 +50,17 @@ library FundLibrary {
         uint16 feeRate; // 0 - 1000‰
     }
 
+    uint256 public constant CREDIT_PRECISION = 1 << 80;
+
     Holder public constant NULL = Holder.wrap(0);
     Fair public constant ZERO_FAIR = Fair.wrap(0);
     Credit public constant ZERO_CREDIT = Credit.wrap(0);
 
+    Fair private constant ALLOWED_ERROR = Fair.wrap(1e9);
+
     error NotEnoughStaked(Fair staked);
     error NotEnoughFee(Fair earnedFee);
+    error RoundingErrorTooHigh(Fair roundingError);
 
     function claimFee(
         Fund storage fund,
@@ -85,6 +90,7 @@ library FundLibrary {
         internal
     {
         _processBalanceChange(fund, balanceBeforeRemove);
+        Fair balanceBefore = getBalance(fund, balanceBeforeRemove, holder);
         Credit credits = _toCreditsRoundedUp(fund, balanceBeforeRemove, amount);
         (bool exists, Credit holderCredits) = fund.credits.tryGet(holder);
         if (holderCredits < credits) {
@@ -98,8 +104,12 @@ library FundLibrary {
             // Set must return false because holder already exists in the map.
             assert(!fund.credits.set(holder, holderCredits - credits));
         }
+
+
         fund.totalCredits = fund.totalCredits - credits;
         fund.lastBalance = balanceBeforeRemove - amount;
+        Fair balanceAfter = getBalance(fund, fund.lastBalance, holder);
+        _checkAllowedError(balanceBefore, balanceAfter, amount);
     }
 
     function setFeeRate(
@@ -122,13 +132,18 @@ library FundLibrary {
         internal
     {
         _processBalanceChange(fund, balanceBeforeSupply);
+        Fair balanceBefore = getBalance(fund, balanceBeforeSupply, holder);
         Credit credits = _toCreditsRoundedDown(fund, balanceBeforeSupply, amount);
         (bool holderExists, Credit holderCredits) = fund.credits.tryGet(holder);
         // If holder does not exist, it is added with the credits.
         // If it does exist, set() must return false and value is updated.
-        assert(fund.credits.set(holder, holderCredits + credits) != holderExists);
-        fund.totalCredits = fund.totalCredits + credits;
+        if (ZERO_CREDIT < credits) {
+            assert(fund.credits.set(holder, holderCredits + credits) != holderExists);
+            fund.totalCredits = fund.totalCredits + credits;
+        }
         fund.lastBalance = balanceBeforeSupply + amount;
+        Fair balanceAfter = getBalance(fund, fund.lastBalance, holder);
+        _checkAllowedError(balanceBefore, balanceAfter, amount);
     }
 
     function getBalance(
@@ -147,9 +162,12 @@ library FundLibrary {
         // If exists credits is 0, otherwise it is not.
         assert(exists != (holderCredits == ZERO_CREDIT));
         return Fair.wrap(
-            Fair.unwrap(balance)
-            * Credit.unwrap(holderCredits)
-            / Credit.unwrap(fund.totalCredits + _getUncountedFeeCredits(fund, balance))
+            Math.mulDiv(
+                Fair.unwrap(balance),
+                Credit.unwrap(holderCredits),
+                Credit.unwrap(fund.totalCredits + _getUncountedFeeCredits(fund, balance)),
+                Math.Rounding.Floor
+            )
         );
     }
 
@@ -227,10 +245,15 @@ library FundLibrary {
         returns (Credit credits)
     {
         if (balance == ZERO_FAIR) {
-            return Credit.wrap(Fair.unwrap(amount));
+            return Credit.wrap(Fair.unwrap(amount) * CREDIT_PRECISION);
         }
         return Credit.wrap(
-            Fair.unwrap(amount) * Credit.unwrap(fund.totalCredits) / Fair.unwrap(balance)
+            Math.mulDiv(
+                Fair.unwrap(amount),
+                Credit.unwrap(fund.totalCredits),
+                Fair.unwrap(balance),
+                Math.Rounding.Floor
+            )
         );
     }
 
@@ -244,12 +267,14 @@ library FundLibrary {
         returns (Credit credits)
     {
         if (balance == ZERO_FAIR) {
-            return Credit.wrap(Fair.unwrap(amount));
+            return Credit.wrap(Fair.unwrap(amount) * CREDIT_PRECISION);
         }
         return Credit.wrap(
-            Math.ceilDiv(
-                Fair.unwrap(amount) * Credit.unwrap(fund.totalCredits),
-                Fair.unwrap(balance)
+            Math.mulDiv(
+                Fair.unwrap(amount),
+                Credit.unwrap(fund.totalCredits),
+                Fair.unwrap(balance),
+                Math.Rounding.Ceil
             )
         );
     }
@@ -268,8 +293,38 @@ library FundLibrary {
             return ZERO_FAIR;
         }
         return Fair.wrap(
-            Fair.unwrap(balance) * Credit.unwrap(amount) / Credit.unwrap(fund.totalCredits + uncountedFee)
+            Math.mulDiv(
+                Fair.unwrap(balance),
+                Credit.unwrap(amount),
+                Credit.unwrap(fund.totalCredits + uncountedFee),
+                Math.Rounding.Floor
+            )
         );
+    }
+
+    function _checkAllowedError(
+        Fair balanceBefore,
+        Fair balanceAfter,
+        Fair amount
+    )
+        private
+        pure
+    {
+        Fair max = Fair.wrap(Math.max(Fair.unwrap(balanceBefore), Fair.unwrap(balanceAfter)));
+        Fair min = Fair.wrap(Math.min(Fair.unwrap(balanceBefore), Fair.unwrap(balanceAfter)));
+        Fair delta = max - min;
+
+        max = Fair.wrap(Math.max(Fair.unwrap(delta), Fair.unwrap(amount)));
+        min = Fair.wrap(Math.min(Fair.unwrap(delta), Fair.unwrap(amount)));
+
+        Fair err = max - min;
+
+        if (err > ALLOWED_ERROR) {
+            // If the error is too high, we revert with a custom error
+            // This is to prevent any potential exploits or issues with rounding errors
+            // that could lead to funds lost.
+            revert RoundingErrorTooHigh(err);
+        }
     }
 }
 
