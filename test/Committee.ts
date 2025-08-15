@@ -310,6 +310,7 @@ describe("Committee", () => {
         seedrandom('d2-d2', { global: true });
         const _lodash = _.runInContext();
         const {committee, nodesData, status} = await stakedNodes();
+        await committee.setCommitteeSize(5); // to save time
         const whitelistedNodes = _lodash.sampleSize(nodesData, Number(await committee.committeeSize()));
         for (const node of whitelistedNodes) {
             await status.whitelistNode(node.id);
@@ -332,10 +333,9 @@ describe("Committee", () => {
         seedrandom('d2-d2', { global: true });
         const _lodash = _.runInContext();
         const {committee, nodesData, status} = await whitelistedAndStakedNodes();
+        await committee.setCommitteeSize(5); // to save time
         const healthyNodes = _lodash.sampleSize(nodesData, Number(await committee.committeeSize()));
-        for (const node of healthyNodes) {
-            await status.connect(node.wallet).alive();
-        }
+        await sendHeartbeat(status, healthyNodes)
 
         await committee.select();
         const nextCommittee = await committee.getCommittee(await committee.getActiveCommitteeIndex() + 1n);
