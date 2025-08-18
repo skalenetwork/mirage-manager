@@ -400,13 +400,12 @@ describe("Staking", () => {
 
         await staking.connect(node.wallet).addAllowedReceiver(receiver.address);
 
-        // node owner is registered by default
-        await expect(staking.connect(node.wallet).addAllowedReceiver(node.wallet))
-        .to.be.revertedWithCustomError(staking, "ReceiverIsAlreadyAllowed")
+        // node owner can register itself
+        await expect(staking.connect(node.wallet).addAllowedReceiver(node.wallet)).to.emit(staking, "AllowedReceiverAdded");
 
-        // node owner cannot be removed
+        // node owner can remove itself
         await expect(staking.connect(node.wallet).removeAllowedReceiver(node.wallet))
-        .to.be.revertedWithCustomError(staking, "CannotRemoveOwner")
+        .to.emit(staking, "AllowedReceiverRemoved");
 
         // unauthorized users cannot claim fees
         await expect(staking.connect(user).claimAllFees(node.id)).to.be.revertedWithCustomError(staking, "NotAllowedToClaimRewards");

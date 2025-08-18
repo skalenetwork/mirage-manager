@@ -87,7 +87,6 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
     event NodeFeeRateUpdated(NodeId indexed node, uint16 oldFeeRate, uint16 newFeeRate);
     event RewardWalletReferenceUpdated(IRewardWallet indexed oldReference, IRewardWallet indexed newReference);
 
-    error CannotRemoveOwner();
     error FeeRateIsIncorrect(uint16 feeRate);
     error OnlyFeeReductionIsAllowed(uint16 currentRate, uint16 newRate);
     error ZeroAmount();
@@ -129,13 +128,12 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
     function addAllowedReceiver(address receiver) external override {
         NodeId node = nodes.getNodeId(msg.sender);
         bool added = _nodesAllowedReceivers[node].add(receiver);
-        require(added && receiver != msg.sender, ReceiverIsAlreadyAllowed(receiver));
+        require(added, ReceiverIsAlreadyAllowed(receiver));
         emit AllowedReceiverAdded(node, receiver);
     }
 
     function removeAllowedReceiver(address receiver) external override {
         NodeId node = nodes.getNodeId(msg.sender);
-        require(receiver != msg.sender, CannotRemoveOwner());
         bool removed = _nodesAllowedReceivers[node].remove(receiver);
         require(removed, ReceiverWasNotAllowed(receiver));
         emit AllowedReceiverRemoved(node, receiver);
