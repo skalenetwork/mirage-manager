@@ -117,6 +117,27 @@ describe("Staking", () => {
         expect(await staking.getDelegatorsToNode(node)).to.be.eql([]);
     });
 
+    it("should allow only allowed node owner to change allowed list", async () => {
+        const {staking, nodesData, nodes} = await registeredOnlyNodes();
+        const [,hacker] = await ethers.getSigners();
+        const node = nodesData[22]; // not in the current committee
+
+        // only node owner can add receivers
+        await expect(staking.addAllowedReceiver(hacker.address)).to.be.revertedWithCustomError(nodes, "AddressIsNotAssignedToAnyNode");
+
+        // node owner can register itself
+        await expect(staking.connect(node.wallet).addAllowedReceiver(node.wallet)).to.emit(staking, "AllowedReceiverAdded");
+
+        // node owner can remove itself
+        await expect(staking.connect(node.wallet).removeAllowedReceiver(node.wallet))
+        .to.emit(staking, "AllowedReceiverRemoved");
+
+        await nodes.connect(node.wallet).deleteNode(node.id);
+
+        // Should not allow changing allowed list after node deletion
+        await staking.connect(node.wallet).removeAllowedReceiver(node.wallet).should.be.revertedWithCustomError(nodes, "NodeWasDeleted");
+    });
+
     it("only authorized users should be able to claim, send or receive rewards", async () => {
         const {staking, nodesData, nodes} = await registeredOnlyNodes();
         const [,user, allowedReceiver] = await ethers.getSigners();
@@ -159,10 +180,8 @@ describe("Staking", () => {
         // allowed receivers cannot send fees, only claim
         await expect(staking.connect(allowedReceiver).sendFees(allowedReceiver, tinyAmount))
         .to.be.revertedWithCustomError(nodes, "AddressIsNotAssignedToAnyNode");
-
-
-
     });
+
     it("should be possible to retrieve stake and fees from deleted Node", async () => {
         const {staking, nodesData, nodes} = await registeredOnlyNodes();
         const [,user] = await ethers.getSigners();
@@ -381,47 +400,6 @@ describe("Staking", () => {
             .should.be.equal(0n);
         (await staking.getStakedAmountFor(user))
             .should.be.equal(amount2 + node2Reward);
-    });
-
-    it("should allow only allowed receivers to claim fees", async () => {
-
-        const {staking, nodesData, nodes} = await registeredOnlyNodes();
-        const [,user, receiver] = await ethers.getSigners();
-        const initialAmount = ethers.parseEther("3");
-        const amount = ethers.parseEther("1");
-        const node = nodesData[22]; // not in the current committee
-        const feeRate = 500; // Yes, Eddie, half
-        await staking.connect(node.wallet).setFeeRate(feeRate);
-        await staking.connect(user).stake(node.id, {value: initialAmount});
-        await staking.connect(user).payReward(node.id, {value: amount});
-
-        // only node owner can add receivers
-        await expect(staking.addAllowedReceiver(receiver.address)).to.be.revertedWithCustomError(nodes, "AddressIsNotAssignedToAnyNode");
-
-        await staking.connect(node.wallet).addAllowedReceiver(receiver.address);
-
-        // node owner can register itself
-        await expect(staking.connect(node.wallet).addAllowedReceiver(node.wallet)).to.emit(staking, "AllowedReceiverAdded");
-
-        // node owner can remove itself
-        await expect(staking.connect(node.wallet).removeAllowedReceiver(node.wallet))
-        .to.emit(staking, "AllowedReceiverRemoved");
-
-        // unauthorized users cannot claim fees
-        await expect(staking.connect(user).claimAllFees(node.id)).to.be.revertedWithCustomError(staking, "NotAllowedToClaimRewards");
-
-
-        // should allow receiver to collect fees
-        const unclaimedFees = await staking.getEarnedFeeAmount(node.id);
-        await staking.connect(receiver).claimAllFees(node.id).should.changeEtherBalance(receiver, unclaimedFees);
-
-        expect(await staking.getEarnedFeeAmount(node.id)).to.be.eql(0n);
-
-        await nodes.connect(node.wallet).deleteNode(node.id);
-
-        // Should not allow changing allowed list after node deletion
-        await staking.connect(node.wallet).removeAllowedReceiver(receiver).should.be.revertedWithCustomError(nodes, "NodeWasDeleted");
-
     });
 
     it("should allow to retrieve from a node from committee", async () => {
