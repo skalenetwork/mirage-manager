@@ -188,7 +188,10 @@ describe("Nodes", function () {
         await expect(nodesContract.getNodeId(deployer.address))
         .to.be.revertedWithCustomError(nodesContract, "AddressIsNotAssignedToAnyNode");
 
-        await expect(nodesContract.getPassiveNodeIdsForAddress(deployer.address))
+        await expect(nodesContract.getNodeIdUnchecked(deployer))
+        .to.be.revertedWithCustomError(nodesContract, "AddressIsNotAssignedToAnyNode");
+
+        await expect(nodesContract.getPassiveNodeIdsForAddress(deployer))
         .to.be.revertedWithCustomError(nodesContract, "AddressIsNotAssignedToAnyNode");
     });
 
@@ -197,11 +200,16 @@ describe("Nodes", function () {
         await expect(nodesContract.getNodeId(deployer))
         .to.be.revertedWithCustomError(nodesContract, "AddressIsNotAssignedToAnyNode");
 
+        await expect(nodesContract.getNodeIdUnchecked(deployer))
+        .to.be.revertedWithCustomError(nodesContract, "AddressIsNotAssignedToAnyNode");
+
         await nodesContract.registerPassiveNode(MOCK_IP_0_BYTES, 8000);
 
         await expect(nodesContract.getNodeId(deployer))
         .to.be.revertedWithCustomError(nodesContract, "AddressIsNotAssignedToAnyNode");
 
+        await expect(nodesContract.getNodeIdUnchecked(deployer))
+        .to.be.revertedWithCustomError(nodesContract, "AddressIsNotAssignedToAnyNode");
     });
 
 
@@ -465,7 +473,12 @@ describe("Nodes", function () {
         await nodesContract.registerNode(MOCK_IP_0_BYTES, deployerPubKey , 8000);
         const node = await nodesContract.getNodeId(deployer.address);
         await nodesContract.deleteNode(node);
+
+        // Node was deleted, but address is forever assigned to the node
+        expect(await nodesContract.getActiveNodeIds()).to.not.include(node);
         await expect(nodesContract.getNodeId(deployer.address)).to.be.revertedWithCustomError(nodesContract, "NodeWasDeleted");
+        expect(await nodesContract.getNodeIdUnchecked(deployer.address)).to.be.equal(node);
+
         expect(await nodesContract.getPublicKey(node)).to.be.eql(deployerPubKey);
 
         await expect(nodesContract.registerNode(MOCK_IP_0_BYTES, deployerPubKey , 8000))

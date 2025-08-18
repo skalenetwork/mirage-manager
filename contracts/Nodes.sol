@@ -342,11 +342,7 @@ contract Nodes is AccessManagedUpgradeable, INodes {
     }
 
     function getNodeId(address nodeAddress) external view override returns (NodeId nodeId) {
-        require(
-            _isAddressOfActiveNode(nodeAddress),
-            AddressIsNotAssignedToAnyNode(nodeAddress)
-        );
-        nodeId = _activeNodesAddressToId.get(nodeAddress);
+        nodeId = getNodeIdUnchecked(nodeAddress);
 
         // Address may have been assigned to an active node in the past, but the node may have been deleted
         // We do not allow active nodes with duplicate addresses, even if the old was deleted

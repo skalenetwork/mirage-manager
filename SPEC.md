@@ -70,7 +70,8 @@ struct Node {
 - `requestChangeOwner(NodeId nodeId, ...)`: Registers a request to change ownership of a Passive Node.
 - `confirmOwnerChange(NodeId nodeId)`: Confirms a request to change ownership of a Passive Node.
 - `getNode(NodeId nodeId)`: Retrieves a Node.
-- `getNodeId(address nodeAddress)`: Gets the NodeId (if any) for an owner address.
+- `getNodeId(address nodeAddress)`: Gets the NodeId (if registered and not deleted) for an owner address.
+- `getNodeIdUnchecked(address nodeAddress)`: Gets the NodeId (if ever registered) for an owner address.
 - `getActiveNodeIds()`: Returns a list of IDs of all Active Nodes.
 - `getPassiveNodeIds()`: Returns a list of IDs of all Passive Nodes.
 - `getPassiveNodeIdsForAddress(address nodeAddress)`: Returns a list of all Passive Node IDs owned by an address.
@@ -195,8 +196,10 @@ As described, Active Nodes can be healthy or unhealthy, depending on whether the
 
 #### Staking Main Functions
 
-- `claimAllFee(NodeId node)`: Allows the sender (if allowed) to collect all pending fees for a node to their own address.
-- `claimFee(NodeId node, Fair amount)`: Allows the sender (if allowed) to withdraw a specific amount of fees for a node to their own address.
+- `claimAllFees(NodeId node)`: Allows the sender (if allowed) to collect all pending fees for a node to their own address.
+- `claimFees(NodeId node, Fair amount)`: Allows the sender (if allowed) to withdraw a specific amount of fees for a node to their own address.
+- `sendAllFees(address payable to)`: Allows the node owner to send all pending fees for a node to an address.
+- `sendFees(address payable to, Fair amount)`: Allows the node owner to send a specific amount of fees for a node to an address.
 - `addAllowedReceiver(address receiver)`: Allows a Node Owner to add an address to the list of allowed fee receivers for their node.
 - `removeAllowedReceiver(address receiver)`: Allows a Node Owner to remove an address from the list of allowed fee receivers for their node.
 - `nodeCreated(NodeId node)`: internal function that is called by `Nodes` when a new node is created
@@ -234,6 +237,9 @@ FAIR-manager supports setting a maximum stake limit that applies to each nodes t
 - Only node owners can change their fee rate.
 - Only COMMITTEE_ROLE can change node eligibility.
 - Only authorized administrators can set stake limits.
+- Only node owners can send earned fees to other users.
+- Only authorized participants or node owners can claim fees.
+- Only node owners can alter the list of allowed receivers to claim/receive fees.
 
 ### [`Committee.sol`](./contracts/Committee.sol)
 
