@@ -385,6 +385,10 @@ contract Nodes is AccessManagedUpgradeable, INodes {
         result = _isActiveNode(nodeId);
     }
 
+    function passiveNodeExists(NodeId nodeId) external view override returns(bool result){
+        result = _isPassiveNode(nodeId);
+    }
+
     function _createActiveNode(
         NodeId nodeId,
         address nodeAddress,

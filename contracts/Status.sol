@@ -37,14 +37,17 @@ contract Status is AccessManagedUpgradeable, IStatus {
 
     Duration public heartbeatInterval;
     mapping (NodeId id => uint256 timestamp) public lastHeartbeatTimestamp;
-    TypedSet.NodeIdSet private _whitelist;
+    TypedSet.NodeIdSet private _activeWhitelist;
+    TypedSet.NodeIdSet private _passiveWhitelist;
 
     ICommittee public committee;
     INodes public nodes;
 
     event HeartbeatIntervalUpdated(Duration oldInterval, Duration newInterval);
-    event NodeWhitelisted(NodeId indexed nodeId);
-    event NodeRemovedFromWhitelist(NodeId indexed nodeId);
+    event ActiveNodeWhitelisted(NodeId indexed nodeId);
+    event ActiveNodeRemovedFromWhitelist(NodeId indexed nodeId);
+    event PassiveNodeWhitelisted(NodeId indexed nodeId);
+    event PassiveNodeRemovedFromWhitelist(NodeId indexed nodeId);
     event NodeDataRemoved(NodeId indexed nodeId);
     event HeartbeatReceived(NodeId indexed nodeId, uint256 timestamp);
 
@@ -52,10 +55,16 @@ contract Status is AccessManagedUpgradeable, IStatus {
     error NodeNotWhitelisted(NodeId nodeId);
     error NodeDoesNotExist(NodeId nodeId);
 
-    modifier nodeExists(NodeId nodeId) {
+    modifier activeNodeExists(NodeId nodeId) {
         require(nodes.activeNodeExists(nodeId), NodeDoesNotExist(nodeId));
         _;
     }
+
+    modifier passiveNodeExists(NodeId nodeId) {
+        require(nodes.passiveNodeExists(nodeId), NodeDoesNotExist(nodeId));
+        _;
+    }
+
     function initialize(
         address initialAuthority,
         INodes nodesAddress,
@@ -88,21 +97,38 @@ contract Status is AccessManagedUpgradeable, IStatus {
         emit HeartbeatIntervalUpdated(oldInterval, interval);
     }
 
-    function whitelistNode(NodeId nodeId) external override restricted nodeExists(nodeId) {
-        require(_whitelist.add(nodeId), NodeAlreadyWhitelisted(nodeId));
-        emit NodeWhitelisted(nodeId);
-        committee.nodeWhitelisted(nodeId);
+    function whitelistNode(NodeId nodeId) external override restricted activeNodeExists(nodeId) {
+        if (nodes.activeNodeExists(nodeId)){
+            require(_activeWhitelist.add(nodeId), NodeAlreadyWhitelisted(nodeId));
+            emit ActiveNodeWhitelisted(nodeId);
+            committee.nodeWhitelisted(nodeId);
+        }
+        else if (nodes.passiveNodeExists(nodeId)) {
+            require(_passiveWhitelist.add(nodeId), NodeAlreadyWhitelisted(nodeId));
+            emit PassiveNodeWhitelisted(nodeId);
+        }
+        else {
+            revert NodeDoesNotExist(nodeId);
+        }
     }
 
     function removeNodeFromWhitelist(NodeId nodeId) external override restricted {
-        require(_whitelist.remove(nodeId), NodeNotWhitelisted(nodeId));
-        emit NodeRemovedFromWhitelist(nodeId);
-        committee.nodeBlacklisted(nodeId);
+        bool wasActive = _activeWhitelist.contains(nodeId);
+        bool wasPassive = _passiveWhitelist.contains(nodeId);
+        require(wasActive || wasPassive, NodeNotWhitelisted(nodeId));
+        if (wasActive) {
+            assert(_activeWhitelist.remove(nodeId));
+            emit ActiveNodeRemovedFromWhitelist(nodeId);
+            committee.nodeBlacklisted(nodeId);
+        } else {
+            assert(_passiveWhitelist.remove(nodeId));
+            emit PassiveNodeRemovedFromWhitelist(nodeId);
+        }
     }
 
     function nodeRemoved(NodeId nodeId) external override restricted {
-        if(_whitelist.contains(nodeId)){
-            assert(_whitelist.remove(nodeId));
+        if(_activeWhitelist.contains(nodeId)){
+            assert(_activeWhitelist.remove(nodeId));
         }
         delete lastHeartbeatTimestamp[nodeId];
         emit NodeDataRemoved(nodeId);
@@ -110,14 +136,13 @@ contract Status is AccessManagedUpgradeable, IStatus {
 
     function getNodesEligibleForCommittee() external view override returns (NodeId[] memory nodeIds) {
 
-        uint256 whitelistedLength = _whitelist.length();
+        uint256 whitelistedLength = _activeWhitelist.length();
         NodeId[] memory healthyNodeIds = new NodeId[](whitelistedLength);
         uint256 eligibleCount = 0;
 
         for (uint256 i = 0; i < whitelistedLength; ++i) {
-            NodeId nodeId = _whitelist.at(i);
+            NodeId nodeId = _activeWhitelist.at(i);
 
-            // TODO: improve. It's simple enough while nodes can't be removed
             if (isHealthy(nodeId)) {
                 healthyNodeIds[eligibleCount] = nodeId;
                 ++eligibleCount;
@@ -130,12 +155,20 @@ contract Status is AccessManagedUpgradeable, IStatus {
         }
     }
 
-    function getWhitelistedNodes() external view override returns (NodeId[] memory nodeIds) {
-        nodeIds = _whitelist.values();
+    function getWhitelistedActiveNodes() external view override returns (NodeId[] memory nodeIds) {
+        nodeIds = _activeWhitelist.values();
+    }
+
+    function getWhitelistedPassiveNodes() external view override returns (NodeId[] memory nodeIds) {
+        nodeIds = _passiveWhitelist.values();
     }
 
     function isWhitelisted(NodeId nodeId) public view override returns (bool whitelisted) {
-        whitelisted = _whitelist.contains(nodeId);
+        whitelisted = _activeWhitelist.contains(nodeId);
+    }
+
+    function isPassiveWhitelisted(NodeId nodeId) public view override returns (bool whitelisted) {
+        whitelisted = _passiveWhitelist.contains(nodeId);
     }
 
     function isHealthy(NodeId nodeId) public view override returns (bool healthy) {

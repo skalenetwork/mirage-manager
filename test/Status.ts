@@ -47,13 +47,13 @@ describe("Status", function () {
 
         await statusContract.whitelistNode(nodeIdForUser1);
 
-        expect(await statusContract.getWhitelistedNodes()).to.eql([nodeIdForUser1]);
+        expect(await statusContract.getWhitelistedActiveNodes()).to.eql([nodeIdForUser1]);
         expect(await statusContract.isWhitelisted(nodeIdForUser1)).to.eql(true);
     });
 
     it("should revert if node is already whitelisted", async () => {
         await statusContract.whitelistNode(nodeIdForUser1);
-        expect(await statusContract.getWhitelistedNodes()).to.eql([nodeIdForUser1]);
+        expect(await statusContract.getWhitelistedActiveNodes()).to.eql([nodeIdForUser1]);
         await expect(statusContract.whitelistNode(nodeIdForUser1))
         .to.be.revertedWithCustomError(statusContract, "NodeAlreadyWhitelisted");
     });
@@ -95,13 +95,13 @@ describe("Status", function () {
 
     it("should allow only creator to remove node from whitelist", async () => {
         await statusContract.whitelistNode(nodeIdForUser1);
-        expect(await statusContract.getWhitelistedNodes()).to.eql([nodeIdForUser1]);
+        expect(await statusContract.getWhitelistedActiveNodes()).to.eql([nodeIdForUser1]);
 
         await expect(statusContract.connect(user1).removeNodeFromWhitelist(1)).to.be.reverted;
 
         await statusContract.removeNodeFromWhitelist(nodeIdForUser1);
 
-        expect(await statusContract.getWhitelistedNodes()).to.eql([]);
+        expect(await statusContract.getWhitelistedActiveNodes()).to.eql([]);
 
     });
 

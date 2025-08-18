@@ -107,7 +107,7 @@ A node is considered **eligible** for Committee if it is **healthy**, whiteliste
 - `removeNodeFromWhitelist(NodeId nodeId)`: Allows DEFAULT_ADMIN to remove a node from the whitelist.
 - `isHealthy(NodeId nodeId)`: Checks if a node is **healthy**.
 - `getNodesEligibleForCommittee()`: Returns a list of nodes that are **eligible** to join a Committee.
-- `getWhitelistedNodes()`: Returns the list of all whitelisted nodes.
+- `getWhitelistedActiveNodes()`: Returns the list of all whitelisted nodes.
 - `isWhitelisted(NodeId nodeId)`: Returns a boolean stating if a node is whitelisted.
 
 #### Status Integration Points
