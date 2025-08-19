@@ -52,11 +52,6 @@ contract Status is AccessManagedUpgradeable, IStatus {
     error NodeNotWhitelisted(NodeId nodeId);
     error NodeDoesNotExist(NodeId nodeId);
 
-    modifier activeNodeExists(NodeId nodeId) {
-        require(nodes.activeNodeExists(nodeId), NodeDoesNotExist(nodeId));
-        _;
-    }
-
     function initialize(
         address initialAuthority,
         INodes nodesAddress,
@@ -144,7 +139,6 @@ contract Status is AccessManagedUpgradeable, IStatus {
     function getWhitelistedNodes() external view override returns (NodeId[] memory nodeIds) {
         nodeIds = _whitelist.values();
     }
-
 
     function isWhitelisted(NodeId nodeId) public view override returns (bool whitelisted) {
         whitelisted = _whitelist.contains(nodeId);
