@@ -102,15 +102,13 @@ An active node is considered **eligible** for Committee if it is **healthy**, wh
 
 - `alive()`: Allows Active Node owners to prove liveliness.
 - `setHeartbeatInterval(Duration interval)`: Allows DEFAULT_ADMIN to set the maximum interval nodes are considered healthy after the last alive transaction.
-- `whitelistNode(NodeId nodeId)`: Allows DEFAULT_ADMIN to whitelist a node (active or passive).
+- `whitelistNode(NodeId nodeId)`: Allows DEFAULT_ADMIN to whitelist a node.
 - `nodeRemoved(NodeId node)`: Allows NODES_ROLE to notify of a Node deletion.
 - `removeNodeFromWhitelist(NodeId nodeId)`: Allows DEFAULT_ADMIN to remove a node from the whitelist (active or passive).
 - `isHealthy(NodeId nodeId)`: Checks if a active node is **healthy**.
 - `getNodesEligibleForCommittee()`: Returns a list of active nodes that are **eligible** to join a Committee.
-- `getWhitelistedActiveNodes()`: Returns the list of all whitelisted active nodes.
-- `getWhitelistedPassiveNodes()`: Returns the list of all whitelisted passive nodes.
-- `isWhitelisted(NodeId nodeId)`: Returns a boolean stating if a active node is whitelisted.
-- `isPassiveWhitelisted(NodeId nodeId)`: Returns a boolean stating if a passive node is whitelisted.
+- `getWhitelistedNodes()`: Returns the list of all whitelisted nodes.
+- `isWhitelisted(NodeId nodeId)`: Returns a boolean stating if a node is whitelisted.
 
 #### Status Integration Points
 
