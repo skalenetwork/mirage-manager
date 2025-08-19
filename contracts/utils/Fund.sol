@@ -133,6 +133,10 @@ library FundLibrary {
         _processBalanceChange(fund, balanceBeforeSupply);
         Fair balanceBefore = getBalance(fund, balanceBeforeSupply, holder);
         Credit credits = _toCreditsRoundedDown(fund, balanceBeforeSupply, amount);
+        Fair delayedReward = ZERO_FAIR;
+        if (fund.totalCredits == ZERO_CREDIT) {
+            delayedReward = balanceBeforeSupply;
+        }
         (bool holderExists, Credit holderCredits) = fund.credits.tryGet(holder);
         // If holder does not exist, it is added with the credits.
         // If it does exist, set() must return false and value is updated.
@@ -142,7 +146,7 @@ library FundLibrary {
         }
         fund.lastBalance = balanceBeforeSupply + amount;
         Fair balanceAfter = getBalance(fund, fund.lastBalance, holder);
-        _checkAllowedError(balanceBefore, balanceAfter, amount);
+        _checkAllowedError(balanceBefore, balanceAfter, amount + delayedReward);
     }
 
     function getBalance(
@@ -271,6 +275,12 @@ library FundLibrary {
     {
         if (balance == ZERO_FAIR) {
             return Credit.wrap(Fair.unwrap(amount) * CREDIT_PRECISION);
+        }
+        if (fund.totalCredits == ZERO_CREDIT) {
+            // Balance is positive but amount of shares is still zero.
+            // Reward was received before somebody joined the fund.
+            // Give away the reward to first holder joined because there is no one else.
+            return Credit.wrap(Fair.unwrap(amount + balance) * CREDIT_PRECISION);
         }
         return Credit.wrap(
             Math.mulDiv(
