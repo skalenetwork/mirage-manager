@@ -2326,10 +2326,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@skalenetwork/fair-manager-interfaces@npm:0.1.0-reward-receivers.7":
-  version: 0.1.0-reward-receivers.7
-  resolution: "@skalenetwork/fair-manager-interfaces@npm:0.1.0-reward-receivers.7"
-  checksum: 10c0/050572d11da4049c223ad5fc613b20e6b13de5e69f13acf52bcc3103ee854f247461c1e5651304fc565b6c928148def44a6daf3b7d12f2d205586b99a92ec9e6
+"@skalenetwork/fair-manager-interfaces@npm:0.1.0-reward-receivers.9":
+  version: 0.1.0-reward-receivers.9
+  resolution: "@skalenetwork/fair-manager-interfaces@npm:0.1.0-reward-receivers.9"
+  checksum: 10c0/7cba12e76a95b064774489fb0449cc85270980f849f8e9a5cc492ab3ddeac0e76b29e71a0987bc6b76235f997a65be146335f7f6bd08d10cff909e0145c90bce
   languageName: node
   linkType: hard
 
@@ -5095,7 +5095,7 @@ __metadata:
     "@openzeppelin/contracts-upgradeable": "npm:^5.3.0"
     "@openzeppelin/hardhat-upgrades": "npm:^3.9.0"
     "@openzeppelin/upgrades-core": "npm:^1.42.2"
-    "@skalenetwork/fair-manager-interfaces": "npm:0.1.0-reward-receivers.7"
+    "@skalenetwork/fair-manager-interfaces": "npm:0.1.0-reward-receivers.9"
     "@skalenetwork/skale-contracts-ethers-v6": "npm:1.0.2-develop.68"
     "@skalenetwork/skale-manager-interfaces": "npm:3.2.0-develop.3"
     "@skalenetwork/upgrade-tools": "npm:3.0.0-develop.44"

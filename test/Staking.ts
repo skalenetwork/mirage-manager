@@ -135,7 +135,7 @@ describe("Staking", () => {
         await nodes.connect(node.wallet).deleteNode(node.id);
 
         // Should not allow changing allowed list after node deletion
-        await staking.connect(node.wallet).removeAllowedReceiver(node.wallet).should.be.revertedWithCustomError(nodes, "NodeWasDeleted");
+        await staking.connect(node.wallet).removeAllowedReceiver(node.wallet).should.be.revertedWithCustomError(nodes, "AddressIsNotAssignedToAnyNode");
     });
 
     it("only authorized users should be able to claim, send or receive rewards", async () => {
@@ -182,7 +182,7 @@ describe("Staking", () => {
         .to.be.revertedWithCustomError(nodes, "AddressIsNotAssignedToAnyNode");
     });
 
-    it("should be possible to retrieve stake and fees from deleted Node", async () => {
+    it("should only be possible to claimFees after node deletion", async () => {
         const {staking, nodesData, nodes} = await registeredOnlyNodes();
         const [,user] = await ethers.getSigners();
         const initialAmount = ethers.parseEther("3");
@@ -230,10 +230,14 @@ describe("Staking", () => {
         // allows to collect fees after deletion, even with reward wallet having balance
         await staking.connect(node.wallet).claimFees(node.id, amount / 4n).should.changeEtherBalance(node.wallet.address, amount / 4n);
 
-        // allows to send fees after deletion, even with reward wallet having balance
-        await staking.connect(node.wallet).sendFees(node.wallet, amount / 4n).should.changeEtherBalance(node.wallet.address, amount / 4n);
+        // does not allow to send fees after deletion
+        await expect(staking.connect(node.wallet).sendFees(node.wallet, amount / 4n)).to.be.revertedWithCustomError(nodes, "AddressIsNotAssignedToAnyNode");
 
-        expect(await staking.getNodeTotalStake(node.id)).to.be.eql(100n); // 100 wei lost in reward wallet
+        const leftovers = await staking.getNodeTotalStake(node.id);
+        await staking.connect(node.wallet).claimAllFees(node.id).should.changeEtherBalance(node.wallet.address, leftovers);
+
+        // rewards were flushed and shared to all stakers, nothing left
+        expect(await staking.getNodeTotalStake(node.id)).to.be.eql(0n);
     });
 
     it("should apply validator fee on rewards", async () => {

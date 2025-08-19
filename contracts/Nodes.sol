@@ -96,7 +96,6 @@ contract Nodes is AccessManagedUpgradeable, INodes {
     error IpIsNotAvailable(bytes ip);
     error DomainNameAlreadyTaken(string domainName);
     error NodeDoesNotExist(NodeId nodeId);
-    error NodeWasDeleted(NodeId nodeId);
     error ActiveNodeWasNeverRegistered(NodeId nodeId);
     error PortShouldNotBeZero();
     error SenderIsNotNodeOwner();
@@ -342,11 +341,11 @@ contract Nodes is AccessManagedUpgradeable, INodes {
     }
 
     function getNodeId(address nodeAddress) external view override returns (NodeId nodeId) {
-        nodeId = getNodeIdUnchecked(nodeAddress);
-
-        // Address may have been assigned to an active node in the past, but the node may have been deleted
-        // We do not allow active nodes with duplicate addresses, even if the old was deleted
-        require(_isActiveNode(nodeId), NodeWasDeleted(nodeId));
+        require(
+            _isAddressOfActiveNode(nodeAddress),
+            AddressIsNotAssignedToAnyNode(nodeAddress)
+        );
+        nodeId = _activeNodesAddressToId.get(nodeAddress);
     }
 
     function getPassiveNodeIdsForAddress(
@@ -437,6 +436,7 @@ contract Nodes is AccessManagedUpgradeable, INodes {
         IStatus statusContract = IStatus(committeeContract.status());
         if (_isActiveNode(id)) {
             assert(_activeNodeIds.remove(id));
+            assert(_activeNodesAddressToId.remove(nodeOwner));
             emit ActiveNodeDeleted(id, nodeOwner, node.ip, node.port);
             committeeContract.nodeRemoved(id);
         }

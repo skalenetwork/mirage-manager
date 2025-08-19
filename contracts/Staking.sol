@@ -140,11 +140,13 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
     }
 
     function claimAllFees(NodeId node) external override {
+        // Works for deleted Nodes
         claimFees(node, getEarnedFeeAmount(node));
     }
 
     function sendAllFees(address payable to) external override {
-        sendFees(to, getEarnedFeeAmount(nodes.getNodeIdUnchecked(msg.sender)));
+        // Does not work for deleted Nodes
+        sendFees(to, getEarnedFeeAmount(nodes.getNodeId(msg.sender)));
     }
 
     function disable(NodeId node) external override restricted {
@@ -198,9 +200,15 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
         external
         payable
         override
-        onlyExistingActiveNode(node)
     {
         require(msg.value > 0, ZeroAmount());
+
+        if (!nodes.activeNodeExists(node)) {
+            // Node was deleted or never registered -> reward is shared with all stakers
+            emit RewardReceived(msg.sender, msg.value);
+            return;
+        }
+
         bool nodeIsEnabled = !_disabledNodesBalances.contains(node);
         Fair amount = Fair.wrap(msg.value);
         Fair balance = _getTotalBalance() - amount;
@@ -400,6 +408,7 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
     // Public
 
     function claimFees(NodeId node, Fair amount) public override {
+        // works for deleted Nodes
         bool senderIsOwner = msg.sender == _publicKeyToAddress(nodes.getPublicKey(node));
         require(
             _nodesAllowedReceivers[node].contains(msg.sender) || senderIsOwner,
@@ -413,7 +422,7 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
     }
 
     function sendFees(address payable to, Fair amount) public override {
-        NodeId node = nodes.getNodeIdUnchecked(msg.sender);
+        NodeId node = nodes.getNodeId(msg.sender);
 
         // Node has opted in to allowed receivers, so the destination address must be in the list
         // Or be the owner
@@ -528,7 +537,7 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
 
     function _pullReward(NodeId node) private nonReentrant {
 
-        if (nodes.activeNodeExists(node) && _getNonPulledReward(node) > FundLibrary.ZERO_FAIR) {
+        if (_getNonPulledReward(node) > FundLibrary.ZERO_FAIR) {
             // Reward wallet is considered as a part of Staking contract.
             // The code is trusted and effects are known.
             // slither-disable-start reentrancy-events

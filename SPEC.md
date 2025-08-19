@@ -71,7 +71,6 @@ struct Node {
 - `confirmOwnerChange(NodeId nodeId)`: Confirms a request to change ownership of a Passive Node.
 - `getNode(NodeId nodeId)`: Retrieves a Node.
 - `getNodeId(address nodeAddress)`: Gets the NodeId (if registered and not deleted) for an owner address.
-- `getNodeIdUnchecked(address nodeAddress)`: Gets the NodeId (if ever registered) for an owner address.
 - `getActiveNodeIds()`: Returns a list of IDs of all Active Nodes.
 - `getPassiveNodeIds()`: Returns a list of IDs of all Passive Nodes.
 - `getPassiveNodeIdsForAddress(address nodeAddress)`: Returns a list of all Passive Node IDs owned by an address.
