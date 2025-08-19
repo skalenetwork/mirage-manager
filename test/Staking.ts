@@ -1029,4 +1029,13 @@ describe("Staking", () => {
         expect(stakeBefore).to.be.greaterThan(stakeAfter);
         expect(await staking.getEarnedFeeAmount(node.id)).to.be.eql(0n);
     });
+
+    it("should allow alive() to enable node after receiving rewards", async () => {
+        const {nodesData, staking, status} = await whitelistedNodes();
+        const [node] = nodesData;
+        const rewardWallet = await staking.getRewardWallet(node.id);
+        await setBalance(rewardWallet, ethers.parseEther("3"));
+        await setBalance(await ethers.resolveAddress(staking), ethers.parseEther("2"));
+        await status.connect(node.wallet).alive();
+    });
 });
