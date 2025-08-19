@@ -30,7 +30,7 @@ describe("Status", function () {
         nodesContract = nodes;
         statusContract = status;
 
-        // Last five are not in the first committee so we can test node deletion
+        // Last node is not in the first committee so we can test node deletion
         const [lastNode] = nodesData.slice(-1);
         user1 = lastNode.wallet;
         nodeIdForUser1 = lastNode.id;
