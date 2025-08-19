@@ -204,7 +204,12 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
         require(msg.value > 0, ZeroAmount());
 
         if (!nodes.activeNodeExists(node)) {
-            // Node was deleted or never registered -> reward is shared with all stakers
+            require(
+                address(_rewardWallets[node]) == msg.sender,
+                Nodes.NodeDoesNotExist(node)
+            );
+            // Node was deleted
+            // rewards sent by its reward wallet are shared with all stakers
             emit RewardReceived(msg.sender, msg.value);
             return;
         }
