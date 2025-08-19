@@ -438,11 +438,10 @@ contract Nodes is AccessManagedUpgradeable, INodes {
         }
         address nodeOwner = node.nodeAddress;
         delete nodes[id];
+        IStatus statusContract = IStatus(committeeContract.status());
         if (_isActiveNode(id)) {
-            IStatus statusContract = IStatus(committeeContract.status());
             assert(_activeNodeIds.remove(id));
             emit ActiveNodeDeleted(id, nodeOwner, node.ip, node.port);
-            statusContract.nodeRemoved(id);
             committeeContract.nodeRemoved(id);
         }
         else {
@@ -452,6 +451,7 @@ contract Nodes is AccessManagedUpgradeable, INodes {
             delete ownerChangeRequests[id];
             emit PassiveNodeDeleted(id, nodeOwner, node.ip, node.port);
         }
+        statusContract.nodeRemoved(id);
     }
 
     function _addPassiveNodeId(NodeId nodeId) private {

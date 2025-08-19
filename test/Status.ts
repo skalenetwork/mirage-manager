@@ -40,10 +40,13 @@ describe("Status", function () {
         const { nodes, status , nodesData } = await registeredOnlyNodes();
         nodesContract = nodes;
         statusContract = status;
-        [user1, user2, user3, user4, user5] = nodesData.map(({ wallet }) => wallet);
+
+        // Last five are not in the first committee so we can test node deletion
+        const lastFiveNodes = nodesData.slice(-5);
+        [user1, user2, user3, user4, user5] = lastFiveNodes.map(({ wallet }) => wallet);
         [nodeIdForUser1, nodeIdForUser2, nodeIdForUser3, nodeIdForUser4, nodeIdForUser5] =
             [user1, user2, user3, user4, user5].map(user =>
-                nodesData.find(node => node.wallet.address === user.address)!.id
+                lastFiveNodes.find(node => node.wallet.address === user.address)!.id
             );
         randomUser = Wallet.createRandom().connect(ethers.provider);
 
@@ -96,6 +99,31 @@ describe("Status", function () {
         expect(await statusContract.getWhitelistedPassiveNodes()).to.eql([]);
         expect(await statusContract.isWhitelisted(nodeIdForUser1)).to.eql(false);
         expect(await statusContract.isPassiveWhitelisted(passiveNodeId)).to.eql(false);
+    });
+
+    it("deleting nodes should remove them from whitelist", async () => {
+        await expect(statusContract.whitelistNode(nodeIdForUser1)).to.emit(statusContract, "ActiveNodeWhitelisted");
+        await expect(statusContract.whitelistNode(passiveNodeId)).to.emit(statusContract, "PassiveNodeWhitelisted");
+
+        expect(await statusContract.getWhitelistedActiveNodes()).to.eql([nodeIdForUser1]);
+        expect(await statusContract.isWhitelisted(nodeIdForUser1)).to.eql(true);
+
+        expect(await statusContract.getWhitelistedPassiveNodes()).to.eql([passiveNodeId]);
+        expect(await statusContract.isPassiveWhitelisted(passiveNodeId)).to.eql(true);
+
+        expect(await statusContract.isPassiveWhitelisted(nodeIdForUser1)).to.eql(false);
+        expect(await statusContract.isWhitelisted(passiveNodeId)).to.eql(false);
+
+        await nodesContract.connect(user1).deleteNode(nodeIdForUser1);
+        await nodesContract.connect(randomUser).deleteNode(passiveNodeId);
+
+        expect(await statusContract.getWhitelistedActiveNodes()).to.eql([]);
+        expect(await statusContract.getWhitelistedPassiveNodes()).to.eql([]);
+        expect(await statusContract.isWhitelisted(nodeIdForUser1)).to.eql(false);
+        expect(await statusContract.isPassiveWhitelisted(passiveNodeId)).to.eql(false);
+
+        await expect(statusContract.whitelistNode(nodeIdForUser1)).to.be.revertedWithCustomError(statusContract, "NodeDoesNotExist");
+        await expect(statusContract.whitelistNode(passiveNodeId)).to.be.revertedWithCustomError(statusContract, "NodeDoesNotExist");
     });
 
     it("should revert if node is already whitelisted", async () => {

@@ -125,6 +125,9 @@ contract Status is AccessManagedUpgradeable, IStatus {
         if(_activeWhitelist.contains(nodeId)){
             assert(_activeWhitelist.remove(nodeId));
         }
+        else if(_passiveWhitelist.contains(nodeId)){
+            assert(_passiveWhitelist.remove(nodeId));
+        }
         delete lastHeartbeatTimestamp[nodeId];
         emit NodeDataRemoved(nodeId);
     }
