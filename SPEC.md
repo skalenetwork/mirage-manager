@@ -199,6 +199,7 @@ Unstaking and withdrawing fees posts requests to an exit queue. Users must wait 
 
 - `stake(NodeId node)`: Stake FAIR to a node (any user, only existing active nodes, payable).
 - `requestRetrieve(NodeId node, Fair value)`: Request to unstake FAIR from a node.
+- `requestRetrieveAll(NodeId node)`: Request to unstake All FAIR from a node.
 - `claimRequest(uint256 requestId)`: Claim the exit request with the given requestId (if unlocked).
 - `disable(NodeId node)`, `enable(NodeId node)`: Disable/enable a node (committee role).
 - `nodeCreated(NodeId node)`: Called by `Nodes.sol` when a new node is created.

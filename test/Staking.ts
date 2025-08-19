@@ -558,7 +558,12 @@ describe("Staking", () => {
         (await staking.getStakedToNodeAmountFor(node1, user))
             .should.be.equal(0n);
         (await staking.getStakedAmountFor(user))
-            .should.be.equal(amount2 + node2Reward);
+            .should.be.equal(amount2 + node2Reward + 1n);
+
+        await staking.connect(user).requestRetrieveAll(node2);
+
+        (await staking.getStakedAmountFor(user))
+            .should.be.equal(0n);
     });
 
     it("should allow to retrieve from a node from committee", async () => {
@@ -873,8 +878,8 @@ describe("Staking", () => {
 
         expect(await staking.getNodeTotalStake(node)).to.be.equal(2n * sufficientlyHighAmount + 1n);
 
-        await staking.connect(hacker).requestRetrieve(node, sufficientlyHighAmount + 1n);
-        await staking.connect(user).requestRetrieve(node, sufficientlyHighAmount);
+        await staking.connect(hacker).requestRetrieveAll(node);
+        await staking.connect(user).requestRetrieveAll(node);
 
         expect(await staking.getNodeTotalStake(node)).to.be.equal(0n);
         // With fees
@@ -980,7 +985,61 @@ describe("Staking", () => {
         expect(await staking.getStakedAmountFor(user)).to.be.equal(initialStake);
         expect(await staking.getStakedToNodeAmountFor(node, user)).to.be.equal(initialStake);
 
-        await staking.connect(user).requestRetrieve(node, initialStake);
+        await staking.connect(user).requestRetrieveAll(node);
+        expect(await staking.getStakedAmountFor(user)).to.be.equal(0n);
+
+        expect(await staking.getTotalInExitQueueFor(user)).to.be.eql(initialStake + 1n);
+        expect(await staking.getExitRequestsCountFor(user)).to.be.eql(2n);
+    });
+
+    it("should not create phantom stake on withdraw", async () => {
+        const {staking, status, nodesData} = await whitelistedNodes();
+        const [goodNode, badNode] = nodesData;
+
+        await staking.stake(goodNode.id, {value: ethers.parseEther("1")});
+        await staking.stake(badNode.id, {value: ethers.parseEther("1")});
+        await sendHeartbeat(status, [goodNode, badNode]);
+
+        await setBalance(
+            await ethers.resolveAddress(staking),
+            await ethers.provider.getBalance(staking) + 1n
+        ); // Pay 1e-18 fair reward
+
+        expect(await staking.getNodeTotalStake(goodNode.id)).to.be.equal(ethers.parseEther("1"));
+        expect(await staking.getNodeTotalStake(badNode.id)).to.be.equal(ethers.parseEther("1"));
+
+        await staking.requestRetrieve(badNode.id, ethers.parseEther("1"));
+
+
+        expect(await staking.getNodeTotalStake(badNode.id)).to.be.equal(0n);
+        expect(await staking.getNodeShare(badNode.id)).to.be.equal(0n);
+
+        expect(await staking.getNodeTotalStake(goodNode.id)).to.be.equal(ethers.parseEther("1") + 1n);
+    });
+
+    it("should not create phantom stake on claimFees", async () => {
+        const {staking, status, nodesData} = await whitelistedNodes();
+        const [goodNode, badNode] = nodesData;
+
+        await staking.stake(goodNode.id, {value: ethers.parseEther("1")});
+        await staking.payReward(badNode.id, {value: ethers.parseEther("1")});
+        await sendHeartbeat(status, [goodNode, badNode]);
+
+        await setBalance(
+            await ethers.resolveAddress(staking),
+            await ethers.provider.getBalance(staking) + 1n
+        ); // Pay 1e-18 fair reward
+
+        expect(await staking.getNodeTotalStake(goodNode.id)).to.be.equal(ethers.parseEther("1"));
+        expect(await staking.getNodeTotalStake(badNode.id)).to.be.equal(ethers.parseEther("1"));
+        expect(await staking.getEarnedFeeAmount(badNode.id)).to.be.equal(ethers.parseEther("1"));
+
+        await staking.connect(badNode.wallet).requestAllFees(badNode.id);
+
+        expect(await staking.getNodeTotalStake(badNode.id)).to.be.equal(0n);
+        expect(await staking.getNodeShare(badNode.id)).to.be.equal(0n);
+
+        expect(await staking.getNodeTotalStake(goodNode.id)).to.be.equal(ethers.parseEther("1") + 1n);
     });
 
     it("should not create phantom stake after node disabling", async () => {
