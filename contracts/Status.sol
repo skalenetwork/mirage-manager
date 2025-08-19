@@ -115,27 +115,6 @@ contract Status is AccessManagedUpgradeable, IStatus {
         emit NodeDataRemoved(nodeId);
     }
 
-    function getNodesEligibleForCommittee() external view override returns (NodeId[] memory nodeIds) {
-
-        uint256 whitelistedLength = _whitelist.length();
-        NodeId[] memory healthyNodeIds = new NodeId[](whitelistedLength);
-        uint256 eligibleCount = 0;
-
-        for (uint256 i = 0; i < whitelistedLength; ++i) {
-            NodeId nodeId = _whitelist.at(i);
-
-            if (isHealthy(nodeId)) {
-                healthyNodeIds[eligibleCount] = nodeId;
-                ++eligibleCount;
-            }
-        }
-
-        nodeIds = new NodeId[](eligibleCount);
-        for (uint256 i = 0; i < eligibleCount; ++i) {
-            nodeIds[i] = healthyNodeIds[i];
-        }
-    }
-
     function getWhitelistedNodes() external view override returns (NodeId[] memory nodeIds) {
         nodeIds = _whitelist.values();
     }

@@ -2326,10 +2326,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@skalenetwork/fair-manager-interfaces@npm:0.1.0-whitelist-passive-nodes.1":
-  version: 0.1.0-whitelist-passive-nodes.1
-  resolution: "@skalenetwork/fair-manager-interfaces@npm:0.1.0-whitelist-passive-nodes.1"
-  checksum: 10c0/2bc97c2679e62ab9a88185a101452547a9be8eb46df168d329fbe4829897d2ebdf0121d31a1fc7f05d936357855a40c8b7506c1f05bc53fdf6a2c0d2cdb759fa
+"@skalenetwork/fair-manager-interfaces@npm:0.1.0-whitelist-passive-nodes.2":
+  version: 0.1.0-whitelist-passive-nodes.2
+  resolution: "@skalenetwork/fair-manager-interfaces@npm:0.1.0-whitelist-passive-nodes.2"
+  checksum: 10c0/58044e8cbef6e162f39c644512c86a1bb1b9422bba21fa42b5423371bc6fc4b86e48abf8ff3e73ac601fd27f42d402f3365175221a97d3e817d68d3f9dc39053
   languageName: node
   linkType: hard
 
@@ -5095,7 +5095,7 @@ __metadata:
     "@openzeppelin/contracts-upgradeable": "npm:^5.3.0"
     "@openzeppelin/hardhat-upgrades": "npm:^3.9.0"
     "@openzeppelin/upgrades-core": "npm:^1.42.2"
-    "@skalenetwork/fair-manager-interfaces": "npm:0.1.0-whitelist-passive-nodes.1"
+    "@skalenetwork/fair-manager-interfaces": "npm:0.1.0-whitelist-passive-nodes.2"
     "@skalenetwork/skale-contracts-ethers-v6": "npm:1.0.2-develop.68"
     "@skalenetwork/skale-manager-interfaces": "npm:3.2.0-develop.3"
     "@skalenetwork/upgrade-tools": "npm:3.0.0-develop.44"
