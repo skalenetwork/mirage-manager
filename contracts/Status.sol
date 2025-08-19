@@ -60,11 +60,6 @@ contract Status is AccessManagedUpgradeable, IStatus {
         _;
     }
 
-    modifier passiveNodeExists(NodeId nodeId) {
-        require(nodes.passiveNodeExists(nodeId), NodeDoesNotExist(nodeId));
-        _;
-    }
-
     function initialize(
         address initialAuthority,
         INodes nodesAddress,
@@ -97,7 +92,7 @@ contract Status is AccessManagedUpgradeable, IStatus {
         emit HeartbeatIntervalUpdated(oldInterval, interval);
     }
 
-    function whitelistNode(NodeId nodeId) external override restricted activeNodeExists(nodeId) {
+    function whitelistNode(NodeId nodeId) external override restricted {
         if (nodes.activeNodeExists(nodeId)){
             require(_activeWhitelist.add(nodeId), NodeAlreadyWhitelisted(nodeId));
             emit ActiveNodeWhitelisted(nodeId);

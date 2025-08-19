@@ -2,12 +2,17 @@ import { expect } from "chai";
 import { registeredOnlyNodes } from "./tools/fixtures";
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
+import ip from "ip";
 import { Nodes, Status } from "../typechain-types";
 import { BigNumberish, HDNodeWallet, Wallet } from "ethers";
 import { ethers } from "hardhat";
+import { setBalance } from "@nomicfoundation/hardhat-network-helpers";
 
 chai.should();
 chai.use(chaiAsPromised)
+
+const MOCK_IP_0 = "192.168.0.1"
+const MOCK_IP_0_BYTES = ip.toBuffer(MOCK_IP_0);
 
 describe("Status", function () {
     let nodesContract: Nodes;
@@ -29,6 +34,7 @@ describe("Status", function () {
     let nodeIdForUser3: BigNumberish;
     let nodeIdForUser4: BigNumberish;
     let nodeIdForUser5: BigNumberish;
+    let passiveNodeId: BigNumberish;
 
     beforeEach(async () => {
         const { nodes, status , nodesData } = await registeredOnlyNodes();
@@ -40,6 +46,11 @@ describe("Status", function () {
                 nodesData.find(node => node.wallet.address === user.address)!.id
             );
         randomUser = Wallet.createRandom().connect(ethers.provider);
+
+        // Random user registers a passive node
+        await setBalance(randomUser.address, ethers.parseEther("1000"));
+        await nodesContract.connect(randomUser).registerPassiveNode(MOCK_IP_0_BYTES, 8000);
+        [passiveNodeId] = await nodesContract.getPassiveNodeIdsForAddress(randomUser.address);
     });
 
     it("should allow only creator to whitelist nodes", async () => {
@@ -51,10 +62,50 @@ describe("Status", function () {
         expect(await statusContract.isWhitelisted(nodeIdForUser1)).to.eql(true);
     });
 
+    it("should whitelist and distinguish passive and active nodes", async () => {
+        await expect(statusContract.whitelistNode(nodeIdForUser1)).to.emit(statusContract, "ActiveNodeWhitelisted");
+        await expect(statusContract.whitelistNode(passiveNodeId)).to.emit(statusContract, "PassiveNodeWhitelisted");
+
+        expect(await statusContract.getWhitelistedActiveNodes()).to.eql([nodeIdForUser1]);
+        expect(await statusContract.isWhitelisted(nodeIdForUser1)).to.eql(true);
+
+        expect(await statusContract.getWhitelistedPassiveNodes()).to.eql([passiveNodeId]);
+        expect(await statusContract.isPassiveWhitelisted(passiveNodeId)).to.eql(true);
+
+        expect(await statusContract.isPassiveWhitelisted(nodeIdForUser1)).to.eql(false);
+        expect(await statusContract.isWhitelisted(passiveNodeId)).to.eql(false);
+    });
+
+    it("should allow to blacklist nodes", async () => {
+        await expect(statusContract.whitelistNode(nodeIdForUser1)).to.emit(statusContract, "ActiveNodeWhitelisted");
+        await expect(statusContract.whitelistNode(passiveNodeId)).to.emit(statusContract, "PassiveNodeWhitelisted");
+
+        expect(await statusContract.getWhitelistedActiveNodes()).to.eql([nodeIdForUser1]);
+        expect(await statusContract.isWhitelisted(nodeIdForUser1)).to.eql(true);
+
+        expect(await statusContract.getWhitelistedPassiveNodes()).to.eql([passiveNodeId]);
+        expect(await statusContract.isPassiveWhitelisted(passiveNodeId)).to.eql(true);
+
+        expect(await statusContract.isPassiveWhitelisted(nodeIdForUser1)).to.eql(false);
+        expect(await statusContract.isWhitelisted(passiveNodeId)).to.eql(false);
+
+        await expect(statusContract.removeNodeFromWhitelist(nodeIdForUser1)).to.emit(statusContract, "ActiveNodeRemovedFromWhitelist");
+        await expect(statusContract.removeNodeFromWhitelist(passiveNodeId)).to.emit(statusContract, "PassiveNodeRemovedFromWhitelist");
+
+        expect(await statusContract.getWhitelistedActiveNodes()).to.eql([]);
+        expect(await statusContract.getWhitelistedPassiveNodes()).to.eql([]);
+        expect(await statusContract.isWhitelisted(nodeIdForUser1)).to.eql(false);
+        expect(await statusContract.isPassiveWhitelisted(passiveNodeId)).to.eql(false);
+    });
+
     it("should revert if node is already whitelisted", async () => {
         await statusContract.whitelistNode(nodeIdForUser1);
+        await statusContract.whitelistNode(passiveNodeId);
         expect(await statusContract.getWhitelistedActiveNodes()).to.eql([nodeIdForUser1]);
+        expect(await statusContract.getWhitelistedPassiveNodes()).to.eql([passiveNodeId]);
         await expect(statusContract.whitelistNode(nodeIdForUser1))
+        .to.be.revertedWithCustomError(statusContract, "NodeAlreadyWhitelisted");
+        await expect(statusContract.whitelistNode(passiveNodeId))
         .to.be.revertedWithCustomError(statusContract, "NodeAlreadyWhitelisted");
     });
 
@@ -81,7 +132,7 @@ describe("Status", function () {
         expect(secondTimestamp).to.be.greaterThan(firstTimestamp);
     });
 
-    it("should revert alive() if node does not exist for sender", async () => {
+    it("should revert alive() if Active node does not exist for sender", async () => {
         await expect(statusContract.connect(randomUser).alive())
         .to.be.revertedWithCustomError(nodesContract, "AddressIsNotAssignedToAnyNode")
     });
