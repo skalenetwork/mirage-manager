@@ -141,12 +141,10 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
     }
 
     function claimAllFees(NodeId node) external override {
-        // Works for deleted Nodes
         claimFees(node, getEarnedFeeAmount(node));
     }
 
     function sendAllFees(address payable to) external override {
-        // Does not work for deleted Nodes
         sendFees(to, getEarnedFeeAmount(nodes.getNodeId(msg.sender)));
     }
 
@@ -209,7 +207,6 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
             getEarnedFeeAmount(node),
             payable(_publicKeyToAddress(nodes.getPublicKey(node)))
         );
-
     }
 
     function payReward(

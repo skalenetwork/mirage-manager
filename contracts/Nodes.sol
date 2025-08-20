@@ -24,13 +24,14 @@ import {
     AccessManagedUpgradeable
 } from "@openzeppelin/contracts-upgradeable/access/manager/AccessManagedUpgradeable.sol";
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+
 import { ICommittee } from "@skalenetwork/fair-manager-interfaces/ICommittee.sol";
 import {
     INodes,
     NodeId
 } from "@skalenetwork/fair-manager-interfaces/INodes.sol";
-import { IStatus } from "@skalenetwork/fair-manager-interfaces/IStatus.sol";
 import { IStaking } from "@skalenetwork/fair-manager-interfaces/IStaking.sol";
+import { IStatus } from "@skalenetwork/fair-manager-interfaces/IStatus.sol";
 
 import { TypedMap } from "./structs/typed/TypedMap.sol";
 import { TypedSet } from "./structs/typed/TypedSet.sol";

@@ -24,10 +24,10 @@ pragma solidity ^0.8.24;
 import {
     AccessManagedUpgradeable
 } from "@openzeppelin/contracts-upgradeable/access/manager/AccessManagedUpgradeable.sol";
-import {NodeId} from "@skalenetwork/fair-manager-interfaces/INodes.sol";
+
+import {INodes, NodeId} from "@skalenetwork/fair-manager-interfaces/INodes.sol";
 import {IRewardWallet} from "@skalenetwork/fair-manager-interfaces/IRewardWallet.sol";
-import { IStaking } from "@skalenetwork/fair-manager-interfaces/IStaking.sol";
-import { INodes } from "@skalenetwork/fair-manager-interfaces/INodes.sol";
+import {IStaking} from "@skalenetwork/fair-manager-interfaces/IStaking.sol";
 
 
 contract RewardWallet is AccessManagedUpgradeable, IRewardWallet {
@@ -86,7 +86,7 @@ contract RewardWallet is AccessManagedUpgradeable, IRewardWallet {
     }
 
     // Private
-    function _nodeExists(NodeId nodeId) private view returns (bool) {
+    function _nodeExists(NodeId nodeId) private view returns (bool exists) {
         return nodes.activeNodeExists(nodeId);
     }
 }
