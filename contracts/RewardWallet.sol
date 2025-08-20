@@ -79,9 +79,6 @@ contract RewardWallet is AccessManagedUpgradeable, IRewardWallet {
             else {
                 // Rewards are sent as network rewards
                 // This is a failsafe mechanism, it's expected to never happen under normal conditions
-                // Staking is set during deployment
-                // by Staking contract so the warning is false positive
-                // slither-disable-next-line arbitrary-send-eth
                 payable(staking).sendValue(address(this).balance);
             }
 

@@ -188,7 +188,6 @@ describe("Nodes", function () {
         await expect(nodesContract.getNodeId(deployer.address))
         .to.be.revertedWithCustomError(nodesContract, "AddressIsNotAssignedToAnyNode");
 
-
         await expect(nodesContract.getPassiveNodeIdsForAddress(deployer))
         .to.be.revertedWithCustomError(nodesContract, "AddressIsNotAssignedToAnyNode");
     });
@@ -197,7 +196,6 @@ describe("Nodes", function () {
 
         await expect(nodesContract.getNodeId(deployer))
         .to.be.revertedWithCustomError(nodesContract, "AddressIsNotAssignedToAnyNode");
-
 
         await nodesContract.registerPassiveNode(MOCK_IP_0_BYTES, 8000);
 

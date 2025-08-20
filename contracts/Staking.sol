@@ -251,9 +251,8 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
         require(_stakedNodes[msg.sender].contains(node), ZeroStakeToNode(node));
 
         emit Retrieved(msg.sender, node, value);
-        bool nodeIsEnabled = isNodeEnabled(node);
-
         _pullReward(node);
+        bool nodeIsEnabled = isNodeEnabled(node);
 
         if (nodeIsEnabled) {
             Fair balance = _getTotalBalance();
@@ -576,7 +575,6 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
             return FundLibrary.ZERO_FAIR;
         }
         return Fair.wrap(address(_rewardWallets[node]).balance);
-
     }
 
     function _getTotalBalance() private view returns (Fair balance) {
