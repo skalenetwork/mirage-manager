@@ -95,18 +95,17 @@ struct Node {
 Nodes that are actively contributing to the network should periodically send a transaction to `Status.sol` to attest that they are **healthy**.
 For the first version of FAIR, a whitelist of nodes is maintained. Status stores this whitelist, which effectively limits the nodes allowed to join a Committee.
 
-A node is considered **healthy** if the last `alive()` transaction was sent less than `Duration public heartbeatInterval` ago.
-A node is considered **eligible** for Committee if it is **healthy**, whitelisted and staked.
+An active node is considered **healthy** if the last `alive()` transaction was sent less than `Duration public heartbeatInterval` ago.
+An active node is considered **eligible** for Committee if it is **healthy**, whitelisted and staked.
 
 #### Status Main Functions
 
 - `alive()`: Allows Active Node owners to prove liveliness.
 - `setHeartbeatInterval(Duration interval)`: Allows DEFAULT_ADMIN to set the maximum interval nodes are considered healthy after the last alive transaction.
 - `whitelistNode(NodeId nodeId)`: Allows DEFAULT_ADMIN to whitelist a node.
-- `nodeRemoved(NodeId node)`: Allows NODES_ROLE to notify of Active Node deletion.
-- `removeNodeFromWhitelist(NodeId nodeId)`: Allows DEFAULT_ADMIN to remove a node from the whitelist.
-- `isHealthy(NodeId nodeId)`: Checks if a node is **healthy**.
-- `getNodesEligibleForCommittee()`: Returns a list of nodes that are **eligible** to join a Committee.
+- `nodeRemoved(NodeId node)`: Allows NODES_ROLE to notify of a Node deletion.
+- `removeNodeFromWhitelist(NodeId nodeId)`: Allows DEFAULT_ADMIN to remove a node from the whitelist (active or passive).
+- `isHealthy(NodeId nodeId)`: Checks if a active node is **healthy**.
 - `getWhitelistedNodes()`: Returns the list of all whitelisted nodes.
 - `isWhitelisted(NodeId nodeId)`: Returns a boolean stating if a node is whitelisted.
 
