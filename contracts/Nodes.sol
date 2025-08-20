@@ -30,6 +30,7 @@ import {
     NodeId
 } from "@skalenetwork/fair-manager-interfaces/INodes.sol";
 import { IStatus } from "@skalenetwork/fair-manager-interfaces/IStatus.sol";
+import { IStaking } from "@skalenetwork/fair-manager-interfaces/IStaking.sol";
 
 import { TypedMap } from "./structs/typed/TypedMap.sol";
 import { TypedSet } from "./structs/typed/TypedSet.sol";
@@ -434,7 +435,8 @@ contract Nodes is AccessManagedUpgradeable, INodes {
         address nodeOwner = node.nodeAddress;
         delete nodes[id];
         IStatus statusContract = IStatus(committeeContract.status());
-        if (_isActiveNode(id)) {
+        bool isActive = _isActiveNode(id);
+        if (isActive) {
             assert(_activeNodeIds.remove(id));
             assert(_activeNodesAddressToId.remove(nodeOwner));
             emit ActiveNodeDeleted(id, nodeOwner, node.ip, node.port);
@@ -448,6 +450,12 @@ contract Nodes is AccessManagedUpgradeable, INodes {
             emit PassiveNodeDeleted(id, nodeOwner, node.ip, node.port);
         }
         statusContract.nodeRemoved(id);
+
+        // may send tokens, should be the very last
+        if (isActive) {
+            IStaking stakingContract = IStaking(committeeContract.staking());
+            stakingContract.nodeRemoved(id);
+        }
     }
 
     function _addPassiveNodeId(NodeId nodeId) private {

@@ -81,6 +81,7 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
     event Staked(address indexed sender, NodeId indexed node, Fair indexed amount);
     event StakedToNewNode(address indexed sender, NodeId indexed node);
     event StoppedStaking(address indexed sender, NodeId indexed node);
+    event NodeDataRemoved(NodeId indexed node);
     event NodeDisabled(NodeId indexed node);
     event NodeEnabled(NodeId indexed node);
     event StakeLimitUpdated(Fair indexed newLimit);
@@ -158,10 +159,13 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
             FundLibrary.nodeToHolder(node),
             nodeFundBalance
         );
-        require(_disabledNodesBalances.set(node, nodeFundBalance), NodeIsAlreadyDisabled(node));
         totalDisabled = totalDisabled + nodeFundBalance;
+        require(_disabledNodesBalances.set(node, nodeFundBalance), NodeIsAlreadyDisabled(node));
         emit NodeDisabled(node);
-        committee.updateWeight(node, 0);
+
+        if (nodes.activeNodeExists(node)) {
+            committee.updateWeight(node, 0);
+        }
     }
 
     function enable(
@@ -194,26 +198,29 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
         assert(_disabledNodesBalances.set(node, FundLibrary.ZERO_FAIR));
     }
 
+    function nodeRemoved(NodeId node) external override restricted {
+        // Committee should disable node first
+        require(!isNodeEnabled(node), NodeIsNotDisabled(node));
+        delete _nodesAllowedReceivers[node];
+        delete _rewardWallets[node];
+        emit NodeDataRemoved(node);
+        _sendFees(
+            node,
+            getEarnedFeeAmount(node),
+            payable(_publicKeyToAddress(nodes.getPublicKey(node)))
+        );
+
+    }
+
     function payReward(
         NodeId node
     )
         external
         payable
         override
+        onlyExistingActiveNode(node)
     {
         require(msg.value > 0, ZeroAmount());
-
-        if (!nodes.activeNodeExists(node)) {
-            require(
-                address(_rewardWallets[node]) == msg.sender,
-                Nodes.NodeDoesNotExist(node)
-            );
-            // Node was deleted
-            // rewards sent by its reward wallet are shared with all stakers
-            emit RewardReceived(msg.sender, msg.value);
-            return;
-        }
-
         bool nodeIsEnabled = !_disabledNodesBalances.contains(node);
         Fair amount = Fair.wrap(msg.value);
         Fair balance = _getTotalBalance() - amount;
@@ -247,9 +254,10 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
         require(_stakedNodes[msg.sender].contains(node), ZeroStakeToNode(node));
 
         emit Retrieved(msg.sender, node, value);
+        bool nodeIsEnabled = isNodeEnabled(node);
 
         _pullReward(node);
-        bool nodeIsEnabled = isNodeEnabled(node);
+
         if (nodeIsEnabled) {
             Fair balance = _getTotalBalance();
             _nodesFunds[node].remove(
@@ -412,8 +420,7 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
 
     // Public
 
-    function claimFees(NodeId node, Fair amount) public override {
-        // works for deleted Nodes
+    function claimFees(NodeId node, Fair amount) public override onlyExistingActiveNode(node) {
         bool senderIsOwner = msg.sender == _publicKeyToAddress(nodes.getPublicKey(node));
         require(
             _nodesAllowedReceivers[node].contains(msg.sender) || senderIsOwner,
@@ -534,6 +541,7 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
                 IRewardWallet.initialize.selector,
                 authority(),
                 IStaking(payable(this)),
+                nodes,
                 node
             )
         )));
@@ -541,7 +549,7 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
 
 
     function _pullReward(NodeId node) private nonReentrant {
-
+        // safe because getNonPulledReward returns 0 if rewardWallet does not exist
         if (_getNonPulledReward(node) > FundLibrary.ZERO_FAIR) {
             // Reward wallet is considered as a part of Staking contract.
             // The code is trusted and effects are known.
@@ -567,7 +575,11 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
     }
 
     function _getNonPulledReward(NodeId node) private view returns (Fair nonPulledReward) {
+        if (_rewardWallets[node] == IRewardWallet(payable(0))) {
+            return FundLibrary.ZERO_FAIR;
+        }
         return Fair.wrap(address(_rewardWallets[node]).balance);
+
     }
 
     function _getTotalBalance() private view returns (Fair balance) {

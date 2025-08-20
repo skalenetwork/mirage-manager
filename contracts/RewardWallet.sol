@@ -27,19 +27,38 @@ import {
 import {NodeId} from "@skalenetwork/fair-manager-interfaces/INodes.sol";
 import {IRewardWallet} from "@skalenetwork/fair-manager-interfaces/IRewardWallet.sol";
 import { IStaking } from "@skalenetwork/fair-manager-interfaces/IStaking.sol";
+import { INodes } from "@skalenetwork/fair-manager-interfaces/INodes.sol";
 
 
 contract RewardWallet is AccessManagedUpgradeable, IRewardWallet {
     IStaking public staking;
+    INodes public nodes;
     NodeId public ownerNode;
 
-    function initialize(address initialAuthority, IStaking staking_, NodeId ownerNode_) external override initializer {
+    error OwnerNodeDoesNotExist();
+    error TransferToStakingFailed();
+
+    function initialize(
+        address initialAuthority,
+        IStaking staking_,
+        INodes nodes_,
+        NodeId ownerNode_
+    )
+        external
+        override
+        initializer
+    {
         __AccessManaged_init(initialAuthority);
         staking = staking_;
         ownerNode = ownerNode_;
+        nodes = nodes_;
     }
 
     receive() external payable override {
+        require(
+            _nodeExists(ownerNode),
+            OwnerNodeDoesNotExist()
+        );
         flush();
     }
 
@@ -47,10 +66,27 @@ contract RewardWallet is AccessManagedUpgradeable, IRewardWallet {
 
     function flush() public override {
         if (address(this).balance > 0) {
-            // Both staking and ownerNode is set during deployment
-            // by Staking contract so the warning is false positive
-            // slither-disable-next-line arbitrary-send-eth
-            staking.payReward{value: address(this).balance}(ownerNode);
+            if (_nodeExists(ownerNode)) {
+                // Both staking and ownerNode is set during deployment
+                // by Staking contract so the warning is false positive
+                // slither-disable-next-line arbitrary-send-eth
+                staking.payReward{value: address(this).balance}(ownerNode);
+            }
+            else {
+                // Rewards are sent as network rewards
+                // This is a failsafe mechanism, it's expected to never happen under normal conditions
+                // Staking is set during deployment
+                // by Staking contract so the warning is false positive
+                // slither-disable-next-line arbitrary-send-eth
+                (bool success, ) = address(staking).call{value: address(this).balance}("");
+                require(success, TransferToStakingFailed());
+            }
+
         }
+    }
+
+    // Private
+    function _nodeExists(NodeId nodeId) private view returns (bool) {
+        return nodes.activeNodeExists(nodeId);
     }
 }

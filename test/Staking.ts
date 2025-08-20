@@ -182,15 +182,21 @@ describe("Staking", () => {
         .to.be.revertedWithCustomError(nodes, "AddressIsNotAssignedToAnyNode");
     });
 
-    it("should only be possible to claimFees after node deletion", async () => {
-        const {staking, nodesData, nodes} = await registeredOnlyNodes();
+    it("should not be possible and needed to claimFees and send after node deletion", async () => {
+        const {staking, nodesData, nodes, status} = await whitelistedNodes();
         const [,user] = await ethers.getSigners();
         const initialAmount = ethers.parseEther("3");
-        const amount = ethers.parseEther("1");
+        const amount = ethers.parseEther("2");
         const node = nodesData[22]; // not in the current committee
         const feeRate = 500; // Yes, Eddie, half
         await staking.connect(node.wallet).setFeeRate(feeRate);
         await staking.connect(user).stake(node.id, {value: initialAmount});
+
+        // Node should be eligible
+        await status.connect(node.wallet).alive();
+
+        expect(await staking.isNodeEnabled(node.id)).to.be.eql(true);
+
         (await staking.connect(user).getStakedAmount())
             .should.be.equal(initialAmount);
 
@@ -199,11 +205,18 @@ describe("Staking", () => {
         expect(await staking.getDelegatorsToNode(node.id)).to.be.eql([user.address]);
 
         await staking.connect(user).payReward(node.id, {value: amount});
-
+        expect(await staking.getEarnedFeeAmount(node.id)).to.be.eql(amount / 2n);
+        // shall send fees to the node
         await nodes.connect(node.wallet).deleteNode(node.id);
+
+
         expect(await nodes.activeNodeExists(node.id)).to.be.eql(false);
         expect(await staking.isNodeEnabled(node.id)).to.be.eql(false);
-        expect(await staking.getNodeTotalStake(node.id)).to.be.eql(initialAmount + amount);
+
+        const fees = amount / 2n;
+        expect(await staking.getEarnedFeeAmount(node.id)).to.be.eql(0n);
+        // fees were sent to the node
+        expect(await staking.getNodeTotalStake(node.id)).to.be.eql(initialAmount + amount - fees);
         expect(await staking.getDelegatorsToNodeCount(node.id)).to.be.eql(1n);
         expect(await staking.getDelegatorsToNode(node.id)).to.be.eql([user.address]);
 
@@ -212,32 +225,20 @@ describe("Staking", () => {
         (await staking.connect(user).getStakedAmount())
             .should.be.equal(initialAmount - amount / 2n);
 
-        expect(await staking.getNodeTotalStake(node.id)).to.be.eql(initialAmount);
+        expect(await staking.getNodeTotalStake(node.id)).to.be.eql(initialAmount - amount / 2n);
 
         await staking.connect(user).retrieve(node.id, initialAmount - amount / 2n)
             .should.changeEtherBalance(user, initialAmount - amount / 2n);
 
-        expect(await staking.getNodeTotalStake(node.id)).to.be.eql(amount / 2n);
+        expect(await staking.getNodeTotalStake(node.id)).to.be.eql(0n);
         expect(await staking.getDelegatorsToNodeCount(node.id)).to.be.eql(0n);
         expect(await staking.getDelegatorsToNode(node.id)).to.be.eql([]);
 
-
-        expect(await staking.getNodeTotalStake(node.id)).to.be.eql(amount / 2n);
-
-        // Set some balance to reward wallet
-        await setBalance(await staking.getRewardWallet(node.id), 100);
-
-        // allows to collect fees after deletion, even with reward wallet having balance
-        await staking.connect(node.wallet).claimFees(node.id, amount / 4n).should.changeEtherBalance(node.wallet.address, amount / 4n);
+        // does not allow to collect fees after deletion
+        await expect(staking.connect(node.wallet).claimAllFees(node.id)).to.be.revertedWithCustomError(nodes, "NodeDoesNotExist");
 
         // does not allow to send fees after deletion
-        await expect(staking.connect(node.wallet).sendFees(node.wallet, amount / 4n)).to.be.revertedWithCustomError(nodes, "AddressIsNotAssignedToAnyNode");
-
-        const leftovers = await staking.getNodeTotalStake(node.id);
-        await staking.connect(node.wallet).claimAllFees(node.id).should.changeEtherBalance(node.wallet.address, leftovers);
-
-        // rewards were flushed and shared to all stakers, nothing left
-        expect(await staking.getNodeTotalStake(node.id)).to.be.eql(0n);
+        await expect(staking.connect(node.wallet).sendAllFees(node.wallet)).to.be.revertedWithCustomError(nodes, "AddressIsNotAssignedToAnyNode");
     });
 
     it("should apply validator fee on rewards", async () => {
