@@ -437,10 +437,15 @@ contract Nodes is AccessManagedUpgradeable, INodes {
         delete nodes[id];
         IStatus statusContract = IStatus(committeeContract.status());
         bool isActive = _isActiveNode(id);
+        IStaking stakingContract = IStaking(committeeContract.staking());
+
         if (isActive) {
+            emit ActiveNodeDeleted(id, nodeOwner, node.ip, node.port);
+            // flush before removal or rewards are split
+            stakingContract.getRewardWallet(id).flush();
+
             assert(_activeNodeIds.remove(id));
             assert(_activeNodesAddressToId.remove(nodeOwner));
-            emit ActiveNodeDeleted(id, nodeOwner, node.ip, node.port);
             committeeContract.nodeRemoved(id);
         }
         else {
@@ -454,7 +459,6 @@ contract Nodes is AccessManagedUpgradeable, INodes {
 
         // may send tokens, should be the very last
         if (isActive) {
-            IStaking stakingContract = IStaking(committeeContract.staking());
             stakingContract.nodeRemoved(id);
         }
     }
