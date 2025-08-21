@@ -199,6 +199,7 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
     function nodeRemoved(NodeId node) external override restricted {
         // Committee should disable node first
         require(!isNodeEnabled(node), NodeIsNotDisabled(node));
+        _nodesAllowedReceivers[node].clear();
         delete _nodesAllowedReceivers[node];
         delete _rewardWallets[node];
         emit NodeDataRemoved(node);
@@ -417,7 +418,7 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
     // Public
 
     function claimFees(NodeId node, Fair amount) public override onlyExistingActiveNode(node) {
-        bool senderIsOwner = msg.sender == _publicKeyToAddress(nodes.getPublicKey(node));
+        bool senderIsOwner = msg.sender == nodes.getNode(node).nodeAddress;
         require(
             _nodesAllowedReceivers[node].contains(msg.sender) || senderIsOwner,
             NotAllowedToClaimRewards(msg.sender)

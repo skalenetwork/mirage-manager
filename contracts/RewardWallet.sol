@@ -42,6 +42,11 @@ contract RewardWallet is AccessManagedUpgradeable, IRewardWallet {
 
     error OwnerNodeDoesNotExist();
 
+    modifier onlyIfNodeExists() {
+        require(_nodeExists(ownerNode), OwnerNodeDoesNotExist());
+        _;
+    }
+
     function initialize(
         address initialAuthority,
         IStaking staking_,
@@ -58,11 +63,7 @@ contract RewardWallet is AccessManagedUpgradeable, IRewardWallet {
         nodes = nodes_;
     }
 
-    receive() external payable override {
-        require(
-            _nodeExists(ownerNode),
-            OwnerNodeDoesNotExist()
-        );
+    receive() external payable override onlyIfNodeExists() {
         flush();
     }
 
