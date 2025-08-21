@@ -24,22 +24,46 @@ pragma solidity ^0.8.24;
 import {
     AccessManagedUpgradeable
 } from "@openzeppelin/contracts-upgradeable/access/manager/AccessManagedUpgradeable.sol";
-import {NodeId} from "@skalenetwork/fair-manager-interfaces/INodes.sol";
+import {
+    Address
+} from "@openzeppelin/contracts/utils/Address.sol";
+
+import {INodes, NodeId} from "@skalenetwork/fair-manager-interfaces/INodes.sol";
 import {IRewardWallet} from "@skalenetwork/fair-manager-interfaces/IRewardWallet.sol";
-import { IStaking } from "@skalenetwork/fair-manager-interfaces/IStaking.sol";
+import {IStaking} from "@skalenetwork/fair-manager-interfaces/IStaking.sol";
 
 
 contract RewardWallet is AccessManagedUpgradeable, IRewardWallet {
+    using Address for address payable;
+
     IStaking public staking;
+    INodes public nodes;
     NodeId public ownerNode;
 
-    function initialize(address initialAuthority, IStaking staking_, NodeId ownerNode_) external override initializer {
+    error OwnerNodeDoesNotExist();
+
+    modifier onlyIfNodeExists() {
+        require(_nodeExists(ownerNode), OwnerNodeDoesNotExist());
+        _;
+    }
+
+    function initialize(
+        address initialAuthority,
+        IStaking staking_,
+        INodes nodes_,
+        NodeId ownerNode_
+    )
+        external
+        override
+        initializer
+    {
         __AccessManaged_init(initialAuthority);
         staking = staking_;
         ownerNode = ownerNode_;
+        nodes = nodes_;
     }
 
-    receive() external payable override {
+    receive() external payable override onlyIfNodeExists() {
         flush();
     }
 
@@ -47,10 +71,23 @@ contract RewardWallet is AccessManagedUpgradeable, IRewardWallet {
 
     function flush() public override {
         if (address(this).balance > 0) {
-            // Both staking and ownerNode is set during deployment
-            // by Staking contract so the warning is false positive
-            // slither-disable-next-line arbitrary-send-eth
-            staking.payReward{value: address(this).balance}(ownerNode);
+            if (_nodeExists(ownerNode)) {
+                // Both staking and ownerNode is set during deployment
+                // by Staking contract so the warning is false positive
+                // slither-disable-next-line arbitrary-send-eth
+                staking.payReward{value: address(this).balance}(ownerNode);
+            }
+            else {
+                // Rewards are sent as network rewards
+                // This is a failsafe mechanism, it's expected to never happen under normal conditions
+                payable(staking).sendValue(address(this).balance);
+            }
+
         }
+    }
+
+    // Private
+    function _nodeExists(NodeId nodeId) private view returns (bool exists) {
+        return nodes.activeNodeExists(nodeId);
     }
 }

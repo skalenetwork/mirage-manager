@@ -24,11 +24,13 @@ import {
     AccessManagedUpgradeable
 } from "@openzeppelin/contracts-upgradeable/access/manager/AccessManagedUpgradeable.sol";
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+
 import { ICommittee } from "@skalenetwork/fair-manager-interfaces/ICommittee.sol";
 import {
     INodes,
     NodeId
 } from "@skalenetwork/fair-manager-interfaces/INodes.sol";
+import { IStaking } from "@skalenetwork/fair-manager-interfaces/IStaking.sol";
 import { IStatus } from "@skalenetwork/fair-manager-interfaces/IStatus.sol";
 
 import { TypedMap } from "./structs/typed/TypedMap.sol";
@@ -96,7 +98,6 @@ contract Nodes is AccessManagedUpgradeable, INodes {
     error IpIsNotAvailable(bytes ip);
     error DomainNameAlreadyTaken(string domainName);
     error NodeDoesNotExist(NodeId nodeId);
-    error NodeWasDeleted(NodeId nodeId);
     error ActiveNodeWasNeverRegistered(NodeId nodeId);
     error PortShouldNotBeZero();
     error SenderIsNotNodeOwner();
@@ -347,10 +348,6 @@ contract Nodes is AccessManagedUpgradeable, INodes {
             AddressIsNotAssignedToAnyNode(nodeAddress)
         );
         nodeId = _activeNodesAddressToId.get(nodeAddress);
-
-        // Address may have been assigned to an active node in the past, but the node may have been deleted
-        // We do not allow active nodes with duplicate addresses, even if the old was deleted
-        require(_isActiveNode(nodeId), NodeWasDeleted(nodeId));
     }
 
     function getPassiveNodeIdsForAddress(
@@ -439,9 +436,16 @@ contract Nodes is AccessManagedUpgradeable, INodes {
         address nodeOwner = node.nodeAddress;
         delete nodes[id];
         IStatus statusContract = IStatus(committeeContract.status());
-        if (_isActiveNode(id)) {
-            assert(_activeNodeIds.remove(id));
+        bool isActive = _isActiveNode(id);
+        IStaking stakingContract = IStaking(committeeContract.staking());
+
+        if (isActive) {
             emit ActiveNodeDeleted(id, nodeOwner, node.ip, node.port);
+            // flush before removal or rewards are split
+            stakingContract.getRewardWallet(id).flush();
+
+            assert(_activeNodeIds.remove(id));
+            assert(_activeNodesAddressToId.remove(nodeOwner));
             committeeContract.nodeRemoved(id);
         }
         else {
@@ -452,6 +456,11 @@ contract Nodes is AccessManagedUpgradeable, INodes {
             emit PassiveNodeDeleted(id, nodeOwner, node.ip, node.port);
         }
         statusContract.nodeRemoved(id);
+
+        // may send tokens, should be the very last
+        if (isActive) {
+            stakingContract.nodeRemoved(id);
+        }
     }
 
     function _addPassiveNodeId(NodeId nodeId) private {

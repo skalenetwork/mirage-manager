@@ -45,7 +45,10 @@ const setupStakeRoles = async (accessManager: FairAccessManager, staking: Stakin
 
     response = await accessManager.setTargetFunctionRole(
         await ethers.resolveAddress(staking),
-        [staking.interface.getFunction("nodeCreated").selector],
+        [
+            staking.interface.getFunction("nodeCreated").selector,
+            staking.interface.getFunction("nodeRemoved").selector
+        ],
         await accessManager.NODES_ROLE()
     );
     await response.wait();
