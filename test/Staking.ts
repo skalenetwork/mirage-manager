@@ -840,10 +840,12 @@ describe("Staking", () => {
         ); // Pay 1e-18 fair reward
 
         await staking.disable(badNode.id);
-        (await ethers.provider.getBalance(staking))
-            .should.be.equal(
-                await staking.getNodeTotalStake(goodNode.id) +
-                await staking.getNodeTotalStake(goodNode.id)
-            )
+
+        (
+            await staking.getNodeTotalStake(goodNode.id) +
+            await staking.getNodeTotalStake(badNode.id)
+        ).should.be.equal(
+            await ethers.provider.getBalance(staking)
+        )
     });
 });
