@@ -825,4 +825,25 @@ describe("Staking", () => {
 
         await staking.connect(user).retrieve(node, initialStake);
     });
+
+    it("should not create phantom stake after node disabling", async () => {
+        const {staking, status, nodesData} = await whitelistedNodes();
+        const [goodNode, badNode] = nodesData;
+
+        await staking.stake(goodNode.id, {value: ethers.parseEther("1")});
+        await staking.stake(badNode.id, {value: ethers.parseEther("1")});
+        await sendHeartbeat(status, [goodNode, badNode]);
+
+        await setBalance(
+            await ethers.resolveAddress(staking),
+            await ethers.provider.getBalance(staking) + 1n
+        ); // Pay 1e-18 fair reward
+
+        await staking.disable(badNode.id);
+        (await ethers.provider.getBalance(staking))
+            .should.be.equal(
+                await staking.getNodeTotalStake(goodNode.id) +
+                await staking.getNodeTotalStake(goodNode.id)
+            )
+    });
 });
