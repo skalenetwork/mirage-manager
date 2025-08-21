@@ -223,7 +223,7 @@ library FundLibrary {
         Holder holder,
         Credit amount
     )
-        internal
+        private
         returns (Fair removed)
     {
         _processBalanceChange(fund, balanceBeforeRemove);
