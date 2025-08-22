@@ -21,15 +21,25 @@
 
 pragma solidity ^0.8.24;
 
-
+/// @title Library for calling precompiled contracts
+/// @author Dmytro Stebaiev
+/// @notice Provides functions for call precompiled contracts
 library Precompiled {
 
+    /// @notice Address of precompiled contract for modular exponentiation
     address public constant MOD_EXP = address(5);
+    /// @notice Address of precompiled contract for elliptic curve operations
     address public constant EC_MUL = address(7);
+    /// @notice Address of precompiled contract for elliptic curve pairing check
     address public constant EC_PAIRING = address(8);
 
     error PrecompiledCallFailed(address precompiledContract);
 
+    /// @notice Calculates (base ^ exponent) % modulus
+    /// @param base Base number
+    /// @param exponent Exponent
+    /// @param modulus Modulus
+    /// @return value Result of (base ^ exponent) % modulus
     function bigModExp(
         uint256 base,
         uint256 exponent,
@@ -54,6 +64,12 @@ library Precompiled {
         return abi.decode(output, (uint256));
     }
 
+    /// @notice Performs elliptic curve scalar multiplication
+    /// @param x X coordinate of the point
+    /// @param y Y coordinate of the point
+    /// @param k Scalar to multiply the point by
+    /// @return xValue X coordinate of the resulting point
+    /// @return yValue Y coordinate of the resulting point
     function bn256ScalarMul(
         uint256 x,
         uint256 y,
@@ -67,6 +83,20 @@ library Precompiled {
         return abi.decode(output, (uint256, uint256));
     }
 
+    /// @notice Performs elliptic curve pairing check
+    /// @param x1 X coordinate of the first point in G1
+    /// @param y1 Y coordinate of the first point in G1
+    /// @param a1 X real part of the second point in G2
+    /// @param b1 X imaginary part of the second point in G2
+    /// @param c1 Y real part of the second point in G2
+    /// @param d1 Y imaginary part of the second point in G2
+    /// @param x2 X coordinate of the third point in G1
+    /// @param y2 Y coordinate of the third point in G1
+    /// @param a2 X real part of the fourth point in G2
+    /// @param b2 X imaginary part of the fourth point in G2
+    /// @param c2 Y real part of the fourth point in G2
+    /// @param d2 Y imaginary part of the fourth point in G2
+    /// @return pairing True if the pairing check passes, false otherwise
     function bn256Pairing(
         uint256 x1,
         uint256 y1,
@@ -93,17 +123,27 @@ library Precompiled {
         return abi.decode(output, (uint256)) != 0;
     }
 
-    // rngOnChain should be SKALE Random Number Generator predeployed or similar
+    /// @notice Gets random bytes32 from on-chain RNG precompiled contract
+    /// @dev rngOnChain should be SKALE Random Number Generator predeployed or similar
+    /// @param rngOnChain Address of on-chain RNG precompiled contract
+    /// @return addr Random bytes32
     function getRandomBytes32(address rngOnChain) internal view returns (bytes32 addr) {
         return bytes32(_callPrecompiled(rngOnChain, ""));
     }
 
+    /// @notice Gets random uint256 from on-chain RNG precompiled contract
+    /// @param rngOnChain Address of on-chain RNG precompiled contract
+    /// @return addr Random uint256
     function getRandomNumber(address rngOnChain) internal view returns (uint256 addr) {
         return uint256(getRandomBytes32(rngOnChain));
     }
 
     // Private
 
+    /// @notice Calls precompiled contract with given input
+    /// @param precompiledContract Address of precompiled contract
+    /// @param input Input data for the precompiled contract
+    /// @return output Output data from the precompiled contract
     function _callPrecompiled(
         address precompiledContract,
         bytes memory input
