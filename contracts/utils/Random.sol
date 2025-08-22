@@ -25,17 +25,25 @@ import { IRandom } from "@skalenetwork/fair-manager-interfaces/IRandom.sol";
 
 /**
  * @title Random
- * @dev The library for generating of pseudo random numbers
+ * @author Dmytro Stebaiev
+ * @notice The library for generating of pseudo random numbers
  */
 library Random {
 
     /**
-     * @dev Create an instance of RandomGenerator
+     * @notice Create an instance of RandomGenerator
+     * @param seed Initial seed
+     * @return generator Instance of RandomGenerator
      */
     function create(uint256 seed) internal pure returns (IRandom.RandomGenerator memory generator) {
         return IRandom.RandomGenerator({seed: seed});
     }
 
+    /**
+     * @notice Create an instance of RandomGenerator from entropy
+     * @param entropy Entropy bytes
+     * @return generator Instance of RandomGenerator
+     */
     function createFromEntropy(
         bytes memory entropy
     )
@@ -47,7 +55,10 @@ library Random {
     }
 
     /**
-     * @dev Generates random value
+     * @notice Generates random value
+     * @dev Returns value from 0 to type(uint256).max
+     * @param self Instance of RandomGenerator
+     * @return value Random value
      */
     function random(IRandom.RandomGenerator memory self) internal pure returns (uint256 value) {
         self.seed = uint256(sha256(abi.encodePacked(self.seed)));
@@ -55,7 +66,10 @@ library Random {
     }
 
     /**
-     * @dev Generates random value in range [0, max)
+     * @notice Generates random value in range [0, max)
+     * @param self Instance of RandomGenerator
+     * @param max Upper bound (exclusive)
+     * @return value Random value
      */
     function random(
         IRandom.RandomGenerator memory self,
@@ -75,7 +89,11 @@ library Random {
     }
 
     /**
-     * @dev Generates random value in range [min, max)
+     * @notice Generates random value in range [min, max)
+     * @param self Instance of RandomGenerator
+     * @param min Lower bound (inclusive)
+     * @param max Upper bound (exclusive)
+     * @return value Random value
      */
     function random(
         IRandom.RandomGenerator memory self,
