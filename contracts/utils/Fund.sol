@@ -92,24 +92,24 @@ library FundLibrary {
         _processBalanceChange(fund, balanceBeforeRemove);
         Fair balanceBefore = getBalance(fund, balanceBeforeRemove, holder);
         Credit credits = _toCreditsRoundedUp(fund, balanceBeforeRemove, amount);
-        (bool exists, Credit holderCredits) = fund.credits.tryGet(holder);
-        if (holderCredits < credits) {
-            revert NotEnoughStaked(_toFairRoundedDown(fund, balanceBeforeRemove, ZERO_CREDIT, holderCredits));
-        }
-        if (holderCredits == credits) {
-            // Holders with Zero credits are always removed from the map.
-            assert(fund.credits.remove(holder) == exists);
-        }
-        else {
-            // Set must return false because holder already exists in the map.
-            assert(!fund.credits.set(holder, holderCredits - credits));
-        }
-
-
-        fund.totalCredits = fund.totalCredits - credits;
-        fund.lastBalance = balanceBeforeRemove - amount;
+        _remove(fund, balanceBeforeRemove, holder, credits);
         Fair balanceAfter = getBalance(fund, fund.lastBalance, holder);
         _checkAllowedError(balanceBefore, balanceAfter, amount);
+    }
+
+    function removeAll(
+        Fund storage fund,
+        Fair balanceBeforeRemove,
+        Holder holder
+    )
+        internal
+        returns (Fair removed)
+    {
+        _processBalanceChange(fund, balanceBeforeRemove);
+        Fair balanceBefore = getBalance(fund, balanceBeforeRemove, holder);
+        removed = _remove(fund, balanceBeforeRemove, holder, fund.credits.get(holder));
+        Fair balanceAfter = getBalance(fund, fund.lastBalance, holder);
+        _checkAllowedError(balanceBefore, balanceAfter, removed);
     }
 
     function setFeeRate(
@@ -215,6 +215,34 @@ library FundLibrary {
             fund.totalCredits = fund.totalCredits + credits;
             fund.lastBalance = balance;
         }
+    }
+
+    function _remove(
+        Fund storage fund,
+        Fair balanceBeforeRemove,
+        Holder holder,
+        Credit amount
+    )
+        private
+        returns (Fair removed)
+    {
+        _processBalanceChange(fund, balanceBeforeRemove);
+        (bool exists, Credit holderCredits) = fund.credits.tryGet(holder);
+        if (holderCredits < amount) {
+            revert NotEnoughStaked(_toFairRoundedDown(fund, balanceBeforeRemove, ZERO_CREDIT, holderCredits));
+        }
+        removed = _toFairRoundedDown(fund, balanceBeforeRemove, ZERO_CREDIT, amount);
+        if (holderCredits == amount) {
+            // Holders with Zero credits are always removed from the map.
+            assert(fund.credits.remove(holder) == exists);
+        }
+        else {
+            // Set must return false because holder already exists in the map.
+            assert(!fund.credits.set(holder, holderCredits - amount));
+        }
+
+        fund.totalCredits = fund.totalCredits - amount;
+        fund.lastBalance = balanceBeforeRemove - removed;
     }
 
     function _getUncountedFeeCredits(
