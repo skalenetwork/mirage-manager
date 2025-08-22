@@ -29,9 +29,15 @@ import { IDkg } from "@skalenetwork/fair-manager-interfaces/IDkg.sol";
 import { Fp2Operations } from "./Fp2Operations.sol";
 
 
+/// @title G2Operations - library for operations on G2 points
+/// @author Dmytro Stebaiev
+/// @notice Library that provides operations for G2 points on the BLS12-381 curve
 library G2Operations {
     using Fp2Operations for IDkg.Fp2Point;
 
+    /// @notice Doubles a G2 point
+    /// @param value The G2 point to be doubled
+    /// @return result The resulting G2 point after doubling
     function doubleG2(IDkg.G2Point memory value)
         internal
         view
@@ -50,6 +56,10 @@ library G2Operations {
         }
     }
 
+    /// @notice Adds two G2 points
+    /// @param value1 The first G2 point
+    /// @param value2 The second G2 point
+    /// @return sum The resulting G2 point after addition
     function addG2(
         IDkg.G2Point memory value1,
         IDkg.G2Point memory value2
@@ -89,6 +99,8 @@ library G2Operations {
         sum.y.b = (p - sum.y.b) % p;
     }
 
+    /// @notice Gets value of the twist b constant
+    /// @return point The Fp2 point representing the twist b constant
     function getTWISTB() internal pure returns (IDkg.Fp2Point memory point) {
         // Current solidity version does not support Constants of non-value type
         // so we implemented this function
@@ -98,6 +110,8 @@ library G2Operations {
         });
     }
 
+    /// @notice Gets the generator point of G2
+    /// @return point The G2 point representing the generator of G2
     function getG2Generator() internal pure returns (IDkg.G2Point memory point) {
         // Current solidity version does not support Constants of non-value type
         // so we implemented this function
@@ -113,6 +127,8 @@ library G2Operations {
         });
     }
 
+    /// @notice Gets the zero point of G2
+    /// @return point The G2 point representing the zero point of G2
     function getG2Zero() internal pure returns (IDkg.G2Point memory point) {
         // Current solidity version does not support Constants of non-value type
         // so we implemented this function
@@ -128,6 +144,10 @@ library G2Operations {
         });
     }
 
+    /// @notice Checks if the given coordinates form a valid G2 point
+    /// @param x The x-coordinate of the point in Fp2
+    /// @param y The y-coordinate of the point in Fp2
+    /// @return result True if the coordinates form a valid G2 point, false otherwise
     function isG2Point(
         IDkg.Fp2Point memory x,
         IDkg.Fp2Point memory y
@@ -146,10 +166,17 @@ library G2Operations {
         return res.a == 0 && res.b == 0;
     }
 
+    /// @notice Checks if the given G2 point is valid
+    /// @param value The G2 point to be checked
+    /// @return result True if the G2 point is valid, false otherwise
     function isG2(IDkg.G2Point memory value) internal pure returns (bool result) {
         return isG2Point(value.x, value.y);
     }
 
+    /// @notice Checks if the given coordinates form the zero point of G2
+    /// @param x The x-coordinate of the point in Fp2
+    /// @param y The y-coordinate of the point in Fp2
+    /// @return result True if the coordinates form the zero point of G2, false otherwise
     function isG2ZeroPoint(
         IDkg.Fp2Point memory x,
         IDkg.Fp2Point memory y
@@ -161,16 +188,20 @@ library G2Operations {
         return x.a == 0 && x.b == 0 && y.a == 1 && y.b == 0;
     }
 
+    /// @notice Checks if the given G2 point is the zero point of G2
+    /// @param value The G2 point to be checked
+    /// @return result True if the G2 point is the zero point of G2, false otherwise
     function isG2Zero(IDkg.G2Point memory value) internal pure returns (bool result) {
         return value.x.a == 0 && value.x.b == 0 && value.y.a == 1 && value.y.b == 0;
         // return isG2ZeroPoint(value.x, value.y);
     }
 
-    /**
-     * @dev Checks are G2 points identical.
-     * This function will return false if following coordinates
-     * of points are different, even if its different on P.
-     */
+    /// @notice Checks are G2 points identical.
+    /// @dev This function will return false if following coordinates
+    /// of points are different, even if its different on P.
+    /// @param value1 The first G2 point
+    /// @param value2 The second G2 point
+    /// @return result True if the points are identical, false otherwise
     function isEqual(
         IDkg.G2Point memory value1,
         IDkg.G2Point memory value2
