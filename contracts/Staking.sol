@@ -58,6 +58,8 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
     using TypedMap for TypedMap.HolderToCreditMap;
     using TypedMap for TypedMap.NodeIdToFairMap;
 
+    uint16 public constant DEFAULT_FEE_RATE = 1000;
+
     ICommittee public committee;
     INodes public nodes;
     IRewardWallet public rewardWalletReference;
@@ -69,7 +71,6 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
     mapping (address holder => TypedSet.NodeIdSet nodeIds) private _stakedNodes;
     TypedMap.NodeIdToFairMap private _disabledNodesBalances;
     Fair public stakeLimit;
-    uint16 public constant DEFAULT_FEE_RATE = 1000;
 
     event AllowedReceiverAdded(NodeId indexed node, address indexed receiver);
     event AllowedReceiverRemoved(NodeId indexed node, address indexed receiver);
@@ -103,23 +104,6 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
     modifier onlyExistingActiveNode(NodeId node) {
         require(nodes.activeNodeExists(node), Nodes.NodeDoesNotExist(node));
         _;
-    }
-
-    function initialize(
-        address initialAuthority,
-        ICommittee committee_,
-        INodes nodes_,
-        IRewardWallet rewardWalletReference_
-    )
-        public
-        initializer
-        override
-    {
-        __AccessManaged_init(initialAuthority);
-        __ReentrancyGuard_init();
-        committee = committee_;
-        nodes = nodes_;
-        rewardWalletReference = rewardWalletReference_;
     }
 
     receive() external override payable {
@@ -426,6 +410,23 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
             amount,
             payable(msg.sender)
         );
+    }
+
+    function initialize(
+        address initialAuthority,
+        ICommittee committee_,
+        INodes nodes_,
+        IRewardWallet rewardWalletReference_
+    )
+        public
+        initializer
+        override
+    {
+        __AccessManaged_init(initialAuthority);
+        __ReentrancyGuard_init();
+        committee = committee_;
+        nodes = nodes_;
+        rewardWalletReference = rewardWalletReference_;
     }
 
     function sendFees(address payable to, Fair amount) public override {

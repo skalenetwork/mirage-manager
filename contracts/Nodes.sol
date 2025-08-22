@@ -147,19 +147,6 @@ contract Nodes is AccessManagedUpgradeable, INodes {
         _;
     }
 
-    function initialize(
-        address initialAuthority,
-        Node[] calldata initialNodes,
-        bytes32[2][] calldata nodesPublicKeys
-    )
-        public
-        override
-        initializer
-    {
-        __AccessManaged_init(initialAuthority);
-        _initializeGroup(initialNodes, nodesPublicKeys);
-    }
-
     function setCommittee(ICommittee committeeAddress) external override restricted {
         committeeContract = committeeAddress;
     }
@@ -384,6 +371,21 @@ contract Nodes is AccessManagedUpgradeable, INodes {
 
     function passiveNodeExists(NodeId nodeId) external view override returns(bool result){
         result = _isPassiveNode(nodeId);
+    }
+
+    // Public
+
+    function initialize(
+        address initialAuthority,
+        Node[] calldata initialNodes,
+        bytes32[2][] calldata nodesPublicKeys
+    )
+        public
+        override
+        initializer
+    {
+        __AccessManaged_init(initialAuthority);
+        _initializeGroup(initialNodes, nodesPublicKeys);
     }
 
     function _createActiveNode(

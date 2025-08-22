@@ -47,6 +47,10 @@ contract RewardWallet is AccessManagedUpgradeable, IRewardWallet {
         _;
     }
 
+    receive() external payable override onlyIfNodeExists() {
+        flush();
+    }
+
     function initialize(
         address initialAuthority,
         IStaking staking_,
@@ -61,10 +65,6 @@ contract RewardWallet is AccessManagedUpgradeable, IRewardWallet {
         staking = staking_;
         ownerNode = ownerNode_;
         nodes = nodes_;
-    }
-
-    receive() external payable override onlyIfNodeExists() {
-        flush();
     }
 
     // Public

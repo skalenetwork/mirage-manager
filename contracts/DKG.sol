@@ -109,20 +109,6 @@ contract DKG is AccessManagedUpgradeable, IDkg {
         _;
     }
 
-    function initialize(
-        address initialAuthority,
-        ICommittee committeeAddress,
-        INodes nodesAddress
-    )
-        public
-        override
-        initializer
-    {
-        __AccessManaged_init(initialAuthority);
-        committee = committeeAddress;
-        nodes = nodesAddress;
-    }
-
     function alright(DkgId dkg) external override onlyAlrightDkg(dkg) {
         uint256 n = _rounds[dkg].nodes.length();
         NodeId node = nodes.getNodeId(msg.sender);
@@ -222,6 +208,22 @@ contract DKG is AccessManagedUpgradeable, IDkg {
             numberOfCompleted: _rounds[dkg].completed.length(),
             completed: orderedCompleted
         });
+    }
+
+    // Public
+
+    function initialize(
+        address initialAuthority,
+        ICommittee committeeAddress,
+        INodes nodesAddress
+    )
+        public
+        override
+        initializer
+    {
+        __AccessManaged_init(initialAuthority);
+        committee = committeeAddress;
+        nodes = nodesAddress;
     }
 
     // Private

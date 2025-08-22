@@ -102,25 +102,6 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
         _;
     }
 
-    function initialize(
-        address initialAuthority,
-        INodes nodesAddress,
-        IDkg.G2Point memory commonPublicKey,
-        NodeId[] memory nodeIds
-    )
-        public
-        initializer
-        override
-    {
-        __AccessManaged_init(initialAuthority);
-        committeeSize = 22;
-        transitionDelay = Duration.wrap(1 days);
-        nodes = nodesAddress;
-        skaleRng = address(0);
-        minTransitionDelay = Duration.wrap(10 minutes);
-        _initializeCommittee(commonPublicKey, nodeIds);
-    }
-
     function select() external override restricted {
         require(
             _canSelectNewCommittee(),
@@ -283,6 +264,25 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
         if (!status.isHealthy(oldest)) {
             _setIneligible(oldest);
         }
+    }
+
+    function initialize(
+        address initialAuthority,
+        INodes nodesAddress,
+        IDkg.G2Point memory commonPublicKey,
+        NodeId[] memory nodeIds
+    )
+        public
+        initializer
+        override
+    {
+        __AccessManaged_init(initialAuthority);
+        committeeSize = 22;
+        transitionDelay = Duration.wrap(1 days);
+        nodes = nodesAddress;
+        skaleRng = address(0);
+        minTransitionDelay = Duration.wrap(10 minutes);
+        _initializeCommittee(commonPublicKey, nodeIds);
     }
 
     function getActiveCommitteeIndex() public view override returns (CommitteeIndex committeeIndex) {

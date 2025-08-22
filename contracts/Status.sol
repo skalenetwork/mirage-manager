@@ -52,21 +52,6 @@ contract Status is AccessManagedUpgradeable, IStatus {
     error NodeNotWhitelisted(NodeId nodeId);
     error NodeDoesNotExist(NodeId nodeId);
 
-    function initialize(
-        address initialAuthority,
-        INodes nodesAddress,
-        ICommittee committeeAddress
-    )
-        public
-        override
-        initializer
-    {
-        __AccessManaged_init(initialAuthority);
-        nodes = nodesAddress;
-        committee = committeeAddress;
-        heartbeatInterval = Duration.wrap(5 minutes);
-    }
-
     function alive() external override {
         // Nodes.sol will revert if sender has no Active Node
         NodeId nodeId = nodes.getNodeId(msg.sender);
@@ -117,6 +102,23 @@ contract Status is AccessManagedUpgradeable, IStatus {
 
     function getWhitelistedNodes() external view override returns (NodeId[] memory nodeIds) {
         nodeIds = _whitelist.values();
+    }
+
+    // Public
+
+    function initialize(
+        address initialAuthority,
+        INodes nodesAddress,
+        ICommittee committeeAddress
+    )
+        public
+        override
+        initializer
+    {
+        __AccessManaged_init(initialAuthority);
+        nodes = nodesAddress;
+        committee = committeeAddress;
+        heartbeatInterval = Duration.wrap(5 minutes);
     }
 
     function isWhitelisted(NodeId nodeId) public view override returns (bool whitelisted) {
