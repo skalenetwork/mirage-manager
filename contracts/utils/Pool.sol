@@ -27,7 +27,10 @@ import { SplayTree } from "../structs/SplayTree.sol";
 import { TypedSet } from "../structs/typed/TypedSet.sol";
 import { IRandom, Random } from "./Random.sol";
 
-
+/// @title Library for managing set of eligible nodes
+/// @author Dmytro Stebaiev
+/// @notice Provides functions for managing set of eligible nodes
+/// @dev Nodes are ordered by last alive() function call time
 library PoolLibrary {
     using Random for IRandom.RandomGenerator;
     using SplayTree for mapping(NodeId => SplayTree.Node);
@@ -47,16 +50,29 @@ library PoolLibrary {
         uint256 available
     );
 
+    /// @notice Adds node to the pool
+    /// @dev Adds to unordered part
+    /// @param pool Pool struct
+    /// @param id Node ID
     function add(Pool storage pool, NodeId id) internal {
         assert(pool.incomingNodes.add(id));
     }
 
+    /// @notice Moves node to the front of the order
+    /// @dev If node was in the unordered part, it moves to the ordered part
+    /// @param pool Pool struct
+    /// @param node Node ID
+    /// @param weight Weight of the node
     function moveToFront(Pool storage pool, NodeId node, uint256 weight) internal {
         remove(pool, node);
         assert(pool.presentNodes.add(node));
         pool.root = pool.tree.insertSmallest(pool.root, node, weight);
     }
 
+    /// @notice Removes node from the pool
+    /// @param pool Pool struct
+    /// @param node Node ID
+    /// @return removed True if node was present and was removed and false otherwise
     function remove(Pool storage pool, NodeId node) internal returns (bool removed) {
         if (pool.presentNodes.remove(node)) {
             pool.root = pool.tree.remove(node);
@@ -66,6 +82,12 @@ library PoolLibrary {
         }
     }
 
+    /// @notice Return random sample of nodes from the pool
+    /// @dev Probability of choosing node is proportional to its weight
+    /// @param pool Pool struct
+    /// @param size Size of the sample
+    /// @param generator Instance of RandomGenerator
+    /// @return nodesSample Array of node IDs
     function sample(
         Pool storage pool,
         uint256 size,
@@ -94,6 +116,10 @@ library PoolLibrary {
         }
     }
 
+    /// @notice Sets weight of the node
+    /// @param pool Pool struct
+    /// @param node Node ID
+    /// @param weight New weight
     function setWeight(
         Pool storage pool,
         NodeId node,
@@ -104,6 +130,9 @@ library PoolLibrary {
         }
     }
 
+    /// @notice Gets one of the nodes that hasn't called the alive() function for the longest time
+    /// @param pool Pool struct
+    /// @return oldest Node ID or SplayTree.NULL if pool is empty
     function getOldestIsh(Pool storage pool) internal returns (NodeId oldest) {
         if (pool.incomingNodes.length() > 0) {
             return pool.incomingNodes.at(0);
@@ -115,16 +144,26 @@ library PoolLibrary {
         return pool.root;
     }
 
+    /// @notice Checks if node is in the pool
+    /// @param pool Pool struct
+    /// @param node Node ID
+    /// @return present True if node is in the pool and false otherwise
     function contains(Pool storage pool, NodeId node) internal view returns (bool present) {
         return pool.presentNodes.contains(node) || pool.incomingNodes.contains(node);
     }
 
+    /// @notice Gets number of nodes in the pool
+    /// @param pool Pool struct
+    /// @return poolSize Number of nodes in the pool
     function length(Pool storage pool) internal view returns (uint256 poolSize) {
         return pool.presentNodes.length() + pool.incomingNodes.length();
     }
 
-    // private
+    // Private
 
+    /// @notice Finds healthy node in the pool that hasn't called the alive() function for the longest time
+    /// @param pool Pool struct
+    /// @return lastHealthy Node ID or SplayTree.NULL if there are no healthy nodes
     function _findLastHealthyNode(Pool storage pool) private view returns (NodeId lastHealthy) {
         lastHealthy = SplayTree.NULL;
         NodeId node = pool.root;
