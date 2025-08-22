@@ -39,6 +39,11 @@ using {
 } for Credit global;
 
 
+/// @title Library for managing fund with fair tokens
+/// @author Dmytro Stebaiev
+/// @notice A holder can supply or retrieve fair tokens from the fund
+/// Rewards can be sent to the fund and are shared among holders proportionally to their supply.abi
+/// There is a dedicated owner that receive a fixed percentage of all rewards as a fee
 library FundLibrary {
     using TypedMap for TypedMap.HolderToCreditMap;
 
@@ -50,18 +55,27 @@ library FundLibrary {
         uint16 feeRate; // 0 - 1000‰
     }
 
+    /// @notice Default number of credits to store 1 wei of fair tokens
     uint256 public constant CREDIT_PRECISION = 1 << 80;
 
+    /// @notice Constant representing a null holder
     Holder public constant NULL = Holder.wrap(0);
+    /// @notice Constant representing zero fair tokens
     Fair public constant ZERO_FAIR = Fair.wrap(0);
+    /// @notice Constant representing zero credits
     Credit public constant ZERO_CREDIT = Credit.wrap(0);
 
+    /// @notice Maximum allowed rounding error when moving fair tokens
     Fair private constant ALLOWED_ERROR = Fair.wrap(1e9);
 
     error NotEnoughStaked(Fair staked);
     error NotEnoughFee(Fair earnedFee);
     error RoundingErrorTooHigh(Fair roundingError);
 
+    /// @notice Claims fee for the owner of the fund
+    /// @param fund Fund struct
+    /// @param balanceBeforeClaim Balance of the fund before claiming the fee
+    /// @param amount Amount of fair tokens to claim as fee
     function claimFee(
         Fund storage fund,
         Fair balanceBeforeClaim,
@@ -81,6 +95,11 @@ library FundLibrary {
         }
     }
 
+    /// @notice Withdraw fair tokens from the fund
+    /// @param fund Fund struct
+    /// @param balanceBeforeRemove Balance of the fund before removing fair tokens
+    /// @param holder Holder of the fund that withdraws fair tokens
+    /// @param amount Amount of fair tokens to withdraw
     function remove(
         Fund storage fund,
         Fair balanceBeforeRemove,
@@ -97,6 +116,11 @@ library FundLibrary {
         _checkAllowedError(balanceBefore, balanceAfter, amount);
     }
 
+    /// @notice Withdraws all fair tokens from the fund
+    /// @param fund Fund struct
+    /// @param balanceBeforeRemove Balance of the fund before removing fair tokens
+    /// @param holder Holder of the fund that withdraws fair tokens
+    /// @return removed Amount of fair tokens that were withdrawn
     function removeAll(
         Fund storage fund,
         Fair balanceBeforeRemove,
@@ -112,6 +136,10 @@ library FundLibrary {
         _checkAllowedError(balanceBefore, balanceAfter, removed);
     }
 
+    /// @notice Sets owner fee rate for the fund
+    /// @param fund Fund struct
+    /// @param balanceBefore Balance of the fund before setting the fee rate
+    /// @param feeRate New fee rate to set (0 - 1000‰)
     function setFeeRate(
         Fund storage fund,
         Fair balanceBefore,
@@ -123,6 +151,11 @@ library FundLibrary {
         fund.feeRate = feeRate;
     }
 
+    /// @notice Supplies fair tokens to the fund
+    /// @param fund Fund struct
+    /// @param balanceBeforeSupply Balance of the fund before supplying fair tokens
+    /// @param holder Holder of the fund that supplies fair tokens
+    /// @param amount Amount of fair tokens to supply
     function supply(
         Fund storage fund,
         Fair balanceBeforeSupply,
@@ -146,6 +179,11 @@ library FundLibrary {
         _checkAllowedError(balanceBefore, balanceAfter, amount);
     }
 
+    /// @notice Gets the balance of fair tokens for a holder in the fund
+    /// @param fund Fund struct
+    /// @param balance Current balance of the fund
+    /// @param holder Holder of the fund to get the balance for
+    /// @return amount Amount of fair tokens the holder has in the fund
     function getBalance(
         Fund storage fund,
         Fair balance,
@@ -171,6 +209,10 @@ library FundLibrary {
         );
     }
 
+    /// @notice Gets the earned fee for the owner of the fund
+    /// @param fund Fund struct
+    /// @param balance Current balance of the fund
+    /// @return amount Amount of fair tokens the owner has earned as fee
     function getEarnedFee(
         Fund storage fund,
         Fair balance
@@ -185,24 +227,40 @@ library FundLibrary {
         }
     }
 
+    /// @notice Cast Holder to address
+    /// @param holder Holder to cast
+    /// @return holderAddress holder as an address
     function holderToAddress(Holder holder) internal pure returns (address holderAddress) {
         return address(uint160(Holder.unwrap(holder)));
     }
 
+    /// @notice Cast Holder to NodeId
+    /// @param holder Holder to cast
+    /// @return node holder as a NodeId
     function holderToNode(Holder holder) internal pure returns (NodeId node) {
         return NodeId.wrap(Holder.unwrap(holder));
     }
 
+    /// @notice Cast address to Holder
+    /// @param holder address to cast
+    /// @return typedHolder the address as a Holder
     function addressToHolder(address holder) internal pure returns (Holder typedHolder) {
         return Holder.wrap(uint256(uint160(holder)));
     }
 
+    /// @notice Cast NodeId to Holder
+    /// @param holder NodeId to cast
+    /// @return typedHolder the NodeId as a Holder
     function nodeToHolder(NodeId holder) internal pure returns (Holder typedHolder) {
         return Holder.wrap(NodeId.unwrap(holder));
     }
 
     // private
 
+    /// @notice Processes balance change
+    /// @dev Balance of the fund could be changed on protocol level without smart contract execution
+    /// @param fund Fund struct
+    /// @param balance Current balance of the fund
     function _processBalanceChange(
         Fund storage fund,
         Fair balance
@@ -217,6 +275,12 @@ library FundLibrary {
         }
     }
 
+    /// @notice Removes fair tokens from the fund
+    /// @param fund Fund struct
+    /// @param balanceBeforeRemove Balance of the fund before removing fair tokens
+    /// @param holder Holder of the fund that withdraws fair tokens
+    /// @param amount Amount of credits to remove
+    /// @return removed Amount of fair tokens that were withdrawn
     function _remove(
         Fund storage fund,
         Fair balanceBeforeRemove,
@@ -245,6 +309,10 @@ library FundLibrary {
         fund.lastBalance = balanceBeforeRemove - removed;
     }
 
+    /// @notice Calculates uncounted fee credits based on the balance change
+    /// @param fund Fund struct
+    /// @param balance Current balance of the fund
+    /// @return fee Amount of credits that represent the uncounted fee
     function _getUncountedFeeCredits(
         Fund storage fund,
         Fair balance
@@ -263,6 +331,12 @@ library FundLibrary {
         return ZERO_CREDIT;
     }
 
+    /// @notice Calculate number of credits that correspond to the given amount of fair tokens
+    /// @dev The value is rounded down
+    /// @param fund Fund struct
+    /// @param balance Current balance of the fund
+    /// @param amount Amount of fair tokens to convert to credits
+    /// @return credits Amount of credits that correspond to the given amount of fair tokens
     function _toCreditsRoundedDown(
         Fund storage fund,
         Fair balance,
@@ -285,6 +359,12 @@ library FundLibrary {
         );
     }
 
+    /// @notice Calculate number of credits that correspond to the given amount of fair tokens
+    /// @dev The value is rounded up
+    /// @param fund Fund struct
+    /// @param balance Current balance of the fund
+    /// @param amount Amount of fair tokens to convert to credits
+    /// @return credits Amount of credits that correspond to the given amount of fair tokens
     function _toCreditsRoundedUp(
         Fund storage fund,
         Fair balance,
@@ -307,6 +387,13 @@ library FundLibrary {
         );
     }
 
+    /// @notice Calculate number of fair tokens that correspond to the given amount of credits
+    /// @dev The value is rounded down
+    /// @param fund Fund struct
+    /// @param balance Current balance of the fund
+    /// @param uncountedFee Amount of uncounted fee credits that should be moved to the owner
+    /// @param amount Amount of credits to convert to fair tokens
+    /// @return fair Amount of fair tokens that correspond to the given amount of credits
     function _toFairRoundedDown(
         Fund storage fund,
         Fair balance,
@@ -330,6 +417,10 @@ library FundLibrary {
         );
     }
 
+    /// @notice Checks that the rounding error is within the allowed limit
+    /// @param balanceBefore Balance of the holder before the operation
+    /// @param balanceAfter Balance of the holder after the operation
+    /// @param amount Amount of fair tokens that were moved
     function _checkAllowedError(
         Fair balanceBefore,
         Fair balanceAfter,
@@ -360,18 +451,34 @@ library FundLibrary {
 
 // Credit
 
+/// @notice Adds two Credit values
+/// @param a First Credit value
+/// @param b Second Credit value
+/// @return sum Sum of the two Credit values
 function _creditAdd(Credit a, Credit b) pure returns (Credit sum) {
     return Credit.wrap(Credit.unwrap(a) + Credit.unwrap(b));
 }
 
+/// @notice Checks if two Credit values are equal
+/// @param a First Credit value
+/// @param b Second Credit value
+/// @return equal True if the two Credit values are equal, false otherwise
 function _creditEqual(Credit a, Credit b) pure returns (bool equal) {
     return Credit.unwrap(a) == Credit.unwrap(b);
 }
 
+/// @notice Checks if one Credit value is less than another
+/// @param a First Credit value
+/// @param b Second Credit value
+/// @return less True if the first Credit value is less than the second, false otherwise
 function _creditLess(Credit a, Credit b) pure returns (bool less) {
     return Credit.unwrap(a) < Credit.unwrap(b);
 }
 
+/// @notice Subtracts one Credit value from another
+/// @param a First Credit value
+/// @param b Second Credit value
+/// @return diff Difference of the two Credit values
 function _creditSubtract(Credit a, Credit b) pure returns (Credit diff) {
     return Credit.wrap(Credit.unwrap(a) - Credit.unwrap(b));
 }
