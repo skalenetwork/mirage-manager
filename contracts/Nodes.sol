@@ -434,12 +434,17 @@ contract Nodes is AccessManagedUpgradeable, INodes {
             assert(_usedDomainNames.remove(newName));
         }
         address nodeOwner = node.nodeAddress;
+        bytes memory ip = node.ip;
+        uint16 port = node.port;
+        delete nodes[id];
+
+
         IStatus statusContract = IStatus(committeeContract.status());
         bool isActive = _isActiveNode(id);
         IStaking stakingContract = IStaking(committeeContract.staking());
 
         if (isActive) {
-            emit ActiveNodeDeleted(id, nodeOwner, node.ip, node.port);
+            emit ActiveNodeDeleted(id, nodeOwner, ip, port);
             // flush before removal or rewards are split
             stakingContract.getRewardWallet(id).flush();
 
@@ -452,14 +457,11 @@ contract Nodes is AccessManagedUpgradeable, INodes {
 
             assert(_passiveNodeIdByAddress.remove(nodeOwner, id));
             if (_passiveNodeIdByAddress.lengthOf(nodeOwner) == 0) {
-                _passiveNodeAddresses.remove(nodeOwner);
+                assert(_passiveNodeAddresses.remove(nodeOwner));
             }
             delete ownerChangeRequests[id];
-            emit PassiveNodeDeleted(id, nodeOwner, node.ip, node.port);
+            emit PassiveNodeDeleted(id, nodeOwner, ip, port);
         }
-
-        delete nodes[id];
-
 
         statusContract.nodeRemoved(id);
         // may send tokens, should be the very last
