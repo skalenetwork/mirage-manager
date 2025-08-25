@@ -434,7 +434,6 @@ contract Nodes is AccessManagedUpgradeable, INodes {
             assert(_usedDomainNames.remove(newName));
         }
         address nodeOwner = node.nodeAddress;
-        delete nodes[id];
         IStatus statusContract = IStatus(committeeContract.status());
         bool isActive = _isActiveNode(id);
         IStaking stakingContract = IStaking(committeeContract.staking());
@@ -450,13 +449,19 @@ contract Nodes is AccessManagedUpgradeable, INodes {
         }
         else {
             assert(_passiveNodeIds.remove(id));
-            assert(_passiveNodeAddresses.remove(nodeOwner));
+
             assert(_passiveNodeIdByAddress.remove(nodeOwner, id));
+            if (_passiveNodeIdByAddress.lengthOf(nodeOwner) == 0) {
+                _passiveNodeAddresses.remove(nodeOwner);
+            }
             delete ownerChangeRequests[id];
             emit PassiveNodeDeleted(id, nodeOwner, node.ip, node.port);
         }
-        statusContract.nodeRemoved(id);
 
+        delete nodes[id];
+
+
+        statusContract.nodeRemoved(id);
         // may send tokens, should be the very last
         if (isActive) {
             stakingContract.nodeRemoved(id);
