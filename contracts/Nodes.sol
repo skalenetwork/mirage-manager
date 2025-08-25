@@ -315,6 +315,7 @@ contract Nodes is AccessManagedUpgradeable, INodes {
         override
         nodeExists(nodeId)
         onlyNodeOwner(nodeId)
+        nodeNotInCurrentOrNextCommittee(nodeId)
     {
         Node storage node = nodes[nodeId];
 
