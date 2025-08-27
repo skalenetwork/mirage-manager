@@ -848,4 +848,28 @@ describe("Staking", () => {
             await ethers.provider.getBalance(staking)
         )
     });
+
+    it("Node owners can only retrieve their rewards even if feeRate is 0", async () => {
+        const {staking, nodesData} = await whitelistedNodes();
+        const [node] = nodesData;
+        const value = ethers.parseEther("1");
+        const halfValue = value / 2n;
+        await staking.stake(node.id, {value: value});
+        await staking.connect(node.wallet).setFeeRate(500n);
+        await staking.payReward(node.id, {value: value});
+
+        expect(await staking.getEarnedFeeAmount(node.id)).to.be.eql(halfValue - 1n);
+        expect(await staking.getStakedAmount()).to.be.eql(value + halfValue);
+
+        await expect(staking.connect(node.wallet).claimFees(node.id, value * 2n)).to.revertedWithCustomError(staking, "NotEnoughFee");
+        await staking.connect(node.wallet).setFeeRate(0n);
+        // setting fee to 0 does not compromise old earned fees
+        expect(await staking.getEarnedFeeAmount(node.id)).to.be.eql(halfValue - 1n);
+        await expect(staking.connect(node.wallet).claimFees(node.id, value * 2n)).to.revertedWithCustomError(staking, "NotEnoughFee");
+        const balanceBefore = await ethers.provider.getBalance(staking);
+        await staking.connect(node.wallet).claimAllFees(node.id);
+        const balanceAfter = await ethers.provider.getBalance(staking);
+        expect(balanceBefore).to.be.greaterThan(balanceAfter);
+        expect(await staking.getEarnedFeeAmount(node.id)).to.be.eql(0n);
+    });
 });
