@@ -59,10 +59,14 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
     using TypedMap for TypedMap.NodeIdToFairMap;
     using ExitQueueLibrary for ExitQueueLibrary.ExitQueue;
 
+    uint16 public constant DEFAULT_FEE_RATE = 1000;
+
     ICommittee public committee;
     INodes public nodes;
     IRewardWallet public rewardWalletReference;
     Fair public totalDisabled;
+    Fair public stakeLimit;
+
     FundLibrary.Fund private _rootFund;
     ExitQueueLibrary.ExitQueue private _exitQueue;
     mapping (NodeId node => FundLibrary.Fund nodeFund) private _nodesFunds;
@@ -70,10 +74,7 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
     mapping (NodeId node => EnumerableSet.AddressSet allowedReceivers) private _nodesAllowedReceivers;
     mapping (address holder => TypedSet.NodeIdSet nodeIds) private _stakedNodes;
     TypedMap.NodeIdToFairMap private _disabledNodesBalances;
-
-    Fair public stakeLimit;
-    uint16 public constant DEFAULT_FEE_RATE = 1000;
-
+    
     event AllowedReceiverAdded(NodeId indexed node, address indexed receiver);
     event AllowedReceiverRemoved(NodeId indexed node, address indexed receiver);
     event FeeClaimRequested(NodeId indexed node, address from, address indexed to, Fair indexed amount);
@@ -233,6 +234,14 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
         bool nodeIsEnabled = !_disabledNodesBalances.contains(node);
         Fair amount = Fair.wrap(msg.value);
         Fair balance = _getTotalBalance() - amount;
+        (bool withinStakeLimit, Fair currentNodeStake) = _isWhithinStakeLimit(node, amount, balance, nodeIsEnabled);
+        
+        // allow to payRewards over the limit only for reward wallet
+        require(
+            withinStakeLimit || msg.sender == address(_rewardWallets[node]),
+            StakeLimitExceeded(currentNodeStake, amount, stakeLimit)
+        );
+
         if (nodeIsEnabled) {
             _rootFund.supply(
                 balance,
@@ -694,9 +703,18 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
         return Fair.wrap(address(this).balance) - totalDisabled - getTotalInExitQueue();
     }
 
-    function _validateStakeLimit(NodeId node, Fair amount, Fair balance, bool nodeIsEnabled) private view {
-        if (Fair.unwrap(stakeLimit) > 0) {
-            Fair currentNodeStake;
+    function _isWhithinStakeLimit(
+        NodeId node,
+        Fair amount,
+        Fair balance,
+        bool nodeIsEnabled
+    )
+        private
+        view
+        returns (bool result, Fair currentNodeStake)
+    {   
+        result = true;
+        if (stakeLimit > FundLibrary.ZERO_FAIR) {
             if (nodeIsEnabled) {
                 currentNodeStake = _rootFund.getBalance(balance, FundLibrary.nodeToHolder(node));
             } else {
@@ -704,11 +722,16 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
             }
 
             Fair newNodeStake = currentNodeStake + amount;
-            require(
-                !(newNodeStake > stakeLimit),
-                StakeLimitExceeded(currentNodeStake, amount, stakeLimit)
-            );
+            result = !(newNodeStake > stakeLimit);
         }
+    }
+
+    function _validateStakeLimit(NodeId node, Fair amount, Fair balance, bool nodeIsEnabled) private view {
+        (bool isWithinLimit, Fair currentNodeStake) = _isWhithinStakeLimit(node, amount, balance, nodeIsEnabled);
+        require(
+            isWithinLimit,
+            StakeLimitExceeded(currentNodeStake, amount, stakeLimit)
+        );
     }
 
     function _hasAllowedReceiver(NodeId node) private view returns (bool result) {
