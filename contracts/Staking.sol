@@ -234,7 +234,7 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
         bool nodeIsEnabled = !_disabledNodesBalances.contains(node);
         Fair amount = Fair.wrap(msg.value);
         Fair balance = _getTotalBalance() - amount;
-        (bool withinStakeLimit, Fair currentNodeStake) = _isWhithinStakeLimit(node, amount, balance, nodeIsEnabled);
+        (bool withinStakeLimit, Fair currentNodeStake) = _isWithinStakeLimit(node, amount, balance, nodeIsEnabled);
         
         // allow to payRewards over the limit only for reward wallet
         require(
@@ -703,7 +703,7 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
         return Fair.wrap(address(this).balance) - totalDisabled - getTotalInExitQueue();
     }
 
-    function _isWhithinStakeLimit(
+    function _isWithinStakeLimit(
         NodeId node,
         Fair amount,
         Fair balance,
@@ -727,7 +727,7 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
     }
 
     function _validateStakeLimit(NodeId node, Fair amount, Fair balance, bool nodeIsEnabled) private view {
-        (bool isWithinLimit, Fair currentNodeStake) = _isWhithinStakeLimit(node, amount, balance, nodeIsEnabled);
+        (bool isWithinLimit, Fair currentNodeStake) = _isWithinStakeLimit(node, amount, balance, nodeIsEnabled);
         require(
             isWithinLimit,
             StakeLimitExceeded(currentNodeStake, amount, stakeLimit)

@@ -887,7 +887,7 @@ describe("Staking", () => {
         
         // Consensus can pay 1 more ETH Rewards directly to node rewards wallet
         await setBalance(await rewardWallet.getAddress(), additionalStake);
-        await rewardWallet.flush(); // but it should manualy flush
+        await rewardWallet.flush(); // but it should manually flush
         expect(await staking.getNodeTotalStake(node)).to.be.eql(expectedTotalAfterReward + additionalStake)
         
     });
