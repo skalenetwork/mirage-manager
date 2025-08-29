@@ -85,6 +85,7 @@ library RedBlackTree {
             }
             return remove(nodes, currentRoot, node);
         }
+        setWeight(nodes, node, 0);
         if (left == NULL && right == NULL) {
             if (nodes[node].red) {
                 _updateChild(nodes, nodes[node].parent, node, NULL);
@@ -94,10 +95,11 @@ library RedBlackTree {
                 }
                 return root;
             }
-            // remove black leaf
-            revert NotImplemented();
+            return _removeBlackLeaf(nodes, root, node);
         } else {
             NodeId child = left == NULL ? right : left;
+            assert(_isBlack(nodes, node));
+            assert(_isRed(nodes, child));
             _updateChild(nodes, nodes[node].parent, node, child);
             nodes[child].red = false;
             delete nodes[node];
@@ -115,10 +117,13 @@ library RedBlackTree {
         uint256 weight
     )
         internal
-        returns (NodeId newRoot)
     {
         require(node != NULL, SetWeightOfNullNode());
-        revert NotImplemented();
+        uint248 oldWeight = _getWeight(nodes, node);
+        while(node != NULL) {
+            nodes[node].totalWeight = nodes[node].totalWeight - oldWeight + weight.toUint248();
+            node = nodes[node].parent;
+        }
     }
 
     function findByWeight(
@@ -348,6 +353,205 @@ library RedBlackTree {
         });
     }
 
+    function _removeBlackLeaf(mapping(NodeId => Node) storage nodes, NodeId root, NodeId node) private returns (NodeId newRoot) {
+        if (node == root) {
+            delete nodes[node];
+            return NULL;
+        }
+        NodeId parent = nodes[node].parent;
+        delete nodes[node];
+        if (nodes[parent].left == node) {
+            return _fixBlackHeightLeftNode(nodes, parent, node);
+        }
+        return _fixBlackHeightRightNode(nodes, root, parent, node);
+    }
+
+    function _fixBlackHeightRightNode(mapping(NodeId => Node) storage nodes, NodeId root, NodeId parent, NodeId node) private returns (NodeId newRoot) {
+        NodeId sibling = nodes[parent].left;
+        if (_isRed(nodes, parent)) {
+            return _fixBlackHeightRightNodeRedParent(nodes, root, parent, sibling);
+        } else {
+            return _fixBlackHeightRightBlackParent(nodes, parent, node, sibling);
+        }
+    }
+
+    function _fixBlackHeightRightNodeRedParent(
+        mapping(NodeId => Node) storage nodes,
+        NodeId root,
+        NodeId parent,
+        NodeId sibling
+    )
+        private
+        returns (NodeId newRoot)
+    {
+        assert(_isBlack(nodes, sibling));
+        NodeId left = nodes[sibling].left;
+        NodeId right = nodes[sibling].right;
+
+        if (_isRed(nodes, left)) {
+            _rotateLeft(nodes, parent, sibling);
+
+            _setBlack(nodes, parent);
+            _setRed(nodes, sibling);
+            _setBlack(nodes, left);
+
+            if (parent == root) {
+                return sibling;
+            } else {
+                return root;
+            }
+        } else if (_isRed(nodes, right)) {
+            _rotateLeftRight(nodes, parent, sibling, right);
+
+            _setBlack(nodes, parent);
+
+            if (parent == root) {
+                return right;
+            } else {
+                return root;
+            }
+        } else {
+            _setBlack(nodes, parent);
+            _setRed(nodes, sibling);
+            return root;
+        }
+    }
+
+    function _fixBlackHeightLeftNodeRedParent(
+        mapping(NodeId => Node) storage nodes,
+        NodeId root,
+        NodeId parent,
+        NodeId sibling
+    )
+        private
+        returns (NodeId newRoot)
+    {
+        assert(_isBlack(nodes, sibling));
+        NodeId left = nodes[sibling].left;
+        NodeId right = nodes[sibling].right;
+
+        if (_isRed(nodes, left)) {
+            _rotateRightLeft(nodes, parent, sibling, left);
+
+            _setBlack(nodes, parent);
+
+            if (parent == root) {
+                return sibling;
+            } else {
+                return root;
+            }
+        } else if (_isRed(nodes, right)) {
+            _rotateRight(nodes, parent, sibling);
+
+            _setBlack(nodes, parent);
+            _setRed(nodes, sibling);
+            _setBlack(nodes, right);
+
+            if (parent == root) {
+                return right;
+            } else {
+                return root;
+            }
+        } else {
+            _setBlack(nodes, parent);
+            _setRed(nodes, sibling);
+            return root;
+        }
+    }
+
+    function _fixBlackHeightRightBlackParent(
+        mapping(NodeId => Node) storage nodes,
+        NodeId parent,
+        NodeId node,
+        NodeId sibling
+    )
+        private
+        returns (NodeId newRoot)
+    {
+        revert NotImplemented();
+    }
+
+    function _fixBlackHeightLeftNode(mapping(NodeId => Node) storage nodes, NodeId parent, NodeId node) private returns (NodeId newRoot){
+        revert NotImplemented();
+    }
+
+    function _rotateLeft(mapping(NodeId => Node) storage nodes, NodeId parent, NodeId node) private {
+        NodeId beta = nodes[node].right;
+
+        uint248 nodeWeight = _getWeight(nodes, node);
+        uint248 parentWeight = _getWeight(nodes, parent);
+
+        _updateChild(nodes, nodes[parent].parent, parent, node);
+        _updateChild(nodes, parent, node, beta);
+        _updateChild(nodes, node, beta, parent);
+
+        _updateTotalWeight(nodes, parent, parentWeight);
+        _updateTotalWeight(nodes, node, nodeWeight);
+    }
+
+    function _rotateLeftRight(mapping(NodeId => Node) storage nodes, NodeId grandfather, NodeId parent, NodeId node) private {
+        NodeId beta = nodes[node].left;
+        NodeId gamma = nodes[node].right;
+
+        uint248 nodeWeight = _getWeight(nodes, node);
+        uint248 parentWeight = _getWeight(nodes, parent);
+        uint248 grandfatherWeight = _getWeight(nodes, grandfather);
+
+        _updateChild(nodes, nodes[grandfather].parent, grandfather, node);
+        _updateChild(nodes, grandfather, parent, gamma);
+        _updateChild(nodes, parent, node, beta);
+        _updateChild(nodes, node, beta, parent);
+        _updateChild(nodes, node, gamma, grandfather);
+
+        _updateTotalWeight(nodes, parent, parentWeight);
+        _updateTotalWeight(nodes, grandfather, grandfatherWeight);
+        _updateTotalWeight(nodes, node, nodeWeight);
+    }
+
+    function _rotateRight(mapping(NodeId => Node) storage nodes, NodeId parent, NodeId node) private {
+        NodeId beta = nodes[node].left;
+
+        uint248 nodeWeight = _getWeight(nodes, node);
+        uint248 parentWeight = _getWeight(nodes, parent);
+
+        _updateChild(nodes, nodes[parent].parent, parent, node);
+        _updateChild(nodes, parent, node, beta);
+        _updateChild(nodes, node, beta, parent);
+
+        _updateTotalWeight(nodes, parent, parentWeight);
+        _updateTotalWeight(nodes, node, nodeWeight);
+    }
+
+    function _rotateRightLeft(mapping(NodeId => Node) storage nodes, NodeId grandfather, NodeId parent, NodeId node) private {
+        NodeId beta = nodes[node].left;
+        NodeId gamma = nodes[node].right;
+
+        uint248 nodeWeight = _getWeight(nodes, node);
+        uint248 parentWeight = _getWeight(nodes, parent);
+        uint248 grandfatherWeight = _getWeight(nodes, grandfather);
+
+        _updateChild(nodes, nodes[grandfather].parent, grandfather, node);
+        _updateChild(nodes, grandfather, parent, beta);
+        _updateChild(nodes, parent, node, gamma);
+        _updateChild(nodes, node, beta, grandfather);
+        _updateChild(nodes, node, gamma, parent);
+
+        _updateTotalWeight(nodes, parent, parentWeight);
+        _updateTotalWeight(nodes, grandfather, grandfatherWeight);
+        _updateTotalWeight(nodes, node, nodeWeight);
+    }
+
+    function _setBlack(mapping(NodeId => Node) storage nodes, NodeId node) private {
+        if (node != NULL) {
+            nodes[node].red = false;
+        }
+    }
+
+    function _setRed(mapping(NodeId => Node) storage nodes, NodeId node) private {
+        assert(node != NULL);
+        nodes[node].red = true;
+    }
+
 /// @dev node has to be a descendant of base
     function _swap(mapping(NodeId => Node) storage nodes, NodeId base, NodeId node) private {
         uint248 nodeWeight = _getWeight(nodes, node);
@@ -384,6 +588,11 @@ library RedBlackTree {
             nodes[newChild].parent = NULL;
         }
         nodes[oldChild].parent = NULL;
+    }
+
+    function _updateTotalWeight(mapping(NodeId => Node) storage nodes, NodeId node, uint248 weight) private {
+        assert(node != NULL);
+        nodes[node].totalWeight = weight = _getTotalWeight(nodes, nodes[node].left) + _getTotalWeight(nodes, nodes[node].right);
     }
 
     function _getTotalWeight(mapping(NodeId => Node) storage nodes, NodeId node) private view returns (uint248 totalWeight) {
