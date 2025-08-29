@@ -195,31 +195,46 @@ As described, Active Nodes can be healthy or unhealthy, depending on whether the
 
 #### Staking Main Functions
 
-- `claimAllFees(NodeId node)`: Allows the sender (if allowed) to collect all pending fees for a node to their own address.
-- `claimFees(NodeId node, Fair amount)`: Allows the sender (if allowed) to withdraw a specific amount of fees for a node to their own address.
-- `sendAllFees(address payable to)`: Allows the node owner to send all pending fees for a node to an address.
-- `sendFees(address payable to, Fair amount)`: Allows the node owner to send a specific amount of fees for a node to an address.
-- `addAllowedReceiver(address receiver)`: Allows a Node Owner to add an address to the list of allowed fee receivers for their node.
-- `removeAllowedReceiver(address receiver)`: Allows a Node Owner to remove an address from the list of allowed fee receivers for their node.
-- `nodeCreated(NodeId node)`: internal function that is called by `Nodes` when a new node is created
-- `payReward(NodeId node)`: pays rewards to delegators of the specified nodes
-- `retrieve(NodeId node, Fair value)`: Allows any user to unstake an amount of FAIR from a node.
-- `setFeeRate(uint16 feeRate)`: Allows a Node owner to set the fee rate.
-- `stake(NodeId node)`: Allows any user to add stake to a node.
-- `getEarnedFeeAmount(NodeId node)`: Returns the fee rewards that a Node can claim.
-- `getNodeShare(NodeId node)`: Returns the amount of Credits a Node has in the rootFund.
-- `getNodeTotalStake(NodeId node)`: Returns the total amount of FAIR tokens a Node has staked.
-- `getStakedAmount()`: Returns the total amount of FAIR tokens the sender has staked.
-- `getStakedAmountFor(address holder)`: Returns the total amount of FAIR tokens a user has staked.
-- `getStakedNodes()`: Returns a list of the NodeIds that the sender has staked to.
-- `getStakedNodesFor(address holder)`: Returns a list of the NodeIds that a user has staked to.
-- `getStakedToNodeAmount(NodeId node)`: Returns the amount of FAIR the sender has staked to a Node.
-- `getStakedToNodeAmountFor(NodeId node, address holder)`: Returns the amount of FAIR a user has staked to a Node.
-- `isNodeEnabled(NodeId node)`: Returns a boolean indicating if a Node is enabled or disabled.
-- `setStakeLimit(Fair limit)`: Allows authorized administrators to set a global maximum stake limit that applies to all nodes.
-- `getRewardWallet(NodeId node)`: Returns the reward wallet address for a node.
-- `getDelegatorsToNode(NodeId node)`: Returns the list of delegator addresses for a node.
-- `getDelegatorsToNodeCount(NodeId node)`: Returns the number of delegators for a node.
+
+- `stake(NodeId node)`: Stake FAIR to a node (any user, only enabled nodes, payable).
+- `requestRetrieve(NodeId node, Fair value)`: Request to unstake FAIR from a node (any user).
+- `retrieveAll()`: Claim all unlocked FAIR in the exit queue for sender.
+- `retrieve(bytes32 requestId)`: Claim the request with requestId for the sender (if unlocked).
+- `claimUnlockedFees()`: Claim all unlocked requested fees for sender.
+- `claimUnlockedFees(bytes32 requestId)`: Claim unlocked requested fees for a specific request.
+- `requestFees(NodeId node, Fair amount)`: Request to claim fees for a node.
+- `requestAllFees(NodeId node)`: Request to claim all fees for a node.
+- `requestSendFees(address payable to, Fair amount)`: Request to send fees to an address (node owner).
+- `requestSendAllFees(address payable to)`: Request to send all fees to an address (node owner).
+- `addAllowedReceiver(address receiver)`: Add an allowed fee receiver for a node (node owner).
+- `removeAllowedReceiver(address receiver)`: Remove an allowed fee receiver for a node (node owner).
+- `setFeeRate(uint16 feeRate)`: Set node fee rate (only decrease, node owner).
+- `setStakeLimit(Fair limit)`: Set max stake limit to each node.
+- `setMaxAllowedExitRequests(uint256 amount)`: Set max exit requests for each user.
+- `setRetrievingDelay(uint256 delay)`: Set delay for unlocking stake/fees.
+- `getStakedAmount()`, `getStakedAmountFor(address holder)`: Get total staked FAIR for sender or user.
+- `getStakedNodes()`, `getStakedNodesFor(address holder)`: Get list of node IDs staked to by sender or user.
+- `getStakedToNodeAmount(NodeId node)`, `getStakedToNodeAmountFor(NodeId node, address holder)`: Get amount staked to a node by sender or user.
+- `getNodeTotalStake(NodeId node)`: Get total FAIR staked to a node.
+- `getNodeShare(NodeId node)`: Get credits share for a node in root fund.
+- `getNodeFeeRate(NodeId node)`: Get node fee rate.
+- `getRewardWallet(NodeId node)`: Get reward wallet address for a node.
+- `getDelegatorsToNode(NodeId node)`, `getDelegatorsToNodeCount(NodeId node)`: Get delegator addresses/count for a node.
+- `isNodeEnabled(NodeId node)`: Returns if node is enabled.
+- `nodeCreated(NodeId node)`: Called by `Nodes.sol` when a new node is created.
+- `nodeRemoved(NodeId node)`: Called by `Nodes.sol` when a node is deleted.
+- `payReward(NodeId node)`: Pays rewards to delegators of a node (payable).
+- `disable(NodeId node)`, `enable(NodeId node)`: Disable/enable a node (committee role).
+- `setRewardWalletReference(IRewardWallet rewardWalletReference_)`: Set reference implementation for reward wallets.
+- `getFeesExitRequest(address user, bytes32 requestId)`: get exit request data
+- `getLockedFeesAmountFor(address user)`, `getMyLockedFeesAmount()`: get total amount of exit fee requests locked for a user or sender
+- `getLockedStakeAmountFor(address user)`, `getMyLockedStakeAmount()`: get total amount of exit stake requests locked for a user or sender
+- `getLockedFeesRequestsFor(address user)`, `getMyLockedFeesRequests()`: get request ids of exit fee requests locked for a user or sender
+- `getLockedStakeRequestsFor(address user)`, `getMyLockedStakeRequests()`: get request ids of exit stake requests locked for a user or sender
+- `getUnlocked*`: For all getLocked or getMyLocked, there's analogous function for unlocked tokens
+- `getMaxExitRequests()`: returns the maximum amount of exit requests a user may have pending
+- `getRetrievingDelay()`: returns the retrieving delay that will be applied to exit requests
+- `getTotalInExitQueue()`: returns the total amount of tokens in the exit queue (fees + stake)
 
 #### Stake Limits
 
@@ -305,6 +320,33 @@ All main smart contracts (`Nodes.sol`, `Status.sol`, `Staking.sol`, `Committee.s
 Although accounts with DEFAULT_ADMIN_ROLE are not automatically granted access to other roles, it is important to note that they have indirect access to all restricted functions. This is because DEFAULT_ADMIN_ROLE holders can add or remove accounts from any other role and manage function selector permissions, effectively giving them ultimate control over contract access management.
 
 ## Custom Libraries & Data Structures
+### [`ExitQueue.sol`](./contracts/utils/ExitQueue.sol)
+
+The `ExitQueueLibrary` manages delayed withdrawal for staking and rewards. It is used by `Staking.sol` to enforce withdrawal delays and limit the number of pending exit requests per account.
+
+#### Key Data Structures
+
+- **ExitQueue**: Tracks all user exit requests, total pending amount, max requests per user, and delay before funds can be claimed.
+- **UserExitQueue**: Stores a user's exit requests and their IDs.
+- **ExitRequest**: Contains the amount and release date for a withdrawal.
+
+#### Main Functions
+
+- `createRequest(queue, user, amount)`: Creates a new exit request for a user, enforcing max requests and setting the release date.
+- `claimAll(queue, user)`: Claims all unlocked requests for a user and transfers funds.
+- `getReadyToClaimAmount(queue, user)`: Returns the total amount ready to be claimed by a user.
+- `getTotalAmountInExitQueue(queue, user)`: Returns the total amount in que queue for a user.
+
+#### Configuration
+
+- `maxRequests`: Maximum number of pending exit requests per user. If the limit is reached, the newest request in the queue is overridden with an updated value and timestamp
+- `retrievingDelay`: Delay (in seconds) before a request can be claimed.
+
+#### Usage
+
+- Used by `Staking.sol` for both stake and fee exit queues, enforcing delays and limits on withdrawals and fee claims.
+- Ensures fair and predictable exit mechanics for stakers and node owners.
+- Can be reused by other contracts that require the same type of delayed retrieval
 
 ### [`SplayTree.sol`](./contracts/structs/SplayTree.sol)
 
