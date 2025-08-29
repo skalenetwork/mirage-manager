@@ -371,7 +371,7 @@ library RedBlackTree {
         if (_isRed(nodes, parent)) {
             return _fixBlackHeightRightNodeRedParent(nodes, root, parent, sibling);
         } else {
-            return _fixBlackHeightRightBlackParent(nodes, parent, node, sibling);
+            return _fixBlackHeightRightNodeBlackParent(nodes, root, parent, node, sibling);
         }
     }
 
@@ -459,8 +459,9 @@ library RedBlackTree {
         }
     }
 
-    function _fixBlackHeightRightBlackParent(
+    function _fixBlackHeightRightNodeBlackParent(
         mapping(NodeId => Node) storage nodes,
+        NodeId root,
         NodeId parent,
         NodeId node,
         NodeId sibling
@@ -468,7 +469,66 @@ library RedBlackTree {
         private
         returns (NodeId newRoot)
     {
+        if (_isRed(nodes, sibling)) {
+            return _fixBlackHeightRightNodeBlackParentRedSibling(nodes, root, parent, sibling);
+        }
         revert NotImplemented();
+    }
+
+    function _fixBlackHeightRightNodeBlackParentRedSibling(
+        mapping(NodeId => Node) storage nodes,
+        NodeId root,
+        NodeId parent,
+        NodeId sibling
+    )
+        private
+        returns (NodeId newRoot)
+    {
+        NodeId right = nodes[sibling].right;
+        assert(right != NULL);
+        if (_hasRedChild(nodes, right)) {
+            _rotateLeftRight(nodes, parent, sibling, right);
+            _setBlack(nodes, nodes[sibling].right);
+        } else {
+            _rotateLeft(nodes, parent, sibling);
+
+            _setBlack(nodes, sibling);
+            _setRed(nodes, nodes[parent].left);
+        }
+
+        if (parent == root) {
+            return sibling;
+        } else {
+            return root;
+        }
+    }
+
+    function _fixBlackHeightLeftNodeBlackParentRedSibling(
+        mapping(NodeId => Node) storage nodes,
+        NodeId root,
+        NodeId parent,
+        NodeId sibling
+    )
+        private
+        returns (NodeId newRoot)
+    {
+        NodeId left = nodes[sibling].left;
+        assert(left != NULL);
+        if (_hasRedChild(nodes, left)) {
+            _rotateRightLeft(nodes, parent, sibling, left);
+            _setBlack(nodes, nodes[sibling].left);
+        } else {
+            _rotateRight(nodes, parent, sibling);
+
+            _setBlack(nodes, sibling);
+            _setRed(nodes, nodes[parent].right);
+        }
+
+        if (parent == root) {
+            return sibling;
+        } else {
+            return root;
+        }
     }
 
     function _fixBlackHeightLeftNode(mapping(NodeId => Node) storage nodes, NodeId parent, NodeId node) private returns (NodeId newRoot){
@@ -617,6 +677,13 @@ library RedBlackTree {
 
     function _grandfather(mapping(NodeId => Node) storage nodes, NodeId node) private view returns (NodeId grandfather) {
         return _parent(nodes, _parent(nodes, node));
+    }
+
+    function _hasRedChild(mapping(NodeId => Node) storage nodes, NodeId node) private view returns (bool has) {
+        if (node == NULL) {
+            return false;
+        }
+        return _isRed(nodes, nodes[node].left) || _isRed(nodes, nodes[node].right);
     }
 
     function _isBlack(mapping(NodeId => Node) storage nodes, NodeId node) private view returns (bool black) {
