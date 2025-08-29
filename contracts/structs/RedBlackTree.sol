@@ -72,9 +72,41 @@ library RedBlackTree {
         return _balance(nodes, root, newNode);
     }
 
-    function remove(mapping(NodeId => Node) storage nodes, NodeId id) internal returns (NodeId newRoot) {
-        require(id != NULL, RemoveNullNode());
-        revert NotImplemented();
+    function remove(mapping(NodeId => Node) storage nodes, NodeId root, NodeId node) internal returns (NodeId newRoot) {
+        require(node != NULL, RemoveNullNode());
+        NodeId left = nodes[node].left;
+        NodeId right = nodes[node].right;
+        if (left != NULL && right != NULL) {
+            NodeId biggestChild = findLast(nodes, left);
+            _swap(nodes, node, biggestChild);
+            NodeId currentRoot = root;
+            if (nodes[biggestChild].parent == NULL) {
+                currentRoot = biggestChild;
+            }
+            return remove(nodes, currentRoot, node);
+        }
+        if (left == NULL && right == NULL) {
+            if (nodes[node].red) {
+                _updateChild(nodes, nodes[node].parent, node, NULL);
+                delete nodes[node];
+                if (node == root) {
+                    return NULL;
+                }
+                return root;
+            }
+            // remove black leaf
+            revert NotImplemented();
+        } else {
+            NodeId child = left == NULL ? right : left;
+            _updateChild(nodes, nodes[node].parent, node, child);
+            nodes[child].red = false;
+            delete nodes[node];
+            if (nodes[child].parent == NULL) {
+                return child;
+            } else {
+                return root;
+            }
+        }
     }
 
     function setWeight(
@@ -117,8 +149,13 @@ library RedBlackTree {
         revert NotFound();
     }
 
-    function findLast(mapping(NodeId => Node) storage nodes, NodeId root) internal returns (NodeId newRoot) {
-        revert NotImplemented();
+    function findLast(mapping(NodeId => Node) storage nodes, NodeId root) internal view returns (NodeId biggest) {
+        for (NodeId node = root; node != NULL; node = nodes[node].right) {
+            if (nodes[node].right == NULL) {
+                return node;
+            }
+        }
+        revert NotFound();
     }
 
     // Private
@@ -187,15 +224,9 @@ library RedBlackTree {
         uint248 parentWeight = _getWeight(nodes, parent);
         uint248 grandfatherWeight = _getWeight(nodes, grandfather);
 
-        nodes[parent].parent = nodes[grandfather].parent;
-        nodes[parent].left = grandfather;
-
-        nodes[grandfather].parent = parent;
-        nodes[grandfather].left = alpha;
-        nodes[grandfather].right = beta;
-
-        _setParentIfNodeExists(nodes, alpha, grandfather);
-        _setParentIfNodeExists(nodes, beta, grandfather);
+        _updateChild(nodes, nodes[grandfather].parent, grandfather, parent);
+        _updateChild(nodes, grandfather, parent, beta);
+        _updateChild(nodes, parent, beta, grandfather);
 
         nodes[parent].red = false;
         nodes[grandfather].red = true;
@@ -223,15 +254,9 @@ library RedBlackTree {
         uint248 parentWeight = _getWeight(nodes, parent);
         uint248 grandfatherWeight = _getWeight(nodes, grandfather);
 
-        nodes[parent].parent = nodes[grandfather].parent;
-        nodes[parent].right = grandfather;
-
-        nodes[grandfather].parent = parent;
-        nodes[grandfather].left = gamma;
-        nodes[grandfather].right = delta;
-
-        _setParentIfNodeExists(nodes, gamma, grandfather);
-        _setParentIfNodeExists(nodes, delta, grandfather);
+        _updateChild(nodes, nodes[grandfather].parent, grandfather, parent);
+        _updateChild(nodes, grandfather, parent, gamma);
+        _updateChild(nodes, parent, gamma, grandfather);
 
         nodes[parent].red = false;
         nodes[grandfather].red = true;
@@ -261,18 +286,11 @@ library RedBlackTree {
         uint248 parentWeight = _getWeight(nodes, parent);
         uint248 grandfatherWeight = _getWeight(nodes, grandfather);
 
-        nodes[node].parent = nodes[grandfather].parent;
-        nodes[node].left = grandfather;
-        nodes[node].right = parent;
-
-        nodes[parent].parent = node;
-        nodes[parent].left = gamma;
-
-        nodes[grandfather].parent = node;
-        nodes[grandfather].right = beta;
-
-        _setParentIfNodeExists(nodes, beta, grandfather);
-        _setParentIfNodeExists(nodes, gamma, parent);
+        _updateChild(nodes, nodes[grandfather].parent, grandfather, node);
+        _updateChild(nodes, grandfather, parent, beta);
+        _updateChild(nodes, parent, node, gamma);
+        _updateChild(nodes, node, beta, grandfather);
+        _updateChild(nodes, node, gamma, parent);
 
         nodes[node].red = false;
         nodes[grandfather].red = true;
@@ -303,18 +321,11 @@ library RedBlackTree {
         uint248 parentWeight = _getWeight(nodes, parent);
         uint248 grandfatherWeight = _getWeight(nodes, grandfather);
 
-        nodes[node].parent = nodes[grandfather].parent;
-        nodes[node].left = parent;
-        nodes[node].right = grandfather;
-
-        nodes[parent].parent = node;
-        nodes[parent].right = beta;
-
-        nodes[grandfather].parent = node;
-        nodes[grandfather].left = gamma;
-
-        _setParentIfNodeExists(nodes, beta, grandfather);
-        _setParentIfNodeExists(nodes, gamma, parent);
+        _updateChild(nodes, nodes[grandfather].parent, grandfather, node);
+        _updateChild(nodes, grandfather, parent, gamma);
+        _updateChild(nodes, parent, node, beta);
+        _updateChild(nodes, node, beta, parent);
+        _updateChild(nodes, node, gamma, grandfather);
 
         nodes[node].red = false;
         nodes[grandfather].red = true;
@@ -337,10 +348,42 @@ library RedBlackTree {
         });
     }
 
-    function _setParentIfNodeExists(mapping(NodeId => Node) storage nodes, NodeId node, NodeId newParent) private {
-        if (node != NULL) {
-            nodes[node].parent = newParent;
+/// @dev node has to be a descendant of base
+    function _swap(mapping(NodeId => Node) storage nodes, NodeId base, NodeId node) private {
+        uint248 nodeWeight = _getWeight(nodes, node);
+        uint248 baseWeight = _getWeight(nodes, base);
+
+        NodeId nodeParent = nodes[node].parent;
+        NodeId baseLeft = nodes[base].left;
+        NodeId baseRight = nodes[base].right;
+
+        _updateChild(nodes, nodes[base].parent, base, node);
+        _updateChild(nodes, base, nodes[base].left, nodes[node].left);
+        _updateChild(nodes, base, nodes[base].right, nodes[node].right);
+        _updateChild(nodes, nodeParent, node, base);
+        _updateChild(nodes, node, nodes[node].left, baseLeft);
+        _updateChild(nodes, node, nodes[node].right, baseRight);
+
+        (nodes[base].red, nodes[node].red) = (nodes[node].red, nodes[base].red);
+        nodes[node].totalWeight = nodes[base].totalWeight;
+        while (node != base) {
+            nodes[node].totalWeight += nodes[node].totalWeight + baseWeight - nodeWeight;
         }
+    }
+
+    function _updateChild(mapping(NodeId => Node) storage nodes, NodeId node, NodeId oldChild, NodeId newChild) private {
+        if (node != NULL) {
+            if (nodes[node].left == oldChild) {
+                nodes[node].left = newChild;
+                nodes[newChild].parent = node;
+            } else if (nodes[node].right == oldChild) {
+                nodes[node].right = newChild;
+                nodes[newChild].parent = node;
+            }
+        } else {
+            nodes[newChild].parent = NULL;
+        }
+        nodes[oldChild].parent = NULL;
     }
 
     function _getTotalWeight(mapping(NodeId => Node) storage nodes, NodeId node) private view returns (uint248 totalWeight) {
