@@ -92,7 +92,7 @@ describe("Nodes", function () {
         expect(await nodesContract.getActiveNodeIds()).to.include(nodeId);
         expect(await nodesContract.activeNodeExists(nodeId)).to.eql(true);
 
-        await nodesContract.connect(deployer).deleteNode(nodeId);
+        await expect(nodesContract.connect(deployer).deleteNode(nodeId)).to.emit(nodesContract, "ActiveNodeDeleted").withArgs(nodeId, deployer.address, MOCK_IP_0_BYTES, 8000);
 
         await expect(nodesContract.getNode(nodeId)).to.be.revertedWithCustomError(nodesContract, "NodeDoesNotExist");
         expect(await nodesContract.getActiveNodeIds()).to.not.include(nodeId);
@@ -178,6 +178,38 @@ describe("Nodes", function () {
 
         const allPassiveNodeIds = await nodesContract.getPassiveNodeIds();
         expect(allPassiveNodeIds.length).to.eql(0);
+
+    });
+
+    it("should remove passive node addresses only if it does not own any other node", async () => {
+        await nodesContract.registerPassiveNode(MOCK_IPV6_BYTES, 8000);
+        const [passiveNodeId] = await nodesContract.getPassiveNodeIdsForAddress(deployer.address);
+        const passiveNode = await nodesContract.getNode(passiveNodeId);
+        expect(passiveNode.id).to.equal(passiveNodeId);
+        expect(passiveNode.port).to.equal(8000n);
+        expect(Buffer.from(getBytes(passiveNode.ip))).to.eql(MOCK_IPV6_BYTES);
+        expect(passiveNode.nodeAddress).to.equal(deployer.address);
+        expect(await nodesContract.getPassiveNodeIdsForAddress(deployer.address)).to.include(passiveNodeId);
+
+        await nodesContract.registerPassiveNode(MOCK_IP_0_BYTES, 8000);
+
+        const [, passiveNodeId2] = await nodesContract.getPassiveNodeIdsForAddress(deployer.address);
+        expect(await nodesContract.getPassiveNodeIdsForAddress(deployer.address)).to.eql([passiveNodeId, passiveNodeId2]);
+
+        await expect(nodesContract.connect(deployer).deleteNode(passiveNodeId)).to.emit(nodesContract, "PassiveNodeDeleted").withArgs(passiveNodeId, deployer.address, MOCK_IPV6_BYTES, 8000);
+        await expect(nodesContract.getNode(passiveNodeId)).to.be.revertedWithCustomError(nodesContract, "NodeDoesNotExist");
+
+        await expect(nodesContract.registerNode(MOCK_IPV6_BYTES, deployerPubKey, 8000)).to.be.revertedWithCustomError(nodesContract, "AddressInUseByPassiveNodes");
+        expect(await nodesContract.getPassiveNodeIdsForAddress(deployer.address)).to.eql([passiveNodeId2]);
+
+        expect((await nodesContract.getPassiveNodeIds()).length).to.eql(1);
+
+        await expect(nodesContract.connect(deployer).deleteNode(passiveNodeId2)).to.emit(nodesContract, "PassiveNodeDeleted").withArgs(passiveNodeId2, deployer.address, MOCK_IP_0_BYTES, 8000);
+
+        expect((await nodesContract.getPassiveNodeIds()).length).to.eql(0);
+
+        // Address is free now
+        await expect(nodesContract.registerNode(MOCK_IPV6_BYTES, deployerPubKey, 8000)).to.be.fulfilled;
 
     });
 

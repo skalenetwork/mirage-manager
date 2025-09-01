@@ -435,13 +435,17 @@ contract Nodes is AccessManagedUpgradeable, INodes {
             assert(_usedDomainNames.remove(newName));
         }
         address nodeOwner = node.nodeAddress;
+        bytes memory ip = node.ip;
+        uint16 port = node.port;
         delete nodes[id];
+
+
         IStatus statusContract = IStatus(committeeContract.status());
         bool isActive = _isActiveNode(id);
         IStaking stakingContract = IStaking(committeeContract.staking());
 
         if (isActive) {
-            emit ActiveNodeDeleted(id, nodeOwner, node.ip, node.port);
+            emit ActiveNodeDeleted(id, nodeOwner, ip, port);
             // flush before removal or rewards are split
             stakingContract.getRewardWallet(id).flush();
 
@@ -451,13 +455,16 @@ contract Nodes is AccessManagedUpgradeable, INodes {
         }
         else {
             assert(_passiveNodeIds.remove(id));
-            assert(_passiveNodeAddresses.remove(nodeOwner));
-            assert(_passiveNodeIdByAddress.remove(nodeOwner, id));
-            delete ownerChangeRequests[id];
-            emit PassiveNodeDeleted(id, nodeOwner, node.ip, node.port);
-        }
-        statusContract.nodeRemoved(id);
 
+            assert(_passiveNodeIdByAddress.remove(nodeOwner, id));
+            if (_passiveNodeIdByAddress.lengthOf(nodeOwner) == 0) {
+                assert(_passiveNodeAddresses.remove(nodeOwner));
+            }
+            delete ownerChangeRequests[id];
+            emit PassiveNodeDeleted(id, nodeOwner, ip, port);
+        }
+
+        statusContract.nodeRemoved(id);
         // may send tokens, should be the very last
         if (isActive) {
             stakingContract.nodeRemoved(id);
