@@ -495,14 +495,19 @@ describe("Nodes", function () {
 
         for(const node of nodesData) {
             const newIp = ethers.randomBytes(4);
+            const newDomain = String(ethers.randomBytes(32));
             const nodeBlocked = await committee.isNodeInCurrentOrNextCommittee(node.id);
             if (nodeBlocked) {
                 expect(nodes.connect(node.wallet).setIpAddress(node.id, newIp, 8000))
+                .to.be.revertedWithCustomError(nodes, "NodeIsInCommittee");
+                expect(nodes.connect(node.wallet).setDomainName(node.id, newDomain))
                 .to.be.revertedWithCustomError(nodes, "NodeIsInCommittee");
             }
             else {
                 await nodes.connect(node.wallet).setIpAddress(node.id, newIp, 8000);
                 expect(Buffer.from(getBytes((await nodes.getNode(node.id)).ip))).to.eql(newIp);
+                await nodes.connect(node.wallet).setDomainName(node.id, newDomain);
+                expect((await nodes.getNode(node.id)).domainName).to.eql(newDomain);
             }
         }
 
