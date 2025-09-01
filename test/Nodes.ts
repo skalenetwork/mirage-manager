@@ -264,22 +264,30 @@ describe("Nodes", function () {
         await expect(nodesContract.registerNode(MOCK_IP_1_BYTES, deployerPubKey, 8000))
         .to.be.revertedWithCustomError(nodesContract, "AddressWasAlreadyAssignedToNode");
 
-        // IP address is taken by active node
-        await expect(nodesContract.connect(user1).registerPassiveNode(MOCK_IP_0_BYTES, 8000))
-        .to.be.revertedWithCustomError(nodesContract, "IpIsNotAvailable");
-        await expect(nodesContract.connect(user1).registerNode(MOCK_IP_0_BYTES, user1PubKey, 8000))
-        .to.be.revertedWithCustomError(nodesContract, "IpIsNotAvailable");
-
         // New passive node
         await nodesContract.connect(user1).registerPassiveNode(MOCK_IP_1_BYTES, 8000)
 
         // Node Address is assigned to passive nodes
         await expect(nodesContract.connect(user1).registerNode(MOCK_IP_2_BYTES, user1PubKey, 8000))
         .to.be.revertedWithCustomError(nodesContract, "AddressInUseByPassiveNodes");
+    });
 
-        // IP Address is assigned to passive node
-        await expect(nodesContract.connect(user2).registerNode(MOCK_IP_1_BYTES, user2PubKey, 8000))
-        .to.be.revertedWithCustomError(nodesContract, "IpIsNotAvailable");
+    it("should allow duplicate domain names and IP addresses", async () => {
+        await nodesContract.registerNode(MOCK_IP_0_BYTES, deployerPubKey, 8000);
+        const nodeId = await nodesContract.getNodeId(deployer.address) as BigNumberish;
+        await nodesContract.setDomainName(nodeId, MOCK_DOMAIN_NAME_0);
+
+        await nodesContract.connect(user1).registerNode(MOCK_IP_0_BYTES, user1PubKey, 8000);
+        const nodeIdUser1 = await nodesContract.getNodeId(user1.address) as BigNumberish;
+        await nodesContract.connect(user1).setDomainName(nodeIdUser1, MOCK_DOMAIN_NAME_0);
+
+        const nodeDeployer = await nodesContract.getNode(nodeId);
+        expect(nodeDeployer.domainName).to.equal(MOCK_DOMAIN_NAME_0);
+        expect(Buffer.from(getBytes(nodeDeployer.ip))).to.eql(MOCK_IP_0_BYTES);
+
+        const nodeUser1 = await nodesContract.getNode(nodeIdUser1);
+        expect(nodeUser1.domainName).to.equal(MOCK_DOMAIN_NAME_0);
+        expect(Buffer.from(getBytes(nodeUser1.ip))).to.eql(MOCK_IP_0_BYTES);
     });
 
 
@@ -312,20 +320,6 @@ describe("Nodes", function () {
 
     });
 
-    it("should block duplicate domain names ", async () => {
-        await nodesContract.registerNode(MOCK_IP_0_BYTES, deployerPubKey, 8000);
-        const firstRegisteredNodeId = await nodesContract.getNodeId(deployer.address) as BigNumberish;
-
-        await nodesContract.setDomainName(firstRegisteredNodeId, MOCK_DOMAIN_NAME_1);
-
-        await nodesContract.connect(user1).registerNode(MOCK_IP_1_BYTES, user1PubKey, 8000);
-        const secondRegisteredNodeId = await nodesContract.getNodeId(user1.address) as BigNumberish;
-
-        await expect(nodesContract.connect(user1).setDomainName(secondRegisteredNodeId, MOCK_DOMAIN_NAME_1))
-        .to.be.revertedWithCustomError(nodesContract, "DomainNameAlreadyTaken");
-
-    });
-
     it("should block invalid IP address change requests", async () => {
         await nodesContract.registerNode(MOCK_IP_0_BYTES, deployerPubKey, 8000);
         const nodeId = await nodesContract.getNodeId(deployer.address);
@@ -344,9 +338,6 @@ describe("Nodes", function () {
         .to.be.reverted;
 
         await nodesContract.connect(user1).registerNode(MOCK_IP_1_BYTES, user1PubKey, 8000);
-
-        await expect(nodesContract.setIpAddress(nodeId, MOCK_IP_1_BYTES, 9000))
-        .to.be.revertedWithCustomError(nodesContract, "IpIsNotAvailable");
     });
 
     it("should not allow submit address change requests for not existent nodes", async () => {

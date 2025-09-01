@@ -50,8 +50,6 @@ struct Node {
 - Node IDs are unique.
 - Active Node owners cannot own any other Node, **even if the active node is deleted**.
 - Passive Node owners can own multiple Passive Nodes.
-- Registered node IPs must be unique.
-- Domain names can be empty, but if not empty, they must be unique.
 
 #### Data Validation
 
