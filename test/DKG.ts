@@ -3,6 +3,7 @@ import { NodeData, registeredOnlyNodes } from "./tools/fixtures";
 import { loadFixture } from "@nomicfoundation/hardhat-network-helpers";
 import { DKG } from "../typechain-types";
 import { DkgStatus, toEventFormat } from "./tools/dkg";
+import { ethers } from "hardhat";
 
 chai.should();
 
@@ -84,6 +85,13 @@ describe("DKG", () => {
             (await dkg.getRound(1)).status.should.be.equal(DkgStatus.BROADCAST);
             (await dkg.getRound(1)).startingBlockNumber.should.be.equal(receipt.blockNumber);
             (await dkg.getRound(1)).nodes.should.be.deep.equal(committee);
+        });
+
+        it("should restrict DKG", async () => {
+            const { dkg } = await registeredOnlyNodes();
+            const [,hacker] = await ethers.getSigners();
+            await expect(dkg.connect(hacker).generate(committee))
+                .to.be.reverted;
         });
 
         it("should not get missing round", async () => {

@@ -175,7 +175,7 @@ contract DKG is AccessManagedUpgradeable, IDkg {
         );
     }
 
-    function generate(NodeId[] calldata participants) external override returns (DkgId dkg) {
+    function generate(NodeId[] calldata participants) external override restricted returns (DkgId dkg) {
         return _createRound(participants);
     }
 
