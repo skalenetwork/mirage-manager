@@ -70,15 +70,14 @@ library FundLibrary {
         internal
     {
         _processBalanceChange(fund, balanceBeforeClaim);
-        if (fund.feeRate > 0) {
-            Credit credits = _toCreditsRoundedUp(fund, balanceBeforeClaim, amount);
-            if (fund.ownerCredits < credits) {
-                revert NotEnoughFee(_toFairRoundedDown(fund, balanceBeforeClaim, ZERO_CREDIT, fund.ownerCredits));
-            }
-            fund.ownerCredits = fund.ownerCredits - credits;
-            fund.totalCredits = fund.totalCredits - credits;
-            fund.lastBalance = balanceBeforeClaim - amount;
+        
+        Credit credits = _toCreditsRoundedUp(fund, balanceBeforeClaim, amount);
+        if (fund.ownerCredits < credits) {
+            revert NotEnoughFee(_toFairRoundedDown(fund, balanceBeforeClaim, ZERO_CREDIT, fund.ownerCredits));
         }
+        fund.ownerCredits = fund.ownerCredits - credits;
+        fund.totalCredits = fund.totalCredits - credits;
+        fund.lastBalance = balanceBeforeClaim - amount;
     }
 
     function remove(
@@ -179,10 +178,8 @@ library FundLibrary {
         view
         returns (Fair amount)
     {
-        if (fund.feeRate > 0) {
-            Credit uncountedFee = _getUncountedFeeCredits(fund, balance);
-            return _toFairRoundedDown(fund, balance, uncountedFee, fund.ownerCredits + uncountedFee);
-        }
+        Credit uncountedFee = _getUncountedFeeCredits(fund, balance);
+        return _toFairRoundedDown(fund, balance, uncountedFee, fund.ownerCredits + uncountedFee);
     }
 
     function holderToAddress(Holder holder) internal pure returns (address holderAddress) {
@@ -209,7 +206,7 @@ library FundLibrary {
     )
         private
     {
-        if (fund.feeRate > 0 && balance > fund.lastBalance) {
+        if (balance > fund.lastBalance) {
             Credit credits = _getUncountedFeeCredits(fund, balance);
             fund.ownerCredits = fund.ownerCredits + credits;
             fund.totalCredits = fund.totalCredits + credits;
@@ -253,7 +250,7 @@ library FundLibrary {
         view
         returns (Credit fee)
     {
-        if (fund.feeRate > 0 && balance > fund.lastBalance) {
+        if (balance > fund.lastBalance) {
             Fair balanceChange = balance - fund.lastBalance;
             Fair feeInFair = Fair.wrap(
                 Fair.unwrap(balanceChange) * fund.feeRate / 1000

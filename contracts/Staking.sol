@@ -49,7 +49,6 @@ import {TypedMap} from "./structs/typed/TypedMap.sol";
 import {TypedSet} from "./structs/typed/TypedSet.sol";
 import {Credit, FundLibrary, Fair, Holder} from "./utils/Fund.sol";
 
-
 contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaking {
     using Address for address payable;
     using EnumerableSet for EnumerableSet.AddressSet;
@@ -556,8 +555,15 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
     }
 
     function _updateNodeFeeRate(NodeId node, uint16 feeRate) private {
+        Fair balance;
+        if (isNodeEnabled(node)){
+            balance = _rootFund.getBalance(_getTotalBalance(), FundLibrary.nodeToHolder(node));
+        }
+        else {
+            balance = _disabledNodesBalances.get(node);
+        }
         _nodesFunds[node].setFeeRate(
-            _rootFund.getBalance(_getTotalBalance(), FundLibrary.nodeToHolder(node)),
+            balance,
             feeRate
         );
     }
