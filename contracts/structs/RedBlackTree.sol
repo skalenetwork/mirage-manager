@@ -39,6 +39,7 @@ library RedBlackTree {
 
     NodeId constant public NULL = NodeId.wrap(0);
 
+    error ChildIsMissing(NodeId node, NodeId child);
     error InsertNullNode();
     error NotFound();
     error RemoveNullNode();
@@ -57,6 +58,7 @@ library RedBlackTree {
         uint248 weight_ = weight.toUint248();
         if (root == NULL) {
             _createNode(nodes, newNode, NULL, weight_);
+            _setBlack(nodes, newNode);
             return newNode;
         }
 
@@ -76,10 +78,11 @@ library RedBlackTree {
         require(node != NULL, RemoveNullNode());
         NodeId left = nodes[node].left;
         NodeId right = nodes[node].right;
+
         if (left != NULL && right != NULL) {
             NodeId biggestChild = findLast(nodes, left);
             _swap(nodes, node, biggestChild);
-            NodeId currentRoot = root;
+            NodeId currentRoot = node == root ? biggestChild : root;
             if (nodes[biggestChild].parent == NULL) {
                 currentRoot = biggestChild;
             }
@@ -88,12 +91,7 @@ library RedBlackTree {
         setWeight(nodes, node, 0);
         if (left == NULL && right == NULL) {
             if (nodes[node].red) {
-                _updateChild(nodes, nodes[node].parent, node, NULL);
-                delete nodes[node];
-                if (node == root) {
-                    return NULL;
-                }
-                return root;
+                return _removeRedLeaf(nodes, root, node);
             }
             return _removeBlackLeaf(nodes, root, node);
         } else {
@@ -194,6 +192,9 @@ library RedBlackTree {
                     }
                 }
                 if (grandfather == root) {
+                    if (_isRed(nodes, localRoot)) {
+                        _setBlack(nodes, localRoot);
+                    }
                     return localRoot;
                 } else {
                     NodeId grandGrandfather = _parent(nodes, grandfather);
@@ -207,7 +208,7 @@ library RedBlackTree {
             }
         }
         if (_isRed(nodes, node)) {
-            nodes[node].red = false;
+            _setBlack(nodes, node);
         }
         return node;
     }
@@ -375,6 +376,15 @@ library RedBlackTree {
             node = parent;
             parent = nodes[node].parent;
         }
+    }
+
+    function _removeRedLeaf(mapping(NodeId => Node) storage nodes, NodeId root, NodeId node) private returns (NodeId newRoot) {
+        _updateChild(nodes, nodes[node].parent, node, NULL);
+        delete nodes[node];
+        if (node == root) {
+            return NULL;
+        }
+        return root;
     }
 
     function _fixBlackHeightRightNode(
@@ -725,27 +735,31 @@ library RedBlackTree {
         nodes[node].red = true;
     }
 
-/// @dev node has to be a descendant of base
+    /// @dev node has to be a descendant of base
     function _swap(mapping(NodeId => Node) storage nodes, NodeId base, NodeId node) private {
         uint248 nodeWeight = _getWeight(nodes, node);
         uint248 baseWeight = _getWeight(nodes, base);
 
+        (nodes[node].totalWeight, nodes[base].totalWeight) =
+            (nodes[base].totalWeight, nodes[node].totalWeight - nodeWeight + baseWeight);
+        for(NodeId current = nodes[node].parent; current != base; current = nodes[current].parent) {
+            nodes[current].totalWeight = nodes[current].totalWeight - nodeWeight + baseWeight;
+        }
+
         NodeId nodeParent = nodes[node].parent;
-        NodeId baseLeft = nodes[base].left;
-        NodeId baseRight = nodes[base].right;
+        NodeId nodeLeft = nodes[node].left;
+        NodeId nodeRight = nodes[node].right;
 
         _updateChild(nodes, nodes[base].parent, base, node);
-        _updateChild(nodes, base, nodes[base].left, nodes[node].left);
-        _updateChild(nodes, base, nodes[base].right, nodes[node].right);
-        _updateChild(nodes, nodeParent, node, base);
-        _updateChild(nodes, node, nodes[node].left, baseLeft);
-        _updateChild(nodes, node, nodes[node].right, baseRight);
+        _updateChild(nodes, node, nodes[node].left, nodes[base].left == node ? base : nodes[base].left);
+        _updateChild(nodes, node, nodes[node].right, nodes[base].right == node ? base : nodes[base].right);
+        if (nodeParent != base) {
+            _updateChild(nodes, nodeParent, node, base);
+        }
+        _updateChild(nodes, base, nodes[base].left, nodeLeft);
+        _updateChild(nodes, base, nodes[base].right, nodeRight);
 
         (nodes[base].red, nodes[node].red) = (nodes[node].red, nodes[base].red);
-        nodes[node].totalWeight = nodes[base].totalWeight;
-        while (node != base) {
-            nodes[node].totalWeight += nodes[node].totalWeight + baseWeight - nodeWeight;
-        }
     }
 
     function _updateChild(mapping(NodeId => Node) storage nodes, NodeId node, NodeId oldChild, NodeId newChild) private {
@@ -756,11 +770,12 @@ library RedBlackTree {
             } else if (nodes[node].right == oldChild) {
                 nodes[node].right = newChild;
                 nodes[newChild].parent = node;
+            } else {
+                revert ChildIsMissing(node, oldChild);
             }
         } else {
             nodes[newChild].parent = NULL;
         }
-        nodes[oldChild].parent = NULL;
     }
 
     function _updateTotalWeight(mapping(NodeId => Node) storage nodes, NodeId node, uint248 weight) private {
@@ -780,11 +795,13 @@ library RedBlackTree {
             return 0;
         }
         weight = nodes[node].totalWeight;
-        if (nodes[node].left != NULL) {
-            weight -= nodes[nodes[node].left].totalWeight;
+        NodeId left = nodes[node].left;
+        NodeId right = nodes[node].right;
+        if (left != NULL) {
+            weight -= nodes[left].totalWeight;
         }
-        if (nodes[node].right != NULL) {
-            weight -= nodes[nodes[node].right].totalWeight;
+        if (right != NULL) {
+            weight -= nodes[right].totalWeight;
         }
     }
 
