@@ -82,7 +82,7 @@ library RedBlackTree {
         NodeId right = nodes[node].right;
 
         if (left != NULL && right != NULL) {
-            console.log("remove node with two children");
+            // console.log("remove node with two children");
             NodeId biggestChild = findLast(nodes, left);
             _swap(nodes, node, biggestChild);
             NodeId currentRoot = node == root ? biggestChild : root;
@@ -93,13 +93,13 @@ library RedBlackTree {
         }
         setWeight(nodes, node, 0);
         if (left == NULL && right == NULL) {
-            console.log("remove leaf");
+            // console.log("remove leaf");
             if (nodes[node].red) {
                 return _removeRedLeaf(nodes, root, node);
             }
             return _removeBlackLeaf(nodes, root, node);
         } else {
-            console.log("remove node with one child");
+            // console.log("remove node with one child");
             NodeId child = left == NULL ? right : left;
             assert(_isBlack(nodes, node));
             assert(_isRed(nodes, child));
@@ -174,7 +174,6 @@ library RedBlackTree {
             if (_isBlack(nodes, parent)) {
                 return root;
             }
-            console.log("parent is red");
             NodeId uncle = _uncle(nodes, node);
             NodeId grandfather = _grandfather(nodes, node);
             if (_isRed(nodes, uncle)) {
@@ -183,7 +182,6 @@ library RedBlackTree {
                 _setRed(nodes, grandfather);
                 node = grandfather;
             } else {
-                console.log("uncle is black");
                 assert(parent == nodes[grandfather].left);
                 assert(node == nodes[parent].left);
                 _rotateLeft(nodes, grandfather, parent);
@@ -238,7 +236,6 @@ library RedBlackTree {
         private
         returns (NodeId newGrandfather)
     {
-        console.log("balance left left");
         NodeId gamma = uncle;
         NodeId delta = nodes[grandfather].right;
 
@@ -340,7 +337,7 @@ library RedBlackTree {
     }
 
     function _removeBlackLeaf(mapping(NodeId => Node) storage nodes, NodeId root, NodeId node) private returns (NodeId newRoot) {
-        console.log("remove black leaf");
+        // console.log("remove black leaf");
         if (node == root) {
             delete nodes[node];
             return NULL;
@@ -368,7 +365,7 @@ library RedBlackTree {
     }
 
     function _removeRedLeaf(mapping(NodeId => Node) storage nodes, NodeId root, NodeId node) private returns (NodeId newRoot) {
-        console.log("remove red leaf");
+        // console.log("remove red leaf");
         _updateChild(nodes, nodes[node].parent, node, NULL);
         delete nodes[node];
         if (node == root) {
@@ -538,7 +535,7 @@ library RedBlackTree {
         }
 
         if (parent == root) {
-            return sibling;
+            return right;
         } else {
             return root;
         }
@@ -566,7 +563,7 @@ library RedBlackTree {
         }
 
         if (parent == root) {
-            return sibling;
+            return left;
         } else {
             return root;
         }
