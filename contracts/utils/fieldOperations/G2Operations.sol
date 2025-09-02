@@ -136,6 +136,10 @@ library G2Operations {
         pure
         returns (bool result)
     {
+        uint256 p = Fp2Operations.P;
+        if (!(x.a < p && x.b < p && y.a < p && y.b < p)) {
+            return false;
+        }
         if (isG2ZeroPoint(x, y)) {
             return true;
         }
