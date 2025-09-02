@@ -21,6 +21,8 @@
 
 pragma solidity ^0.8.24;
 
+import "hardhat/console.sol";
+
 import { SafeCast } from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import { NodeId } from "@skalenetwork/fair-manager-interfaces/INodes.sol";
 import { NotImplemented } from "../utils/errors.sol";
@@ -80,6 +82,7 @@ library RedBlackTree {
         NodeId right = nodes[node].right;
 
         if (left != NULL && right != NULL) {
+            console.log("remove node with two children");
             NodeId biggestChild = findLast(nodes, left);
             _swap(nodes, node, biggestChild);
             NodeId currentRoot = node == root ? biggestChild : root;
@@ -90,11 +93,13 @@ library RedBlackTree {
         }
         setWeight(nodes, node, 0);
         if (left == NULL && right == NULL) {
+            console.log("remove leaf");
             if (nodes[node].red) {
                 return _removeRedLeaf(nodes, root, node);
             }
             return _removeBlackLeaf(nodes, root, node);
         } else {
+            console.log("remove node with one child");
             NodeId child = left == NULL ? right : left;
             assert(_isBlack(nodes, node));
             assert(_isRed(nodes, child));
@@ -354,12 +359,14 @@ library RedBlackTree {
     }
 
     function _removeBlackLeaf(mapping(NodeId => Node) storage nodes, NodeId root, NodeId node) private returns (NodeId newRoot) {
+        console.log("remove black leaf");
         if (node == root) {
             delete nodes[node];
             return NULL;
         }
         NodeId parent = nodes[node].parent;
         delete nodes[node];
+        _updateChild(nodes, parent, node, NULL);
         bool success;
         while (node != root) {
             if (nodes[parent].left == node) {
@@ -379,6 +386,7 @@ library RedBlackTree {
     }
 
     function _removeRedLeaf(mapping(NodeId => Node) storage nodes, NodeId root, NodeId node) private returns (NodeId newRoot) {
+        console.log("remove red leaf");
         _updateChild(nodes, nodes[node].parent, node, NULL);
         delete nodes[node];
         if (node == root) {
@@ -780,7 +788,7 @@ library RedBlackTree {
 
     function _updateTotalWeight(mapping(NodeId => Node) storage nodes, NodeId node, uint248 weight) private {
         assert(node != NULL);
-        nodes[node].totalWeight = weight = _getTotalWeight(nodes, nodes[node].left) + _getTotalWeight(nodes, nodes[node].right);
+        nodes[node].totalWeight = weight + _getTotalWeight(nodes, nodes[node].left) + _getTotalWeight(nodes, nodes[node].right);
     }
 
     function _getTotalWeight(mapping(NodeId => Node) storage nodes, NodeId node) private view returns (uint248 totalWeight) {
