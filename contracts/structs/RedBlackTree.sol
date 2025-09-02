@@ -366,10 +366,11 @@ library RedBlackTree {
         }
         NodeId parent = nodes[node].parent;
         delete nodes[node];
+        bool leftChild = nodes[parent].left == node;
         _updateChild(nodes, parent, node, NULL);
         bool success;
         while (node != root) {
-            if (nodes[parent].left == node) {
+            if (leftChild) {
                 (newRoot, success) = _fixBlackHeightLeftNode(nodes, root, parent);
                 if (success) {
                     return newRoot;
