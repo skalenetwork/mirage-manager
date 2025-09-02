@@ -42,6 +42,10 @@ library G1Operations {
     }
 
     function isG1Point(uint256 x, uint256 y) internal pure returns (bool result) {
+        // Add an explicit check for the point at infinity, the identity element.
+        if (x == 0 && y == 0) {
+            return true;
+        }
         uint256 p = Fp2Operations.P;
         return mulmod(y, y, p) ==
             addmod(mulmod(mulmod(x, x, p), x, p), 3, p);
