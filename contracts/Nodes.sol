@@ -182,7 +182,7 @@ contract Nodes is AccessManagedUpgradeable, INodes {
             publicKey: publicKey
         });
         // Node is first disabled by default.
-        // It should send a hearbeat before being considered eligible
+        // It should send a heartbeat before being considered eligible
         committeeContract.staking().nodeCreated(nextNodeId);
     }
 
