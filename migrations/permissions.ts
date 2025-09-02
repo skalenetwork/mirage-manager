@@ -6,7 +6,6 @@ const setupCommitteeRoles = async (accessManager: FairAccessManager, committee: 
     let response = await accessManager.setTargetFunctionRole(
         await ethers.resolveAddress(committee),
         [
-            committee.interface.getFunction("nodeCreated").selector,
             committee.interface.getFunction("nodeRemoved").selector
         ],
         await accessManager.NODES_ROLE()
