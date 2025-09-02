@@ -174,42 +174,22 @@ library RedBlackTree {
             if (_isBlack(nodes, parent)) {
                 return root;
             }
+            console.log("parent is red");
             NodeId uncle = _uncle(nodes, node);
             NodeId grandfather = _grandfather(nodes, node);
             if (_isRed(nodes, uncle)) {
-                nodes[parent].red = false;
-                nodes[uncle].red = false;
-                nodes[grandfather].red = true;
+                _setBlack(nodes, parent);
+                _setBlack(nodes, uncle);
+                _setRed(nodes, grandfather);
                 node = grandfather;
             } else {
-                NodeId localRoot;
-                if (parent == nodes[grandfather].left) {
-                    if (node == nodes[parent].left) {
-                        localRoot = _balanceLeftLeft(nodes, node, parent, uncle, grandfather);
-                    } else {
-                        localRoot = _balanceLeftRight(nodes, node, parent, grandfather);
-                    }
-                } else {
-                    if (node == nodes[parent].right) {
-                        localRoot = _balanceRightRight(nodes, node, parent, uncle, grandfather);
-                    } else {
-                        localRoot = _balanceRightLeft(nodes, node, parent, uncle, grandfather);
-                    }
-                }
-                if (grandfather == root) {
-                    if (_isRed(nodes, localRoot)) {
-                        _setBlack(nodes, localRoot);
-                    }
-                    return localRoot;
-                } else {
-                    NodeId grandGrandfather = _parent(nodes, grandfather);
-                    if (grandfather == nodes[grandGrandfather].left) {
-                        nodes[grandGrandfather].left = localRoot;
-                    } else {
-                        nodes[grandGrandfather].right = localRoot;
-                    }
-                    return root;
-                }
+                console.log("uncle is black");
+                assert(parent == nodes[grandfather].left);
+                assert(node == nodes[parent].left);
+                _rotateLeft(nodes, grandfather, parent);
+                _setBlack(nodes, parent);
+                _setRed(nodes, grandfather);
+                return grandfather == root ? parent : root;
             }
         }
         if (_isRed(nodes, node)) {
@@ -258,6 +238,7 @@ library RedBlackTree {
         private
         returns (NodeId newGrandfather)
     {
+        console.log("balance left left");
         NodeId gamma = uncle;
         NodeId delta = nodes[grandfather].right;
 
