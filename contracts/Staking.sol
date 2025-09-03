@@ -147,12 +147,12 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
         emit AllowedReceiverRemoved(node, receiver);
     }
 
-    function requestAllFees(NodeId node) external override {
-        requestFees(node, getEarnedFeeAmount(node));
+    function requestAllFees(NodeId node) external override returns (uint256 requestId) {
+        return requestFees(node, getEarnedFeeAmount(node));
     }
 
-    function requestSendAllFees(address payable to) external override {
-        requestSendFees(to, getEarnedFeeAmount(nodes.getNodeId(msg.sender)));
+    function requestSendAllFees(address payable to) external override returns (uint256 requestId) {
+        return requestSendFees(to, getEarnedFeeAmount(nodes.getNodeId(msg.sender)));
     }
 
     function disable(NodeId node) external override restricted {
@@ -208,6 +208,7 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
         delete _nodesAllowedReceivers[node];
         delete _rewardWallets[node];
         emit NodeDataRemoved(node);
+        
         _requestSendFees(
             node,
             getEarnedFeeAmount(node),
@@ -263,7 +264,7 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
         emit RetrievingDelayUpdated(delay);
     }
 
-    function requestRetrieve(NodeId node, Fair value) external override {
+    function requestRetrieve(NodeId node, Fair value) external override returns (uint256 requestId) {
         require(value > FundLibrary.ZERO_FAIR, ZeroAmount());
         require(_stakedNodes[msg.sender].contains(node), ZeroStakeToNode(node));
 
@@ -299,7 +300,7 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
             emit StoppedStaking(msg.sender, node);
         }
 
-        _exitQueue.createRequest(msg.sender, node, value);
+        requestId = _exitQueue.createRequest(msg.sender, node, value);
 
         if (nodeIsEnabled) {
             committee.updateWeight(node, Credit.unwrap(_getNodeCredits(node)));
@@ -491,20 +492,28 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
 
     // Public
 
-    function requestFees(NodeId node, Fair amount) public override onlyExistingActiveNode(node) {
+    function requestFees(
+        NodeId node,
+        Fair amount
+    )
+        public
+        override
+        onlyExistingActiveNode(node)
+        returns (uint256 requestId)
+    {
         bool senderIsOwner = msg.sender == nodes.getNode(node).nodeAddress;
         require(
             _nodesAllowedReceivers[node].contains(msg.sender) || senderIsOwner,
             NotAllowedToClaimRewards(msg.sender)
         );
-        _requestSendFees(
+        requestId = _requestSendFees(
             node,
             amount,
             payable(msg.sender)
         );
     }
 
-    function requestSendFees(address payable to, Fair amount) public override {
+    function requestSendFees(address payable to, Fair amount) public override returns (uint256 requestId) {
         NodeId node = nodes.getNodeId(msg.sender);
 
         // Node has opted in to allowed receivers, so the destination address must be in the list
@@ -515,7 +524,7 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
                 NotAllowedToClaimRewards(to)
             );
         }
-        _requestSendFees(
+        requestId = _requestSendFees(
             node,
             amount,
             to
@@ -574,6 +583,7 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
         address to
     )
         private
+        returns (uint256 requestId)
     {
         // sender can be allowed user, nodeOwner, or Nodes.sol contract (node deleted)
         emit FeeClaimRequested(node, msg.sender, to, amount);
@@ -601,7 +611,7 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
             totalDisabled = totalDisabled - amount;
         }
 
-        _exitQueue.createRequest(to, node, amount);
+        requestId = _exitQueue.createRequest(to, node, amount);
 
         if (nodeIsEnabled) {
             committee.updateWeight(node, Credit.unwrap(_getNodeCredits(node)));
