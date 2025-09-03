@@ -194,7 +194,9 @@ describe("Staking", () => {
         (await staking.connect(user).getStakedAmount())
             .should.be.equal(initialAmount);
 
-        await staking.connect(user).payReward(node.id, {value: amount});
+        // pay rewards to the node
+        const rewardWallet = await staking.getRewardWallet(node.id);
+        await setBalance(rewardWallet, amount);
 
         // Node has 0.5 FAIR to collect in Fees
         const tinyAmount = 10n;
@@ -248,7 +250,10 @@ describe("Staking", () => {
         expect(await staking.getDelegatorsToNodeCount(node.id)).to.be.eql(1n);
         expect(await staking.getDelegatorsToNode(node.id)).to.be.eql([user.address]);
 
-        await staking.connect(user).payReward(node.id, {value: amount});
+        // missing balance in reward wallet from rewards
+        const rewardWallet = await staking.getRewardWallet(node.id);
+        await setBalance(rewardWallet, amount);
+
         expect(await staking.getEarnedFeeAmount(node.id)).to.be.eql(amount / 2n);
         // shall send fees to the node
         await nodes.connect(node.wallet).deleteNode(node.id);
@@ -900,7 +905,8 @@ describe("Staking", () => {
         const halfValue = value / 2n;
         await staking.stake(node.id, {value: value});
         await staking.connect(node.wallet).setFeeRate(500n);
-        await staking.payReward(node.id, {value: value});
+
+        await setBalance(await staking.getRewardWallet(node.id), value);
 
         expect(await staking.getEarnedFeeAmount(node.id)).to.be.eql(halfValue - 1n);
         expect(await staking.getStakedAmount()).to.be.eql(value + halfValue);
