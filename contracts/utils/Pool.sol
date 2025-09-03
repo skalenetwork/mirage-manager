@@ -77,8 +77,7 @@ library PoolLibrary {
         nodesSample = new NodeId[](size);
         NodeId lastHealthy = _findLastHealthyNode(pool);
         require(lastHealthy != RedBlackTree.NULL, TooFewCandidates(size, 0));
-        uint256 totalWeight = pool.tree[lastHealthy].totalWeight
-                - pool.tree[pool.tree[lastHealthy].right].totalWeight;
+        uint256 totalWeight = pool.tree.getWeightTill(lastHealthy);
         for (uint256 i = 0; i < size; ++i) {
             require(totalWeight > 0, TooFewCandidates(size, i));
             uint256 randomValue = generator.random(totalWeight);

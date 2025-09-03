@@ -166,6 +166,24 @@ library RedBlackTree {
         revert NotFound();
     }
 
+    function getWeightTill(mapping(NodeId => Node) storage nodes, NodeId bound) internal view returns (uint256 weight) {
+        weight = nodes[bound].totalWeight;
+        if (nodes[bound].right != NULL) {
+            weight -= nodes[nodes[bound].right].totalWeight;
+        }
+
+        NodeId node = bound;
+        NodeId parent = nodes[bound].parent;
+        while(parent != NULL) {
+            if (nodes[parent].right == node) {
+                weight += nodes[parent].totalWeight - nodes[node].totalWeight;
+            }
+            node = parent;
+            parent = nodes[node].parent;
+        }
+        return weight;
+    }
+
     // Private
 
     function _balance(mapping(NodeId => Node) storage nodes, NodeId root, NodeId node) private returns (NodeId newRoot) {
