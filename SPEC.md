@@ -1,4 +1,4 @@
-<!-- cspell:ignore permissionless TUPP restaked unstake unstakes -->
+<!-- cspell:ignore permissionless TUPP restaked unstake unstakes Unstaking -->
 
 # FAIR Manager
 
@@ -193,48 +193,53 @@ Node fees are not *claimed* automatically. Node owners can claim fees at any tim
 
 As described, Active Nodes can be healthy or unhealthy, depending on whether they actively send `alive()` transactions to `Status.sol`. `Committee.sol` can remove nodes from the Pool, and then set them as *disabled* in `Staking.sol`. A *disabled* node does not receive rewards, but users can still stake or unstake FAIR to them. When a node is *deleted*, it becomes disabled and can never become *enabled* again.
 
+Unstaking and withdrawing fees posts requests to an exit queue. Users must wait for the delay, before their request is available for withdrawal.
+
 #### Staking Main Functions
 
-
-- `stake(NodeId node)`: Stake FAIR to a node (any user, only enabled nodes, payable).
-- `requestRetrieve(NodeId node, Fair value)`: Request to unstake FAIR from a node (any user).
-- `retrieveAll()`: Claim all unlocked FAIR in the exit queue for sender.
-- `retrieve(bytes32 requestId)`: Claim the request with requestId for the sender (if unlocked).
-- `claimUnlockedFees()`: Claim all unlocked requested fees for sender.
-- `claimUnlockedFees(bytes32 requestId)`: Claim unlocked requested fees for a specific request.
-- `requestFees(NodeId node, Fair amount)`: Request to claim fees for a node.
-- `requestAllFees(NodeId node)`: Request to claim all fees for a node.
-- `requestSendFees(address payable to, Fair amount)`: Request to send fees to an address (node owner).
-- `requestSendAllFees(address payable to)`: Request to send all fees to an address (node owner).
-- `addAllowedReceiver(address receiver)`: Add an allowed fee receiver for a node (node owner).
-- `removeAllowedReceiver(address receiver)`: Remove an allowed fee receiver for a node (node owner).
-- `setFeeRate(uint16 feeRate)`: Set node fee rate (only decrease, node owner).
-- `setStakeLimit(Fair limit)`: Set max stake limit to each node.
-- `setMaxAllowedExitRequests(uint256 amount)`: Set max exit requests for each user.
-- `setRetrievingDelay(uint256 delay)`: Set delay for unlocking stake/fees.
-- `getStakedAmount()`, `getStakedAmountFor(address holder)`: Get total staked FAIR for sender or user.
-- `getStakedNodes()`, `getStakedNodesFor(address holder)`: Get list of node IDs staked to by sender or user.
-- `getStakedToNodeAmount(NodeId node)`, `getStakedToNodeAmountFor(NodeId node, address holder)`: Get amount staked to a node by sender or user.
-- `getNodeTotalStake(NodeId node)`: Get total FAIR staked to a node.
-- `getNodeShare(NodeId node)`: Get credits share for a node in root fund.
-- `getNodeFeeRate(NodeId node)`: Get node fee rate.
-- `getRewardWallet(NodeId node)`: Get reward wallet address for a node.
-- `getDelegatorsToNode(NodeId node)`, `getDelegatorsToNodeCount(NodeId node)`: Get delegator addresses/count for a node.
-- `isNodeEnabled(NodeId node)`: Returns if node is enabled.
+- `stake(NodeId node)`: Stake FAIR to a node (any user, only existing active nodes, payable).
+- `requestRetrieve(NodeId node, Fair value)`: Request to unstake FAIR from a node.
+- `claimRequest(uint256 requestId)`: Claim the exit request with the given requestId (if unlocked).
+- `disable(NodeId node)`, `enable(NodeId node)`: Disable/enable a node (committee role).
 - `nodeCreated(NodeId node)`: Called by `Nodes.sol` when a new node is created.
 - `nodeRemoved(NodeId node)`: Called by `Nodes.sol` when a node is deleted.
-- `payReward(NodeId node)`: Pays rewards to delegators of a node (payable).
-- `disable(NodeId node)`, `enable(NodeId node)`: Disable/enable a node (committee role).
+- `payReward(NodeId node)`: Pays rewards to directly to a Node and it's delegators.
+- `addAllowedReceiver(address receiver)`: Add an allowed fee receiver for a node (node owner).
+- `removeAllowedReceiver(address receiver)`: Remove an allowed fee receiver for a node (node owner).
+- `requestFees(NodeId node, Fair amount)`: Request to claim specific amount of fees for a node.
+- `requestAllFees(NodeId node)`: Request to claim all fees for a node.
+- `requestSendFees(address payable to, Fair amount)`: Request to send specific amount fees to an address(node owner).
+- `requestSendAllFees(address payable to)`: Request to send all fees to an address (node owner).
+- `setFeeRate(uint16 feeRate)`: Set node fee rate (only decrease, node owner).
+- `setStakeLimit(Fair limit)`: Set max stake limit to each node.
+- `setRetrievingDelay(Timestamp delay)`: Set delay for unlocking requests in the exit queue.
 - `setRewardWalletReference(IRewardWallet rewardWalletReference_)`: Set reference implementation for reward wallets.
-- `getFeesExitRequest(address user, bytes32 requestId)`: get exit request data
-- `getLockedFeesAmountFor(address user)`, `getMyLockedFeesAmount()`: get total amount of exit fee requests locked for a user or sender
-- `getLockedStakeAmountFor(address user)`, `getMyLockedStakeAmount()`: get total amount of exit stake requests locked for a user or sender
-- `getLockedFeesRequestsFor(address user)`, `getMyLockedFeesRequests()`: get request ids of exit fee requests locked for a user or sender
-- `getLockedStakeRequestsFor(address user)`, `getMyLockedStakeRequests()`: get request ids of exit stake requests locked for a user or sender
-- `getUnlocked*`: For all getLocked or getMyLocked, there's analogous function for unlocked tokens
-- `getMaxExitRequests()`: returns the maximum amount of exit requests a user may have pending
-- `getRetrievingDelay()`: returns the retrieving delay that will be applied to exit requests
-- `getTotalInExitQueue()`: returns the total amount of tokens in the exit queue (fees + stake)
+
+Read functions:
+- `getDelegatorsToNode(NodeId node)`: Get delegator addresses for a node.
+- `getDelegatorsToNodeCount(NodeId node)`: Get delegator count for a node.
+- `getEarnedFeeAmount(NodeId node)`: Get earned fee amount for a node.
+- `getExitRequest(uint256 requestId)`: Get exit request data by requestId.
+- `getExitRequestAt(address user, uint256 index)`: Get exit request for a user at a specific index.
+- `getExitRequestsCountFor(address user)`: Get number of exit requests for a user.
+- `getMyExitRequestsCount()`: Get number of exit requests for sender.
+- `getMyTotalInExitQueue()`: Get total amount in exit queue for sender.
+- `getNodeFeeRate(NodeId node)`: Get node fee rate.
+- `getNodeShare(NodeId node)`: Get credits share for a node in root fund.
+- `getNodeTotalStake(NodeId node)`: Get total FAIR staked to a node.
+- `getRetrievingDelay()`: Get retrieving delay for exit requests.
+- `getRewardWallet(NodeId node)`: Get reward wallet address for a node.
+- `getStakedAmount()`: Get total staked FAIR for sender.
+- `getStakedAmountFor(address holder)`: Get total staked FAIR for a user.
+- `getStakedNodes()`: Get list of node IDs staked to by sender.
+- `getStakedNodesFor(address holder)`: Get list of node IDs staked to by a user.
+- `getStakedToNodeAmount(NodeId node)`: Get amount staked to a node by sender.
+- `getStakedToNodeAmountFor(NodeId node, address holder)`: Get amount staked to a node by a user.
+- `getTotalInExitQueueFor(address user)`: Get total amount in exit queue for a user.
+- `getTotalInExitQueue()`: Get total amount in exit queue (all users).
+- `getUnlockedExitRequestFor(address user)`: Get first unlocked exit request for a user.
+- `isNodeEnabled(NodeId node)`: Returns if node is enabled.
+- `isRequestUnlocked(uint256 requestId)`: Returns if a request is unlocked and ready to claim.
 
 #### Stake Limits
 
@@ -322,24 +327,27 @@ Although accounts with DEFAULT_ADMIN_ROLE are not automatically granted access t
 ## Custom Libraries & Data Structures
 ### [`ExitQueue.sol`](./contracts/utils/ExitQueue.sol)
 
-The `ExitQueueLibrary` manages delayed withdrawal for staking and rewards. It is used by `Staking.sol` to enforce withdrawal delays and limit the number of pending exit requests per account.
+The `ExitQueueLibrary` manages delayed withdrawals for staking and rewards. It is used by `Staking.sol` to enforce withdrawal delays and track exit requests per user.
 
 #### Key Data Structures
 
-- **ExitQueue**: Tracks all user exit requests, total pending amount, max requests per user, and delay before funds can be claimed.
-- **UserExitQueue**: Stores a user's exit requests and their IDs.
-- **ExitRequest**: Contains the amount and release date for a withdrawal.
+- **ExitQueue**: Stores all exit requests, user exit data, the total amount in the exit queue, a delay before funds can be claimed, and a counter for request IDs.
+- **UserExitData**: Tracks a user's exit request IDs and the total amount pending withdrawal.
+- **ExitRequest**: Contains the request ID, user address, node ID, amount, and unlock date for a withdrawal.
 
 #### Main Functions
 
-- `createRequest(queue, user, amount)`: Creates a new exit request for a user, enforcing max requests and setting the release date.
-- `claimAll(queue, user)`: Claims all unlocked requests for a user and transfers funds.
-- `getReadyToClaimAmount(queue, user)`: Returns the total amount ready to be claimed by a user.
-- `getTotalAmountInExitQueue(queue, user)`: Returns the total amount in que queue for a user.
+- `createRequest(queue, user, nodeId, amount)`: Creates a new exit request for a user and node, setting the unlock date based on the configured delay.
+- `claim(queue, user, requestId)`: Claims a specific unlocked exit request for a user and removes it from the queue.
+- `isRequestUnlocked(queue, requestId)`: Returns whether a specific request is unlocked and ready to be claimed.
+- `getNumRequestsForUser(queue, user)`: Returns the number of pending exit requests for a user.
+- `getRequest(queue, requestId)`: Returns the details of a specific exit request.
+- `getRequestAt(queue, user, index)`: Returns the exit request at a specific index for a user.
+- `getUnlockedRequest(queue, user)`: Returns the first unlocked exit request for a user.
+- `getTotalInQueueForUser(queue, user)`: Returns the total amount pending withdrawal for a user.
 
 #### Configuration
 
-- `maxRequests`: Maximum number of pending exit requests per user. If the limit is reached, the newest request in the queue is overridden with an updated value and timestamp
 - `retrievingDelay`: Delay (in seconds) before a request can be claimed.
 
 #### Usage
