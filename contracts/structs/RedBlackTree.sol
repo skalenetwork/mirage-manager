@@ -526,17 +526,19 @@ library RedBlackTree {
         assert(right != NULL);
         if (_hasRedChild(nodes, right)) {
             _rotateLeftRight(nodes, parent, sibling, right);
+            newRoot = right;
+
             _setBlack(nodes, nodes[sibling].right);
         } else {
             _rotateLeft(nodes, parent, sibling);
+            newRoot = sibling;
 
             _setBlack(nodes, sibling);
             _setRed(nodes, nodes[parent].left);
+
         }
 
-        if (parent == root) {
-            return right;
-        } else {
+        if (parent != root) {
             return root;
         }
     }
@@ -554,17 +556,18 @@ library RedBlackTree {
         assert(left != NULL);
         if (_hasRedChild(nodes, left)) {
             _rotateRightLeft(nodes, parent, sibling, left);
+            newRoot = left;
+
             _setBlack(nodes, nodes[sibling].left);
         } else {
             _rotateRight(nodes, parent, sibling);
+            newRoot = sibling;
 
             _setBlack(nodes, sibling);
             _setRed(nodes, nodes[parent].right);
         }
 
-        if (parent == root) {
-            return left;
-        } else {
+        if (parent != root) {
             return root;
         }
     }
