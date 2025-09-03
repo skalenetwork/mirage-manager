@@ -362,11 +362,11 @@ library RedBlackTree {
         }
         NodeId parent = nodes[node].parent;
         delete nodes[node];
-        bool leftChild = nodes[parent].left == node;
         _updateChild(nodes, parent, node, NULL);
+        node = NULL;
         bool success;
         while (node != root) {
-            if (leftChild) {
+            if (nodes[parent].left == node) {
                 (newRoot, success) = _fixBlackHeightLeftNode(nodes, root, parent);
                 if (success) {
                     return newRoot;
@@ -541,10 +541,17 @@ library RedBlackTree {
         returns (NodeId newRoot)
     {
         NodeId right = nodes[sibling].right;
+        NodeId rightLeft = nodes[right].left;
         assert(right != NULL);
         if (_hasRedChild(nodes, right)) {
             _rotateLeftRight(nodes, parent, sibling, right);
             newRoot = right;
+
+            if(_isRed(nodes, rightLeft)) {
+                _setBlack(nodes, rightLeft);
+            } else {
+                _fixBlackHeightRightNodeRedParent(nodes, root, sibling, nodes[sibling].left);
+            }
 
             _setBlack(nodes, nodes[sibling].right);
         } else {
@@ -571,12 +578,17 @@ library RedBlackTree {
         returns (NodeId newRoot)
     {
         NodeId left = nodes[sibling].left;
+        NodeId leftRight = nodes[left].right;
         assert(left != NULL);
         if (_hasRedChild(nodes, left)) {
             _rotateRightLeft(nodes, parent, sibling, left);
             newRoot = left;
 
-            _setBlack(nodes, nodes[sibling].left);
+            if(_isRed(nodes, leftRight)) {
+                _setBlack(nodes, leftRight);
+            } else {
+                _fixBlackHeightLeftNodeRedParent(nodes, root, sibling, nodes[sibling].right);
+            }
         } else {
             _rotateRight(nodes, parent, sibling);
             newRoot = sibling;
