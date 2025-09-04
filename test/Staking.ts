@@ -147,7 +147,7 @@ describe("Staking", () => {
         
         for (let index = 0; index < numRetrieve; index++) {
             const requestAt0 = await staking.getExitRequestAt(user, 0);
-            const unlocked = await staking.getUnlockedExitRequestFor(user);
+            const unlocked = await staking.getUnlockedExitRequestFor(user, 0);
             // they are the same because are all unlocked
             expect(unlocked.requestId).to.be.eql(requestAt0.requestId); 
             await staking.connect(user).claimRequest(requestAt0.requestId);
@@ -236,8 +236,8 @@ describe("Staking", () => {
         await staking.connect(node.wallet).removeAllowedReceiver(allowedReceiver);
 
         // new block was mined, timestamp updated, this fees are now unlocked because waiting time is 0 seconds
-        const unlockedFees = (await staking.connect(allowedReceiver).getUnlockedExitRequestFor(allowedReceiver)).amount;
-        expect((await staking.connect(allowedReceiver).getUnlockedExitRequestFor(allowedReceiver)).requestId).to.be.eql(5n);
+        const unlockedFees = (await staking.connect(allowedReceiver).getUnlockedExitRequestFor(allowedReceiver, 0)).amount;
+        expect((await staking.connect(allowedReceiver).getUnlockedExitRequestFor(allowedReceiver, 0)).requestId).to.be.eql(5n);
         expect(unlockedFees).to.be.eql(lockedFees);
 
         // Not allowed receiver, but can still claim fees that were previously sent/assigned to it
@@ -277,8 +277,8 @@ describe("Staking", () => {
 
         await skipTime(ONE_DAY_IN_SECONDS - 10); // skip almost 1 day
 
-        await expect(staking.getUnlockedExitRequestFor(user)).to.be.revertedWithCustomError(staking, "ZeroUnlockedRequests");
-        await expect(staking.getUnlockedExitRequestFor(node.wallet)).to.be.revertedWithCustomError(staking, "ZeroUnlockedRequests");
+        await expect(staking.getUnlockedExitRequestFor(user, 0)).to.be.revertedWithCustomError(staking, "ZeroUnlockedRequests");
+        await expect(staking.getUnlockedExitRequestFor(node.wallet, 0)).to.be.revertedWithCustomError(staking, "ZeroUnlockedRequests");
         expect(await staking.getTotalInExitQueue()).to.be.eql(2n * tinyAmount);
 
         await expect(staking.connect(user).claimRequest(0)).to.be.revertedWithCustomError(staking, "RequestIsStillLocked");
@@ -286,8 +286,8 @@ describe("Staking", () => {
 
         await skipTime(10); // skip 10 seconds
 
-        expect((await staking.getUnlockedExitRequestFor(user)).requestId).to.be.eql(0n)
-        expect((await staking.getUnlockedExitRequestFor(node.wallet)).requestId).to.be.eql(1n)
+        expect((await staking.getUnlockedExitRequestFor(user, 0)).requestId).to.be.eql(0n)
+        expect((await staking.getUnlockedExitRequestFor(node.wallet, 0)).requestId).to.be.eql(1n)
 
         await expect(staking.connect(user).claimRequest(0)).to.changeEtherBalance(user, tinyAmount);
         expect(await staking.getTotalInExitQueue()).to.be.eql(tinyAmount);
@@ -306,8 +306,8 @@ describe("Staking", () => {
         await staking.setRetrievingDelay(0); // 0 seconds delay
 
         // Will not affect previous created requests
-        await expect(staking.getUnlockedExitRequestFor(user)).to.be.revertedWithCustomError(staking, "ZeroUnlockedRequests");
-        await expect(staking.getUnlockedExitRequestFor(node.wallet)).to.be.revertedWithCustomError(staking, "ZeroUnlockedRequests");
+        await expect(staking.getUnlockedExitRequestFor(user, 0)).to.be.revertedWithCustomError(staking, "ZeroUnlockedRequests");
+        await expect(staking.getUnlockedExitRequestFor(node.wallet, 0)).to.be.revertedWithCustomError(staking, "ZeroUnlockedRequests");
         expect(await staking.getTotalInExitQueue()).to.be.eql(2n * tinyAmount);
 
         await expect(staking.connect(user).claimRequest(2)).to.be.revertedWithCustomError(staking, "RequestIsStillLocked");
@@ -315,8 +315,8 @@ describe("Staking", () => {
 
         await skipTime(ONE_DAY_IN_SECONDS); // skip 1 day
 
-        expect((await staking.getUnlockedExitRequestFor(user)).requestId).to.be.eql(2n)
-        expect((await staking.getUnlockedExitRequestFor(node.wallet)).requestId).to.be.eql(3n)
+        expect((await staking.getUnlockedExitRequestFor(user, 0)).requestId).to.be.eql(2n)
+        expect((await staking.getUnlockedExitRequestFor(node.wallet, 0)).requestId).to.be.eql(3n)
 
         await expect(staking.connect(user).claimRequest(2)).to.changeEtherBalance(user, tinyAmount);
         expect(await staking.getTotalInExitQueue()).to.be.eql(tinyAmount);

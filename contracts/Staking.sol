@@ -457,14 +457,15 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
     }
 
     function getUnlockedExitRequestFor(
-        address user
+        address user,
+        uint256 fromIndex
     )
         external
         view
         override
         returns (ExitRequest memory request)
     {
-        return _exitQueue.getUnlockedRequest(user);
+        return _exitQueue.getUnlockedRequest(user, fromIndex);
     }
 
     function getExitRequestAt(

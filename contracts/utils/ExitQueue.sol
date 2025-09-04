@@ -21,6 +21,7 @@
 
 pragma solidity ^0.8.24;
 
+import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
 import { NodeId } from "@skalenetwork/fair-manager-interfaces/INodes.sol";
@@ -63,7 +64,7 @@ library ExitQueueLibrary{
     error RequestDoesNotExistForUser(address user, uint256 requestId);
     error RequestIsStillLocked(Timestamp currentTime, Timestamp releaseTime);
     error UserDoesNotHaveRequestAt(address user, uint256 index);
-    error ZeroUnlockedRequests(address user);
+    error ZeroUnlockedRequests(address user, uint256 startIndex, uint256 endIndex);
 
     // internal
 
@@ -140,7 +141,7 @@ library ExitQueueLibrary{
     )
         internal
         view
-        returns (IStaking.ExitRequest memory request)
+        returns (IStaking.ExitRequest storage request)
     {
         request = queue.exitRequests[id];
         require(request.user != address(0), RequestDoesNotExist(id));
@@ -160,23 +161,27 @@ library ExitQueueLibrary{
         return queue.exitRequests[id];
     }
 
+    //@dev Looks up for an unlocked request in the first 20 requests starting after 'from'
     function getUnlockedRequest(
         ExitQueue storage queue,
-        address user
+        address user,
+        uint256 from
     )
         internal
         view
         returns (IStaking.ExitRequest memory request)
     {
         uint256 numRequests = getNumRequestsForUser(queue, user);
-        for (uint256 i = 0; i < numRequests; ++i) {
+        require(from < numRequests, UserDoesNotHaveRequestAt(user, from));
+        uint256 end = Math.min(numRequests, from + 20);
+        for (uint256 i = from; i < end; ++i) {
             uint256 id = queue.userExitData[user].requestIds.at(i);
             request = queue.exitRequests[id];
             if(_isRequestUnlocked(request)){
                 return request;
             }
         }
-        revert ZeroUnlockedRequests(user);
+        revert ZeroUnlockedRequests(user, from, end);
     }
 
     function getTotalInQueueForUser(ExitQueue storage queue, address user) internal view returns (Fair amount) {
