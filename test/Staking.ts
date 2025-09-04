@@ -872,4 +872,138 @@ describe("Staking", () => {
         expect(balanceBefore).to.be.greaterThan(balanceAfter);
         expect(await staking.getEarnedFeeAmount(node.id)).to.be.eql(0n);
     });
+
+    it("should compound node fee rewards", async () => {
+        const {staking, status, nodesData} = await whitelistedNodes();
+        const [, user] = await ethers.getSigners();
+        const node = nodesData[0];
+        const tolerance = 10n; // tolerance in wei for rounding errors
+
+        // Set fee rate to 10% (100 out of 1000)
+        const feeRate = 100n;
+        await staking.connect(node.wallet).setFeeRate(feeRate);
+
+        // User stakes 100 ether
+        const userStake = ethers.parseEther("100");
+        await staking.connect(user).stake(node.id, {value: userStake});
+
+        // Enable the node
+        await sendHeartbeat(status, [node]);
+
+        // Store initial values
+        let earnedFeeAmountBefore = await staking.getEarnedFeeAmount(node.id);
+        let nodeTotalStakeBefore = await staking.getNodeTotalStake(node.id);
+        let nodeStakeAmountBefore = await staking.getStakedToNodeAmountFor(node.id, node.wallet);
+        let userStakeAmountBefore = await staking.getStakedToNodeAmountFor(node.id, user);
+
+        console.log("Initial state:");
+        console.log("- Earned fees:", earnedFeeAmountBefore.toString());
+        console.log("- Node total stake:", nodeTotalStakeBefore.toString());
+        console.log("- Node self-stake:", nodeStakeAmountBefore.toString());
+        console.log("- User stake:", userStakeAmountBefore.toString());
+
+        // First cycle: Pay 100 ether reward
+        const reward1 = ethers.parseEther("100");
+        const stakingBalance1 = await ethers.provider.getBalance(staking);
+        await setBalance(await ethers.resolveAddress(staking), stakingBalance1 + reward1);
+
+        // Get values after first reward
+        let earnedFeeAmountAfter1 = await staking.getEarnedFeeAmount(node.id);
+        let nodeTotalStakeAfter1 = await staking.getNodeTotalStake(node.id);
+        let nodeStakeAmountAfter1 = await staking.getStakedToNodeAmountFor(node.id, node.wallet);
+        let userStakeAmountAfter1 = await staking.getStakedToNodeAmountFor(node.id, user);
+
+        console.log("\nAfter first reward (100 ether):");
+        console.log("- Earned fees:", earnedFeeAmountAfter1.toString());
+        console.log("- Node total stake:", nodeTotalStakeAfter1.toString());
+        console.log("- Node self-stake:", nodeStakeAmountAfter1.toString());
+        console.log("- User stake:", userStakeAmountAfter1.toString());
+
+        // Expected values after first cycle:
+        // Node commission: 10% of 100 = 10 ether
+        // Delegator receives: 90 ether
+        // Total stake should be: 100 (initial) + 100 (reward) = 200 ether
+        // Node should have 10 ether in fees
+        // User stake should be 100 + 90 = 190 ether
+        const expectedNodeFees1 = reward1 * feeRate / 1000n; // 10 ether
+        const expectedUserStake1 = userStake + reward1 - expectedNodeFees1; // 190 ether
+        const expectedTotalStake1 = userStake + reward1; // 200 ether
+
+        expect(earnedFeeAmountAfter1).to.be.closeTo(expectedNodeFees1, tolerance);
+        expect(userStakeAmountAfter1).to.be.closeTo(expectedUserStake1, tolerance);
+        expect(nodeTotalStakeAfter1).to.be.closeTo(expectedTotalStake1, tolerance);
+
+        // Second cycle: Pay another 100 ether reward
+        const reward2 = ethers.parseEther("100");
+        const stakingBalance2 = await ethers.provider.getBalance(staking);
+        await setBalance(await ethers.resolveAddress(staking), stakingBalance2 + reward2);
+
+        // Get values after second reward
+        let earnedFeeAmountAfter2 = await staking.getEarnedFeeAmount(node.id);
+        let nodeTotalStakeAfter2 = await staking.getNodeTotalStake(node.id);
+        let nodeStakeAmountAfter2 = await staking.getStakedToNodeAmountFor(node.id, node.wallet);
+        let userStakeAmountAfter2 = await staking.getStakedToNodeAmountFor(node.id, user);
+
+        console.log("\nAfter second reward (100 ether):");
+        console.log("- Earned fees:", earnedFeeAmountAfter2.toString());
+        console.log("- Node total stake:", nodeTotalStakeAfter2.toString());
+        console.log("- Node self-stake:", nodeStakeAmountAfter2.toString());
+        console.log("- User stake:", userStakeAmountAfter2.toString());
+
+        // Expected values after second cycle:
+        // Node commission from second reward: 10% of 100 = 10 ether
+        // Remaining for distribution: 90 ether
+        //
+        // At start of second cycle:
+        // - User has 190 ether staked
+        // - Node has 10 ether staked (from previous fees)
+        // - Total staked: 200 ether
+        //
+        // Distribution of remaining 90 ether:
+        // - User gets: 90 * (190/200) = 85.5 ether
+        // - Node gets: 90 * (10/200) = 4.5 ether
+        //
+        // Total node receives: 10 (commission) + 4.5 (as delegator) = 14.5 ether
+        // Total user receives: 85.5 ether
+
+        const totalStakeBeforeSecondReward = expectedTotalStake1;
+        const nodeStakeBeforeSecondReward = expectedNodeFees1;
+        const userStakeBeforeSecondReward = expectedUserStake1;
+
+        const secondRewardCommission = reward2 * feeRate / 1000n; // 10 ether
+        const remainingSecondReward = reward2 - secondRewardCommission; // 90 ether
+
+        const nodeProportionalReward = remainingSecondReward * nodeStakeBeforeSecondReward / totalStakeBeforeSecondReward;
+        const userProportionalReward = remainingSecondReward * userStakeBeforeSecondReward / totalStakeBeforeSecondReward;
+
+        const totalNodeReward = secondRewardCommission + nodeProportionalReward; // Should be ~14.5 ether
+        const expectedTotalNodeFees = expectedNodeFees1 + totalNodeReward;
+        const expectedUserStake2 = userStakeBeforeSecondReward + userProportionalReward; // Should be ~275.5 ether
+        const expectedTotalStake2 = totalStakeBeforeSecondReward + reward2; // 300 ether
+
+        console.log("\nExpected calculations:");
+        console.log("- Second reward commission:", secondRewardCommission.toString());
+        console.log("- Remaining for distribution:", remainingSecondReward.toString());
+        console.log("- Node proportional reward:", nodeProportionalReward.toString());
+        console.log("- User proportional reward:", userProportionalReward.toString());
+        console.log("- Total node reward:", totalNodeReward.toString());
+        console.log("- Expected total node fees:", expectedTotalNodeFees.toString());
+        console.log("- Expected user stake:", expectedUserStake2.toString());
+        console.log("- Expected total stake:", expectedTotalStake2.toString());
+
+        // Verify that getEarnedFeeAmount includes both commission and compounded rewards
+        expect(earnedFeeAmountAfter2).to.be.closeTo(expectedTotalNodeFees, tolerance);
+        expect(userStakeAmountAfter2).to.be.closeTo(expectedUserStake2, tolerance);
+        expect(nodeTotalStakeAfter2).to.be.closeTo(expectedTotalStake2, tolerance);
+
+        // Verify that the node's self-stake amount reflects the compounded fees
+        expect(nodeStakeAmountAfter2).to.be.closeTo(expectedTotalNodeFees, tolerance);
+
+        // Additional verification: check that the delta calculations match expectations
+        const nodeTotalStakeDelta2 = nodeTotalStakeAfter2 - nodeTotalStakeAfter1;
+        expect(nodeTotalStakeDelta2).to.be.closeTo(reward2, tolerance);
+
+        const earnedFeeDelta2 = earnedFeeAmountAfter2 - earnedFeeAmountAfter1;
+        expect(earnedFeeDelta2).to.be.closeTo(totalNodeReward, tolerance);
+    });
 });
