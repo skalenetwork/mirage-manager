@@ -545,11 +545,11 @@ describe("Nodes", function () {
 
     });
 
-    it("should should not allow deleting node if node in current or next committee or has stake", async function () {
+    it("should should not allow deleting node if node in current or next committee", async function () {
         // TODO: this test is taking too long only on old versions of nodejs
         // remove custom timeout after deprecation of nodejs 18
         this.timeout(60000); // 1 minutes
-        const {committee, nodesData, nodes, status, staking} = await whitelistedAndStakedNodes();
+        const {committee, nodesData, nodes, status} = await whitelistedAndStakedNodes();
         await committee.setCommitteeSize(5); // to save resources
         await sendHeartbeat(status, nodesData.slice(0, 10)); // to save time
         await committee.select();
@@ -560,12 +560,6 @@ describe("Nodes", function () {
                 .to.be.revertedWithCustomError(nodes, "NodeIsInCommittee");
             }
             else {
-                const amount = await staking.getStakedToNodeAmount(node.id);
-                if (amount > 0) {
-                    await expect(nodes.connect(node.wallet).deleteNode(node.id))
-                    .to.be.revertedWithCustomError(nodes, "NodeHasDelegations");
-                    await staking.retrieve(node.id, amount);
-                }
                 await nodes.connect(node.wallet).deleteNode(node.id);
             }
         }

@@ -17,6 +17,7 @@
         "typechain-types",
         "slither.config.json",
         "coverage",
-        "coverage.json"
+        "coverage.json",
+        "package.json"
     ]
 }
