@@ -298,10 +298,8 @@ describe("Red-black tree", () => {
             await redBlackTree.insertSmallest(9, 9);
             await redBlackTree.insertSmallest(10, 10);
             await redBlackTree.validate();
-            await redBlackTree.print();
 
             await redBlackTree.remove(3);
-            await redBlackTree.print();
             await redBlackTree.validate();
         });
 
@@ -337,12 +335,9 @@ describe("Red-black tree", () => {
             await redBlackTree.remove(102);
             await redBlackTree.remove(63);
             await redBlackTree.remove(62);
-
             await redBlackTree.validate();
-            await redBlackTree.print();
 
             await redBlackTree.remove(4);
-            await redBlackTree.print();
             await redBlackTree.validate();
         });
     });

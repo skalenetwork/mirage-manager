@@ -21,19 +21,14 @@
 
 pragma solidity ^0.8.24;
 
-import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 import {NodeId} from "@skalenetwork/fair-manager-interfaces/INodes.sol";
-// for debugging purposes only
-// solhint-disable-next-line no-console
-import {console} from "hardhat/console.sol";
 import {RedBlackTree} from "../../structs/RedBlackTree.sol";
 
 interface IRedBlackTreeTester {
     function insertSmallest(NodeId node, uint256 weight) external;
     function remove(NodeId node) external;
     function getNodes() external view returns (NodeId[] memory nodes);
-    function print() external view;
     function validate() external view;
 }
 
@@ -76,17 +71,8 @@ contract RedBlackTreeTester is IRedBlackTreeTester{
     }
 
     function getNodes() external view override returns (NodeId[] memory nodes) {
-        return _getNodes(root);
-    }
-
-    function print() external view override {
-        // it's for debugging purposes only
-        // solhint-disable-next-line no-console
-        console.log("Tree:");
-        uint256 height = _height(root);
-        for (uint256 level = height; level + 1 > 1; --level) {
-            _print(level);
-        }
+        nodes = new NodeId[](_count(root));
+        _getNodes(root, nodes, 0);
     }
 
     // private
@@ -102,101 +88,23 @@ contract RedBlackTreeTester is IRedBlackTreeTester{
         return tree[node].red;
     }
 
-    function _getNodes(NodeId node) private view returns (NodeId[] memory nodes) {
+    function _getNodes(NodeId node, NodeId[] memory nodes, uint256 index) private view returns (uint256 newIndex){
         if (node == NULL) {
-            return new NodeId[](0);
+            return index;
         }
-        NodeId[] memory leftNodes = _getNodes(tree[node].left);
-        NodeId[] memory rightNodes = _getNodes(tree[node].right);
-        uint256 leftNodesLength = leftNodes.length;
-        uint256 rightNodesLength = rightNodes.length;
-        nodes = new NodeId[](leftNodes.length + 1 + rightNodes.length);
-        uint256 index = 0;
-        for (uint256 i = 0; i < leftNodesLength; ++i) {
-            nodes[index] = leftNodes[i];
-            ++index;
-        }
+        index = _getNodes(tree[node].left, nodes, index);
         nodes[index] = node;
         ++index;
-        for (uint256 i = 0; i < rightNodesLength; ++i) {
-            nodes[index] = rightNodes[i];
-            ++index;
-        }
+        index = _getNodes(tree[node].right, nodes, index);
+        return index;
     }
 
-    function _height(NodeId node) private view returns (uint256 value) {
+    function _count(NodeId node) private view returns (uint256 value) {
         if (node == NULL) {
-            return 1;
+            return 0;
+        } else {
+            return 1 + _count(tree[node].left) + _count(tree[node].right);
         }
-        else return 1 + Math.max(_height(tree[node].left), _height(tree[node].right));
-    }
-
-    function _getNodesWithHeight(
-        NodeId node,
-        uint256 height,
-        uint256 targetHeight
-    )
-        private
-        view
-        returns (NodeId[] memory nodes)
-    {
-        assert(height + 1 > targetHeight);
-        if (height > targetHeight) {
-            NodeId[] memory left;
-            NodeId[] memory right;
-            if (node == NULL || node == EMPTY) {
-                left = _getNodesWithHeight(EMPTY, height - 1, targetHeight);
-                right = _getNodesWithHeight(EMPTY, height - 1, targetHeight);
-            } else {
-                left = _getNodesWithHeight(tree[node].left, height - 1, targetHeight);
-                right = _getNodesWithHeight(tree[node].right, height - 1, targetHeight);
-            }
-            uint256 leftLength = left.length;
-            uint256 rightLength = right.length;
-            nodes = new NodeId[](leftLength + rightLength);
-            uint256 index = 0;
-            for (uint256 i = 0; i < leftLength; ++i) {
-                nodes[index] = left[i];
-                ++index;
-            }
-            for (uint256 i = 0; i < rightLength; ++i) {
-                nodes[index] = right[i];
-                ++index;
-            }
-            return nodes;
-        }
-        nodes = new NodeId[](1);
-        nodes[0] = node;
-    }
-
-    function _print(uint256 height) private view {
-        NodeId[] memory nodes = _getNodesWithHeight(root, _height(root), height);
-        uint256 nodesNumber = nodes.length;
-        string memory line = "";
-        string memory offset = _offset(_width(height - 1));
-        for (uint256 i = 0; i < nodesNumber; ++i) {
-            string memory node = NodeId.unwrap(nodes[i]).toString();
-            if (nodes[i] == NULL) {
-                node = "x";
-            }
-            if (nodes[i] == EMPTY) {
-                node = " ";
-            }
-            if (_isRed(nodes[i])) {
-                node = string.concat(node, "!");
-            }
-            string memory rightOffset;
-            if (bytes(offset).length + 1 > bytes(node).length) {
-                rightOffset = _offset(bytes(offset).length + 1 - bytes(node).length);
-            } else {
-                rightOffset = " ";
-            }
-            string memory output = string.concat(offset, node, rightOffset);
-            line = string.concat(line, " ", output);
-        }
-        // it's for debugging purposes only
-        // solhint-disable-next-line no-console
-        console.log(line);
     }
 
     function _validate(NodeId currentRoot) private view returns (uint256 blackHeight, uint256 weight) {
@@ -244,22 +152,5 @@ contract RedBlackTreeTester is IRedBlackTreeTester{
             ++blackHeight;
         }
         weight = tree[currentRoot].totalWeight;
-    }
-
-    function _offset(uint256 width) private pure returns (string memory result) {
-        result = "";
-        for (uint256 i = 0; i < width; ++i) {
-            result = string.concat(result, " ");
-        }
-    }
-
-    function _width(uint256 height) private pure returns (uint256 value) {
-        if (height == 0) {
-            return 0;
-        }
-        if (height == 1) {
-            return 1;
-        }
-        return 1 + 2 * _width(height - 1);
     }
 }
