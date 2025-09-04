@@ -179,9 +179,9 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
         restricted
         onlyExistingActiveNode(node)
     {
+        _pullReward(node);
         (bool wasDisabled, Fair value) = _disabledNodesBalances.tryGet(node);
         require(wasDisabled, NodeIsNotDisabled(node));
-        _pullReward(node);
         Fair balance = _getTotalBalance();
         _rootFund.supply(
             balance,

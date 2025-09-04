@@ -1029,4 +1029,78 @@ describe("Staking", () => {
         expect(stakeBefore).to.be.greaterThan(stakeAfter);
         expect(await staking.getEarnedFeeAmount(node.id)).to.be.eql(0n);
     });
+
+    it("should allow alive() to enable node after receiving rewards", async () => {
+        const {nodesData, staking, status} = await whitelistedNodes();
+        const [node] = nodesData;
+        const rewardWallet = await staking.getRewardWallet(node.id);
+        await setBalance(rewardWallet, ethers.parseEther("3"));
+        await setBalance(await ethers.resolveAddress(staking), ethers.parseEther("2"));
+        await status.connect(node.wallet).alive();
+    });
+
+    it("should correctly process delayed rewards when fee rate is 0", async () => {
+        const {nodesData: [node], staking} = await registeredOnlyNodes();
+        const amount = ethers.parseEther("1");
+        await staking.connect(node.wallet).setFeeRate(0);
+
+        (await staking.getStakedAmount())
+            .should.be.equal(0n);
+        (await staking.getNodeTotalStake(node.id))
+            .should.be.equal(0n);
+        (await staking.getEarnedFeeAmount(node.id))
+            .should.be.equal(0n);
+
+        // Pay reward to a node without stake
+        await setBalance(await staking.getRewardWallet(node.id), amount);
+
+        (await staking.getStakedAmount())
+            .should.be.equal(0n);
+        (await staking.getNodeTotalStake(node.id))
+            .should.be.equal(amount);
+        (await staking.getEarnedFeeAmount(node.id))
+            .should.be.equal(0n);
+
+        // Stake to the node with reward waiting
+        await staking.stake(node.id, {value: amount});
+
+        (await staking.getStakedAmount())
+            .should.be.equal(amount + amount); // stake + delayed reward
+        (await staking.getNodeTotalStake(node.id))
+            .should.be.equal(amount + amount);
+        (await staking.getEarnedFeeAmount(node.id))
+            .should.be.equal(0n);
+    });
+
+    it("should correctly process delayed rewards when fee rate is greater than 0", async () => {
+        const {nodesData: [node], staking} = await registeredOnlyNodes();
+        const amount = ethers.parseEther("1");
+        await staking.connect(node.wallet).setFeeRate(500); // 50%
+
+        (await staking.getStakedAmount())
+            .should.be.equal(0n);
+        (await staking.getNodeTotalStake(node.id))
+            .should.be.equal(0n);
+        (await staking.getEarnedFeeAmount(node.id))
+            .should.be.equal(0n);
+
+        // Pay reward to a node without stake
+        await setBalance(await staking.getRewardWallet(node.id), amount);
+
+        (await staking.getStakedAmount())
+            .should.be.equal(0n);
+        (await staking.getNodeTotalStake(node.id))
+            .should.be.equal(amount);
+        (await staking.getEarnedFeeAmount(node.id))
+            .should.be.equal(amount);
+
+        await staking.stake(node.id, {value: amount});
+
+        (await staking.getStakedAmount())
+            .should.be.equal(amount);
+        (await staking.getNodeTotalStake(node.id))
+            .should.be.equal(amount + amount);
+        (await staking.getEarnedFeeAmount(node.id))
+            .should.be.equal(amount);
+    });
 });

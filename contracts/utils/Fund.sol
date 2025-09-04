@@ -70,7 +70,7 @@ library FundLibrary {
         internal
     {
         _processBalanceChange(fund, balanceBeforeClaim);
-        
+
         Credit credits = _toCreditsRoundedUp(fund, balanceBeforeClaim, amount);
         if (fund.ownerCredits < credits) {
             revert NotEnoughFee(_toFairRoundedDown(fund, balanceBeforeClaim, ZERO_CREDIT, fund.ownerCredits));
@@ -131,8 +131,12 @@ library FundLibrary {
         internal
     {
         _processBalanceChange(fund, balanceBeforeSupply);
-        Fair balanceBefore = getBalance(fund, balanceBeforeSupply, holder);
+        Fair holderBalanceBefore = getBalance(fund, balanceBeforeSupply, holder);
         Credit credits = _toCreditsRoundedDown(fund, balanceBeforeSupply, amount);
+        Fair delayedReward = ZERO_FAIR;
+        if (fund.totalCredits == ZERO_CREDIT) {
+            delayedReward = balanceBeforeSupply;
+        }
         (bool holderExists, Credit holderCredits) = fund.credits.tryGet(holder);
         // If holder does not exist, it is added with the credits.
         // If it does exist, set() must return false and value is updated.
@@ -142,7 +146,7 @@ library FundLibrary {
         }
         fund.lastBalance = balanceBeforeSupply + amount;
         Fair balanceAfter = getBalance(fund, fund.lastBalance, holder);
-        _checkAllowedError(balanceBefore, balanceAfter, amount);
+        _checkAllowedError(holderBalanceBefore, balanceAfter, amount + delayedReward);
     }
 
     function getBalance(
@@ -250,7 +254,7 @@ library FundLibrary {
         view
         returns (Credit fee)
     {
-        if (balance > fund.lastBalance) {
+        if (balance > fund.lastBalance && fund.feeRate > 0) {
             Fair balanceChange = balance - fund.lastBalance;
             Fair feeInFair = Fair.wrap(
                 Fair.unwrap(balanceChange) * fund.feeRate / 1000
@@ -271,6 +275,12 @@ library FundLibrary {
     {
         if (balance == ZERO_FAIR) {
             return Credit.wrap(Fair.unwrap(amount) * CREDIT_PRECISION);
+        }
+        if (fund.totalCredits == ZERO_CREDIT) {
+            // Balance is positive but amount of shares is still zero.
+            // Reward was received before somebody joined the fund.
+            // Give away the reward to first holder joined because there is no one else.
+            return Credit.wrap(Fair.unwrap(amount + balance) * CREDIT_PRECISION);
         }
         return Credit.wrap(
             Math.mulDiv(
@@ -314,14 +324,15 @@ library FundLibrary {
         view
         returns (Fair fair)
     {
-        if (fund.totalCredits == ZERO_CREDIT) {
+        Credit totalCreditsWithUncountedFee = fund.totalCredits + uncountedFee;
+        if (totalCreditsWithUncountedFee == ZERO_CREDIT) {
             return ZERO_FAIR;
         }
         return Fair.wrap(
             Math.mulDiv(
                 Fair.unwrap(balance),
                 Credit.unwrap(amount),
-                Credit.unwrap(fund.totalCredits + uncountedFee),
+                Credit.unwrap(totalCreditsWithUncountedFee),
                 Math.Rounding.Floor
             )
         );
