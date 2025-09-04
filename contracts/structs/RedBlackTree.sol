@@ -21,11 +21,8 @@
 
 pragma solidity ^0.8.24;
 
-import "hardhat/console.sol";
-
 import { SafeCast } from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import { NodeId } from "@skalenetwork/fair-manager-interfaces/INodes.sol";
-import { NotImplemented } from "../utils/errors.sol";
 
 library RedBlackTree {
     using SafeCast for uint256;
@@ -82,7 +79,6 @@ library RedBlackTree {
         NodeId right = nodes[node].right;
 
         if (left != NULL && right != NULL) {
-            // console.log("remove node with two children");
             NodeId biggestChild = findLast(nodes, left);
             _swap(nodes, node, biggestChild);
             NodeId currentRoot = node == root ? biggestChild : root;
@@ -93,13 +89,11 @@ library RedBlackTree {
         }
         setWeight(nodes, node, 0);
         if (left == NULL && right == NULL) {
-            // console.log("remove leaf");
             if (nodes[node].red) {
                 return _removeRedLeaf(nodes, root, node);
             }
             return _removeBlackLeaf(nodes, root, node);
         } else {
-            // console.log("remove node with one child");
             NodeId child = left == NULL ? right : left;
             assert(_isBlack(nodes, node));
             assert(_isRed(nodes, child));
@@ -186,7 +180,14 @@ library RedBlackTree {
 
     // Private
 
-    function _balance(mapping(NodeId => Node) storage nodes, NodeId root, NodeId node) private returns (NodeId newRoot) {
+    function _balance(
+        mapping(NodeId => Node) storage nodes,
+        NodeId root,
+        NodeId node
+    )
+        private
+        returns (NodeId newRoot)
+    {
         while (node != root) {
             NodeId parent = _parent(nodes, node);
             if (_isBlack(nodes, parent)) {
@@ -214,135 +215,6 @@ library RedBlackTree {
         return node;
     }
 
-    function _balanceRightRight(
-        mapping(NodeId => Node) storage nodes,
-        NodeId node,
-        NodeId parent,
-        NodeId uncle,
-        NodeId grandfather
-    )
-        private
-        returns (NodeId newGrandfather)
-    {
-        NodeId alpha = uncle;
-        NodeId beta = nodes[parent].left;
-
-        uint248 nodeWeight = _getWeight(nodes, node);
-        uint248 parentWeight = _getWeight(nodes, parent);
-        uint248 grandfatherWeight = _getWeight(nodes, grandfather);
-
-        _updateChild(nodes, nodes[grandfather].parent, grandfather, parent);
-        _updateChild(nodes, grandfather, parent, beta);
-        _updateChild(nodes, parent, beta, grandfather);
-
-        nodes[parent].red = false;
-        nodes[grandfather].red = true;
-
-        nodes[grandfather].totalWeight = grandfatherWeight + _getTotalWeight(nodes, alpha) + _getTotalWeight(nodes, beta);
-        nodes[parent].totalWeight = parentWeight + nodes[grandfather].totalWeight + nodeWeight;
-
-        return parent;
-    }
-
-    function _balanceLeftLeft(
-        mapping(NodeId => Node) storage nodes,
-        NodeId node,
-        NodeId parent,
-        NodeId uncle,
-        NodeId grandfather
-    )
-        private
-        returns (NodeId newGrandfather)
-    {
-        NodeId gamma = uncle;
-        NodeId delta = nodes[grandfather].right;
-
-        uint248 nodeWeight = _getWeight(nodes, node);
-        uint248 parentWeight = _getWeight(nodes, parent);
-        uint248 grandfatherWeight = _getWeight(nodes, grandfather);
-
-        _updateChild(nodes, nodes[grandfather].parent, grandfather, parent);
-        _updateChild(nodes, grandfather, parent, gamma);
-        _updateChild(nodes, parent, gamma, grandfather);
-
-        nodes[parent].red = false;
-        nodes[grandfather].red = true;
-
-        nodes[grandfather].totalWeight = grandfatherWeight + _getTotalWeight(nodes, gamma) + _getTotalWeight(nodes, delta);
-        nodes[parent].totalWeight = parentWeight + nodes[grandfather].totalWeight + nodeWeight;
-
-        return parent;
-    }
-
-    function _balanceRightLeft(
-        mapping(NodeId => Node) storage nodes,
-        NodeId node,
-        NodeId parent,
-        NodeId uncle,
-        NodeId grandfather
-    )
-        private
-        returns (NodeId newGrandfather)
-    {
-        NodeId alpha = uncle;
-        NodeId beta = nodes[node].left;
-        NodeId gamma = nodes[node].right;
-        NodeId delta = nodes[parent].right;
-
-        uint248 nodeWeight = _getWeight(nodes, node);
-        uint248 parentWeight = _getWeight(nodes, parent);
-        uint248 grandfatherWeight = _getWeight(nodes, grandfather);
-
-        _updateChild(nodes, nodes[grandfather].parent, grandfather, node);
-        _updateChild(nodes, grandfather, parent, beta);
-        _updateChild(nodes, parent, node, gamma);
-        _updateChild(nodes, node, beta, grandfather);
-        _updateChild(nodes, node, gamma, parent);
-
-        nodes[node].red = false;
-        nodes[grandfather].red = true;
-
-        nodes[grandfather].totalWeight = grandfatherWeight + _getTotalWeight(nodes, alpha) + _getTotalWeight(nodes, beta);
-        nodes[parent].totalWeight = parentWeight + _getTotalWeight(nodes, gamma) + _getTotalWeight(nodes, delta);
-        nodes[node].totalWeight = nodeWeight + nodes[parent].totalWeight + nodes[grandfather].totalWeight;
-
-        return node;
-    }
-
-    function _balanceLeftRight(
-        mapping(NodeId => Node) storage nodes,
-        NodeId node,
-        NodeId parent,
-        NodeId grandfather
-    )
-        private
-        returns (NodeId newGrandfather)
-    {
-        NodeId alpha = nodes[parent].left;
-        NodeId beta = nodes[node].left;
-        NodeId gamma = nodes[node].right;
-        NodeId delta = nodes[grandfather].right;
-
-        uint248 nodeWeight = _getWeight(nodes, node);
-        uint248 parentWeight = _getWeight(nodes, parent);
-        uint248 grandfatherWeight = _getWeight(nodes, grandfather);
-
-        _updateChild(nodes, nodes[grandfather].parent, grandfather, node);
-        _updateChild(nodes, grandfather, parent, gamma);
-        _updateChild(nodes, parent, node, beta);
-        _updateChild(nodes, node, beta, parent);
-        _updateChild(nodes, node, gamma, grandfather);
-
-        nodes[node].red = false;
-        nodes[grandfather].red = true;
-
-        nodes[grandfather].totalWeight = grandfatherWeight + _getTotalWeight(nodes, gamma) + _getTotalWeight(nodes, delta);
-        nodes[parent].totalWeight = parentWeight + _getTotalWeight(nodes, alpha) + _getTotalWeight(nodes, beta);
-        nodes[node].totalWeight = nodeWeight + nodes[parent].totalWeight + nodes[grandfather].totalWeight;
-
-        return node;
-    }
-
     function _createNode(mapping(NodeId => Node) storage nodes, NodeId id, NodeId parent, uint248 weight) private {
         nodes[id] = Node({
             id: id,
@@ -354,8 +226,14 @@ library RedBlackTree {
         });
     }
 
-    function _removeBlackLeaf(mapping(NodeId => Node) storage nodes, NodeId root, NodeId node) private returns (NodeId newRoot) {
-        // console.log("remove black leaf");
+    function _removeBlackLeaf(
+        mapping(NodeId => Node) storage nodes,
+        NodeId root,
+        NodeId node
+    )
+        private
+        returns (NodeId newRoot)
+    {
         if (node == root) {
             delete nodes[node];
             return NULL;
@@ -382,8 +260,14 @@ library RedBlackTree {
         }
     }
 
-    function _removeRedLeaf(mapping(NodeId => Node) storage nodes, NodeId root, NodeId node) private returns (NodeId newRoot) {
-        // console.log("remove red leaf");
+    function _removeRedLeaf(
+        mapping(NodeId => Node) storage nodes,
+        NodeId root,
+        NodeId node
+    )
+        private
+        returns (NodeId newRoot)
+    {
         _updateChild(nodes, nodes[node].parent, node, NULL);
         delete nodes[node];
         if (node == root) {
@@ -408,7 +292,14 @@ library RedBlackTree {
         }
     }
 
-    function _fixBlackHeightLeftNode(mapping(NodeId => Node) storage nodes, NodeId root, NodeId parent) private returns (NodeId newRoot, bool success){
+    function _fixBlackHeightLeftNode(
+        mapping(NodeId => Node) storage nodes,
+        NodeId root,
+        NodeId parent
+    )
+        private
+        returns (NodeId newRoot, bool success)
+    {
         NodeId sibling = nodes[parent].right;
         if (_isRed(nodes, parent)) {
             return (_fixBlackHeightLeftNodeRedParent(nodes, root, parent, sibling), true);
@@ -692,7 +583,14 @@ library RedBlackTree {
         _updateTotalWeight(nodes, node, nodeWeight);
     }
 
-    function _rotateLeftRight(mapping(NodeId => Node) storage nodes, NodeId grandfather, NodeId parent, NodeId node) private {
+    function _rotateLeftRight(
+        mapping(NodeId => Node) storage nodes,
+        NodeId grandfather,
+        NodeId parent,
+        NodeId node
+    )
+        private
+    {
         NodeId beta = nodes[node].left;
         NodeId gamma = nodes[node].right;
 
@@ -725,7 +623,14 @@ library RedBlackTree {
         _updateTotalWeight(nodes, node, nodeWeight);
     }
 
-    function _rotateRightLeft(mapping(NodeId => Node) storage nodes, NodeId grandfather, NodeId parent, NodeId node) private {
+    function _rotateRightLeft(
+        mapping(NodeId => Node) storage nodes,
+        NodeId grandfather,
+        NodeId parent,
+        NodeId node
+    )
+        private
+    {
         NodeId beta = nodes[node].left;
         NodeId gamma = nodes[node].right;
 
@@ -782,7 +687,14 @@ library RedBlackTree {
         (nodes[base].red, nodes[node].red) = (nodes[node].red, nodes[base].red);
     }
 
-    function _updateChild(mapping(NodeId => Node) storage nodes, NodeId node, NodeId oldChild, NodeId newChild) private {
+    function _updateChild(
+        mapping(NodeId => Node) storage nodes,
+        NodeId node,
+        NodeId oldChild,
+        NodeId newChild
+    )
+        private
+    {
         if (node != NULL) {
             if (nodes[node].left == oldChild) {
                 nodes[node].left = newChild;
@@ -800,10 +712,18 @@ library RedBlackTree {
 
     function _updateTotalWeight(mapping(NodeId => Node) storage nodes, NodeId node, uint248 weight) private {
         assert(node != NULL);
-        nodes[node].totalWeight = weight + _getTotalWeight(nodes, nodes[node].left) + _getTotalWeight(nodes, nodes[node].right);
+        nodes[node].totalWeight =
+            weight + _getTotalWeight(nodes, nodes[node].left) + _getTotalWeight(nodes, nodes[node].right);
     }
 
-    function _getTotalWeight(mapping(NodeId => Node) storage nodes, NodeId node) private view returns (uint248 totalWeight) {
+    function _getTotalWeight(
+        mapping(NodeId => Node) storage nodes,
+        NodeId node
+    )
+        private
+        view
+        returns (uint248 totalWeight)
+    {
         if (node == NULL) {
             return 0;
         }
@@ -825,7 +745,14 @@ library RedBlackTree {
         }
     }
 
-    function _grandfather(mapping(NodeId => Node) storage nodes, NodeId node) private view returns (NodeId grandfather) {
+    function _grandfather(
+        mapping(NodeId => Node) storage nodes,
+        NodeId node
+    )
+        private
+        view
+        returns (NodeId grandfather)
+    {
         return _parent(nodes, _parent(nodes, node));
     }
 
