@@ -133,7 +133,7 @@ library RedBlackTree {
         returns (NodeId node)
     {
         node = root;
-        while (node != RedBlackTree.NULL) {
+        while (node != NULL) {
             NodeId left = nodes[node].left;
             if (weight < _getTotalWeight(nodes, left)) {
                 node = left;
