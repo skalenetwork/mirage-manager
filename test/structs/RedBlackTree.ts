@@ -86,8 +86,6 @@ describe("Red-black tree", () => {
     describe("random tests", () => {
         let redBlackTree: RedBlackTreeTester;
         const insertedNodes = new Set<bigint>();
-        let log: bigint[] = [];
-        let added: boolean[] = [];
         let nextNodeId = 1n;
         const MAX_AVERAGE_SIZE = 10;
         const NUMBER_OF_ITERATIONS = 200;
@@ -95,16 +93,6 @@ describe("Red-black tree", () => {
         before(async () => {
             redBlackTree = (await redBlackTreeTester()).redBlackTreeTester;
         });
-
-        const showLog = () => {
-            for (let i = 0; i < log.length; ++i) {
-                if (added[i]) {
-                    console.log(`await redBlackTree.insertSmallest(${log[i]}, ${log[i]});`);
-                } else {
-                    console.log(`await redBlackTree.remove(${log[i]});`);
-                }
-            }
-        }
 
         for (let averageSize = 1; averageSize <= MAX_AVERAGE_SIZE; ++averageSize) {
             it(`should work correctly with average size ${averageSize}`, async () => {
@@ -116,39 +104,23 @@ describe("Red-black tree", () => {
                     if (insertedNodes.size === 0 || Math.random() < addProbability) {
                         // add node
                         const nodeId = nextNodeId++;
-                        log.push(nodeId);
-                        added.push(true);
                         insertedNodes.add(nodeId);
                         await redBlackTree.insertSmallest(nodeId, nodeId);
-                        try {
-                            await redBlackTree.validate();
-                        } catch (e) {
-                            showLog();
-                            throw e;
-                        }
+                        await redBlackTree.validate();
                         Array.from(await redBlackTree.getNodes())
                             .should.have.members(Array.from(insertedNodes));
                     } else {
                         // remove node
                         const nodeId = _.sample(Array.from(insertedNodes))!;
-                        log.push(nodeId);
-                        added.push(false);
                         insertedNodes.delete(nodeId);
                         await redBlackTree.remove(nodeId);
-                        try {
-                            await redBlackTree.validate();
-                        } catch (e) {
-                            showLog();
-                            throw e;
-                        }
+                        await redBlackTree.validate();
                         Array.from(await redBlackTree.getNodes())
                             .should.have.members(Array.from(insertedNodes));
                     }
 
                     if (insertedNodes.size === 0) {
                         nextNodeId = 1n;
-                        log = [];
-                        added = [];
                     }
                 }
             });
