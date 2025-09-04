@@ -14,7 +14,7 @@ FAIR-manager smart contracts are a pivotal component in the orchestration and go
   - [Committee.sol](#committeesol)
 - [Permission & Control](#permission--control)
 - [Custom Libraries & Data Structures](#custom-libraries--data-structures)
-  - [SplayTree.sol](#splaytreesol)
+  - [RedBlackTree.sol](#redblacktreesol)
   - [TypedSet.sol](#typedsetsol)
   - [TypedMap.sol](#typedmapsol)
   - [Pool.sol](#poolsol)
@@ -356,35 +356,29 @@ The `ExitQueueLibrary` manages delayed withdrawals for staking and rewards. It i
 - Ensures fair and predictable exit mechanics for stakers and node owners.
 - Can be reused by other contracts that require the same type of delayed retrieval
 
-### [`SplayTree.sol`](./contracts/structs/SplayTree.sol)
+### [`RedBlackTree.sol`](./contracts/structs/RedBlackTree.sol)
 
-The `SplayTree` library implements a self-adjusting binary search tree (splay tree) for efficient management and weighted selection of nodes, using `NodeId` as keys. It is designed for use in scenarios where fast access, insertion, removal, and weighted random selection are required, such as node pools in committee selection.
+The `RedBlackTree` library implements a self-adjusting binary search tree for efficient management and weighted selection of nodes, using last alive() call timestamp as implicit keys. It is designed for use in scenarios where fast access, insertion, removal, and weighted random selection are required, such as node pools in committee selection.
 
-The Key of the Nodes in the Splay Tree is not explicitly represented, but indirectly represents the liveliness of Nodes. This means that *healthy* nodes are usually higher up in the Tree, whereas *unhealthy* nodes are at the bottom of the tree.
+The Key of the Nodes in the Red-Black Tree is not explicitly represented, but indirectly represents the liveliness of Nodes.
 
 #### Key Data Structures
 
-- **Node**: Stores the node's `NodeId`, parent, left and right children, and the total weight of the subtree rooted at this node.
+- **Node**: Stores the node's `NodeId`, parent, left and right children, color and the total weight of the subtree rooted at this node.
 
-#### SplayTree Main Functions
+#### RedBlackTree Main Functions
 
-- `insertSmallest`: Inserts a new node as the root of the tree.
-- `remove`: Removes a node from the tree, maintaining the splay tree properties.
+- `insertSmallest`: Inserts a new node as a smallest key.
+- `remove`: Removes a node from the tree, maintaining the red-black tree properties.
 - `setWeight`: Updates the weight of a node.
-- `findByWeight`: Finds and splays the node corresponding to a given cumulative weight (useful for weighted random selection).
-- `findLast`: Finds and splays the rightmost node in the tree.
-- `splay`: Splays (brings to root) the specified node.
-
-#### Internal Helpers
-
-- `_createNode`: Initializes a new node in storage.
-- `_splay`, `_leftZig`, `_rightZig`, `_leftZigZig`, `_rightZigZig`, `_leftZigZag`, `_rightZigZag`: Internal splay and rotation operations.
-- `getBiggestChild`: Returns the rightmost child of a subtree.
-- `hasLeft`, `hasRight`: Checks for left/right children.
+- `findByWeight`: Finds the node corresponding to a given cumulative weight (useful for weighted random selection).
+- `findLast`: Finds the rightmost node in the tree.
+- `getWeight`: Gets weight of the node
+- `getWeightTill`: Gets sum of weights of nodes from the leftmost one to included specified one.
 
 #### Usage
 
-- Efficiently supports insertion, removal, and search of nodes in O(log n) amortized time.
+- Efficiently supports insertion, removal, and search of nodes in O(log n) time.
 - Used in FAIR-manager for managing node pools and committee selection where node weights (e.g., stake) and their liveliness are relevant.
 
 ### [`TypedSet.sol`](./contracts/structs/typed/TypedSet.sol)
@@ -406,11 +400,11 @@ The `TypedMap` library provides type-safe wrappers around OpenZeppelin's `Enumer
 
 ### [`Pool.sol`](./contracts/utils/Pool.sol)
 
-The `PoolLibrary` provides a robust abstraction for managing a dynamic pool of nodes, supporting efficient weighted random sampling, insertion, removal, and liveliness tracking. It is a core utility for committee selection and node management in FAIR-manager, leveraging the `SplayTree` and `TypedSet` libraries for performance and flexibility.
+The `PoolLibrary` provides a robust abstraction for managing a dynamic pool of nodes, supporting efficient weighted random sampling, insertion, removal, and liveliness tracking. It is a core utility for committee selection and node management in FAIR-manager, leveraging the `RedBlackTree` and `TypedSet` libraries for performance and flexibility.
 
 #### Pool Key Data Structures
 
-- **Pool**: Contains a splay tree (`tree`) for weighted node management, a root node, two sets for present and incoming nodes, and a reference to the `IStatus` contract for liveliness checks.
+- **Pool**: Contains a red-black tree (`tree`) for weighted node management, a root node, two sets for present and incoming nodes, and a reference to the `IStatus` contract for liveliness checks.
 - **presentNodes**: Set of nodes currently eligible for sampling.
 - **incomingNodes**: Set of nodes pending eligibility or recently added.
 
@@ -418,16 +412,16 @@ The `PoolLibrary` provides a robust abstraction for managing a dynamic pool of n
 
 - `add`: Adds a node to the pool's incoming set.
 - `moveToFront`: Moves a node to the front (root) of the pool, updating its weight and eligibility.
-- `remove`: Removes a node from the pool, updating both the splay tree and node sets.
-- `sample`: Selects a random sample of nodes, weighted by their stake, ensuring only healthy and staked nodes are chosen. Uses the splay tree for efficient weighted selection.
+- `remove`: Removes a node from the pool, updating both the red-black tree and node sets.
+- `sample`: Selects a random sample of nodes, weighted by their stake, ensuring only healthy and staked nodes are chosen. Uses the red-black tree for efficient weighted selection.
 - `setWeight`: Updates the weight of a node in the pool, affecting its selection probability.
-- `getOldestIsh`: Returns the *oldest-ish* node (by splay tree order), useful for ejection or rotation logic. Last nodes are more likely to be unhealthy.
+- `getOldestIsh`: Returns the *oldest-ish* node (by red-black tree order), useful for ejection or rotation logic. Last nodes are more likely to be unhealthy.
 - `contains`: Checks if a node is present in either the present or incoming sets.
 - `length`: Returns the total number of nodes in the pool.
 
 #### Internal Logic
 
-- `_findLastHealthyNode`: Finds the rightmost healthy node in the splay tree.
+- `_findLastHealthyNode`: Finds the rightmost healthy node in the red-black tree.
 
 #### Pool Usage
 

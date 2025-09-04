@@ -82,9 +82,7 @@ library PoolLibrary {
             require(totalWeight > 0, TooFewCandidates(size, i));
             uint256 randomValue = generator.random(totalWeight);
             NodeId choice = pool.tree.findByWeight(pool.root, randomValue);
-            // findByWeight did splay
-            uint256 weight = pool.tree[choice].totalWeight -
-                (pool.tree[pool.tree[choice].left].totalWeight + pool.tree[pool.tree[choice].right].totalWeight);
+            uint256 weight = pool.tree.getWeight(choice);
             remove(pool, choice);
             add(pool, choice);
             nodesSample[i] = choice;

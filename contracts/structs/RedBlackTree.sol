@@ -116,7 +116,7 @@ library RedBlackTree {
         internal
     {
         require(node != NULL, SetWeightOfNullNode());
-        uint248 oldWeight = _getWeight(nodes, node);
+        uint248 oldWeight = getWeight(nodes, node);
         while(node != NULL) {
             nodes[node].totalWeight = nodes[node].totalWeight - oldWeight + weight.toUint248();
             node = nodes[node].parent;
@@ -158,6 +158,21 @@ library RedBlackTree {
             }
         }
         revert NotFound();
+    }
+
+    function getWeight(mapping(NodeId => Node) storage nodes, NodeId node) internal view returns (uint248 weight) {
+        if (node == NULL) {
+            return 0;
+        }
+        weight = nodes[node].totalWeight;
+        NodeId left = nodes[node].left;
+        NodeId right = nodes[node].right;
+        if (left != NULL) {
+            weight -= nodes[left].totalWeight;
+        }
+        if (right != NULL) {
+            weight -= nodes[right].totalWeight;
+        }
     }
 
     function getWeightTill(mapping(NodeId => Node) storage nodes, NodeId bound) internal view returns (uint256 weight) {
@@ -572,8 +587,8 @@ library RedBlackTree {
     function _rotateLeft(mapping(NodeId => Node) storage nodes, NodeId parent, NodeId node) private {
         NodeId beta = nodes[node].right;
 
-        uint248 nodeWeight = _getWeight(nodes, node);
-        uint248 parentWeight = _getWeight(nodes, parent);
+        uint248 nodeWeight = getWeight(nodes, node);
+        uint248 parentWeight = getWeight(nodes, parent);
 
         _updateChild(nodes, nodes[parent].parent, parent, node);
         _updateChild(nodes, parent, node, beta);
@@ -594,9 +609,9 @@ library RedBlackTree {
         NodeId beta = nodes[node].left;
         NodeId gamma = nodes[node].right;
 
-        uint248 nodeWeight = _getWeight(nodes, node);
-        uint248 parentWeight = _getWeight(nodes, parent);
-        uint248 grandfatherWeight = _getWeight(nodes, grandfather);
+        uint248 nodeWeight = getWeight(nodes, node);
+        uint248 parentWeight = getWeight(nodes, parent);
+        uint248 grandfatherWeight = getWeight(nodes, grandfather);
 
         _updateChild(nodes, nodes[grandfather].parent, grandfather, node);
         _updateChild(nodes, grandfather, parent, gamma);
@@ -612,8 +627,8 @@ library RedBlackTree {
     function _rotateRight(mapping(NodeId => Node) storage nodes, NodeId parent, NodeId node) private {
         NodeId beta = nodes[node].left;
 
-        uint248 nodeWeight = _getWeight(nodes, node);
-        uint248 parentWeight = _getWeight(nodes, parent);
+        uint248 nodeWeight = getWeight(nodes, node);
+        uint248 parentWeight = getWeight(nodes, parent);
 
         _updateChild(nodes, nodes[parent].parent, parent, node);
         _updateChild(nodes, parent, node, beta);
@@ -634,9 +649,9 @@ library RedBlackTree {
         NodeId beta = nodes[node].left;
         NodeId gamma = nodes[node].right;
 
-        uint248 nodeWeight = _getWeight(nodes, node);
-        uint248 parentWeight = _getWeight(nodes, parent);
-        uint248 grandfatherWeight = _getWeight(nodes, grandfather);
+        uint248 nodeWeight = getWeight(nodes, node);
+        uint248 parentWeight = getWeight(nodes, parent);
+        uint248 grandfatherWeight = getWeight(nodes, grandfather);
 
         _updateChild(nodes, nodes[grandfather].parent, grandfather, node);
         _updateChild(nodes, grandfather, parent, beta);
@@ -662,8 +677,8 @@ library RedBlackTree {
 
     /// @dev node has to be a descendant of base
     function _swap(mapping(NodeId => Node) storage nodes, NodeId base, NodeId node) private {
-        uint248 nodeWeight = _getWeight(nodes, node);
-        uint248 baseWeight = _getWeight(nodes, base);
+        uint248 nodeWeight = getWeight(nodes, node);
+        uint248 baseWeight = getWeight(nodes, base);
 
         (nodes[node].totalWeight, nodes[base].totalWeight) =
             (nodes[base].totalWeight, nodes[node].totalWeight - nodeWeight + baseWeight);
@@ -728,21 +743,6 @@ library RedBlackTree {
             return 0;
         }
         return nodes[node].totalWeight;
-    }
-
-    function _getWeight(mapping(NodeId => Node) storage nodes, NodeId node) private view returns (uint248 weight) {
-        if (node == NULL) {
-            return 0;
-        }
-        weight = nodes[node].totalWeight;
-        NodeId left = nodes[node].left;
-        NodeId right = nodes[node].right;
-        if (left != NULL) {
-            weight -= nodes[left].totalWeight;
-        }
-        if (right != NULL) {
-            weight -= nodes[right].totalWeight;
-        }
     }
 
     function _grandfather(
