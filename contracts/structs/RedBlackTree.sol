@@ -792,26 +792,4 @@ library RedBlackTree {
             return nodes[grandfather].left;
         }
     }
-
-    function getBiggestChild(
-        mapping(NodeId => Node) storage nodes,
-        NodeId vertex
-    )
-        private
-        view
-        returns (NodeId biggestChild)
-    {
-        biggestChild = vertex;
-        while (nodes[biggestChild].right != NULL) {
-            biggestChild = nodes[biggestChild].right;
-        }
-    }
-
-    function hasLeft(mapping(NodeId => Node) storage nodes, NodeId vertex) private view returns (bool exists) {
-        return nodes[vertex].left != NULL;
-    }
-
-    function hasRight(mapping(NodeId => Node) storage nodes, NodeId vertex) private view returns (bool exists) {
-        return nodes[vertex].right != NULL;
-    }
 }
