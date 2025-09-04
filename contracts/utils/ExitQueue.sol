@@ -44,6 +44,8 @@ library ExitQueueLibrary{
         uint256 numRequests; // total requests ever created (serves as unique id)
     }
 
+    uint256 public constant MAX_ITERATIONS = 2000;
+
     event RequestCreated(
         address indexed user,
         uint256 indexed requestId,
@@ -102,7 +104,7 @@ library ExitQueueLibrary{
     }
 
     function claim(ExitQueue storage queue, address user, uint256 id) internal returns (Fair amount) {
-        IStaking.ExitRequest memory request = getRequest(queue, id);
+        IStaking.ExitRequest storage request = getRequest(queue, id);
 
         require(request.user == user, RequestDoesNotExistForUser(user, id));
         require(
@@ -127,8 +129,7 @@ library ExitQueueLibrary{
     }
 
     function isRequestUnlocked(ExitQueue storage queue, uint256 id) internal view returns (bool isUnlocked) {
-        IStaking.ExitRequest memory request = getRequest(queue, id);
-        return _isRequestUnlocked(request);
+        return _isRequestUnlocked(getRequest(queue, id));
     }
 
     function getNumRequestsForUser(ExitQueue storage queue, address user) internal view returns (uint256 numRequests) {
@@ -161,7 +162,7 @@ library ExitQueueLibrary{
         return queue.exitRequests[id];
     }
 
-    //@dev Looks up for an unlocked request in the first 20 requests starting after 'from'
+    //@dev Looks up for an unlocked request in the first MAX_ITERATIONS requests starting after 'from'
     function getUnlockedRequest(
         ExitQueue storage queue,
         address user,
@@ -173,12 +174,13 @@ library ExitQueueLibrary{
     {
         uint256 numRequests = getNumRequestsForUser(queue, user);
         require(from < numRequests, UserDoesNotHaveRequestAt(user, from));
-        uint256 end = Math.min(numRequests, from + 20);
+        uint256 end = Math.min(numRequests, from + MAX_ITERATIONS);
+        UserExitData storage userData = queue.userExitData[user]; 
         for (uint256 i = from; i < end; ++i) {
-            uint256 id = queue.userExitData[user].requestIds.at(i);
-            request = queue.exitRequests[id];
-            if(_isRequestUnlocked(request)){
-                return request;
+            uint256 id = userData.requestIds.at(i);
+            IStaking.ExitRequest storage req = queue.exitRequests[id];
+            if(_isRequestUnlocked(req)){
+                return req;
             }
         }
         revert ZeroUnlockedRequests(user, from, end);
@@ -190,7 +192,7 @@ library ExitQueueLibrary{
 
     // private
 
-    function _isRequestUnlocked(IStaking.ExitRequest memory request) private view returns (bool isUnlocked){
+    function _isRequestUnlocked(IStaking.ExitRequest storage request) private view returns (bool isUnlocked){
         return request.unlockDate < Timestamp.wrap(block.timestamp);
     }
 }

@@ -237,7 +237,7 @@ Read functions:
 - `getStakedToNodeAmountFor(NodeId node, address holder)`: Get amount staked to a node by a user.
 - `getTotalInExitQueueFor(address user)`: Get total amount in exit queue for a user.
 - `getTotalInExitQueue()`: Get total amount in exit queue (all users).
-- `getUnlockedExitRequestFor(address user, uint255 fromIndex)`: Get first found unlocked exit request for a user - starts searching from `fromIndex`, and finish search in the end or after 20 requests.
+- `getUnlockedExitRequestFor(address user, uint255 fromIndex)`: Get first found unlocked exit request for a user - starts searching from `fromIndex`, and finish search in the end or after MAX_ITERATIONS requests.
 - `isNodeEnabled(NodeId node)`: Returns if node is enabled.
 - `isRequestUnlocked(uint256 requestId)`: Returns if a request is unlocked and ready to claim.
 
@@ -343,7 +343,7 @@ The `ExitQueueLibrary` manages delayed withdrawals for staking and rewards. It i
 - `getNumRequestsForUser(queue, user)`: Returns the number of pending exit requests for a user.
 - `getRequest(queue, requestId)`: Returns the details of a specific exit request.
 - `getRequestAt(queue, user, index)`: Returns the exit request at a specific index for a user.
-- `getUnlockedRequest(queue, user)`: Returns the first unlocked exit request for a user.
+- `getUnlockedRequest(queue, user, uint256 fromIndex)`: Returns the first unlocked exit request for a user starting at 'fromIndex' and up to MAX_ITERATIONS iterations.
 - `getTotalInQueueForUser(queue, user)`: Returns the total amount pending withdrawal for a user.
 
 #### Configuration
