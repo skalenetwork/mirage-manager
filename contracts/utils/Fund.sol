@@ -70,7 +70,7 @@ library FundLibrary {
         internal
     {
         _processBalanceChange(fund, balanceBeforeClaim);
-        
+
         Credit credits = _toCreditsRoundedUp(fund, balanceBeforeClaim, amount);
         if (fund.ownerCredits < credits) {
             revert NotEnoughFee(_toFairRoundedDown(fund, balanceBeforeClaim, ZERO_CREDIT, fund.ownerCredits));
@@ -131,7 +131,7 @@ library FundLibrary {
         internal
     {
         _processBalanceChange(fund, balanceBeforeSupply);
-        Fair balanceBefore = getBalance(fund, balanceBeforeSupply, holder);
+        Fair holderBalanceBefore = getBalance(fund, balanceBeforeSupply, holder);
         Credit credits = _toCreditsRoundedDown(fund, balanceBeforeSupply, amount);
         Fair delayedReward = ZERO_FAIR;
         if (fund.totalCredits == ZERO_CREDIT) {
@@ -146,7 +146,7 @@ library FundLibrary {
         }
         fund.lastBalance = balanceBeforeSupply + amount;
         Fair balanceAfter = getBalance(fund, fund.lastBalance, holder);
-        _checkAllowedError(balanceBefore, balanceAfter, amount + delayedReward);
+        _checkAllowedError(holderBalanceBefore, balanceAfter, amount + delayedReward);
     }
 
     function getBalance(
@@ -254,7 +254,7 @@ library FundLibrary {
         view
         returns (Credit fee)
     {
-        if (balance > fund.lastBalance) {
+        if (balance > fund.lastBalance && fund.feeRate > 0) {
             Fair balanceChange = balance - fund.lastBalance;
             Fair feeInFair = Fair.wrap(
                 Fair.unwrap(balanceChange) * fund.feeRate / 1000
@@ -324,14 +324,15 @@ library FundLibrary {
         view
         returns (Fair fair)
     {
-        if (fund.totalCredits == ZERO_CREDIT) {
+        Credit totalCreditsWithUncountedFee = fund.totalCredits + uncountedFee;
+        if (totalCreditsWithUncountedFee == ZERO_CREDIT) {
             return ZERO_FAIR;
         }
         return Fair.wrap(
             Math.mulDiv(
                 Fair.unwrap(balance),
                 Credit.unwrap(amount),
-                Credit.unwrap(fund.totalCredits + uncountedFee),
+                Credit.unwrap(totalCreditsWithUncountedFee),
                 Math.Rounding.Floor
             )
         );
