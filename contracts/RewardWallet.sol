@@ -75,7 +75,7 @@ contract RewardWallet is AccessManagedUpgradeable, IRewardWallet {
         nodes = nodes_;
     }
 
-    receive() external payable override onlyIfNodeExists() onlyWithinStakeLimit(){
+    receive() external payable override onlyIfNodeExists onlyWithinStakeLimit {
         flush();
     }
 
