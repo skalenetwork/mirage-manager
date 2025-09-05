@@ -42,6 +42,7 @@ contract RewardWallet is AccessManagedUpgradeable, IRewardWallet {
     NodeId public ownerNode;
 
     error OwnerNodeDoesNotExist();
+    error ValueExceedsStakeLimit();
 
     modifier onlyIfNodeExists() {
         require(_nodeExists(ownerNode), OwnerNodeDoesNotExist());
@@ -49,13 +50,10 @@ contract RewardWallet is AccessManagedUpgradeable, IRewardWallet {
     }
 
     modifier onlyWithinStakeLimit(){
-        // getNodeTotalStake already accounts for rewardWallet's current balance
-        Fair totalStake = staking.getNodeTotalStake(ownerNode);
-        Fair stakeLimit = staking.stakeLimit();
-        Fair value = Fair.wrap(address(this).balance);
         require(
-            !(totalStake > stakeLimit),
-            Staking.StakeLimitExceeded(totalStake - value, value, stakeLimit));
+            staking.isWithinStakeLimit(ownerNode),
+            ValueExceedsStakeLimit()
+        );
         _;
     }
 

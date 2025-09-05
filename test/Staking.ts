@@ -877,12 +877,8 @@ describe("Staking", () => {
         const rewardWallet = await ethers.getContractAt("RewardWallet", await staking.getRewardWallet(node));
         await user.sendTransaction({to: rewardWallet, value: additionalStake})
             .should.be.revertedWithCustomError(
-                staking,
-                "StakeLimitExceeded"
-            ).withArgs(
-                expectedTotalAfterReward,
-                additionalStake,
-                stakeLimit
+                rewardWallet,
+                "ValueExceedsStakeLimit"
             );
         
         // Consensus can pay 1 more ETH Rewards directly to node rewards wallet
