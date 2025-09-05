@@ -104,6 +104,16 @@ describe("DKG", () => {
                 .withArgs(1n);
         });
 
+        it("should not get public key for missing round", async () => {
+            const { dkg } = await registeredOnlyNodes();
+            await expect(dkg.getPublicKey(0n))
+                .to.be.revertedWithCustomError(dkg, "RoundDoesNotExist")
+                .withArgs(0n);
+            await expect(dkg.getPublicKey(1n))
+                .to.be.revertedWithCustomError(dkg, "RoundDoesNotExist")
+                .withArgs(1n);
+        });
+
         describe("generation is started", async () => {
             let firstNode: NodeData;
             let secondNode: NodeData;
