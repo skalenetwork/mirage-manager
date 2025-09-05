@@ -88,6 +88,50 @@ describe("Staking", () => {
         expect(await staking.getDelegatorsToNode(node2)).to.be.eql([user.address]);
     });
 
+    it("should calculate rewards correctly when inflated by consensus", async () => {
+        const {staking, status, nodesData } = await whitelistedNodes();
+        const [, user1, user2] = await ethers.getSigners();
+        const [amount1, amount2] = [ethers.parseEther("2"), ethers.parseEther("3")];
+        const reward = ethers.parseEther("5");
+        const node = nodesData[0].id;
+
+        await staking.connect(user1).stake(node, {value: amount1});
+        await staking.connect(user2).stake(node, {value: amount2});
+
+        await sendHeartbeat(status, [nodesData[0]]);
+        expect(await staking.isNodeEnabled(node)).to.be.eql(true);
+
+        // 80% to node and 20% to hole network (but there's just 1 staked node)
+        await setBalance(await staking.getAddress(), await ethers.provider.getBalance(staking) + reward * 20n / 100n);
+        await setBalance(await staking.getRewardWallet(node), reward * 80n / 100n);
+
+        expect(await staking.getEarnedFeeAmount(node)).to.be.eql(reward);
+
+        expect(await staking.getStakedToNodeAmountFor(node, user1)).to.be.eql(amount1);
+        expect(await staking.getStakedToNodeAmountFor(node, user2)).to.be.eql(amount2);
+
+        // Set fee rate to 50%
+        await staking.connect(nodesData[0].wallet).setFeeRate(500);
+
+        expect(await staking.getEarnedFeeAmount(node)).to.be.eql(reward);
+
+        // Owner has 5 = 50%
+        // user1 has 2 = 20%
+        // user2 has 3 = 30%
+
+        await setBalance(await staking.getAddress(), await ethers.provider.getBalance(staking) + reward);
+        
+        const earnedByFee = reward / 2n; //50%
+        const forDelegators = reward - earnedByFee
+
+        const earnedByStakeNodeOwner = forDelegators * 50n / 100n; // owner had 50% of stake
+        const earnedByStakeUser1 = forDelegators * 20n / 100n //user1 had 20%
+        const earnedByStakeUser2 = forDelegators * 30n / 100n //user2 had 30%
+        expect(await staking.getEarnedFeeAmount(node)).to.be.eql(reward + earnedByFee + earnedByStakeNodeOwner);
+        expect(await staking.getStakedToNodeAmountFor(node, user1)).to.eql(amount1 + earnedByStakeUser1);
+        expect(await staking.getStakedToNodeAmountFor(node, user2)).to.eql(amount2 + earnedByStakeUser2);
+    });
+
     it("should be possible to retrieve", async () => {
         const {staking, nodesData } = await registeredOnlyNodes();
         const [,user] = await ethers.getSigners();
@@ -189,7 +233,9 @@ describe("Staking", () => {
         (await staking.connect(user).getStakedAmount())
             .should.be.equal(initialAmount);
 
-        await staking.connect(user).payReward(node.id, {value: amount});
+        // pay rewards to the node
+        const rewardWallet = await staking.getRewardWallet(node.id);
+        await setBalance(rewardWallet, amount);
 
         // Node has 0.5 FAIR to collect in Fees
         const tinyAmount = 10n;
@@ -351,7 +397,10 @@ describe("Staking", () => {
         expect(await staking.getDelegatorsToNodeCount(node.id)).to.be.eql(1n);
         expect(await staking.getDelegatorsToNode(node.id)).to.be.eql([user.address]);
 
-        await staking.connect(user).payReward(node.id, {value: amount});
+        // missing balance in reward wallet from rewards
+        const rewardWallet = await staking.getRewardWallet(node.id);
+        await setBalance(rewardWallet, amount);
+
         expect(await staking.getEarnedFeeAmount(node.id)).to.be.eql(amount / 2n);
         // shall send fees to the node, request 0
         await nodes.connect(node.wallet).deleteNode(node.id);
@@ -1140,7 +1189,8 @@ describe("Staking", () => {
         const halfValue = value / 2n;
         await staking.stake(node.id, {value: value});
         await staking.connect(node.wallet).setFeeRate(500n);
-        await staking.payReward(node.id, {value: value});
+
+        await setBalance(await staking.getRewardWallet(node.id), value);
 
         expect(await staking.getEarnedFeeAmount(node.id)).to.be.eql(halfValue - 1n);
         expect(await staking.getStakedAmount()).to.be.eql(value + halfValue);

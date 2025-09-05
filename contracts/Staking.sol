@@ -286,6 +286,7 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
             _nodesFunds[node].totalCredits == FundLibrary.ZERO_CREDIT || feeRate < currentFeeRate,
             OnlyFeeReductionIsAllowed(currentFeeRate, feeRate)
         );
+        _pullReward(node);
 
         emit NodeFeeRateUpdated(node, currentFeeRate, feeRate);
         _updateNodeFeeRate(node, feeRate);
