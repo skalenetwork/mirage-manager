@@ -84,8 +84,9 @@ struct Node {
 
 #### Nodes Integration Points
 
-- `Nodes.sol` interacts with `Committee.sol` to inform of registration and deletion of Active Nodes.
+- `Nodes.sol` interacts with `Committee.sol` to inform deletion of Active Nodes.
 - `Nodes.sol` interacts with `Status.sol` to inform of deletion of Active Nodes.
+- `Nodes.sol` interacts with `Staking.sol` to inform of registration and deletion of Active Nodes.
 
 ### [`Status.sol`](./contracts/Status.sol)
 
@@ -293,7 +294,7 @@ struct Committee {
 
 #### Committee Permissions
 
-- Only NODES_ROLE can notify of created and removed nodes.
+- Only NODES_ROLE can notify of removed nodes.
 - Only STATUS_ROLE can notify of whitelisted nodes, blacklisted nodes, and heartbeat signals sent by nodes.
 - Only the `IDkg public dkg;` address can notify of a successful DKG round.
 - DEFAULT_ADMIN can trigger selection of a new committee.
