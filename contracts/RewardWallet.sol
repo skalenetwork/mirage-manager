@@ -32,7 +32,6 @@ import {INodes, NodeId} from "@skalenetwork/fair-manager-interfaces/INodes.sol";
 import {IRewardWallet} from "@skalenetwork/fair-manager-interfaces/IRewardWallet.sol";
 import {IStaking} from "@skalenetwork/fair-manager-interfaces/IStaking.sol";
 
-
 contract RewardWallet is AccessManagedUpgradeable, IRewardWallet {
     using Address for address payable;
 
@@ -41,9 +40,18 @@ contract RewardWallet is AccessManagedUpgradeable, IRewardWallet {
     NodeId public ownerNode;
 
     error OwnerNodeDoesNotExist();
+    error ValueExceedsStakeLimit();
 
     modifier onlyIfNodeExists() {
         require(_nodeExists(ownerNode), OwnerNodeDoesNotExist());
+        _;
+    }
+
+    modifier onlyWithinStakeLimit(){
+        require(
+            staking.isWithinStakeLimit(ownerNode),
+            ValueExceedsStakeLimit()
+        );
         _;
     }
 
@@ -63,7 +71,7 @@ contract RewardWallet is AccessManagedUpgradeable, IRewardWallet {
         nodes = nodes_;
     }
 
-    receive() external payable override onlyIfNodeExists() {
+    receive() external payable override onlyIfNodeExists onlyWithinStakeLimit {
         flush();
     }
 

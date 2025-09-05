@@ -820,6 +820,74 @@ describe("Staking", () => {
         expect(await staking.getNodeTotalStake(node)).to.be.equal(expectedTotalAfterReward + additionalStake);
     });
 
+    it("should enforce node stake limits on payReward, except for protocol rewards", async () => {
+        const {staking, status, nodesData} = await whitelistedNodes();
+        const [admin, user] = await ethers.getSigners();
+        const node = nodesData[0].id;
+
+        // Set stake limit to 10 ETH
+        const stakeLimit = ethers.parseEther("10");
+        await staking.connect(admin).setStakeLimit(stakeLimit);
+
+        // Verify limit is set
+        expect(await staking.stakeLimit()).to.be.equal(stakeLimit);
+
+        // Stake 9 ETH (should succeed)
+        const initialStake = ethers.parseEther("9");
+        await staking.connect(user).stake(node, {value: initialStake});
+        await sendHeartbeat(status, [nodesData[0]]); // Enable the node
+        expect(await staking.getNodeTotalStake(node)).to.be.equal(initialStake);
+
+        // Pay 2 ETH rewards
+        const reward = ethers.parseEther("2");
+        await admin.sendTransaction({to: staking, value: reward});
+
+        // Check that node total stake is now 11 ETH (9 + 2 reward)
+        const expectedTotalAfterReward = initialStake + reward;
+        expect(await staking.getNodeTotalStake(node)).to.be.equal(expectedTotalAfterReward);
+
+        // Try to stake 1 more ETH (should fail because 11 + 1 = 12 > 10 limit)
+        const additionalStake = ethers.parseEther("1");
+        await staking.connect(user).stake(node, {value: additionalStake})
+            .should.be.revertedWithCustomError(
+                staking,
+                "StakeLimitExceeded"
+            ).withArgs(
+                expectedTotalAfterReward,
+                additionalStake,
+                stakeLimit
+            );
+
+        // Verify total stake hasn't changed
+        expect(await staking.getNodeTotalStake(node)).to.be.equal(expectedTotalAfterReward);
+        
+        // Try to pay 1 more ETH Rewards directly to node (should fail because 11 + 1 = 12 > 10 limit)
+        await staking.connect(user).payReward(node, {value: additionalStake})
+            .should.be.revertedWithCustomError(
+                staking,
+                "StakeLimitExceeded"
+            ).withArgs(
+                expectedTotalAfterReward,
+                additionalStake,
+                stakeLimit
+            );
+
+        // Try to pay 1 more ETH Rewards directly to node rewards wallet
+        // (should fail because 11 + 1 = 12 > 10 limit)
+        const rewardWallet = await ethers.getContractAt("RewardWallet", await staking.getRewardWallet(node));
+        await user.sendTransaction({to: rewardWallet, value: additionalStake})
+            .should.be.revertedWithCustomError(
+                rewardWallet,
+                "ValueExceedsStakeLimit"
+            );
+        
+        // Consensus can pay 1 more ETH Rewards directly to node rewards wallet
+        await setBalance(await rewardWallet.getAddress(), additionalStake);
+        await rewardWallet.flush(); // but it should manually flush
+        expect(await staking.getNodeTotalStake(node)).to.be.eql(expectedTotalAfterReward + additionalStake)
+        
+    });
+
     it("should set default fee rate to 1000 during node creation", async () => {
         const {nodes, staking} = await registeredOnlyNodes();
 

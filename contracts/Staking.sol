@@ -59,10 +59,14 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
     using TypedMap for TypedMap.NodeIdToFairMap;
     using ExitQueueLibrary for ExitQueueLibrary.ExitQueue;
 
+    uint16 public constant DEFAULT_FEE_RATE = 1000;
+
     ICommittee public committee;
     INodes public nodes;
     IRewardWallet public rewardWalletReference;
     Fair public totalDisabled;
+    Fair public stakeLimit;
+
     FundLibrary.Fund private _rootFund;
     ExitQueueLibrary.ExitQueue private _exitQueue;
     mapping (NodeId node => FundLibrary.Fund nodeFund) private _nodesFunds;
@@ -70,10 +74,7 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
     mapping (NodeId node => EnumerableSet.AddressSet allowedReceivers) private _nodesAllowedReceivers;
     mapping (address holder => TypedSet.NodeIdSet nodeIds) private _stakedNodes;
     TypedMap.NodeIdToFairMap private _disabledNodesBalances;
-
-    Fair public stakeLimit;
-    uint16 public constant DEFAULT_FEE_RATE = 1000;
-
+    
     event AllowedReceiverAdded(NodeId indexed node, address indexed receiver);
     event AllowedReceiverRemoved(NodeId indexed node, address indexed receiver);
     event FeeClaimRequested(NodeId indexed node, address from, address indexed to, Fair indexed amount);
@@ -233,6 +234,14 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
         bool nodeIsEnabled = !_disabledNodesBalances.contains(node);
         Fair amount = Fair.wrap(msg.value);
         Fair balance = _getTotalBalance() - amount;
+        (bool withinStakeLimit, Fair currentNodeStake) = _isWithinStakeLimit(node, amount);
+        
+        // allow to payRewards over the limit only for reward wallet
+        require(
+            withinStakeLimit || msg.sender == address(_rewardWallets[node]),
+            StakeLimitExceeded(currentNodeStake, amount, stakeLimit)
+        );
+
         if (nodeIsEnabled) {
             _rootFund.supply(
                 balance,
@@ -299,7 +308,7 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
         _pullReward(node);
         Fair balance = _getTotalBalance() - amount;
 
-        _validateStakeLimit(node, amount, balance, nodeIsEnabled);
+        _validateStakeLimit(node, amount);
 
         if (nodeIsEnabled) {
             _nodesFunds[node].supply(
@@ -373,13 +382,7 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
     }
 
     function getNodeTotalStake(NodeId node) external view override returns (Fair amount) {
-        if (isNodeEnabled(node)) {
-            Fair balance = _getTotalBalance();
-            amount = _rootFund.getBalance(balance, FundLibrary.nodeToHolder(node));
-        } else {
-            amount = _disabledNodesBalances.get(node);
-        }
-        amount = amount + _getNonPulledReward(node);
+        return _getNodeTotalStakeBeforeAmount(node, FundLibrary.ZERO_FAIR);
     }
 
     function getNodeFeeRate(NodeId node) external view override returns (uint16 feeRate) {
@@ -399,16 +402,20 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
         count = _nodesFunds[node].credits.length();
     }
 
-    function getExitRequestsCountFor(address user) external view override returns (uint256 count){
+    function getExitRequestsCountFor(address user) external view override returns (uint256 count) {
         return _exitQueue.getNumRequestsForUser(user);
     }
 
-    function getMyTotalInExitQueue() external view override returns (Fair amount){
+    function getMyTotalInExitQueue() external view override returns (Fair amount) {
         return _exitQueue.getTotalInQueueForUser(msg.sender);
     }
 
-    function getMyExitRequestsCount() external view override returns (uint256 count){
+    function getMyExitRequestsCount() external view override returns (uint256 count) {
         return _exitQueue.getNumRequestsForUser(msg.sender);
+    }
+
+    function isWithinStakeLimit(NodeId node) external view override returns (bool result) {
+        (result,) = _isWithinStakeLimit(node, FundLibrary.ZERO_FAIR);
     }
 
     function getExitRequest(
@@ -683,6 +690,16 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
         assert(exists != (credits == FundLibrary.ZERO_CREDIT));
     }
 
+    function _getNodeTotalStakeBeforeAmount(NodeId node, Fair amount) private view returns (Fair total) {
+        if (isNodeEnabled(node)) {
+            Fair balance = _getTotalBalance() - amount;
+            total = _rootFund.getBalance(balance, FundLibrary.nodeToHolder(node));
+        } else {
+            total = _disabledNodesBalances.get(node);
+        }
+        total = total + _getNonPulledReward(node);
+    }
+
     function _getNonPulledReward(NodeId node) private view returns (Fair nonPulledReward) {
         if (_rewardWallets[node] == IRewardWallet(payable(0))) {
             return FundLibrary.ZERO_FAIR;
@@ -694,21 +711,28 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
         return Fair.wrap(address(this).balance) - totalDisabled - getTotalInExitQueue();
     }
 
-    function _validateStakeLimit(NodeId node, Fair amount, Fair balance, bool nodeIsEnabled) private view {
-        if (Fair.unwrap(stakeLimit) > 0) {
-            Fair currentNodeStake;
-            if (nodeIsEnabled) {
-                currentNodeStake = _rootFund.getBalance(balance, FundLibrary.nodeToHolder(node));
-            } else {
-                currentNodeStake = _disabledNodesBalances.get(node);
-            }
-
+    function _isWithinStakeLimit(
+        NodeId node,
+        Fair amount
+    )
+        private
+        view
+        returns (bool result, Fair currentNodeStake)
+    {   
+        result = true;
+        if (stakeLimit > FundLibrary.ZERO_FAIR) {
+            currentNodeStake = _getNodeTotalStakeBeforeAmount(node, amount);
             Fair newNodeStake = currentNodeStake + amount;
-            require(
-                !(newNodeStake > stakeLimit),
-                StakeLimitExceeded(currentNodeStake, amount, stakeLimit)
-            );
+            result = !(newNodeStake > stakeLimit);
         }
+    }
+
+    function _validateStakeLimit(NodeId node, Fair amount) private view {
+        (bool isWithinLimit, Fair currentNodeStake) = _isWithinStakeLimit(node, amount);
+        require(
+            isWithinLimit,
+            StakeLimitExceeded(currentNodeStake, amount, stakeLimit)
+        );
     }
 
     function _hasAllowedReceiver(NodeId node) private view returns (bool result) {
