@@ -70,12 +70,6 @@ contract Nodes is AccessManagedUpgradeable, INodes {
     // Set to track passive node addresses
     EnumerableSet.AddressSet private _passiveNodeAddresses;
 
-    // Set to track IPs taken
-    EnumerableSet.Bytes32Set private _usedIps;
-
-    // Set to track domain Names taken
-    EnumerableSet.Bytes32Set private _usedDomainNames;
-
     /// For node Id generation
     uint256 private _nodeIdCounter;
 
@@ -95,8 +89,6 @@ contract Nodes is AccessManagedUpgradeable, INodes {
     error InvalidPublicKeyForSender(bytes32[2] publicKey, address expected, address sender);
     error ActiveNodesCannotChangeOwnership();
     error InvalidIp(bytes ip);
-    error IpIsNotAvailable(bytes ip);
-    error DomainNameAlreadyTaken(string domainName);
     error NodeDoesNotExist(NodeId nodeId);
     error ActiveNodeWasNeverRegistered(NodeId nodeId);
     error PortShouldNotBeZero();
@@ -274,8 +266,6 @@ contract Nodes is AccessManagedUpgradeable, INodes {
 
         _setPassiveNodeIdForAddress(msg.sender, nodeId);
 
-        require(_usedIps.add(keccak256(ip)), IpIsNotAvailable(ip));
-
         nodes[nodeId] = Node({
             id: nodeId,
             port: port,
@@ -301,9 +291,6 @@ contract Nodes is AccessManagedUpgradeable, INodes {
             validPort(port)
         {
         Node storage node = nodes[nodeId];
-
-        assert(_usedIps.remove(keccak256(node.ip)));
-        require(_usedIps.add(keccak256(ip)), IpIsNotAvailable(ip));
         node.ip = ip;
         node.port = port;
         emit NodeIpChanged(nodeId, msg.sender, ip, port);
@@ -318,18 +305,7 @@ contract Nodes is AccessManagedUpgradeable, INodes {
         nodeNotInCurrentOrNextCommittee(nodeId)
     {
         Node storage node = nodes[nodeId];
-
-        bytes32 newName = keccak256(abi.encodePacked(name));
-
-        bytes32 oldName = keccak256(abi.encodePacked(node.domainName));
-        if (oldName != keccak256("")) {
-            assert(_usedDomainNames.remove(oldName));
-        }
-
-        require(_usedDomainNames.add(newName), DomainNameAlreadyTaken(name));
-
         node.domainName = name;
-
         emit NodeDomainNameChanged(nodeId, msg.sender, name);
     }
 
@@ -398,19 +374,10 @@ contract Nodes is AccessManagedUpgradeable, INodes {
         internal
     {
         require(NodeId.unwrap(nodeId) > _nodeIdCounter, InvalidNodeId(nodeId, _nodeIdCounter));
-        require(_usedIps.add(keccak256(ip)), IpIsNotAvailable(ip));
 
         _nodeIdCounter = NodeId.unwrap(nodeId);
         _addActiveNodeId(nodeId);
         _setActiveNodeIdForAddress(nodeAddress, nodeId);
-
-        if (bytes(domainName).length > 0){
-            bytes32 hashedName = keccak256(abi.encodePacked(domainName));
-            require(
-                _usedDomainNames.add(hashedName),
-                DomainNameAlreadyTaken(domainName)
-            );
-        }
 
         nodes[nodeId] = Node({
             id: nodeId,
@@ -429,11 +396,6 @@ contract Nodes is AccessManagedUpgradeable, INodes {
 
     function _deleteNode(NodeId id) private nodeNotInCurrentOrNextCommittee(id) {
         Node storage node = nodes[id];
-        assert(_usedIps.remove(keccak256(node.ip)));
-        if (bytes(node.domainName).length > 0) {
-            bytes32 newName = keccak256(abi.encodePacked(node.domainName));
-            assert(_usedDomainNames.remove(newName));
-        }
         address nodeOwner = node.nodeAddress;
         bytes memory ip = node.ip;
         uint16 port = node.port;
