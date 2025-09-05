@@ -37,6 +37,8 @@ import {
 } from "@openzeppelin/contracts/utils/Address.sol";
 
 import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
+import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+
 import {ICommittee} from "@skalenetwork/fair-manager-interfaces/ICommittee.sol";
 import {INodes, NodeId} from "@skalenetwork/fair-manager-interfaces/INodes.sol";
 import {IRewardWallet} from "@skalenetwork/fair-manager-interfaces/IRewardWallet.sol";
@@ -45,38 +47,48 @@ import {IStaking} from "@skalenetwork/fair-manager-interfaces/IStaking.sol";
 import {Nodes} from "./Nodes.sol";
 import {TypedMap} from "./structs/typed/TypedMap.sol";
 import {TypedSet} from "./structs/typed/TypedSet.sol";
+import {ExitQueueLibrary, Timestamp} from "./utils/ExitQueue.sol";
 import {Credit, FundLibrary, Fair, Holder} from "./utils/Fund.sol";
-
 
 contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaking {
     using Address for address payable;
+    using EnumerableSet for EnumerableSet.AddressSet;
     using FundLibrary for FundLibrary.Fund;
     using TypedSet for TypedSet.NodeIdSet;
     using TypedMap for TypedMap.HolderToCreditMap;
     using TypedMap for TypedMap.NodeIdToFairMap;
+    using ExitQueueLibrary for ExitQueueLibrary.ExitQueue;
+
+    uint16 public constant DEFAULT_FEE_RATE = 1000;
 
     ICommittee public committee;
     INodes public nodes;
     IRewardWallet public rewardWalletReference;
     Fair public totalDisabled;
+    Fair public stakeLimit;
+
     FundLibrary.Fund private _rootFund;
+    ExitQueueLibrary.ExitQueue private _exitQueue;
     mapping (NodeId node => FundLibrary.Fund nodeFund) private _nodesFunds;
     mapping (NodeId node => IRewardWallet rewardWallet) private _rewardWallets;
+    mapping (NodeId node => EnumerableSet.AddressSet allowedReceivers) private _nodesAllowedReceivers;
     mapping (address holder => TypedSet.NodeIdSet nodeIds) private _stakedNodes;
     TypedMap.NodeIdToFairMap private _disabledNodesBalances;
-    Fair public stakeLimit;
-    uint16 public constant DEFAULT_FEE_RATE = 1000;
-
-    event FeeClaimed(NodeId indexed node, address indexed to, Fair indexed amount);
+    
+    event AllowedReceiverAdded(NodeId indexed node, address indexed receiver);
+    event AllowedReceiverRemoved(NodeId indexed node, address indexed receiver);
+    event FeeClaimRequested(NodeId indexed node, address from, address indexed to, Fair indexed amount);
     event NodeRewardReceived(NodeId indexed node, Fair indexed amount);
-    event Retrieved(address indexed sender, NodeId indexed node, Fair indexed amount);
+    event RetrieveRequested(address indexed sender, NodeId indexed node, Fair indexed amount);
     event RewardReceived(address indexed sender, uint256 indexed amount);
     event RewardWalletCreated(NodeId indexed node);
     event Staked(address indexed sender, NodeId indexed node, Fair indexed amount);
     event StakedToNewNode(address indexed sender, NodeId indexed node);
     event StoppedStaking(address indexed sender, NodeId indexed node);
+    event NodeDataRemoved(NodeId indexed node);
     event NodeDisabled(NodeId indexed node);
     event NodeEnabled(NodeId indexed node);
+    event RetrievingDelayUpdated(Timestamp indexed retrievingDelay);
     event StakeLimitUpdated(Fair indexed newLimit);
     event NodeFeeRateUpdated(NodeId indexed node, uint16 oldFeeRate, uint16 newFeeRate);
     event RewardWalletReferenceUpdated(IRewardWallet indexed oldReference, IRewardWallet indexed newReference);
@@ -87,8 +99,10 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
     error ZeroStakeToNode(NodeId node);
     error NodeIsAlreadyDisabled(NodeId node);
     error NodeIsNotDisabled(NodeId node);
+    error NotAllowedToClaimRewards(address sender);
     error StakeLimitExceeded(Fair currentStake, Fair attemptedStake, Fair limit);
-    error ZeroAddress();
+    error ReceiverIsAlreadyAllowed(address receiver);
+    error ReceiverWasNotAllowed(address receiver);
     error RewardWalletDoesNotExist(NodeId node);
 
     modifier onlyExistingActiveNode(NodeId node) {
@@ -111,14 +125,35 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
         committee = committee_;
         nodes = nodes_;
         rewardWalletReference = rewardWalletReference_;
+        // Default on initialize
+        _exitQueue.retrievingDelay = Timestamp.wrap(1 days);
+        emit RetrievingDelayUpdated(Timestamp.wrap(1 days));
     }
 
     receive() external override payable {
         emit RewardReceived(msg.sender, msg.value);
     }
 
-    function claimAllFee(address payable to) external override {
-        claimFee(to, getEarnedFeeAmount(nodes.getNodeId(msg.sender)));
+    function addAllowedReceiver(address receiver) external override {
+        NodeId node = nodes.getNodeId(msg.sender);
+        bool added = _nodesAllowedReceivers[node].add(receiver);
+        require(added, ReceiverIsAlreadyAllowed(receiver));
+        emit AllowedReceiverAdded(node, receiver);
+    }
+
+    function removeAllowedReceiver(address receiver) external override {
+        NodeId node = nodes.getNodeId(msg.sender);
+        bool removed = _nodesAllowedReceivers[node].remove(receiver);
+        require(removed, ReceiverWasNotAllowed(receiver));
+        emit AllowedReceiverRemoved(node, receiver);
+    }
+
+    function requestAllFees(NodeId node) external override returns (uint256 requestId) {
+        return requestFees(node, getEarnedFeeAmount(node));
+    }
+
+    function requestSendAllFees(address payable to) external override returns (uint256 requestId) {
+        return requestSendFees(to, getEarnedFeeAmount(nodes.getNodeId(msg.sender)));
     }
 
     function disable(NodeId node) external override restricted {
@@ -130,10 +165,16 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
             FundLibrary.nodeToHolder(node),
             nodeFundBalance
         );
-        require(_disabledNodesBalances.set(node, nodeFundBalance), NodeIsAlreadyDisabled(node));
         totalDisabled = totalDisabled + nodeFundBalance;
+        require(_disabledNodesBalances.set(node, nodeFundBalance), NodeIsAlreadyDisabled(node));
         emit NodeDisabled(node);
-        committee.updateWeight(node, 0);
+
+        assert(_getNodeCredits(node) == FundLibrary.ZERO_CREDIT);
+        assert(_rootFund.getBalance(balance, FundLibrary.nodeToHolder(node)) == FundLibrary.ZERO_FAIR);
+
+        if (nodes.activeNodeExists(node)) {
+            committee.updateWeight(node, 0);
+        }
     }
 
     function enable(
@@ -144,9 +185,9 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
         restricted
         onlyExistingActiveNode(node)
     {
+        _pullReward(node);
         (bool wasDisabled, Fair value) = _disabledNodesBalances.tryGet(node);
         require(wasDisabled, NodeIsNotDisabled(node));
-        _pullReward(node);
         Fair balance = _getTotalBalance();
         _rootFund.supply(
             balance,
@@ -166,6 +207,21 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
         assert(_disabledNodesBalances.set(node, FundLibrary.ZERO_FAIR));
     }
 
+    function nodeRemoved(NodeId node) external override restricted {
+        // Committee should disable node first
+        require(!isNodeEnabled(node), NodeIsNotDisabled(node));
+        _nodesAllowedReceivers[node].clear();
+        delete _nodesAllowedReceivers[node];
+        delete _rewardWallets[node];
+        emit NodeDataRemoved(node);
+        
+        _requestSendFees(
+            node,
+            getEarnedFeeAmount(node),
+            payable(_publicKeyToAddress(nodes.getPublicKey(node)))
+        );
+    }
+
     function payReward(
         NodeId node
     )
@@ -178,6 +234,14 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
         bool nodeIsEnabled = !_disabledNodesBalances.contains(node);
         Fair amount = Fair.wrap(msg.value);
         Fair balance = _getTotalBalance() - amount;
+        (bool withinStakeLimit, Fair currentNodeStake) = _isWithinStakeLimit(node, amount);
+        
+        // allow to payRewards over the limit only for reward wallet
+        require(
+            withinStakeLimit || msg.sender == address(_rewardWallets[node]),
+            StakeLimitExceeded(currentNodeStake, amount, stakeLimit)
+        );
+
         if (nodeIsEnabled) {
             _rootFund.supply(
                 balance,
@@ -198,51 +262,20 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
         }
     }
 
+    
+    function claimRequest(uint256 requestId) external override nonReentrant {
+        Fair amount = _exitQueue.claim(msg.sender, requestId);
+        payable(msg.sender).sendValue(Fair.unwrap(amount));
+    }
+
     function setStakeLimit(Fair limit) external override restricted {
         emit StakeLimitUpdated(limit);
         stakeLimit = limit;
     }
 
-    function retrieve(NodeId node, Fair value) external override {
-        require(value > FundLibrary.ZERO_FAIR, ZeroAmount());
-        require(_stakedNodes[msg.sender].contains(node), ZeroStakeToNode(node));
-
-        emit Retrieved(msg.sender, node, value);
-
-        _pullReward(node);
-        bool nodeIsEnabled = isNodeEnabled(node);
-        if (nodeIsEnabled) {
-            Fair balance = _getTotalBalance();
-            _nodesFunds[node].remove(
-                _rootFund.getBalance(balance, FundLibrary.nodeToHolder(node)),
-                FundLibrary.addressToHolder(msg.sender),
-                value
-            );
-            _rootFund.remove(
-                balance,
-                FundLibrary.nodeToHolder(node),
-                value
-            );
-        } else {
-            Fair nodeFundBalance = _disabledNodesBalances.get(node);
-            _nodesFunds[node].remove(
-                nodeFundBalance,
-                FundLibrary.addressToHolder(msg.sender),
-                value
-            );
-            assert(!_disabledNodesBalances.set(node, nodeFundBalance - value));
-            totalDisabled = totalDisabled - value;
-        }
-        (bool exists, Credit holderCredits) = _nodesFunds[node].credits.tryGet(FundLibrary.addressToHolder(msg.sender));
-        if (holderCredits == FundLibrary.ZERO_CREDIT) {
-            assert(_stakedNodes[msg.sender].remove(node) && !exists);
-            emit StoppedStaking(msg.sender, node);
-        }
-
-        if (nodeIsEnabled) {
-            committee.updateWeight(node, Credit.unwrap(_getNodeCredits(node)));
-        }
-        payable(msg.sender).sendValue(Fair.unwrap(value));
+    function setRetrievingDelay(Timestamp delay) external override restricted {
+        _exitQueue.retrievingDelay = delay;
+        emit RetrievingDelayUpdated(delay);
     }
 
     function setFeeRate(uint16 feeRate) external override {
@@ -253,6 +286,7 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
             _nodesFunds[node].totalCredits == FundLibrary.ZERO_CREDIT || feeRate < currentFeeRate,
             OnlyFeeReductionIsAllowed(currentFeeRate, feeRate)
         );
+        _pullReward(node);
 
         emit NodeFeeRateUpdated(node, currentFeeRate, feeRate);
         _updateNodeFeeRate(node, feeRate);
@@ -263,6 +297,10 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
         rewardWalletReference = rewardWalletReference_;
     }
 
+    function requestRetrieveAll(NodeId node) external override returns (uint256 requestId) {
+        requestId = requestRetrieve(node, getStakedToNodeAmountFor(node, msg.sender));
+    }
+
     function stake(NodeId node) external payable override onlyExistingActiveNode(node) {
         require(msg.value > 0, ZeroAmount());
         bool nodeIsEnabled = isNodeEnabled(node);
@@ -271,7 +309,7 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
         _pullReward(node);
         Fair balance = _getTotalBalance() - amount;
 
-        _validateStakeLimit(node, amount, balance, nodeIsEnabled);
+        _validateStakeLimit(node, amount);
 
         if (nodeIsEnabled) {
             _nodesFunds[node].supply(
@@ -345,13 +383,7 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
     }
 
     function getNodeTotalStake(NodeId node) external view override returns (Fair amount) {
-        if (isNodeEnabled(node)) {
-            Fair balance = _getTotalBalance();
-            amount = _rootFund.getBalance(balance, FundLibrary.nodeToHolder(node));
-        } else {
-            amount = _disabledNodesBalances.get(node);
-        }
-        amount = amount + _getNonPulledReward(node);
+        return _getNodeTotalStakeBeforeAmount(node, FundLibrary.ZERO_FAIR);
     }
 
     function getNodeFeeRate(NodeId node) external view override returns (uint16 feeRate) {
@@ -371,40 +403,116 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
         count = _nodesFunds[node].credits.length();
     }
 
+    function getExitRequestsCountFor(address user) external view override returns (uint256 count) {
+        return _exitQueue.getNumRequestsForUser(user);
+    }
+
+    function getMyTotalInExitQueue() external view override returns (Fair amount) {
+        return _exitQueue.getTotalInQueueForUser(msg.sender);
+    }
+
+    function getMyExitRequestsCount() external view override returns (uint256 count) {
+        return _exitQueue.getNumRequestsForUser(msg.sender);
+    }
+
+    function isWithinStakeLimit(NodeId node) external view override returns (bool result) {
+        (result,) = _isWithinStakeLimit(node, FundLibrary.ZERO_FAIR);
+    }
+
+    function getExitRequest(
+        uint256 requestId
+    )
+        external
+        view
+        override
+        returns (ExitRequest memory request)
+    {
+        request = _exitQueue.getRequest(requestId);
+    }
+
+    function getUnlockedExitRequestFor(
+        address user,
+        uint256 fromIndex
+    )
+        external
+        view
+        override
+        returns (ExitRequest memory request)
+    {
+        return _exitQueue.getUnlockedRequest(user, fromIndex);
+    }
+
+    function getExitRequestAt(
+        address user,
+        uint256 index
+    )
+        external
+        view
+        override
+        returns (ExitRequest memory request)
+    {
+        request = _exitQueue.getRequestAt(user, index);
+    }
+
+    function isRequestUnlocked(uint256 requestId) external view override returns (bool unlocked) {
+        return _exitQueue.isRequestUnlocked(requestId);
+    }
+    function getRetrievingDelay() external view override returns (Timestamp delay) {
+        return _exitQueue.retrievingDelay;
+    }
+
+    function getTotalInExitQueueFor(address user) external view override returns (Fair amount){
+        return _exitQueue.getTotalInQueueForUser(user);
+    }
+
     // Public
 
-    function claimFee(address payable to, Fair amount) public override {
-        require(to != address(0), ZeroAddress());
-        NodeId node = nodes.getNodeId(msg.sender);
-        emit FeeClaimed(node, to, amount);
-        _pullReward(node);
-        Fair balance = _getTotalBalance();
-        bool nodeIsEnabled = isNodeEnabled(node);
-        if (nodeIsEnabled) {
-            _nodesFunds[node].claimFee(
-                _rootFund.getBalance(balance, FundLibrary.nodeToHolder(node)),
-                amount
-            );
-            _rootFund.remove(
-                balance,
-                FundLibrary.nodeToHolder(node),
-                amount
-            );
-        } else {
-            Fair nodeBalance = _disabledNodesBalances.get(node);
-            _nodesFunds[node].claimFee(
-                nodeBalance,
-                amount
-            );
-            // node is already disabled, should return false
-            assert(!_disabledNodesBalances.set(node, nodeBalance - amount));
-            totalDisabled = totalDisabled - amount;
-        }
-
+    function requestRetrieve(NodeId node, Fair value) public override returns (uint256 requestId) {
+        // Private helper does all internal state changes and verifications
+        (bool nodeIsEnabled, uint256 reqId) = _retrieveFunds(node, value);
         if (nodeIsEnabled) {
             committee.updateWeight(node, Credit.unwrap(_getNodeCredits(node)));
         }
-        to.sendValue(Fair.unwrap(amount));
+        return reqId;
+    }
+
+    function requestFees(
+        NodeId node,
+        Fair amount
+    )
+        public
+        override
+        onlyExistingActiveNode(node)
+        returns (uint256 requestId)
+    {
+        bool senderIsOwner = msg.sender == nodes.getNode(node).nodeAddress;
+        require(
+            _nodesAllowedReceivers[node].contains(msg.sender) || senderIsOwner,
+            NotAllowedToClaimRewards(msg.sender)
+        );
+        requestId = _requestSendFees(
+            node,
+            amount,
+            payable(msg.sender)
+        );
+    }
+
+    function requestSendFees(address payable to, Fair amount) public override returns (uint256 requestId) {
+        NodeId node = nodes.getNodeId(msg.sender);
+
+        // Node has opted in to allowed receivers, so the destination address must be in the list
+        // Or be the owner
+        if (_hasAllowedReceiver(node)) {
+            require(
+                _nodesAllowedReceivers[node].contains(to) || to == msg.sender,
+                NotAllowedToClaimRewards(to)
+            );
+        }
+        requestId = _requestSendFees(
+            node,
+            amount,
+            to
+        );
     }
 
     function isNodeEnabled(NodeId node) public view override returns (bool enabled) {
@@ -447,7 +555,91 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
         );
     }
 
+    function getTotalInExitQueue() public view override returns (Fair amount) {
+        return _exitQueue.totalInExitQueue;
+    }
+
     // Private
+
+    function _requestSendFees(
+        NodeId node,
+        Fair amount,
+        address to
+    )
+        private
+        returns (uint256 requestId)
+    {
+        // sender can be allowed user, nodeOwner, or Nodes.sol contract (node deleted)
+        emit FeeClaimRequested(node, msg.sender, to, amount);
+        _pullReward(node);
+        Fair balance = _getTotalBalance();
+        bool nodeIsEnabled = isNodeEnabled(node);
+        if (nodeIsEnabled) {
+            _nodesFunds[node].claimFee(
+                _rootFund.getBalance(balance, FundLibrary.nodeToHolder(node)),
+                amount
+            );
+            _rootFund.remove(
+                balance,
+                FundLibrary.nodeToHolder(node),
+                amount
+            );
+        } else {
+            Fair nodeBalance = _disabledNodesBalances.get(node);
+            _nodesFunds[node].claimFee(
+                nodeBalance,
+                amount
+            );
+            // node is already disabled, should return false
+            assert(!_disabledNodesBalances.set(node, nodeBalance - amount));
+            totalDisabled = totalDisabled - amount;
+        }
+
+        requestId = _exitQueue.createRequest(to, node, amount);
+
+        if (nodeIsEnabled) {
+            committee.updateWeight(node, Credit.unwrap(_getNodeCredits(node)));
+        }
+    }
+
+    function _retrieveFunds(NodeId node, Fair value) private returns (bool nodeIsEnabled, uint256 requestId) {
+        require(value > FundLibrary.ZERO_FAIR, ZeroAmount());
+        require(_stakedNodes[msg.sender].contains(node), ZeroStakeToNode(node));
+
+        emit RetrieveRequested(msg.sender, node, value);
+        _pullReward(node);
+        nodeIsEnabled = isNodeEnabled(node);
+
+        if (nodeIsEnabled) {
+            Fair balance = _getTotalBalance();
+            _nodesFunds[node].remove(
+                _rootFund.getBalance(balance, FundLibrary.nodeToHolder(node)),
+                FundLibrary.addressToHolder(msg.sender),
+                value
+            );
+            _rootFund.remove(
+                balance,
+                FundLibrary.nodeToHolder(node),
+                value
+            );
+        } else {
+            Fair nodeFundBalance = _disabledNodesBalances.get(node);
+            _nodesFunds[node].remove(
+                nodeFundBalance,
+                FundLibrary.addressToHolder(msg.sender),
+                value
+            );
+            assert(!_disabledNodesBalances.set(node, nodeFundBalance - value));
+            totalDisabled = totalDisabled - value;
+        }
+        (bool exists, Credit holderCredits) = _nodesFunds[node].credits.tryGet(FundLibrary.addressToHolder(msg.sender));
+        if (holderCredits == FundLibrary.ZERO_CREDIT) {
+            assert(_stakedNodes[msg.sender].remove(node) && !exists);
+            emit StoppedStaking(msg.sender, node);
+        }
+
+        requestId = _exitQueue.createRequest(msg.sender, node, value);
+    }
 
     function _deployRewardWallet(NodeId node) private {
         ProxyAdmin proxyAdmin = ProxyAdmin(ERC1967Utils.getAdmin());
@@ -459,6 +651,7 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
                 IRewardWallet.initialize.selector,
                 authority(),
                 IStaking(payable(this)),
+                nodes,
                 node
             )
         )));
@@ -466,9 +659,8 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
 
 
     function _pullReward(NodeId node) private nonReentrant {
-
-        // getter returns 0 for deleted nodes, even if reward wallet has balance
-        if (nodes.activeNodeExists(node) && _getNonPulledReward(node) > FundLibrary.ZERO_FAIR) {
+        // safe because getNonPulledReward returns 0 if rewardWallet does not exist
+        if (_getNonPulledReward(node) > FundLibrary.ZERO_FAIR) {
             // Reward wallet is considered as a part of Staking contract.
             // The code is trusted and effects are known.
             // slither-disable-start reentrancy-events
@@ -479,8 +671,15 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
     }
 
     function _updateNodeFeeRate(NodeId node, uint16 feeRate) private {
+        Fair balance;
+        if (isNodeEnabled(node)){
+            balance = _rootFund.getBalance(_getTotalBalance(), FundLibrary.nodeToHolder(node));
+        }
+        else {
+            balance = _disabledNodesBalances.get(node);
+        }
         _nodesFunds[node].setFeeRate(
-            _rootFund.getBalance(_getTotalBalance(), FundLibrary.nodeToHolder(node)),
+            balance,
             feeRate
         );
     }
@@ -492,29 +691,64 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
         assert(exists != (credits == FundLibrary.ZERO_CREDIT));
     }
 
+    function _getNodeTotalStakeBeforeAmount(NodeId node, Fair amount) private view returns (Fair total) {
+        if (isNodeEnabled(node)) {
+            Fair balance = _getTotalBalance() - amount;
+            total = _rootFund.getBalance(balance, FundLibrary.nodeToHolder(node));
+        } else {
+            total = _disabledNodesBalances.get(node);
+        }
+        total = total + _getNonPulledReward(node);
+    }
+
     function _getNonPulledReward(NodeId node) private view returns (Fair nonPulledReward) {
+        if (_rewardWallets[node] == IRewardWallet(payable(0))) {
+            return FundLibrary.ZERO_FAIR;
+        }
         return Fair.wrap(address(_rewardWallets[node]).balance);
     }
 
     function _getTotalBalance() private view returns (Fair balance) {
-        return Fair.wrap(address(this).balance) - totalDisabled;
+        return Fair.wrap(address(this).balance) - totalDisabled - getTotalInExitQueue();
     }
 
-    function _validateStakeLimit(NodeId node, Fair amount, Fair balance, bool nodeIsEnabled) private view {
-        if (Fair.unwrap(stakeLimit) > 0) {
-            Fair currentNodeStake;
-            if (nodeIsEnabled) {
-                currentNodeStake = _rootFund.getBalance(balance, FundLibrary.nodeToHolder(node));
-            } else {
-                currentNodeStake = _disabledNodesBalances.get(node);
-            }
-
+    function _isWithinStakeLimit(
+        NodeId node,
+        Fair amount
+    )
+        private
+        view
+        returns (bool result, Fair currentNodeStake)
+    {   
+        result = true;
+        if (stakeLimit > FundLibrary.ZERO_FAIR) {
+            currentNodeStake = _getNodeTotalStakeBeforeAmount(node, amount);
             Fair newNodeStake = currentNodeStake + amount;
-            require(
-                !(newNodeStake > stakeLimit),
-                StakeLimitExceeded(currentNodeStake, amount, stakeLimit)
-            );
+            result = !(newNodeStake > stakeLimit);
         }
+    }
+
+    function _validateStakeLimit(NodeId node, Fair amount) private view {
+        (bool isWithinLimit, Fair currentNodeStake) = _isWithinStakeLimit(node, amount);
+        require(
+            isWithinLimit,
+            StakeLimitExceeded(currentNodeStake, amount, stakeLimit)
+        );
+    }
+
+    function _hasAllowedReceiver(NodeId node) private view returns (bool result) {
+        return _nodesAllowedReceivers[node].length() > 0;
+    }
+
+    function _publicKeyToAddress(
+        bytes32[2] memory pubKey
+    )
+        private
+        pure
+        returns (address nodeAddress)
+    {
+        bytes32 hash = keccak256(abi.encodePacked(pubKey[0], pubKey[1]));
+        return address(uint160(uint256(hash)));
     }
 
 }

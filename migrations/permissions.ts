@@ -1,12 +1,11 @@
 import { ethers } from "hardhat";
 import { DeployedContracts } from "./deploy";
-import { Committee, FairAccessManager, Staking, Status } from "../typechain-types";
+import { Committee, DKG, FairAccessManager, Staking, Status } from "../typechain-types";
 
 const setupCommitteeRoles = async (accessManager: FairAccessManager, committee: Committee) => {
     let response = await accessManager.setTargetFunctionRole(
         await ethers.resolveAddress(committee),
         [
-            committee.interface.getFunction("nodeCreated").selector,
             committee.interface.getFunction("nodeRemoved").selector
         ],
         await accessManager.NODES_ROLE()
@@ -45,7 +44,10 @@ const setupStakeRoles = async (accessManager: FairAccessManager, staking: Stakin
 
     response = await accessManager.setTargetFunctionRole(
         await ethers.resolveAddress(staking),
-        [staking.interface.getFunction("nodeCreated").selector],
+        [
+            staking.interface.getFunction("nodeCreated").selector,
+            staking.interface.getFunction("nodeRemoved").selector
+        ],
         await accessManager.NODES_ROLE()
     );
     await response.wait();
@@ -60,17 +62,28 @@ const setupStatusRoles = async (accessManager: FairAccessManager, status: Status
     await response.wait();
 }
 
+const setupDKGRoles = async (accessManager: FairAccessManager, dkg: DKG) => {
+    const response = await accessManager.setTargetFunctionRole(
+        await ethers.resolveAddress(dkg),
+        [dkg.interface.getFunction("generate").selector],
+        await accessManager.COMMITTEE_ROLE()
+    );
+    await response.wait();
+}
+
 const setupRoles = async (deployedContracts: DeployedContracts) => {
     const {
         Committee: committee,
         FairAccessManager: accessManager,
         Staking: staking,
-        Status: status
+        Status: status,
+        DKG: dkg
     } = deployedContracts;
 
     await setupCommitteeRoles(accessManager, committee);
     await setupStakeRoles(accessManager, staking);
     await setupStatusRoles(accessManager, status);
+    await setupDKGRoles(accessManager, dkg);
 }
 
 const grantRoles = async (deployedContracts: DeployedContracts) => {

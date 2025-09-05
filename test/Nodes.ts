@@ -92,7 +92,7 @@ describe("Nodes", function () {
         expect(await nodesContract.getActiveNodeIds()).to.include(nodeId);
         expect(await nodesContract.activeNodeExists(nodeId)).to.eql(true);
 
-        await nodesContract.connect(deployer).deleteNode(nodeId);
+        await expect(nodesContract.connect(deployer).deleteNode(nodeId)).to.emit(nodesContract, "ActiveNodeDeleted").withArgs(nodeId, deployer.address, MOCK_IP_0_BYTES, 8000);
 
         await expect(nodesContract.getNode(nodeId)).to.be.revertedWithCustomError(nodesContract, "NodeDoesNotExist");
         expect(await nodesContract.getActiveNodeIds()).to.not.include(nodeId);
@@ -181,6 +181,38 @@ describe("Nodes", function () {
 
     });
 
+    it("should remove passive node addresses only if it does not own any other node", async () => {
+        await nodesContract.registerPassiveNode(MOCK_IPV6_BYTES, 8000);
+        const [passiveNodeId] = await nodesContract.getPassiveNodeIdsForAddress(deployer.address);
+        const passiveNode = await nodesContract.getNode(passiveNodeId);
+        expect(passiveNode.id).to.equal(passiveNodeId);
+        expect(passiveNode.port).to.equal(8000n);
+        expect(Buffer.from(getBytes(passiveNode.ip))).to.eql(MOCK_IPV6_BYTES);
+        expect(passiveNode.nodeAddress).to.equal(deployer.address);
+        expect(await nodesContract.getPassiveNodeIdsForAddress(deployer.address)).to.include(passiveNodeId);
+
+        await nodesContract.registerPassiveNode(MOCK_IP_0_BYTES, 8000);
+
+        const [, passiveNodeId2] = await nodesContract.getPassiveNodeIdsForAddress(deployer.address);
+        expect(await nodesContract.getPassiveNodeIdsForAddress(deployer.address)).to.eql([passiveNodeId, passiveNodeId2]);
+
+        await expect(nodesContract.connect(deployer).deleteNode(passiveNodeId)).to.emit(nodesContract, "PassiveNodeDeleted").withArgs(passiveNodeId, deployer.address, MOCK_IPV6_BYTES, 8000);
+        await expect(nodesContract.getNode(passiveNodeId)).to.be.revertedWithCustomError(nodesContract, "NodeDoesNotExist");
+
+        await expect(nodesContract.registerNode(MOCK_IPV6_BYTES, deployerPubKey, 8000)).to.be.revertedWithCustomError(nodesContract, "AddressInUseByPassiveNodes");
+        expect(await nodesContract.getPassiveNodeIdsForAddress(deployer.address)).to.eql([passiveNodeId2]);
+
+        expect((await nodesContract.getPassiveNodeIds()).length).to.eql(1);
+
+        await expect(nodesContract.connect(deployer).deleteNode(passiveNodeId2)).to.emit(nodesContract, "PassiveNodeDeleted").withArgs(passiveNodeId2, deployer.address, MOCK_IP_0_BYTES, 8000);
+
+        expect((await nodesContract.getPassiveNodeIds()).length).to.eql(0);
+
+        // Address is free now
+        await expect(nodesContract.registerNode(MOCK_IPV6_BYTES, deployerPubKey, 8000)).to.be.fulfilled;
+
+    });
+
     it("getNode should revert when node does not exist", async () => {
         await expect(nodesContract.getNode(0))
         .to.be.reverted;
@@ -188,7 +220,7 @@ describe("Nodes", function () {
         await expect(nodesContract.getNodeId(deployer.address))
         .to.be.revertedWithCustomError(nodesContract, "AddressIsNotAssignedToAnyNode");
 
-        await expect(nodesContract.getPassiveNodeIdsForAddress(deployer.address))
+        await expect(nodesContract.getPassiveNodeIdsForAddress(deployer))
         .to.be.revertedWithCustomError(nodesContract, "AddressIsNotAssignedToAnyNode");
     });
 
@@ -201,7 +233,6 @@ describe("Nodes", function () {
 
         await expect(nodesContract.getNodeId(deployer))
         .to.be.revertedWithCustomError(nodesContract, "AddressIsNotAssignedToAnyNode");
-
     });
 
 
@@ -233,22 +264,30 @@ describe("Nodes", function () {
         await expect(nodesContract.registerNode(MOCK_IP_1_BYTES, deployerPubKey, 8000))
         .to.be.revertedWithCustomError(nodesContract, "AddressWasAlreadyAssignedToNode");
 
-        // IP address is taken by active node
-        await expect(nodesContract.connect(user1).registerPassiveNode(MOCK_IP_0_BYTES, 8000))
-        .to.be.revertedWithCustomError(nodesContract, "IpIsNotAvailable");
-        await expect(nodesContract.connect(user1).registerNode(MOCK_IP_0_BYTES, user1PubKey, 8000))
-        .to.be.revertedWithCustomError(nodesContract, "IpIsNotAvailable");
-
         // New passive node
         await nodesContract.connect(user1).registerPassiveNode(MOCK_IP_1_BYTES, 8000)
 
         // Node Address is assigned to passive nodes
         await expect(nodesContract.connect(user1).registerNode(MOCK_IP_2_BYTES, user1PubKey, 8000))
         .to.be.revertedWithCustomError(nodesContract, "AddressInUseByPassiveNodes");
+    });
 
-        // IP Address is assigned to passive node
-        await expect(nodesContract.connect(user2).registerNode(MOCK_IP_1_BYTES, user2PubKey, 8000))
-        .to.be.revertedWithCustomError(nodesContract, "IpIsNotAvailable");
+    it("should allow duplicate domain names and IP addresses", async () => {
+        await nodesContract.registerNode(MOCK_IP_0_BYTES, deployerPubKey, 8000);
+        const nodeId = await nodesContract.getNodeId(deployer.address) as BigNumberish;
+        await nodesContract.setDomainName(nodeId, MOCK_DOMAIN_NAME_0);
+
+        await nodesContract.connect(user1).registerNode(MOCK_IP_0_BYTES, user1PubKey, 8000);
+        const nodeIdUser1 = await nodesContract.getNodeId(user1.address) as BigNumberish;
+        await nodesContract.connect(user1).setDomainName(nodeIdUser1, MOCK_DOMAIN_NAME_0);
+
+        const nodeDeployer = await nodesContract.getNode(nodeId);
+        expect(nodeDeployer.domainName).to.equal(MOCK_DOMAIN_NAME_0);
+        expect(Buffer.from(getBytes(nodeDeployer.ip))).to.eql(MOCK_IP_0_BYTES);
+
+        const nodeUser1 = await nodesContract.getNode(nodeIdUser1);
+        expect(nodeUser1.domainName).to.equal(MOCK_DOMAIN_NAME_0);
+        expect(Buffer.from(getBytes(nodeUser1.ip))).to.eql(MOCK_IP_0_BYTES);
     });
 
 
@@ -281,20 +320,6 @@ describe("Nodes", function () {
 
     });
 
-    it("should block duplicate domain names ", async () => {
-        await nodesContract.registerNode(MOCK_IP_0_BYTES, deployerPubKey, 8000);
-        const firstRegisteredNodeId = await nodesContract.getNodeId(deployer.address) as BigNumberish;
-
-        await nodesContract.setDomainName(firstRegisteredNodeId, MOCK_DOMAIN_NAME_1);
-
-        await nodesContract.connect(user1).registerNode(MOCK_IP_1_BYTES, user1PubKey, 8000);
-        const secondRegisteredNodeId = await nodesContract.getNodeId(user1.address) as BigNumberish;
-
-        await expect(nodesContract.connect(user1).setDomainName(secondRegisteredNodeId, MOCK_DOMAIN_NAME_1))
-        .to.be.revertedWithCustomError(nodesContract, "DomainNameAlreadyTaken");
-
-    });
-
     it("should block invalid IP address change requests", async () => {
         await nodesContract.registerNode(MOCK_IP_0_BYTES, deployerPubKey, 8000);
         const nodeId = await nodesContract.getNodeId(deployer.address);
@@ -313,9 +338,6 @@ describe("Nodes", function () {
         .to.be.reverted;
 
         await nodesContract.connect(user1).registerNode(MOCK_IP_1_BYTES, user1PubKey, 8000);
-
-        await expect(nodesContract.setIpAddress(nodeId, MOCK_IP_1_BYTES, 9000))
-        .to.be.revertedWithCustomError(nodesContract, "IpIsNotAvailable");
     });
 
     it("should not allow submit address change requests for not existent nodes", async () => {
@@ -461,28 +483,27 @@ describe("Nodes", function () {
         .to.be.revertedWithCustomError(nodesContract, "PassiveNodeAlreadyExistsForAddress");
     });
 
-    it("should never allow duplicate public keys from active nodes even after deletion", async function () {
+    it("should allow duplicate public keys from active nodes after deletion", async function () {
         await nodesContract.registerNode(MOCK_IP_0_BYTES, deployerPubKey , 8000);
         const node = await nodesContract.getNodeId(deployer.address);
         await nodesContract.deleteNode(node);
-        await expect(nodesContract.getNodeId(deployer.address)).to.be.revertedWithCustomError(nodesContract, "NodeWasDeleted");
-        expect(await nodesContract.getPublicKey(node)).to.be.eql(deployerPubKey);
 
-        await expect(nodesContract.registerNode(MOCK_IP_0_BYTES, deployerPubKey , 8000))
-        .to.be.revertedWithCustomError(nodesContract, "AddressWasAlreadyAssignedToNode");
-
-        await expect(nodesContract.registerPassiveNode(MOCK_IP_0_BYTES, 8000))
-        .to.be.revertedWithCustomError(nodesContract, "AddressWasAlreadyAssignedToNode");
+        expect(await nodesContract.getActiveNodeIds()).to.not.include(node);
+        await expect(nodesContract.getNodeId(deployer.address)).to.be.revertedWithCustomError(nodesContract, "AddressIsNotAssignedToAnyNode");
 
         expect(await nodesContract.getPublicKey(node)).to.be.eql(deployerPubKey);
+
+        await nodesContract.registerNode(MOCK_IP_0_BYTES, deployerPubKey , 8000);
+
+        const nodeV2 = await nodesContract.getNodeId(deployer.address);
+
+        expect(await nodesContract.getPublicKey(node)).to.be.eql(await nodesContract.getPublicKey(nodeV2));
 
         await nodesContract.connect(user1).registerPassiveNode(MOCK_IP_1_BYTES, 8000);
 
         const [passiveNode] = await nodesContract.getPassiveNodeIdsForAddress(user1.address);
 
-        await expect(nodesContract.connect(user1).requestChangeOwner(passiveNode, deployer.address))
-        .to.be.revertedWithCustomError(nodesContract, "AddressWasAlreadyAssignedToNode");
-
+        await expect(nodesContract.getPublicKey(passiveNode)).to.be.revertedWithCustomError(nodesContract, "ActiveNodeWasNeverRegistered");
         await expect(nodesContract.getPublicKey(passiveNode + 1n)).to.be.revertedWithCustomError(nodesContract, "ActiveNodeWasNeverRegistered");
     });
 
@@ -497,24 +518,29 @@ describe("Nodes", function () {
 
         for(const node of nodesData) {
             const newIp = ethers.randomBytes(4);
+            const newDomain = String(ethers.randomBytes(32));
             const nodeBlocked = await committee.isNodeInCurrentOrNextCommittee(node.id);
             if (nodeBlocked) {
                 expect(nodes.connect(node.wallet).setIpAddress(node.id, newIp, 8000))
+                .to.be.revertedWithCustomError(nodes, "NodeIsInCommittee");
+                expect(nodes.connect(node.wallet).setDomainName(node.id, newDomain))
                 .to.be.revertedWithCustomError(nodes, "NodeIsInCommittee");
             }
             else {
                 await nodes.connect(node.wallet).setIpAddress(node.id, newIp, 8000);
                 expect(Buffer.from(getBytes((await nodes.getNode(node.id)).ip))).to.eql(newIp);
+                await nodes.connect(node.wallet).setDomainName(node.id, newDomain);
+                expect((await nodes.getNode(node.id)).domainName).to.eql(newDomain);
             }
         }
 
     });
 
-    it("should should not allow deleting node if node in current or next committee or has stake", async function () {
+    it("should should not allow deleting node if node in current or next committee", async function () {
         // TODO: this test is taking too long only on old versions of nodejs
         // remove custom timeout after deprecation of nodejs 18
         this.timeout(60000); // 1 minutes
-        const {committee, nodesData, nodes, status, staking} = await whitelistedAndStakedNodes();
+        const {committee, nodesData, nodes, status} = await whitelistedAndStakedNodes();
         await committee.setCommitteeSize(5); // to save resources
         await sendHeartbeat(status, nodesData.slice(0, 10)); // to save time
         await committee.select();
@@ -525,12 +551,6 @@ describe("Nodes", function () {
                 .to.be.revertedWithCustomError(nodes, "NodeIsInCommittee");
             }
             else {
-                const amount = await staking.getStakedToNodeAmount(node.id);
-                if (amount > 0) {
-                    await expect(nodes.connect(node.wallet).deleteNode(node.id))
-                    .to.be.revertedWithCustomError(nodes, "NodeHasDelegations");
-                    await staking.retrieve(node.id, amount);
-                }
                 await nodes.connect(node.wallet).deleteNode(node.id);
             }
         }

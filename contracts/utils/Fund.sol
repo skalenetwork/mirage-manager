@@ -70,15 +70,19 @@ library FundLibrary {
         internal
     {
         _processBalanceChange(fund, balanceBeforeClaim);
-        if (fund.feeRate > 0) {
-            Credit credits = _toCreditsRoundedUp(fund, balanceBeforeClaim, amount);
-            if (fund.ownerCredits < credits) {
-                revert NotEnoughFee(_toFairRoundedDown(fund, balanceBeforeClaim, ZERO_CREDIT, fund.ownerCredits));
-            }
-            fund.ownerCredits = fund.ownerCredits - credits;
-            fund.totalCredits = fund.totalCredits - credits;
-            fund.lastBalance = balanceBeforeClaim - amount;
+        
+        Credit credits;
+        if (amount == getEarnedFee(fund, balanceBeforeClaim)) {
+            credits = fund.ownerCredits;
+        } else {
+            credits = _toCreditsRoundedUp(fund, balanceBeforeClaim, amount);
         }
+        if (fund.ownerCredits < credits) {
+            revert NotEnoughFee(_toFairRoundedDown(fund, balanceBeforeClaim, ZERO_CREDIT, fund.ownerCredits));
+        }
+        fund.ownerCredits = fund.ownerCredits - credits;
+        fund.totalCredits = fund.totalCredits - credits;
+        fund.lastBalance = balanceBeforeClaim - amount;
     }
 
     function remove(
@@ -91,23 +95,13 @@ library FundLibrary {
     {
         _processBalanceChange(fund, balanceBeforeRemove);
         Fair balanceBefore = getBalance(fund, balanceBeforeRemove, holder);
-        Credit credits = _toCreditsRoundedUp(fund, balanceBeforeRemove, amount);
-        (bool exists, Credit holderCredits) = fund.credits.tryGet(holder);
-        if (holderCredits < credits) {
-            revert NotEnoughStaked(_toFairRoundedDown(fund, balanceBeforeRemove, ZERO_CREDIT, holderCredits));
+        Credit credits;
+        if (balanceBefore == amount) {
+            credits = fund.credits.get(holder);
+        } else {
+            credits = _toCreditsRoundedUp(fund, balanceBeforeRemove, amount);
         }
-        if (holderCredits == credits) {
-            // Holders with Zero credits are always removed from the map.
-            assert(fund.credits.remove(holder) == exists);
-        }
-        else {
-            // Set must return false because holder already exists in the map.
-            assert(!fund.credits.set(holder, holderCredits - credits));
-        }
-
-
-        fund.totalCredits = fund.totalCredits - credits;
-        fund.lastBalance = balanceBeforeRemove - amount;
+        _remove(fund, balanceBeforeRemove, holder, credits);
         Fair balanceAfter = getBalance(fund, fund.lastBalance, holder);
         _checkAllowedError(balanceBefore, balanceAfter, amount);
     }
@@ -132,8 +126,12 @@ library FundLibrary {
         internal
     {
         _processBalanceChange(fund, balanceBeforeSupply);
-        Fair balanceBefore = getBalance(fund, balanceBeforeSupply, holder);
+        Fair holderBalanceBefore = getBalance(fund, balanceBeforeSupply, holder);
         Credit credits = _toCreditsRoundedDown(fund, balanceBeforeSupply, amount);
+        Fair delayedReward = ZERO_FAIR;
+        if (fund.totalCredits == ZERO_CREDIT) {
+            delayedReward = balanceBeforeSupply;
+        }
         (bool holderExists, Credit holderCredits) = fund.credits.tryGet(holder);
         // If holder does not exist, it is added with the credits.
         // If it does exist, set() must return false and value is updated.
@@ -143,7 +141,7 @@ library FundLibrary {
         }
         fund.lastBalance = balanceBeforeSupply + amount;
         Fair balanceAfter = getBalance(fund, fund.lastBalance, holder);
-        _checkAllowedError(balanceBefore, balanceAfter, amount);
+        _checkAllowedError(holderBalanceBefore, balanceAfter, amount + delayedReward);
     }
 
     function getBalance(
@@ -179,10 +177,8 @@ library FundLibrary {
         view
         returns (Fair amount)
     {
-        if (fund.feeRate > 0) {
-            Credit uncountedFee = _getUncountedFeeCredits(fund, balance);
-            return _toFairRoundedDown(fund, balance, uncountedFee, fund.ownerCredits + uncountedFee);
-        }
+        Credit uncountedFee = _getUncountedFeeCredits(fund, balance);
+        return _toFairRoundedDown(fund, balance, uncountedFee, fund.ownerCredits + uncountedFee);
     }
 
     function holderToAddress(Holder holder) internal pure returns (address holderAddress) {
@@ -209,12 +205,40 @@ library FundLibrary {
     )
         private
     {
-        if (fund.feeRate > 0 && balance > fund.lastBalance) {
+        if (balance > fund.lastBalance) {
             Credit credits = _getUncountedFeeCredits(fund, balance);
             fund.ownerCredits = fund.ownerCredits + credits;
             fund.totalCredits = fund.totalCredits + credits;
             fund.lastBalance = balance;
         }
+    }
+
+    function _remove(
+        Fund storage fund,
+        Fair balanceBeforeRemove,
+        Holder holder,
+        Credit amount
+    )
+        private
+        returns (Fair removed)
+    {
+        _processBalanceChange(fund, balanceBeforeRemove);
+        (bool exists, Credit holderCredits) = fund.credits.tryGet(holder);
+        if (holderCredits < amount) {
+            revert NotEnoughStaked(_toFairRoundedDown(fund, balanceBeforeRemove, ZERO_CREDIT, holderCredits));
+        }
+        removed = _toFairRoundedDown(fund, balanceBeforeRemove, ZERO_CREDIT, amount);
+        if (holderCredits == amount) {
+            // Holders with Zero credits are always removed from the map.
+            assert(fund.credits.remove(holder) == exists);
+        }
+        else {
+            // Set must return false because holder already exists in the map.
+            assert(!fund.credits.set(holder, holderCredits - amount));
+        }
+
+        fund.totalCredits = fund.totalCredits - amount;
+        fund.lastBalance = balanceBeforeRemove - removed;
     }
 
     function _getUncountedFeeCredits(
@@ -225,7 +249,7 @@ library FundLibrary {
         view
         returns (Credit fee)
     {
-        if (fund.feeRate > 0 && balance > fund.lastBalance) {
+        if (balance > fund.lastBalance && fund.feeRate > 0) {
             Fair balanceChange = balance - fund.lastBalance;
             Fair feeInFair = Fair.wrap(
                 Fair.unwrap(balanceChange) * fund.feeRate / 1000
@@ -246,6 +270,12 @@ library FundLibrary {
     {
         if (balance == ZERO_FAIR) {
             return Credit.wrap(Fair.unwrap(amount) * CREDIT_PRECISION);
+        }
+        if (fund.totalCredits == ZERO_CREDIT) {
+            // Balance is positive but amount of shares is still zero.
+            // Reward was received before somebody joined the fund.
+            // Give away the reward to first holder joined because there is no one else.
+            return Credit.wrap(Fair.unwrap(amount + balance) * CREDIT_PRECISION);
         }
         return Credit.wrap(
             Math.mulDiv(
@@ -289,14 +319,15 @@ library FundLibrary {
         view
         returns (Fair fair)
     {
-        if (fund.totalCredits == ZERO_CREDIT) {
+        Credit totalCreditsWithUncountedFee = fund.totalCredits + uncountedFee;
+        if (totalCreditsWithUncountedFee == ZERO_CREDIT) {
             return ZERO_FAIR;
         }
         return Fair.wrap(
             Math.mulDiv(
                 Fair.unwrap(balance),
                 Credit.unwrap(amount),
-                Credit.unwrap(fund.totalCredits + uncountedFee),
+                Credit.unwrap(totalCreditsWithUncountedFee),
                 Math.Rounding.Floor
             )
         );

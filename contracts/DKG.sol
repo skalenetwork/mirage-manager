@@ -175,7 +175,7 @@ contract DKG is AccessManagedUpgradeable, IDkg {
         );
     }
 
-    function generate(NodeId[] calldata participants) external override returns (DkgId dkg) {
+    function generate(NodeId[] calldata participants) external override restricted returns (DkgId dkg) {
         return _createRound(participants);
     }
 
@@ -188,6 +188,8 @@ contract DKG is AccessManagedUpgradeable, IDkg {
     }
 
     function getPublicKey(DkgId dkg) external view override returns (G2Point memory publicKey) {
+        require(dkg != DkgId.wrap(0), RoundDoesNotExist(dkg));
+        require(_rounds[dkg].id == dkg, RoundDoesNotExist(dkg));
         // the should return the public key only if the DKG is successful
         // disable the warning because of false positive
         // slither-disable-next-line incorrect-equality

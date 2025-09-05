@@ -432,6 +432,7 @@ describe("Committee", () => {
 
     it("should emit proper error when there are eligible nodes but all of them are not healthy", async () => {
         const {committee, status, nodesData} = await whitelistedAndStakedNodes();
+        await committee.setCommitteeSize(5); // to save time
         await sendHeartbeat(status, nodesData.slice(0, Number(await committee.committeeSize())));
         await skipTime(await status.heartbeatInterval());
         await committee.select()
