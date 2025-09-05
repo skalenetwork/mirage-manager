@@ -31,8 +31,6 @@ import {
 import {INodes, NodeId} from "@skalenetwork/fair-manager-interfaces/INodes.sol";
 import {IRewardWallet} from "@skalenetwork/fair-manager-interfaces/IRewardWallet.sol";
 import {IStaking} from "@skalenetwork/fair-manager-interfaces/IStaking.sol";
-import {Fair} from "@skalenetwork/fair-manager-interfaces/units.sol";
-import {Staking} from "./Staking.sol";
 
 contract RewardWallet is AccessManagedUpgradeable, IRewardWallet {
     using Address for address payable;
