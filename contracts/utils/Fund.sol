@@ -70,8 +70,13 @@ library FundLibrary {
         internal
     {
         _processBalanceChange(fund, balanceBeforeClaim);
-
-        Credit credits = _toCreditsRoundedUp(fund, balanceBeforeClaim, amount);
+        
+        Credit credits;
+        if (amount == getEarnedFee(fund, balanceBeforeClaim)) {
+            credits = fund.ownerCredits;
+        } else {
+            credits = _toCreditsRoundedUp(fund, balanceBeforeClaim, amount);
+        }
         if (fund.ownerCredits < credits) {
             revert NotEnoughFee(_toFairRoundedDown(fund, balanceBeforeClaim, ZERO_CREDIT, fund.ownerCredits));
         }
@@ -90,25 +95,15 @@ library FundLibrary {
     {
         _processBalanceChange(fund, balanceBeforeRemove);
         Fair balanceBefore = getBalance(fund, balanceBeforeRemove, holder);
-        Credit credits = _toCreditsRoundedUp(fund, balanceBeforeRemove, amount);
+        Credit credits;
+        if (balanceBefore == amount) {
+            credits = fund.credits.get(holder);
+        } else {
+            credits = _toCreditsRoundedUp(fund, balanceBeforeRemove, amount);
+        }
         _remove(fund, balanceBeforeRemove, holder, credits);
         Fair balanceAfter = getBalance(fund, fund.lastBalance, holder);
         _checkAllowedError(balanceBefore, balanceAfter, amount);
-    }
-
-    function removeAll(
-        Fund storage fund,
-        Fair balanceBeforeRemove,
-        Holder holder
-    )
-        internal
-        returns (Fair removed)
-    {
-        _processBalanceChange(fund, balanceBeforeRemove);
-        Fair balanceBefore = getBalance(fund, balanceBeforeRemove, holder);
-        removed = _remove(fund, balanceBeforeRemove, holder, fund.credits.get(holder));
-        Fair balanceAfter = getBalance(fund, fund.lastBalance, holder);
-        _checkAllowedError(balanceBefore, balanceAfter, removed);
     }
 
     function setFeeRate(
