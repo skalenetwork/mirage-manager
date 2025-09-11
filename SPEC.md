@@ -57,16 +57,6 @@ struct Node {
 - Node addresses must correspond to the node's public key (address is computable using the public key).
 - Node ports must not be 0.
 
-#### Self-Stake Requirement
-
-FAIR-manager supports a configurable self-stake requirement for Active Node registration. This feature ensures that node operators have a financial commitment to the network's health and security.
-
-**Key Features:**
-- **Global Parameter**: `selfStakeRequirement` is a network-wide parameter that can be set by DEFAULT_ADMIN.
-- **Required on Registration**: When registering an Active Node, if `selfStakeRequirement > 0`, the node owner must provide at least that amount of FAIR tokens as stake.
-- **Automatic Staking**: The provided self-stake is automatically forwarded to the Staking contract and staked to the newly created node.
-- **Retrieval Restrictions**: Node owners cannot retrieve their self-stake while their node exists - this prevents operators from withdrawing their commitment while still operating a node.
-- **Automatic Return on Deletion**: When a node is deleted (either by the owner or foundation), the node owner's stake and any earned fees are automatically made available for withdrawal through the exit queue.
 
 #### Nodes Main Functions
 
@@ -74,7 +64,6 @@ FAIR-manager supports a configurable self-stake requirement for Active Node regi
 - `registerPassiveNode(address owner, bytes publicKey, ...)`: Registers a new Passive Node.
 - `deleteNode(NodeId id)`: Deletes both Active and Passive Nodes.
 - `deleteNodeByFoundation(NodeId id)`: Allows DEFAULT_ADMIN to delete both Active and Passive Nodes.
-- `setSelfStakeRequirement(Fair amount)`: Sets the minimum self-stake requirement for Active Node registration.
 - `setIpAddress(NodeId nodeId, ...)`: Changes the IP address of a Node.
 - `setDomainName(NodeId nodeId, ...)`: Changes the domain name of a Node.
 - `requestChangeOwner(NodeId nodeId, ...)`: Registers a request to change ownership of a Passive Node.
@@ -91,7 +80,6 @@ FAIR-manager supports a configurable self-stake requirement for Active Node regi
 - Only node owners can change node details (IP, domain name, etc.).
 - Anyone can register a node.
 - Only DEFAULT_ADMIN can change the committeeContract address.
-- Only DEFAULT_ADMIN can set the self-stake requirement.
 - Only node owners can delete a node.
 - DEFAULT_ADMIN can delete nodes in V1 of FAIR-manager, but this option may be removed or changed in the future.
 
@@ -228,6 +216,7 @@ Unstaking and withdrawing fees posts requests to an exit queue. Users must wait 
 - `setStakeLimit(Fair limit)`: Set max stake limit to each node.
 - `setRetrievingDelay(Timestamp delay)`: Set delay for unlocking requests in the exit queue.
 - `setRewardWalletReference(IRewardWallet rewardWalletReference_)`: Set reference implementation for reward wallets.
+- `setSelfStakeRequirement(Fair amount)`: Sets the minimum self-stake requirement for Active Node registration.
 
 Read functions:
 - `getDelegatorsToNode(NodeId node)`: Get delegator addresses for a node.
@@ -259,6 +248,18 @@ Read functions:
 
 FAIR-manager supports setting a maximum stake limit that applies to each nodes to prevent excessive concentration of stake. This feature helps maintain network decentralization and security by limiting the total amount of stake that can be delegated across the network.
 
+#### Self-Stake Requirement
+
+FAIR-manager supports a configurable self-stake requirement for Active Node registration. This feature ensures that node operators have a financial commitment to the network's health and security.
+
+**Key Features:**
+- **Global Parameter**: `selfStakeRequirement` is a network-wide parameter that can be set by DEFAULT_ADMIN.
+- **Required on Registration**: When registering an Active Node, if `selfStakeRequirement > 0`, the node owner must provide at least that amount of FAIR tokens as stake.
+- **Automatic Staking**: The provided self-stake is automatically forwarded to the Staking contract and staked to the newly created node.
+- **Retrieval Restrictions**: Node owners cannot retrieve their self-stake while their node exists - this prevents operators from withdrawing their commitment while still operating a node.
+- **Automatic Return on Deletion**: When a node is deleted (either by the owner or foundation), the node owner's stake and any earned fees are automatically made available for withdrawal through the exit queue.
+
+
 #### Staking Integration Points
 
 - `Staking.sol` interacts with `Committee.sol` to update node weights each time an operation that changes the total staking share of a node is performed.
@@ -271,9 +272,11 @@ FAIR-manager supports setting a maximum stake limit that applies to each nodes t
 - Only node owners can change their fee rate.
 - Only COMMITTEE_ROLE can change node eligibility.
 - Only authorized administrators can set stake limits.
+- Only authorized administrators can set the self-stake requirement.
 - Only node owners can send earned fees to other users.
 - Only authorized participants or node owners can claim fees.
 - Only node owners can alter the list of allowed receivers to claim/receive fees.
+- Node owners cannot retrieve their stake while their node exists.
 
 ### [`Committee.sol`](./contracts/Committee.sol)
 
