@@ -77,11 +77,10 @@ library ExitQueueLibrary{
         Fair amount
     )
         internal
-        returns (uint256 requestId)
     {
         Timestamp unlockDate = Timestamp.wrap(block.timestamp) + queue.retrievingDelay;
         UserExitData storage userData = queue.userExitData[user];
-        requestId = queue.numRequests;
+        uint256 requestId = queue.numRequests;
         assert(userData.requestIds.add(requestId));
         assert(queue.exitRequests[requestId].user == address(0));
         queue.exitRequests[requestId] = IStaking.ExitRequest({
@@ -175,7 +174,7 @@ library ExitQueueLibrary{
         uint256 numRequests = getNumRequestsForUser(queue, user);
         require(from < numRequests, UserDoesNotHaveRequestAt(user, from));
         uint256 end = Math.min(numRequests, from + MAX_ITERATIONS);
-        UserExitData storage userData = queue.userExitData[user]; 
+        UserExitData storage userData = queue.userExitData[user];
         for (uint256 i = from; i < end; ++i) {
             uint256 id = userData.requestIds.at(i);
             IStaking.ExitRequest storage req = queue.exitRequests[id];
