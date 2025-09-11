@@ -66,6 +66,7 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
     IRewardWallet public rewardWalletReference;
     Fair public totalDisabled;
     Fair public stakeLimit;
+    Fair public selfStakeRequirement;
 
     FundLibrary.Fund private _rootFund;
     ExitQueueLibrary.ExitQueue private _exitQueue;
@@ -92,6 +93,8 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
     event StakeLimitUpdated(Fair indexed newLimit);
     event NodeFeeRateUpdated(NodeId indexed node, uint16 oldFeeRate, uint16 newFeeRate);
     event RewardWalletReferenceUpdated(IRewardWallet indexed oldReference, IRewardWallet indexed newReference);
+    event SelfStakeRequirementUpdated(Fair indexed amount);
+    event SelfStakeProvided(NodeId indexed nodeId, Fair amount);
 
     error FeeRateIsIncorrect(uint16 feeRate);
     error OnlyFeeReductionIsAllowed(uint16 currentRate, uint16 newRate);
@@ -105,6 +108,7 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
     error ReceiverWasNotAllowed(address receiver);
     error RewardWalletDoesNotExist(NodeId node);
     error NodeOwnerCannotRetrieveWhileNodeExists(address nodeOwner, NodeId node);
+    error InsufficientSelfStake(Fair provided, Fair required);
 
     modifier onlyExistingActiveNode(NodeId node) {
         require(nodes.activeNodeExists(node), Nodes.NodeDoesNotExist(node));
@@ -149,12 +153,17 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
         emit AllowedReceiverRemoved(node, receiver);
     }
 
-    function requestAllFees(NodeId node) external override returns (uint256 requestId) {
-        return requestFees(node, getEarnedFeeAmount(node));
+    function requestAllFees(NodeId node) external override {
+        requestFees(node, getEarnedFeeAmount(node));
     }
 
-    function requestSendAllFees(address payable to) external override returns (uint256 requestId) {
-        return requestSendFees(to, getEarnedFeeAmount(nodes.getNodeId(msg.sender)));
+    function requestSendAllFees(address payable to) external override {
+        requestSendFees(to, getEarnedFeeAmount(nodes.getNodeId(msg.sender)));
+    }
+
+    function setSelfStakeRequirement(Fair amount) external override restricted {
+        selfStakeRequirement = amount;
+        emit SelfStakeRequirementUpdated(amount);
     }
 
     function disable(NodeId node) external override restricted {
@@ -206,6 +215,7 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
         }
         _updateNodeFeeRate(node, DEFAULT_FEE_RATE);
         if (msg.value > 0) {
+            _checkProvidedSelfStake(node);
             _stakeFor(node, nodeAddress);
         }
         assert(_disabledNodesBalances.set(node, FundLibrary.ZERO_FAIR));
@@ -241,9 +251,7 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
             amountToRetrieve = amountToRetrieve + fees;
 
         }
-        // slither-disable-next-line unused-return
         _exitQueue.createRequest(nodeOwner, node, amountToRetrieve);
-
     }
 
     function payReward(
@@ -321,8 +329,8 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
         rewardWalletReference = rewardWalletReference_;
     }
 
-    function requestRetrieveAll(NodeId node) external override returns (uint256 requestId) {
-        requestId = requestRetrieve(node, getStakedToNodeAmountFor(node, msg.sender));
+    function requestRetrieveAll(NodeId node) external override {
+        requestRetrieve(node, getStakedToNodeAmountFor(node, msg.sender));
     }
 
     function stake(NodeId node) external payable override onlyExistingActiveNode(node) {
@@ -454,10 +462,10 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
 
     // Public
 
-    function requestRetrieve(NodeId node, Fair value) public override returns (uint256 requestId) {
+    function requestRetrieve(NodeId node, Fair value) public override {
         // Private helper does all internal state changes and verifications
         (bool nodeIsEnabled) = _retrieveFunds(node, value);
-        requestId = _exitQueue.createRequest(msg.sender, node, value);
+        _exitQueue.createRequest(msg.sender, node, value);
 
         if (nodeIsEnabled) {
             committee.updateWeight(node, Credit.unwrap(_getNodeCredits(node)));
@@ -471,7 +479,6 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
         public
         override
         onlyExistingActiveNode(node)
-        returns (uint256 requestId)
     {
         bool senderIsOwner = msg.sender == nodes.getNode(node).nodeAddress;
         require(
@@ -479,10 +486,10 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
             NotAllowedToClaimRewards(msg.sender)
         );
         _requestSendFees(node, amount, payable(msg.sender));
-        requestId = _exitQueue.createRequest(payable(msg.sender), node, amount);
+        _exitQueue.createRequest(payable(msg.sender), node, amount);
     }
 
-    function requestSendFees(address payable to, Fair amount) public override returns (uint256 requestId) {
+    function requestSendFees(address payable to, Fair amount) public override {
         NodeId node = nodes.getNodeId(msg.sender);
 
         // Node has opted in to allowed receivers, so the destination address must be in the list
@@ -494,7 +501,7 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
             );
         }
         _requestSendFees(node, amount, to);
-        requestId = _exitQueue.createRequest(to, node, amount);
+        _exitQueue.createRequest(to, node, amount);
     }
 
     function isNodeEnabled(NodeId node) public view override returns (bool enabled) {
@@ -707,6 +714,15 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
             balance,
             feeRate
         );
+    }
+
+    function _checkProvidedSelfStake(NodeId nodeId) private {
+        Fair providedStake = Fair.wrap(msg.value);
+        require(
+            !(selfStakeRequirement > providedStake),
+            InsufficientSelfStake(providedStake, selfStakeRequirement)
+        );
+        emit SelfStakeProvided(nodeId, providedStake);
     }
 
     function _getNodeCredits(NodeId node) private view returns (Credit credits) {
