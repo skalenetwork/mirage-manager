@@ -32,11 +32,9 @@ import {
 } from "@skalenetwork/fair-manager-interfaces/INodes.sol";
 import { IStaking } from "@skalenetwork/fair-manager-interfaces/IStaking.sol";
 import { IStatus } from "@skalenetwork/fair-manager-interfaces/IStatus.sol";
-import { Fair } from "@skalenetwork/fair-manager-interfaces/units.sol";
 
 import { TypedMap } from "./structs/typed/TypedMap.sol";
 import { TypedSet } from "./structs/typed/TypedSet.sol";
-import { FundLibrary } from "./utils/Fund.sol";
 
 
 contract Nodes is AccessManagedUpgradeable, INodes {
@@ -61,9 +59,6 @@ contract Nodes is AccessManagedUpgradeable, INodes {
     mapping(NodeId nodeId => address newNodeOwner) public ownerChangeRequests;
 
     ICommittee public committeeContract;
-
-    // Global parameter for minimum self-stake requirement
-    Fair public selfStakeRequirement;
 
     // Mapping from node ID to publicKey - only for active nodes, including deleted
     mapping(NodeId nodeId => NodeInfo nodeInfo) private _nodesInfo;
@@ -101,7 +96,6 @@ contract Nodes is AccessManagedUpgradeable, INodes {
     error SenderIsNotNodeOwner();
     error SenderIsNotNewNodeOwner();
     error InvalidNodeId(NodeId nodeId, uint256 nodeIdCounter);
-    error InsufficientSelfStake(Fair provided, Fair required);
 
     modifier nodeNotInCurrentOrNextCommittee(NodeId nodeId){
         require(
@@ -163,11 +157,6 @@ contract Nodes is AccessManagedUpgradeable, INodes {
         committeeContract = committeeAddress;
     }
 
-    function setSelfStakeRequirement(Fair amount) external override restricted {
-        selfStakeRequirement = amount;
-        emit SelfStakeRequirementUpdated(amount);
-    }
-
     function registerNode(
         bytes calldata ip,
         bytes32[2] calldata publicKey,
@@ -186,7 +175,6 @@ contract Nodes is AccessManagedUpgradeable, INodes {
             InvalidPublicKeyForSender(publicKey, nodeAddress, msg.sender)
         );
         NodeId nextNodeId = NodeId.wrap(_nodeIdCounter + 1);
-        _checkProvidedSelfStake(nextNodeId);
         _createActiveNode({
             nodeId: nextNodeId,
             nodeAddress: msg.sender,
@@ -480,18 +468,6 @@ contract Nodes is AccessManagedUpgradeable, INodes {
         if (!_isAddressOfPassiveNodes(nodeAddress)) {
             assert(_passiveNodeAddresses.add(nodeAddress));
         }
-    }
-
-    function _checkProvidedSelfStake(NodeId nodeId) private {
-        Fair providedStake = Fair.wrap(msg.value);
-        if (selfStakeRequirement == FundLibrary.ZERO_FAIR) {
-            return;
-        }
-        require(
-            !(selfStakeRequirement > providedStake),
-            InsufficientSelfStake(providedStake, selfStakeRequirement)
-        );
-        emit SelfStakeProvided(nodeId, providedStake);
     }
 
     function _initializeGroup(Node[] calldata initialNodes, bytes32[2][] calldata publicKeys) private {
