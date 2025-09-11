@@ -976,6 +976,9 @@ describe("Staking", () => {
         // Hacker 1 deposits 1 WEI
         await staking.connect(hacker).stake(node, {value: 1n});
 
+        // [ earned fee | hacker stake , user stake ]
+        // [ 0 | 1wei , 0 ]
+
         // eligible and fee rate to 0
         await status.connect(nodesData[0].wallet).alive();
         await staking.connect(nodesData[0].wallet).setFeeRate(0);
@@ -984,11 +987,13 @@ describe("Staking", () => {
         expect(await staking.getNodeTotalStake(node)).to.be.eql(1n);
         expect(await staking.getNodeShare(node)).to.be.eql(PRECISION);
         await hacker.sendTransaction({to: staking, value: sufficientlyHighAmount});
+        // [ 0 | ∞ + 1 , 0 ]
         expect(await staking.getNodeShare(node)).to.be.eql(PRECISION);
         expect(await staking.getNodeTotalStake(node)).to.be.eql(sufficientlyHighAmount + 1n);
 
         // user deposits almostHalfMax ETH
         await staking.connect(user).stake(node, {value: sufficientlyHighAmount});
+        // [ 0 | ∞ + 1, ∞ ]
 
         expect(await staking.getStakedToNodeAmountFor(node, user)).to.be.closeTo(sufficientlyHighAmount, ALLOWED_ERROR);
         expect(await staking.getStakedToNodeAmountFor(node, hacker)).to.be.closeTo(sufficientlyHighAmount + 1n, ALLOWED_ERROR);
@@ -996,15 +1001,20 @@ describe("Staking", () => {
         expect(await staking.getNodeTotalStake(node)).to.be.equal(2n * sufficientlyHighAmount + 1n);
 
         await staking.connect(hacker).requestRetrieveAll(node);
+        // [ 0 | 0, ∞ ]
         await staking.connect(user).requestRetrieveAll(node);
+        // [ 0 | 0, 0 ]
 
         expect(await staking.getNodeTotalStake(node)).to.be.equal(0n);
         // With fees
         const feeRate = 500; // Yes, Eddie, half
         await staking.connect(nodesData[0].wallet).setFeeRate(feeRate);
         await staking.connect(hacker).stake(node, {value: 1n});
+        // [ 0 | 1, 0 ]
         await staking.connect(user).stake(node, {value: 1n});
+        // [ 0 | 1, 1 ]
         await hacker.sendTransaction({to: staking, value: 1n});
+        // [ 0 | 1, 1 ] but total stake is 3 (because 1 wei of reward can't be splitted)
         expect(await staking.getNodeTotalStake(node)).to.be.equal(3n);
 
         // Half of 1n should be rounded to 0
@@ -1013,15 +1023,17 @@ describe("Staking", () => {
         expect(await staking.getStakedToNodeAmountFor(node, hacker)).to.be.equal(1n);
 
         await hacker.sendTransaction({to: staking, value: 1n});
+        // [ 1 | 1, 1 ] + 1
 
         // Half of 2n should be 1n, but in fact it is not because of how rewards are calculated.
         // Each user has 1 Credit. The reward credits will be 2/3... When calculating the amount of FAIR using Credits roundedDown, it will be 0.99999 which is 0.
         // Reward credits are, however, updated to 2/3 rounded down (With Credit precision).
-        expect(await staking.getEarnedFeeAmount(node)).to.be.equal(0n);
+        expect(await staking.getEarnedFeeAmount(node)).to.be.equal(1n);
         expect(await staking.getStakedToNodeAmountFor(node, user)).to.be.equal(1n);
         expect(await staking.getStakedToNodeAmountFor(node, hacker)).to.be.equal(1n);
 
         await hacker.sendTransaction({to: staking, value: 1n});
+        // [ 1 | 2, 2 ]
 
         // now with earned feed slightly higher than 1, we have 1n rewards
         expect(await staking.getEarnedFeeAmount(node)).to.be.equal(1n);
