@@ -1299,7 +1299,7 @@ describe("Staking", () => {
     });
 
     it("should revert registerNode if self-stake is below requirement", async () => {
-        const {nodes} = await registeredOnlyNodes();
+        const {nodes, staking} = await registeredOnlyNodes();
 
         // Create a new node wallet
         const nodeWallet = ethers.Wallet.createRandom().connect(ethers.provider);
@@ -1312,7 +1312,7 @@ describe("Staking", () => {
         // Set self-stake requirement
         const selfStakeRequirement = ethers.parseEther("1");
         const lowSelfStake = ethers.parseEther("0.5");
-        await nodes.setSelfStakeRequirement(selfStakeRequirement);
+        await staking.setSelfStakeRequirement(selfStakeRequirement);
 
         // Get a proper public key using the helper function
         const publicKey = await import("./tools/signatures").then(mod => mod.getPublicKey(nodeWallet));
@@ -1323,7 +1323,7 @@ describe("Staking", () => {
             publicKey,
             8000,
             {value: lowSelfStake}
-        )).to.be.revertedWithCustomError(nodes, "InsufficientSelfStake")
+        )).to.be.revertedWithCustomError(staking, "InsufficientSelfStake")
          .withArgs(lowSelfStake, selfStakeRequirement);
     });
 
@@ -1347,7 +1347,7 @@ describe("Staking", () => {
             });
 
             // Set self-stake requirement
-            await nodes.setSelfStakeRequirement(selfStakeAmount);
+            await staking.setSelfStakeRequirement(selfStakeAmount);
 
             // Get a proper public key using the helper function
             const publicKey = await import("./tools/signatures").then(mod => mod.getPublicKey(nodeWallet));
