@@ -304,7 +304,7 @@ library FundLibrary {
             Math.mulDiv(
                 Fair.unwrap(amount),
                 Credit.unwrap(fund.totalCredits),
-                Fair.unwrap(fundBalance),
+                Fair.unwrap(holdersBalance),
                 Math.Rounding.Ceil
             )
         );
