@@ -124,12 +124,12 @@ describe("Staking", () => {
         const earnedByFee = reward / 2n; //50%
         const forDelegators = reward - earnedByFee
 
-        const earnedByStakeNodeOwner = forDelegators * 50n / 100n; // owner had 50% of stake
-        const earnedByStakeUser1 = forDelegators * 20n / 100n //user1 had 20%
-        const earnedByStakeUser2 = forDelegators * 30n / 100n //user2 had 30%
-        expect(await staking.getEarnedFeeAmount(node)).to.be.eql(reward + earnedByFee + earnedByStakeNodeOwner);
-        expect(await staking.getStakedToNodeAmountFor(node, user1)).to.eql(amount1 + earnedByStakeUser1);
-        expect(await staking.getStakedToNodeAmountFor(node, user2)).to.eql(amount2 + earnedByStakeUser2);
+        const stakingRewardsByNodeOwner = 0n; // owner does not earn staking rewards
+        const stakingRewardsByUser1 = forDelegators * 2n / 5n // user1 had 40%
+        const stakingRewardsByUser2 = forDelegators * 3n / 5n // user2 had 60%
+        expect(await staking.getEarnedFeeAmount(node)).to.be.eql(reward + earnedByFee + stakingRewardsByNodeOwner);
+        expect(await staking.getStakedToNodeAmountFor(node, user1)).to.eql(amount1 + stakingRewardsByUser1);
+        expect(await staking.getStakedToNodeAmountFor(node, user2)).to.eql(amount2 + stakingRewardsByUser2);
     });
 
     it("should be possible to retrieve", async () => {
