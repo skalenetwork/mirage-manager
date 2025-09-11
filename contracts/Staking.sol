@@ -241,6 +241,7 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
             amountToRetrieve = amountToRetrieve + fees;
 
         }
+        // slither-disable-next-line unused-return
         _exitQueue.createRequest(nodeOwner, node, amountToRetrieve);
 
     }
