@@ -17,7 +17,7 @@ import {
     Status,
     RewardWallet
 } from "../typechain-types";
-import { AddressLike, BigNumberish, BytesLike } from "ethers";
+import { AddressLike, BytesLike } from "ethers";
 import { skaleContracts } from "@skalenetwork/skale-contracts-ethers-v6";
 import {
     IKeyStorage,
@@ -147,7 +147,7 @@ export const deploy = async (nodeList?: NodeStruct[], commonPublicKey?: IDkg.G2P
         deployedContracts.FairAccessManager,
         deployedContracts.Committee,
         deployedContracts.Nodes,
-        nodeList.map(node => node.id)
+        nodeList
     );
 
     let response = await deployedContracts.Committee.setDkg(deployedContracts.DKG);
@@ -248,7 +248,7 @@ const deployStaking = async (
     authority: FairAccessManager,
     committee: Committee,
     nodes: Nodes,
-    initialNodes: BigNumberish[]
+    initialNodes: NodeStruct[]
 ): Promise<Staking> => {
     const staking = await deployContract(
         "Staking",
@@ -269,10 +269,13 @@ const deployStaking = async (
     // and corresponding RewardWallets can't be deployed
     // To workaround this issue manually notify Staking about initial nodes
 
-    for (const nodeId of initialNodes) {
-        const response = await staking.nodeCreated(nodeId);
+    const selfStakeRequirement = await staking.selfStakeRequirement();
+    await staking.setSelfStakeRequirement(0n);
+    for (const node of initialNodes) {
+        const response = await staking.nodeCreated(node.id, node.nodeAddress);
         await response.wait();
     }
+    await staking.setSelfStakeRequirement(selfStakeRequirement);
 
     return staking;
 }

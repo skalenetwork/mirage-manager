@@ -57,9 +57,10 @@ struct Node {
 - Node addresses must correspond to the node's public key (address is computable using the public key).
 - Node ports must not be 0.
 
+
 #### Nodes Main Functions
 
-- `registerNode(address owner, bytes publicKey, ...)`: Registers a new Active Node.
+- `registerNode(address owner, bytes publicKey, ...)`: Registers a new Active Node. **Requires self-stake payment if `selfStakeRequirement` is set.**
 - `registerPassiveNode(address owner, bytes publicKey, ...)`: Registers a new Passive Node.
 - `deleteNode(NodeId id)`: Deletes both Active and Passive Nodes.
 - `deleteNodeByFoundation(NodeId id)`: Allows DEFAULT_ADMIN to delete both Active and Passive Nodes.
@@ -87,6 +88,7 @@ struct Node {
 - `Nodes.sol` interacts with `Committee.sol` to inform deletion of Active Nodes.
 - `Nodes.sol` interacts with `Status.sol` to inform of deletion of Active Nodes.
 - `Nodes.sol` interacts with `Staking.sol` to inform of registration and deletion of Active Nodes.
+- `Nodes.sol` forwards self-stake payments to `Staking.sol` during node registration.
 
 ### [`Status.sol`](./contracts/Status.sol)
 
@@ -197,12 +199,12 @@ Unstaking and withdrawing fees posts requests to an exit queue. Users must wait 
 #### Staking Main Functions
 
 - `stake(NodeId node)`: Stake FAIR to a node (any user, only existing active nodes, payable).
-- `requestRetrieve(NodeId node, Fair value)`: Request to unstake FAIR from a node.
-- `requestRetrieveAll(NodeId node)`: Request to unstake All FAIR from a node.
+- `requestRetrieve(NodeId node, Fair value)`: Request to unstake FAIR from a node. **Node owners cannot retrieve while their node exists.**
+- `requestRetrieveAll(NodeId node)`: Request to unstake All FAIR from a node. **Node owners cannot retrieve while their node exists.**
 - `claimRequest(uint256 requestId)`: Claim the exit request with the given requestId (if unlocked).
 - `disable(NodeId node)`, `enable(NodeId node)`: Disable/enable a node (committee role).
-- `nodeCreated(NodeId node)`: Called by `Nodes.sol` when a new node is created.
-- `nodeRemoved(NodeId node)`: Called by `Nodes.sol` when a node is deleted.
+- `nodeCreated(NodeId node)`: Called by `Nodes.sol` when a new node is created. **Handles self-stake forwarding.**
+- `nodeRemoved(NodeId node)`: Called by `Nodes.sol` when a node is deleted. **Automatically creates exit requests for node owner's stake and fees.**
 - `payReward(NodeId node)`: Pays rewards to directly to a Node and it's delegators.
 - `addAllowedReceiver(address receiver)`: Add an allowed fee receiver for a node (node owner).
 - `removeAllowedReceiver(address receiver)`: Remove an allowed fee receiver for a node (node owner).
@@ -214,6 +216,7 @@ Unstaking and withdrawing fees posts requests to an exit queue. Users must wait 
 - `setStakeLimit(Fair limit)`: Set max stake limit to each node.
 - `setRetrievingDelay(Timestamp delay)`: Set delay for unlocking requests in the exit queue.
 - `setRewardWalletReference(IRewardWallet rewardWalletReference_)`: Set reference implementation for reward wallets.
+- `setSelfStakeRequirement(Fair amount)`: Sets the minimum self-stake requirement for Active Node registration.
 
 Read functions:
 - `getDelegatorsToNode(NodeId node)`: Get delegator addresses for a node.
@@ -245,20 +248,35 @@ Read functions:
 
 FAIR-manager supports setting a maximum stake limit that applies to each nodes to prevent excessive concentration of stake. This feature helps maintain network decentralization and security by limiting the total amount of stake that can be delegated across the network.
 
+#### Self-Stake Requirement
+
+FAIR-manager supports a configurable self-stake requirement for Active Node registration. This feature ensures that node operators have a financial commitment to the network's health and security.
+
+**Key Features:**
+- **Global Parameter**: `selfStakeRequirement` is a network-wide parameter that can be set by DEFAULT_ADMIN.
+- **Required on Registration**: When registering an Active Node, if `selfStakeRequirement > 0`, the node owner must provide at least that amount of FAIR tokens as stake.
+- **Automatic Staking**: The provided self-stake is automatically forwarded to the Staking contract and staked to the newly created node.
+- **Retrieval Restrictions**: Node owners cannot retrieve their self-stake while their node exists - this prevents operators from withdrawing their commitment while still operating a node.
+- **Automatic Return on Deletion**: When a node is deleted (either by the owner or foundation), the node owner's stake and any earned fees are automatically made available for withdrawal through the exit queue.
+
+
 #### Staking Integration Points
 
 - `Staking.sol` interacts with `Committee.sol` to update node weights each time an operation that changes the total staking share of a node is performed.
 - `Staking.sol` interacts with `RewardWallet.sol` instances to flush rewards that may have been given from consensus layer.
 - `Staking.sol` reads data from `Nodes.sol`.
+- `Staking.sol` receives self-stake payments from `Nodes.sol` during node registration.
 
 #### Staking Permissions
 
 - Only node owners can change their fee rate.
 - Only COMMITTEE_ROLE can change node eligibility.
 - Only authorized administrators can set stake limits.
+- Only authorized administrators can set the self-stake requirement.
 - Only node owners can send earned fees to other users.
 - Only authorized participants or node owners can claim fees.
 - Only node owners can alter the list of allowed receivers to claim/receive fees.
+- Node owners cannot retrieve their stake while their node exists.
 
 ### [`Committee.sol`](./contracts/Committee.sol)
 

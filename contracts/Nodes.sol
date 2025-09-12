@@ -36,6 +36,7 @@ import { IStatus } from "@skalenetwork/fair-manager-interfaces/IStatus.sol";
 import { TypedMap } from "./structs/typed/TypedMap.sol";
 import { TypedSet } from "./structs/typed/TypedSet.sol";
 
+
 contract Nodes is AccessManagedUpgradeable, INodes {
 
     using TypedSet for TypedSet.NodeIdSet;
@@ -162,6 +163,7 @@ contract Nodes is AccessManagedUpgradeable, INodes {
         uint16 port
     )
         external
+        payable
         override
         validIp(ip)
         validPort(port)
@@ -183,7 +185,7 @@ contract Nodes is AccessManagedUpgradeable, INodes {
         });
         // Node is first disabled by default.
         // It should send a heartbeat before being considered eligible
-        committeeContract.staking().nodeCreated(nextNodeId);
+        committeeContract.staking().nodeCreated{value: msg.value}(nextNodeId, msg.sender);
     }
 
     function deleteNode(
