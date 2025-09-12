@@ -74,7 +74,7 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
     mapping (NodeId node => EnumerableSet.AddressSet allowedReceivers) private _nodesAllowedReceivers;
     mapping (address holder => TypedSet.NodeIdSet nodeIds) private _stakedNodes;
     TypedMap.NodeIdToFairMap private _disabledNodesBalances;
-    
+
     event AllowedReceiverAdded(NodeId indexed node, address indexed receiver);
     event AllowedReceiverRemoved(NodeId indexed node, address indexed receiver);
     event FeeClaimRequested(NodeId indexed node, address from, address indexed to, Fair indexed amount);
@@ -212,9 +212,10 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
         require(!isNodeEnabled(node), NodeIsNotDisabled(node));
         _nodesAllowedReceivers[node].clear();
         delete _nodesAllowedReceivers[node];
-        delete _rewardWallets[node];
+        // Don't delete reward wallet,
+        // because it's needed for archive node synchronization
         emit NodeDataRemoved(node);
-        
+
         _requestSendFees(
             node,
             getEarnedFeeAmount(node),
@@ -235,7 +236,7 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
         Fair amount = Fair.wrap(msg.value);
         Fair balance = _getTotalBalance() - amount;
         (bool withinStakeLimit, Fair currentNodeStake) = _isWithinStakeLimit(node, amount);
-        
+
         // allow to payRewards over the limit only for reward wallet
         require(
             withinStakeLimit || msg.sender == address(_rewardWallets[node]),
@@ -262,7 +263,7 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
         }
     }
 
-    
+
     function claimRequest(uint256 requestId) external override nonReentrant {
         Fair amount = _exitQueue.claim(msg.sender, requestId);
         payable(msg.sender).sendValue(Fair.unwrap(amount));
@@ -719,7 +720,7 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
         private
         view
         returns (bool result, Fair currentNodeStake)
-    {   
+    {
         result = true;
         if (stakeLimit > FundLibrary.ZERO_FAIR) {
             currentNodeStake = _getNodeTotalStakeBeforeAmount(node, amount);
