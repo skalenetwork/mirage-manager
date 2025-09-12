@@ -4,6 +4,9 @@ import { ethers } from "hardhat";
 import { zip } from "lodash";
 import { setBalance } from "@nomicfoundation/hardhat-network-helpers";
 import { skipTime } from "./tools/time";
+import { Nodes, Staking } from "../typechain-types";
+import { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers";
+import { HDNodeWallet } from "ethers";
 
 chai.should();
 
@@ -120,16 +123,16 @@ describe("Staking", () => {
         // user2 has 3 = 30%
 
         await setBalance(await staking.getAddress(), await ethers.provider.getBalance(staking) + reward);
-        
+
         const earnedByFee = reward / 2n; //50%
         const forDelegators = reward - earnedByFee
 
-        const earnedByStakeNodeOwner = forDelegators * 50n / 100n; // owner had 50% of stake
-        const earnedByStakeUser1 = forDelegators * 20n / 100n //user1 had 20%
-        const earnedByStakeUser2 = forDelegators * 30n / 100n //user2 had 30%
-        expect(await staking.getEarnedFeeAmount(node)).to.be.eql(reward + earnedByFee + earnedByStakeNodeOwner);
-        expect(await staking.getStakedToNodeAmountFor(node, user1)).to.eql(amount1 + earnedByStakeUser1);
-        expect(await staking.getStakedToNodeAmountFor(node, user2)).to.eql(amount2 + earnedByStakeUser2);
+        const stakingRewardsByNodeOwner = 0n; // owner does not earn staking rewards
+        const stakingRewardsByUser1 = forDelegators * 2n / 5n // user1 had 40%
+        const stakingRewardsByUser2 = forDelegators * 3n / 5n // user2 had 60%
+        expect(await staking.getEarnedFeeAmount(node)).to.be.eql(reward + earnedByFee + stakingRewardsByNodeOwner);
+        expect(await staking.getStakedToNodeAmountFor(node, user1)).to.eql(amount1 + stakingRewardsByUser1);
+        expect(await staking.getStakedToNodeAmountFor(node, user2)).to.eql(amount2 + stakingRewardsByUser2);
     });
 
     it("should be possible to retrieve", async () => {
@@ -170,7 +173,7 @@ describe("Staking", () => {
     it("should be 'safe' to retrieve by id and index, and have no request limit", async () => {
         const {staking, nodesData } = await registeredOnlyNodes();
         const [,user] = await ethers.getSigners();
-        
+
         const amount = 5n; // 5 wei
         const node = nodesData[22].id;
         const numRetrieve = 100n;
@@ -186,14 +189,14 @@ describe("Staking", () => {
         await expect(staking.getExitRequestAt(user, numRetrieve - 1n)).to.not.be.reverted;
 
         await expect(staking.getExitRequestAt(user, numRetrieve)).to.be.revertedWithCustomError(staking, "UserDoesNotHaveRequestAt");
-        
+
         await skipTime(ONE_DAY_IN_SECONDS);
-        
+
         for (let index = 0; index < numRetrieve; index++) {
             const requestAt0 = await staking.getExitRequestAt(user, 0);
             const unlocked = await staking.getUnlockedExitRequestFor(user, 0);
             // they are the same because are all unlocked
-            expect(unlocked.requestId).to.be.eql(requestAt0.requestId); 
+            expect(unlocked.requestId).to.be.eql(requestAt0.requestId);
             await staking.connect(user).claimRequest(requestAt0.requestId);
         }
         await expect(staking.getExitRequestAt(user, 0)).to.be.revertedWithCustomError(staking, "UserDoesNotHaveRequestAt");
@@ -680,11 +683,13 @@ describe("Staking", () => {
         }
         for (const [node, amount] of zip(targetNodes, amounts)) {
             assert(node);
-            const currentFee = node === disabledNode ? 0 : amount;
+            const currentFee = node === disabledNode ? 0 : amount || 0n;
             (await staking.getEarnedFeeAmount(node.id))
                 .should.be.equal(currentFee);
-            (await staking.connect(node.wallet).requestAllFees(node.id))
+            if (currentFee > 0n) {
+                (await staking.connect(node.wallet).requestAllFees(node.id))
                 .should.changeEtherBalance(node.wallet, currentFee);
+            }
         }
 
         // current stakes are 4, 6 and 5
@@ -803,7 +808,7 @@ describe("Staking", () => {
         (await ethers.provider.getBalance(rewardWallets[0]))
             .should.be.equal(0n);
         await staking.connect(users[0]).claimRequest(0).should.changeEtherBalance(users[0], updatedAmounts[0]);
-        
+
         updatedAmounts = [0, 3].map(String).map(ethers.parseEther);
 
         // check distribution
@@ -909,7 +914,7 @@ describe("Staking", () => {
 
         // Verify total stake hasn't changed
         expect(await staking.getNodeTotalStake(node)).to.be.equal(expectedTotalAfterReward);
-        
+
         // Try to pay 1 more ETH Rewards directly to node (should fail because 11 + 1 = 12 > 10 limit)
         await staking.connect(user).payReward(node, {value: additionalStake})
             .should.be.revertedWithCustomError(
@@ -929,12 +934,12 @@ describe("Staking", () => {
                 rewardWallet,
                 "ValueExceedsStakeLimit"
             );
-        
+
         // Consensus can pay 1 more ETH Rewards directly to node rewards wallet
         await setBalance(await rewardWallet.getAddress(), additionalStake);
         await rewardWallet.flush(); // but it should manually flush
         expect(await staking.getNodeTotalStake(node)).to.be.eql(expectedTotalAfterReward + additionalStake)
-        
+
     });
 
     it("should set default fee rate to 1000 during node creation", async () => {
@@ -976,6 +981,9 @@ describe("Staking", () => {
         // Hacker 1 deposits 1 WEI
         await staking.connect(hacker).stake(node, {value: 1n});
 
+        // [ earned fee | hacker stake , user stake ]
+        // [ 0 | 1wei , 0 ]
+
         // eligible and fee rate to 0
         await status.connect(nodesData[0].wallet).alive();
         await staking.connect(nodesData[0].wallet).setFeeRate(0);
@@ -984,11 +992,13 @@ describe("Staking", () => {
         expect(await staking.getNodeTotalStake(node)).to.be.eql(1n);
         expect(await staking.getNodeShare(node)).to.be.eql(PRECISION);
         await hacker.sendTransaction({to: staking, value: sufficientlyHighAmount});
+        // [ 0 | ∞ + 1 , 0 ]
         expect(await staking.getNodeShare(node)).to.be.eql(PRECISION);
         expect(await staking.getNodeTotalStake(node)).to.be.eql(sufficientlyHighAmount + 1n);
 
         // user deposits almostHalfMax ETH
         await staking.connect(user).stake(node, {value: sufficientlyHighAmount});
+        // [ 0 | ∞ + 1, ∞ ]
 
         expect(await staking.getStakedToNodeAmountFor(node, user)).to.be.closeTo(sufficientlyHighAmount, ALLOWED_ERROR);
         expect(await staking.getStakedToNodeAmountFor(node, hacker)).to.be.closeTo(sufficientlyHighAmount + 1n, ALLOWED_ERROR);
@@ -996,15 +1006,20 @@ describe("Staking", () => {
         expect(await staking.getNodeTotalStake(node)).to.be.equal(2n * sufficientlyHighAmount + 1n);
 
         await staking.connect(hacker).requestRetrieveAll(node);
+        // [ 0 | 0, ∞ ]
         await staking.connect(user).requestRetrieveAll(node);
+        // [ 0 | 0, 0 ]
 
         expect(await staking.getNodeTotalStake(node)).to.be.equal(0n);
         // With fees
         const feeRate = 500; // Yes, Eddie, half
         await staking.connect(nodesData[0].wallet).setFeeRate(feeRate);
         await staking.connect(hacker).stake(node, {value: 1n});
+        // [ 0 | 1, 0 ]
         await staking.connect(user).stake(node, {value: 1n});
+        // [ 0 | 1, 1 ]
         await hacker.sendTransaction({to: staking, value: 1n});
+        // [ 0 | 1, 1 ] but total stake is 3 (because 1 wei of reward can't be splitted)
         expect(await staking.getNodeTotalStake(node)).to.be.equal(3n);
 
         // Half of 1n should be rounded to 0
@@ -1013,15 +1028,17 @@ describe("Staking", () => {
         expect(await staking.getStakedToNodeAmountFor(node, hacker)).to.be.equal(1n);
 
         await hacker.sendTransaction({to: staking, value: 1n});
+        // [ 1 | 1, 1 ] + 1
 
         // Half of 2n should be 1n, but in fact it is not because of how rewards are calculated.
         // Each user has 1 Credit. The reward credits will be 2/3... When calculating the amount of FAIR using Credits roundedDown, it will be 0.99999 which is 0.
         // Reward credits are, however, updated to 2/3 rounded down (With Credit precision).
-        expect(await staking.getEarnedFeeAmount(node)).to.be.equal(0n);
+        expect(await staking.getEarnedFeeAmount(node)).to.be.equal(1n);
         expect(await staking.getStakedToNodeAmountFor(node, user)).to.be.equal(1n);
         expect(await staking.getStakedToNodeAmountFor(node, hacker)).to.be.equal(1n);
 
         await hacker.sendTransaction({to: staking, value: 1n});
+        // [ 1 | 2, 2 ]
 
         // now with earned feed slightly higher than 1, we have 1n rewards
         expect(await staking.getEarnedFeeAmount(node)).to.be.equal(1n);
@@ -1188,22 +1205,24 @@ describe("Staking", () => {
         const value = ethers.parseEther("1");
         const halfValue = value / 2n;
         await staking.stake(node.id, {value: value});
+        // [fee: 0 fair, staked: 1 fair]
         await staking.connect(node.wallet).setFeeRate(500n);
 
         await setBalance(await staking.getRewardWallet(node.id), value);
+        // [fee: 0.5 fair, staked: 1.5 fair]
 
-        expect(await staking.getEarnedFeeAmount(node.id)).to.be.eql(halfValue - 1n);
+        expect(await staking.getEarnedFeeAmount(node.id)).to.be.eql(halfValue);
         expect(await staking.getStakedAmount()).to.be.eql(value + halfValue);
 
         await expect(staking.connect(node.wallet).requestFees(node.id, value * 2n)).to.revertedWithCustomError(staking, "NotEnoughFee");
         await staking.connect(node.wallet).setFeeRate(0n);
         // setting fee to 0 does not compromise old earned fees
-        expect(await staking.getEarnedFeeAmount(node.id)).to.be.eql(halfValue - 1n);
+        expect(await staking.getEarnedFeeAmount(node.id)).to.be.eql(halfValue);
         await expect(staking.connect(node.wallet).requestFees(node.id, value * 2n)).to.revertedWithCustomError(staking, "NotEnoughFee");
-        const stakeBefore = await staking.getNodeTotalStake(node.id);
+        // [fee: 0.5 fair, staked: 1.5 fair]
+        expect(await staking.getNodeTotalStake(node.id)).to.be.eql(value + value);
         await staking.connect(node.wallet).requestAllFees(node.id);
-        const stakeAfter = await staking.getNodeTotalStake(node.id);
-        expect(stakeBefore).to.be.greaterThan(stakeAfter);
+        expect(await staking.getNodeTotalStake(node.id)).to.be.eql(value + halfValue);
         expect(await staking.getEarnedFeeAmount(node.id)).to.be.eql(0n);
     });
 
@@ -1279,5 +1298,169 @@ describe("Staking", () => {
             .should.be.equal(amount + amount);
         (await staking.getEarnedFeeAmount(node.id))
             .should.be.equal(amount);
+    });
+
+    it("should revert registerNode if self-stake is below requirement", async () => {
+        const {nodes, staking} = await registeredOnlyNodes();
+
+        // Create a new node wallet
+        const nodeWallet = ethers.Wallet.createRandom().connect(ethers.provider);
+        const [owner] = await ethers.getSigners();
+        await owner.sendTransaction({
+            to: nodeWallet.address,
+            value: ethers.parseEther("1")
+        });
+
+        // Set self-stake requirement
+        const selfStakeRequirement = ethers.parseEther("1");
+        const lowSelfStake = ethers.parseEther("0.5");
+        const zeroSelfStake = 0n;
+        await staking.setSelfStakeRequirement(selfStakeRequirement);
+
+        // Get a proper public key using the helper function
+        const publicKey = await import("./tools/signatures").then(mod => mod.getPublicKey(nodeWallet));
+
+        // Try to register the node with insufficient self-stake
+        await expect(nodes.connect(nodeWallet).registerNode(
+            ethers.randomBytes(4),
+            publicKey,
+            8000,
+            {value: lowSelfStake}
+        )).to.be.revertedWithCustomError(staking, "InsufficientSelfStake")
+         .withArgs(lowSelfStake, selfStakeRequirement);
+        // Try to register the node with zero self-stake
+        await expect(nodes.connect(nodeWallet).registerNode(
+            ethers.randomBytes(4),
+            publicKey,
+            8000,
+            {value: zeroSelfStake}
+        )).to.be.revertedWithCustomError(staking, "InsufficientSelfStake")
+         .withArgs(zeroSelfStake, selfStakeRequirement);
+    });
+
+    describe("when node is registered with self stake", () => {
+        let nodes: Nodes, staking: Staking, nodeWallet: HDNodeWallet, nodeId: bigint;
+        let owner: HardhatEthersSigner, regularUser: HardhatEthersSigner;
+        let selfStakeAmount: bigint;
+
+        beforeEach(async () => {
+            ({nodes, staking} = await registeredOnlyNodes());
+
+            // Create a new node wallet with self-stake
+            nodeWallet = ethers.Wallet.createRandom().connect(ethers.provider);
+            [owner, regularUser] = await ethers.getSigners();
+            selfStakeAmount = ethers.parseEther("1");
+
+            // Fund the node wallet
+            await owner.sendTransaction({
+                to: nodeWallet.address,
+                value: ethers.parseEther("2")
+            });
+
+            // Set self-stake requirement
+            await staking.setSelfStakeRequirement(selfStakeAmount);
+
+            // Get a proper public key using the helper function
+            const publicKey = await import("./tools/signatures").then(mod => mod.getPublicKey(nodeWallet));
+
+            // Register the node with self-stake
+            await nodes.connect(nodeWallet).registerNode(
+                ethers.randomBytes(4),
+                publicKey,
+                8000,
+                {value: selfStakeAmount}
+            );
+
+            nodeId = await nodes.getNodeId(nodeWallet.address);
+
+            // Enable the node manually
+            await staking.enable(nodeId);
+        });
+
+        it("should prevent node owners from retrieving their stake while their node exists", async () => {
+            // Verify the node owner has stake in their own node
+            expect(await staking.getStakedToNodeAmountFor(nodeId, nodeWallet.address)).to.be.equal(selfStakeAmount);
+            const regularStakeAmount = ethers.parseEther("0.5");
+
+            // Regular user can stake to the node and retrieve normally
+            await staking.connect(regularUser).stake(nodeId, {value: regularStakeAmount});
+            expect(await staking.getStakedToNodeAmountFor(nodeId, regularUser.address)).to.be.equal(regularStakeAmount);
+
+            // Regular user should be able to retrieve their stake
+            await staking.connect(regularUser).requestRetrieve(nodeId, regularStakeAmount);
+            expect(await staking.getStakedToNodeAmountFor(nodeId, regularUser.address)).to.be.equal(0n);
+
+            // Node owner should NOT be able to retrieve their stake while node exists
+            await expect(staking.connect(nodeWallet).requestRetrieve(nodeId, selfStakeAmount))
+                .to.be.revertedWithCustomError(staking, "NodeOwnerCannotRetrieveWhileNodeExists")
+                .withArgs(nodeWallet.address, nodeId);
+
+            // Node owner should NOT be able to retrieve all while node exists
+            await expect(staking.connect(nodeWallet).requestRetrieveAll(nodeId))
+                .to.be.revertedWithCustomError(staking, "NodeOwnerCannotRetrieveWhileNodeExists")
+                .withArgs(nodeWallet.address, nodeId);
+        });
+
+        it("should return self-stake plus earned fees to node owner when node is deleted", async () => {
+            // Set retrieving delay to 0 for easier testing
+            await staking.setRetrievingDelay(0n);
+
+            // Set fee rate to 100 (10%)
+            await staking.connect(nodeWallet).setFeeRate(100);
+
+            // User stakes 2 ether
+            const userStakeAmount = ethers.parseEther("2");
+            await staking.connect(regularUser).stake(nodeId, {value: userStakeAmount});
+
+            // Pay 1 ether reward using setBalance
+            const rewardAmount = ethers.parseEther("1");
+            const rewardWallet = await staking.getRewardWallet(nodeId);
+            await setBalance(rewardWallet, rewardAmount);
+
+            // Get the actual earned fee amount (10% of 1 ether reward)
+            const actualFee = await staking.getEarnedFeeAmount(nodeId);
+
+            // Verify the fee is approximately 10% (allowing for small rounding differences)
+            const expectedFee = rewardAmount * 100n / 1000n; // 0.1 ether
+            expect(actualFee).to.be.closeTo(expectedFee, 1n); // 1 wei tolerance
+
+            // Get node owner's staked amount before deletion
+            const nodeOwnerStakedAmount = await staking.getStakedToNodeAmountFor(nodeId, nodeWallet.address);
+            // Should be: 1.0 (initial) + 0.3 (proportional reward) = 1.3 ether
+            expect(nodeOwnerStakedAmount).to.be.closeTo(ethers.parseEther("1.3"), ethers.parseUnits("1", "gwei"));
+
+            // Delete node by foundation (admin) - this creates a single exit request with fees + self-stake
+            await nodes.connect(owner).deleteNodeByFoundation(nodeId);
+
+            // Verify node no longer exists
+            expect(await nodes.activeNodeExists(nodeId)).to.be.equal(false);
+
+            // Combined fees + self-stake should be in the exit queue
+            const expectedTotalPayout = actualFee + nodeOwnerStakedAmount;
+            expect(await staking.connect(nodeWallet).getMyTotalInExitQueue()).to.be.closeTo(expectedTotalPayout, 1n);
+
+            // Node owner claims the combined amount - should get ~1.4 ether (0.1 fees + 1.3 stake)
+            await expect(staking.connect(nodeWallet).claimRequest(0))
+                .to.changeEtherBalance(nodeWallet, expectedTotalPayout);
+
+            // Verify the restriction is no longer in place and node owner stake is now 0
+            expect(await nodes.activeNodeExists(nodeId)).to.be.equal(false);
+            expect(await staking.getStakedToNodeAmountFor(nodeId, nodeWallet.address)).to.be.equal(0n);
+
+            // Regular user's stake is unchanged and they can still retrieve normally
+            const userStakedAmount = await staking.getStakedToNodeAmountFor(nodeId, regularUser.address);
+            // Should be: 2.0 (initial) + 0.6 (proportional reward) = 2.6 ether
+            expect(userStakedAmount).to.be.closeTo(ethers.parseEther("2.6"), ethers.parseUnits("1", "gwei"));
+
+            // User can retrieve their 2.6 ether stake normally
+            await staking.connect(regularUser).requestRetrieveAll(nodeId);
+
+            // User claims their stake - should get ~2.6 ether
+            await expect(staking.connect(regularUser).claimRequest(1))
+                .to.changeEtherBalance(regularUser, userStakedAmount);
+
+            // Total received by node owner: 0.1 (fees) + 1.3 (stake) = 1.4 ether in single claim
+            // Total received by user: 2.6 ether in separate claim
+        });
     });
 });
