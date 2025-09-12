@@ -23,6 +23,7 @@ pragma solidity ^0.8.24;
 
 import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+import { FundLibrary } from "./Fund.sol";
 
 import { NodeId } from "@skalenetwork/fair-manager-interfaces/INodes.sol";
 import { IStaking } from "@skalenetwork/fair-manager-interfaces/IStaking.sol";
@@ -78,6 +79,9 @@ library ExitQueueLibrary{
     )
         internal
     {
+        if (amount == FundLibrary.ZERO_FAIR) {
+            return;
+        }
         Timestamp unlockDate = Timestamp.wrap(block.timestamp) + queue.retrievingDelay;
         UserExitData storage userData = queue.userExitData[user];
         uint256 requestId = queue.numRequests;
