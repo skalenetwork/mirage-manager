@@ -107,9 +107,9 @@ const deployFixture = async () => {
 
 const registeredOnlyNodesFixture = async () => {
     const contracts = await cleanDeployment();
-    const { nodes } = contracts;
+    const { nodes, staking } = contracts;
     const nodesData = await generateRandomNodes(numberOfNodes - initialNumberOfNodes);
-
+    await staking.setSelfStakeRequirement(0n);
     await registerNodes(nodes, nodesData);
 
     return { ...contracts, nodesData:[...contracts.nodesData, ...nodesData] };
