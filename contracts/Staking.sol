@@ -132,6 +132,7 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
         rewardWalletReference = rewardWalletReference_;
         // Default on initialize
         _exitQueue.retrievingDelay = Timestamp.wrap(1 days);
+        selfStakeRequirement = Fair.wrap(1);
         emit RetrievingDelayUpdated(Timestamp.wrap(1 days));
     }
 
@@ -480,6 +481,7 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
         override
         onlyExistingActiveNode(node)
     {
+        require(amount > FundLibrary.ZERO_FAIR, ZeroAmount());
         bool senderIsOwner = msg.sender == nodes.getNode(node).nodeAddress;
         require(
             _nodesAllowedReceivers[node].contains(msg.sender) || senderIsOwner,
@@ -490,6 +492,7 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
     }
 
     function requestSendFees(address payable to, Fair amount) public override {
+        require(amount > FundLibrary.ZERO_FAIR, ZeroAmount());
         NodeId node = nodes.getNodeId(msg.sender);
 
         // Node has opted in to allowed receivers, so the destination address must be in the list
