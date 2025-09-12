@@ -1312,6 +1312,7 @@ describe("Staking", () => {
         // Set self-stake requirement
         const selfStakeRequirement = ethers.parseEther("1");
         const lowSelfStake = ethers.parseEther("0.5");
+        const zeroSelfStake = 0n;
         await staking.setSelfStakeRequirement(selfStakeRequirement);
 
         // Get a proper public key using the helper function
@@ -1325,6 +1326,14 @@ describe("Staking", () => {
             {value: lowSelfStake}
         )).to.be.revertedWithCustomError(staking, "InsufficientSelfStake")
          .withArgs(lowSelfStake, selfStakeRequirement);
+        // Try to register the node with zero self-stake
+        await expect(nodes.connect(nodeWallet).registerNode(
+            ethers.randomBytes(4),
+            publicKey,
+            8000,
+            {value: zeroSelfStake}
+        )).to.be.revertedWithCustomError(staking, "InsufficientSelfStake")
+         .withArgs(zeroSelfStake, selfStakeRequirement);
     });
 
     describe("when node is registered with self stake", () => {
