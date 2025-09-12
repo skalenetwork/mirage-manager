@@ -231,12 +231,6 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
         // because it's needed for archive node synchronization
         emit NodeDataRemoved(node);
 
-        _requestSendFees(
-            node,
-            getEarnedFeeAmount(node),
-            payable(_publicKeyToAddress(nodes.getPublicKey(node)))
-        );
-
         address nodeOwner = _publicKeyToAddress(nodes.getPublicKey(node));
         Fair fees = getEarnedFeeAmount(node);
         Fair nodeOwnerStake = getStakedToNodeAmountFor(node, nodeOwner);
