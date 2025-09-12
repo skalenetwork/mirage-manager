@@ -683,11 +683,13 @@ describe("Staking", () => {
         }
         for (const [node, amount] of zip(targetNodes, amounts)) {
             assert(node);
-            const currentFee = node === disabledNode ? 0 : amount;
+            const currentFee = node === disabledNode ? 0 : amount || 0n;
             (await staking.getEarnedFeeAmount(node.id))
                 .should.be.equal(currentFee);
-            (await staking.connect(node.wallet).requestAllFees(node.id))
+            if (currentFee > 0n) {
+                (await staking.connect(node.wallet).requestAllFees(node.id))
                 .should.changeEtherBalance(node.wallet, currentFee);
+            }
         }
 
         // current stakes are 4, 6 and 5
