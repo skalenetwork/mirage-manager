@@ -165,10 +165,6 @@ export const deploy = async (nodeList?: NodeStruct[], commonPublicKey?: IDkg.G2P
 
     await configurePermissions(deployedContracts);
 
-    const defaultSelfStakeRequirement = 1n;
-    response = await deployedContracts.Staking.setSelfStakeRequirement(defaultSelfStakeRequirement);
-    await response.wait();
-
     return deployedContracts;
 }
 
@@ -273,10 +269,13 @@ const deployStaking = async (
     // and corresponding RewardWallets can't be deployed
     // To workaround this issue manually notify Staking about initial nodes
 
+    const selfStakeRequirement = await staking.selfStakeRequirement();
+    await staking.setSelfStakeRequirement(0n);
     for (const node of initialNodes) {
         const response = await staking.nodeCreated(node.id, node.nodeAddress);
         await response.wait();
     }
+    await staking.setSelfStakeRequirement(selfStakeRequirement);
 
     return staking;
 }
