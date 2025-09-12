@@ -165,6 +165,10 @@ export const deploy = async (nodeList?: NodeStruct[], commonPublicKey?: IDkg.G2P
 
     await configurePermissions(deployedContracts);
 
+    const defaultSelfStakeRequirement = 1n;
+    response = await deployedContracts.Staking.setSelfStakeRequirement(defaultSelfStakeRequirement);
+    await response.wait();
+
     return deployedContracts;
 }
 
