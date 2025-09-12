@@ -214,8 +214,8 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
             _deployRewardWallet(node);
         }
         _updateNodeFeeRate(node, DEFAULT_FEE_RATE);
+        _checkProvidedSelfStake(node);
         if (msg.value > 0) {
-            _checkProvidedSelfStake(node);
             _stakeFor(node, nodeAddress);
         }
         assert(_disabledNodesBalances.set(node, FundLibrary.ZERO_FAIR));
