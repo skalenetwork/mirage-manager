@@ -29,7 +29,6 @@ const MOCK_IP_2_BYTES = ip.toBuffer(MOCK_IP_2);
 
 const MOCK_IPV6 = "2001:0db8:85a3:0000:0000:8a2e:0370:7334";
 const MOCK_IPV6_BYTES = ip.toBuffer(MOCK_IPV6);
-const DEFAULT_SELF_STAKE_REQUIREMENT = ethers.parseUnits("1", "wei");
 
 chai.should();
 chai.use(chaiAsPromised)
@@ -44,6 +43,7 @@ describe("Nodes", function () {
     let deployerPubKey: [BytesLike, BytesLike];
     let user1PubKey: [BytesLike, BytesLike];
     let user2PubKey: [BytesLike, BytesLike];
+    let selfStakeRequirement: BigNumberish;
 
 
     beforeEach(async () => {
@@ -56,11 +56,13 @@ describe("Nodes", function () {
         [deployerPubKey, user1PubKey, user2PubKey] = await Promise.all(
             [deployer, user1, user2].map((user) => getPublicKey(user))
         );
+
+        selfStakeRequirement = await stakingContract.selfStakeRequirement();
     });
 
     it("should register Active Nodes", async () => {
 
-        await nodesContract.registerNode(MOCK_IP_0_BYTES, deployerPubKey, 8000, {value: DEFAULT_SELF_STAKE_REQUIREMENT});
+        await nodesContract.registerNode(MOCK_IP_0_BYTES, deployerPubKey, 8000, {value: selfStakeRequirement});
         const nodeId = await nodesContract.getNodeId(deployer.address) as BigNumberish;
         const node = await nodesContract.getNode(nodeId);
 
@@ -80,7 +82,7 @@ describe("Nodes", function () {
     });
 
     it("should register and delete Active Nodes", async () => {
-        await nodesContract.registerNode(MOCK_IP_0_BYTES, deployerPubKey, 8000, {value: DEFAULT_SELF_STAKE_REQUIREMENT});
+        await nodesContract.registerNode(MOCK_IP_0_BYTES, deployerPubKey, 8000, {value: selfStakeRequirement});
         const nodeId = await nodesContract.getNodeId(deployer.address) as BigNumberish;
         const node = await nodesContract.getNode(nodeId);
         expect(node.id).to.equal(nodeId);
@@ -101,7 +103,7 @@ describe("Nodes", function () {
     });
 
     it("should not allow to enable a deleted Node", async () => {
-        await nodesContract.registerNode(MOCK_IP_0_BYTES, deployerPubKey, 8000, {value: DEFAULT_SELF_STAKE_REQUIREMENT});
+        await nodesContract.registerNode(MOCK_IP_0_BYTES, deployerPubKey, 8000, {value: selfStakeRequirement});
         const nodeId = await nodesContract.getNodeId(deployer.address) as BigNumberish;
 
         // Node is disabled by default
@@ -116,7 +118,7 @@ describe("Nodes", function () {
     });
 
     it("should not allow anyone other than Node owner or Foundation to delete nodes", async () => {
-        await nodesContract.connect(user1).registerNode(MOCK_IP_0_BYTES, user1PubKey, 8000, {value: DEFAULT_SELF_STAKE_REQUIREMENT});
+        await nodesContract.connect(user1).registerNode(MOCK_IP_0_BYTES, user1PubKey, 8000, {value: selfStakeRequirement});
         const nodeId = await nodesContract.getNodeId(user1.address) as BigNumberish;
         await nodesContract.connect(user1).setDomainName(nodeId, MOCK_DOMAIN_NAME_0);
         await expect(nodesContract.connect(deployer).deleteNode(nodeId)).to.be.revertedWithCustomError(nodesContract, "SenderIsNotNodeOwner");
@@ -126,7 +128,7 @@ describe("Nodes", function () {
         expect(await nodesContract.getActiveNodeIds()).to.not.include(nodeId);
         expect(await nodesContract.activeNodeExists(nodeId)).to.eql(false);
 
-        await nodesContract.connect(user2).registerNode(MOCK_IP_0_BYTES, user2PubKey, 8000, {value: DEFAULT_SELF_STAKE_REQUIREMENT});
+        await nodesContract.connect(user2).registerNode(MOCK_IP_0_BYTES, user2PubKey, 8000, {value: selfStakeRequirement});
         const nodeIdV2 = await nodesContract.getNodeId(user2.address) as BigNumberish;
         await nodesContract.connect(user2).setDomainName(nodeIdV2, MOCK_DOMAIN_NAME_0);
 
@@ -200,7 +202,7 @@ describe("Nodes", function () {
         await expect(nodesContract.connect(deployer).deleteNode(passiveNodeId)).to.emit(nodesContract, "PassiveNodeDeleted").withArgs(passiveNodeId, deployer.address, MOCK_IPV6_BYTES, 8000);
         await expect(nodesContract.getNode(passiveNodeId)).to.be.revertedWithCustomError(nodesContract, "NodeDoesNotExist");
 
-        await expect(nodesContract.registerNode(MOCK_IPV6_BYTES, deployerPubKey, 8000, {value: DEFAULT_SELF_STAKE_REQUIREMENT})).to.be.revertedWithCustomError(nodesContract, "AddressInUseByPassiveNodes");
+        await expect(nodesContract.registerNode(MOCK_IPV6_BYTES, deployerPubKey, 8000, {value: selfStakeRequirement})).to.be.revertedWithCustomError(nodesContract, "AddressInUseByPassiveNodes");
         expect(await nodesContract.getPassiveNodeIdsForAddress(deployer.address)).to.eql([passiveNodeId2]);
 
         expect((await nodesContract.getPassiveNodeIds()).length).to.eql(1);
@@ -210,7 +212,7 @@ describe("Nodes", function () {
         expect((await nodesContract.getPassiveNodeIds()).length).to.eql(0);
 
         // Address is free now
-        await expect(nodesContract.registerNode(MOCK_IPV6_BYTES, deployerPubKey, 8000, {value: DEFAULT_SELF_STAKE_REQUIREMENT})).to.be.fulfilled;
+        await expect(nodesContract.registerNode(MOCK_IPV6_BYTES, deployerPubKey, 8000, {value: selfStakeRequirement})).to.be.fulfilled;
 
     });
 
@@ -245,40 +247,40 @@ describe("Nodes", function () {
         await expect(nodesContract.registerPassiveNode(INVALID_IPV4_BYTES, 8000))
         .to.be.revertedWithCustomError(nodesContract, "InvalidIp");
 
-        await expect(nodesContract.registerNode(MOCK_IP_0_BYTES, deployerPubKey, 0, {value: DEFAULT_SELF_STAKE_REQUIREMENT}))
+        await expect(nodesContract.registerNode(MOCK_IP_0_BYTES, deployerPubKey, 0, {value: selfStakeRequirement}))
         .to.be.reverted;
 
-        await expect(nodesContract.registerNode(INVALID_IPV6_BYTES, deployerPubKey, 8000, {value: DEFAULT_SELF_STAKE_REQUIREMENT}))
+        await expect(nodesContract.registerNode(INVALID_IPV6_BYTES, deployerPubKey, 8000, {value: selfStakeRequirement}))
         .to.be.revertedWithCustomError(nodesContract, "InvalidIp");
 
-        await expect(nodesContract.registerNode(MOCK_IPV6_BYTES, [ZeroHash, ZeroHash], 8000, {value: DEFAULT_SELF_STAKE_REQUIREMENT}))
+        await expect(nodesContract.registerNode(MOCK_IPV6_BYTES, [ZeroHash, ZeroHash], 8000, {value: selfStakeRequirement}))
         .to.be.revertedWithCustomError(nodesContract, "InvalidPublicKey");
 
     });
     it("should block registration of duplicates", async () => {
 
-        await nodesContract.registerNode(MOCK_IP_0_BYTES, deployerPubKey, 8000, {value: DEFAULT_SELF_STAKE_REQUIREMENT});
+        await nodesContract.registerNode(MOCK_IP_0_BYTES, deployerPubKey, 8000, {value: selfStakeRequirement});
 
         // Node address is taken by active node
         await expect(nodesContract.registerPassiveNode(MOCK_IP_1_BYTES, 8000))
         .to.be.revertedWithCustomError(nodesContract, "AddressWasAlreadyAssignedToNode");
-        await expect(nodesContract.registerNode(MOCK_IP_1_BYTES, deployerPubKey, 8000, {value: DEFAULT_SELF_STAKE_REQUIREMENT}))
+        await expect(nodesContract.registerNode(MOCK_IP_1_BYTES, deployerPubKey, 8000, {value: selfStakeRequirement}))
         .to.be.revertedWithCustomError(nodesContract, "AddressWasAlreadyAssignedToNode");
 
         // New passive node
         await nodesContract.connect(user1).registerPassiveNode(MOCK_IP_1_BYTES, 8000)
 
         // Node Address is assigned to passive nodes
-        await expect(nodesContract.connect(user1).registerNode(MOCK_IP_2_BYTES, user1PubKey, 8000, {value: DEFAULT_SELF_STAKE_REQUIREMENT}))
+        await expect(nodesContract.connect(user1).registerNode(MOCK_IP_2_BYTES, user1PubKey, 8000, {value: selfStakeRequirement}))
         .to.be.revertedWithCustomError(nodesContract, "AddressInUseByPassiveNodes");
     });
 
     it("should allow duplicate domain names and IP addresses", async () => {
-        await nodesContract.registerNode(MOCK_IP_0_BYTES, deployerPubKey, 8000, {value: DEFAULT_SELF_STAKE_REQUIREMENT});
+        await nodesContract.registerNode(MOCK_IP_0_BYTES, deployerPubKey, 8000, {value: selfStakeRequirement});
         const nodeId = await nodesContract.getNodeId(deployer.address) as BigNumberish;
         await nodesContract.setDomainName(nodeId, MOCK_DOMAIN_NAME_0);
 
-        await nodesContract.connect(user1).registerNode(MOCK_IP_0_BYTES, user1PubKey, 8000, {value: DEFAULT_SELF_STAKE_REQUIREMENT});
+        await nodesContract.connect(user1).registerNode(MOCK_IP_0_BYTES, user1PubKey, 8000, {value: selfStakeRequirement});
         const nodeIdUser1 = await nodesContract.getNodeId(user1.address) as BigNumberish;
         await nodesContract.connect(user1).setDomainName(nodeIdUser1, MOCK_DOMAIN_NAME_0);
 
@@ -293,7 +295,7 @@ describe("Nodes", function () {
 
 
     it("should allow only Node owner to change IP and Domain Name", async () => {
-        await nodesContract.registerNode(MOCK_IP_0_BYTES, deployerPubKey, 8000, {value: DEFAULT_SELF_STAKE_REQUIREMENT});
+        await nodesContract.registerNode(MOCK_IP_0_BYTES, deployerPubKey, 8000, {value: selfStakeRequirement});
 
         const nodeId = await nodesContract.getNodeId(deployer.address) as BigNumberish;
         const node_v1 = await nodesContract.getNode(nodeId);
@@ -322,7 +324,7 @@ describe("Nodes", function () {
     });
 
     it("should block invalid IP address change requests", async () => {
-        await nodesContract.registerNode(MOCK_IP_0_BYTES, deployerPubKey, 8000, {value: DEFAULT_SELF_STAKE_REQUIREMENT});
+        await nodesContract.registerNode(MOCK_IP_0_BYTES, deployerPubKey, 8000, {value: selfStakeRequirement});
         const nodeId = await nodesContract.getNodeId(deployer.address);
         const nonExistentNodeId = 9999;
 
@@ -338,7 +340,7 @@ describe("Nodes", function () {
         await expect(nodesContract.setIpAddress(nodeId, MOCK_IP_1_BYTES, 0))
         .to.be.reverted;
 
-        await nodesContract.connect(user1).registerNode(MOCK_IP_1_BYTES, user1PubKey, 8000, {value: DEFAULT_SELF_STAKE_REQUIREMENT});
+        await nodesContract.connect(user1).registerNode(MOCK_IP_1_BYTES, user1PubKey, 8000, {value: selfStakeRequirement});
     });
 
     it("should not allow submit address change requests for not existent nodes", async () => {
@@ -348,7 +350,7 @@ describe("Nodes", function () {
     });
 
     it("should not allow active nodes to change owner", async () => {
-        await nodesContract.registerNode(MOCK_IP_0_BYTES, deployerPubKey, 8000, {value: DEFAULT_SELF_STAKE_REQUIREMENT});
+        await nodesContract.registerNode(MOCK_IP_0_BYTES, deployerPubKey, 8000, {value: selfStakeRequirement});
         const nodeId = await nodesContract.getNodeId(deployer.address);
 
         expect(nodesContract.requestChangeOwner(nodeId, user1.address))
@@ -371,7 +373,7 @@ describe("Nodes", function () {
         await nodesContract.registerPassiveNode(MOCK_IP_0_BYTES, 8000);
         const [firstNodeId] = await nodesContract.getPassiveNodeIdsForAddress(deployer.address);
 
-        await nodesContract.connect(user1).registerNode(MOCK_IP_1_BYTES, user1PubKey, 8000, {value: DEFAULT_SELF_STAKE_REQUIREMENT});
+        await nodesContract.connect(user1).registerNode(MOCK_IP_1_BYTES, user1PubKey, 8000, {value: selfStakeRequirement});
 
         await expect(nodesContract.requestChangeOwner(firstNodeId, user1.address))
         .to.be.revertedWithCustomError(nodesContract, "AddressWasAlreadyAssignedToNode");
@@ -398,7 +400,7 @@ describe("Nodes", function () {
         await nodesContract.requestChangeOwner(nodeId, user1.address);
 
         // Fails, passive node is still owned by deployer
-        await expect(nodesContract.registerNode(MOCK_IP_1_BYTES, deployerPubKey, 8000, {value: DEFAULT_SELF_STAKE_REQUIREMENT}))
+        await expect(nodesContract.registerNode(MOCK_IP_1_BYTES, deployerPubKey, 8000, {value: selfStakeRequirement}))
         .to.be.revertedWithCustomError(nodesContract, "AddressInUseByPassiveNodes");
 
         await nodesContract.connect(user1).confirmOwnerChange(nodeId);
@@ -406,7 +408,7 @@ describe("Nodes", function () {
         expect(node.nodeAddress).to.equal(user1.address);
 
         // Now it should work, deployer does not own any nodes
-        await nodesContract.registerNode(MOCK_IP_1_BYTES, deployerPubKey, 8000, {value: DEFAULT_SELF_STAKE_REQUIREMENT});
+        await nodesContract.registerNode(MOCK_IP_1_BYTES, deployerPubKey, 8000, {value: selfStakeRequirement});
         const newlyRegisteredNodeId = await nodesContract.getNodeId(deployer.address);
         await nodesContract.getNode(nodeId);
         await nodesContract.getNode(newlyRegisteredNodeId);
@@ -419,7 +421,7 @@ describe("Nodes", function () {
 
         await nodesContract.requestChangeOwner(nodeId, user1.address);
 
-        await nodesContract.connect(user1).registerNode(MOCK_IP_1_BYTES, user1PubKey, 8000, {value: DEFAULT_SELF_STAKE_REQUIREMENT});
+        await nodesContract.connect(user1).registerNode(MOCK_IP_1_BYTES, user1PubKey, 8000, {value: selfStakeRequirement});
 
         await expect(nodesContract.connect(user1).confirmOwnerChange(nodeId))
         .to.be.revertedWithCustomError(nodesContract, "AddressWasAlreadyAssignedToNode");
@@ -429,7 +431,7 @@ describe("Nodes", function () {
     });
 
     it("should not allow to confirm an inexistent change request (address(0))", async () => {
-        await nodesContract.registerNode(MOCK_IP_0_BYTES, deployerPubKey, 8000, {value: DEFAULT_SELF_STAKE_REQUIREMENT});
+        await nodesContract.registerNode(MOCK_IP_0_BYTES, deployerPubKey, 8000, {value: selfStakeRequirement});
         const nodeId = await nodesContract.getNodeId(deployer.address) as BigNumberish;
 
         await expect(nodesContract.confirmOwnerChange(nodeId))
@@ -447,7 +449,7 @@ describe("Nodes", function () {
         const [firstNodeId, secondNodeId] = await nodesContract.getPassiveNodeIdsForAddress(deployer.address);
 
         // Fails, active node addresses must be unique
-        await expect(nodesContract.registerNode(MOCK_IP_2_BYTES, deployerPubKey, 8000, {value: DEFAULT_SELF_STAKE_REQUIREMENT}))
+        await expect(nodesContract.registerNode(MOCK_IP_2_BYTES, deployerPubKey, 8000, {value: selfStakeRequirement}))
         .to.be.revertedWithCustomError(nodesContract, "AddressInUseByPassiveNodes");
 
 
@@ -457,7 +459,7 @@ describe("Nodes", function () {
         expect(node.nodeAddress).to.equal(user1.address);
 
         // Fails, deployer still owns 1 passive node
-        await expect(nodesContract.registerNode(MOCK_IP_2_BYTES, deployerPubKey, 8000, {value: DEFAULT_SELF_STAKE_REQUIREMENT}))
+        await expect(nodesContract.registerNode(MOCK_IP_2_BYTES, deployerPubKey, 8000, {value: selfStakeRequirement}))
         .to.be.revertedWithCustomError(nodesContract, "AddressInUseByPassiveNodes");
 
         await nodesContract.requestChangeOwner(secondNodeId, user2.address);
@@ -466,7 +468,7 @@ describe("Nodes", function () {
         expect(node2.nodeAddress).to.equal(user2.address);
 
         // Now deployer should be free
-        await nodesContract.registerNode(MOCK_IP_2_BYTES, deployerPubKey, 8000, {value: DEFAULT_SELF_STAKE_REQUIREMENT});
+        await nodesContract.registerNode(MOCK_IP_2_BYTES, deployerPubKey, 8000, {value: selfStakeRequirement});
         const activeNodeId = await nodesContract.getNodeId(deployer.address);
 
         const node3 = await nodesContract.getNode(activeNodeId);
@@ -485,7 +487,7 @@ describe("Nodes", function () {
     });
 
     it("should allow duplicate public keys from active nodes after deletion", async function () {
-        await nodesContract.registerNode(MOCK_IP_0_BYTES, deployerPubKey , 8000, {value: DEFAULT_SELF_STAKE_REQUIREMENT});
+        await nodesContract.registerNode(MOCK_IP_0_BYTES, deployerPubKey , 8000, {value: selfStakeRequirement});
         const node = await nodesContract.getNodeId(deployer.address);
         await nodesContract.deleteNode(node);
 
@@ -494,7 +496,7 @@ describe("Nodes", function () {
 
         expect(await nodesContract.getPublicKey(node)).to.be.eql(deployerPubKey);
 
-        await nodesContract.registerNode(MOCK_IP_0_BYTES, deployerPubKey , 8000, {value: DEFAULT_SELF_STAKE_REQUIREMENT});
+        await nodesContract.registerNode(MOCK_IP_0_BYTES, deployerPubKey , 8000, {value: selfStakeRequirement});
 
         const nodeV2 = await nodesContract.getNodeId(deployer.address);
 
