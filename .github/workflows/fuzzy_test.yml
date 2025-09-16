@@ -1,0 +1,61 @@
+# cspell:words solcoverjs
+
+name: fuzzy-tests
+
+on: [push]
+
+env:
+  NODE_VERSION: 22
+
+jobs:
+  red-black-tree:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: true
+
+    - name: Set up Node
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'yarn'
+
+    - name: Install Foundry
+      uses: foundry-rs/foundry-toolchain@v1
+
+    - name: Install project
+      run: yarn install
+
+    - name: Compile
+      run: yarn cleanCompile
+
+    - name: Run RBT fuzzy tests
+      run: yarn test-rbt-fuzz
+
+  fair-manager:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: true
+
+    - name: Set up Node
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'yarn'
+
+    - name: Install Foundry
+      uses: foundry-rs/foundry-toolchain@v1
+
+    - name: Install project
+      run: yarn install
+
+    - name: Compile
+      run: yarn cleanCompile
+
+    - name: Run Project fuzzy tests
+      run: yarn test-project-fuzz

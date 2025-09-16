@@ -25,7 +25,7 @@ export const commonPublicKey: IDkg.G2PointStruct = {
       a: 10690960156228072079001083521941886387682522891194608928128426154732026520769n,
       b: 9828205031595443956611906871964866113822094147752101207883765686014961818260n,
     },
-  };
+};
 
 // Auxiliary functions
 
@@ -35,7 +35,7 @@ export interface NodeData extends NodeStruct {
 
 const getIp = (): Uint8Array => ethers.randomBytes(4);
 
-const generateRandomNodes = async (initialNumberOfNodes?: number) => {
+export const generateRandomNodes = async (initialNumberOfNodes?: number) => {
     const [owner] = await ethers.getSigners();
     initialNumberOfNodes = initialNumberOfNodes || numberOfNodes;
     const nodesData: NodeData[] = [];

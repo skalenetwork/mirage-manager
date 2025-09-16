@@ -1,0 +1,26 @@
+# foundry.toml
+
+[profile.default]
+# Points to your Hardhat 'contracts' directory
+src = 'contracts'
+
+# Points to a new directory for your Foundry tests
+test = 'test_fuzz'
+
+# Crucial for Hardhat integration: tells Foundry to find imports
+# like OpenZeppelin in the node_modules folder.
+libs = ["node_modules", "lib"]
+
+show_progress = true
+
+# Invariant testing profile
+[invariant]
+seed = '0x5'
+runs = 450
+depth = 500
+show_metrics = true
+extra_output = ["storageLayout"]
+fail_on_revert = true
+# Enables guided fuzzing
+corpus_dir = ".cache/invariant"
+#show_solidity = true

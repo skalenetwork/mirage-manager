@@ -1,4 +1,4 @@
 {
-    "filter_paths": "node_modules|hardhat-dependency-compiler",
+    "filter_paths": "node_modules|hardhat-dependency-compiler|test_fuzz",
     "detectors_to_exclude": "block-timestamp"
 }

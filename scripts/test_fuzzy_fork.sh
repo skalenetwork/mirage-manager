@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+
+set -e
+
+# This script runs invariant tests against a live SKALE chain.
+# It requires the following environment variables to be manually:
+# You can change the test to target a specific contract
+
+NODES_ADDRESS="0x50319523FD21A1f20492a1ed562bB61386Ad9ED4"
+STATUS_ADDRESS="0x711b90DE2Ec55DffcBBe02929dD7ec8dB60165Eb"
+STAKING_ADDRESS="0x9EcD93c2cF9E551B3B02939c72D3F515A8cb76B0"
+DKG_ADDRESS="0x1ae75bA82d649283992ABfd4885161571249FBbE"
+COMMITTEE_ADDRESS="0x9f4Ab4AD54CC27F310889950F0663504F0459262"
+ACCESS_MANAGER_ADDRESS="0xDF9862d59290C9c00d6E3134975C8DFa69ec8845"
+DEPLOYER_ADDRESS="0xa68F946090c600eDa6f139783077EE802Afeb990"
+NODE_ENDPOINT="http://45.76.166.170:10003/"
+
+echo "Nodes address: $NODES_ADDRESS"
+echo "Status address: $STATUS_ADDRESS"
+echo "Staking address: $STAKING_ADDRESS"
+echo "Committee address: $COMMITTEE_ADDRESS"
+echo "DKG address: $DKG_ADDRESS"
+echo "Access Manager address: $ACCESS_MANAGER_ADDRESS"
+echo "Deployer address: $DEPLOYER_ADDRESS"
+
+export NODES=$NODES_ADDRESS
+export STATUS=$STATUS_ADDRESS
+export STAKING=$STAKING_ADDRESS
+export COMMITTEE=$COMMITTEE_ADDRESS
+export DKG=$DKG_ADDRESS
+export ACCESS_MANAGER=$ACCESS_MANAGER_ADDRESS
+export DEPLOYER=$DEPLOYER_ADDRESS
+
+forge test --rpc-url $NODE_ENDPOINT --mt invariant_dummyInvariant -vvv

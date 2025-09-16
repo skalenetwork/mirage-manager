@@ -25,6 +25,7 @@ import {
     ISchainsInternal,
 } from "../typechain-types/@skalenetwork/skale-manager-interfaces";
 import { configurePermissions } from "./permissions";
+import { commonPublicKey, generateRandomNodes } from "../test/tools/fixtures";
 
 
 export const contracts = [
@@ -284,6 +285,7 @@ const storeAddresses = async (deployedContracts: DeployedContracts, version: str
     const addresses = Object.fromEntries(await Promise.all(Object.entries(deployedContracts).map(
             async ([name, contract]) => [name, await ethers.resolveAddress(contract)]
     )));
+    console.log("DEPLOYER:", await ethers.resolveAddress((await ethers.getSigners())[0].address));
     for (const contract in addresses) {
         console.log(`${contract}: ${addresses[contract]}`);
     }
@@ -316,8 +318,14 @@ const main = async () => {
     const version = await getVersion();
 
     console.log("Deploy contracts");
+    let deployedContracts: DeployedContracts;
 
-    const deployedContracts = await deploy();
+    if(process.env["PRODUCTION"] === "true") {
+        deployedContracts = await deploy();
+    } else {
+        deployedContracts = await deploy(await generateRandomNodes(22), commonPublicKey);
+    }
+
 
     console.log("Store addresses")
 

@@ -26,6 +26,9 @@ jobs:
         node-version: ${{ matrix.node-version }}
         cache: 'yarn'
 
+    - name: Install Foundry
+      uses: foundry-rs/foundry-toolchain@v1
+
     - name: Install project
       run: yarn install
 
@@ -33,7 +36,7 @@ jobs:
       run: yarn cspell
 
     - name: Compile
-      run: yarn compile
+      run: yarn cleanCompile
 
     - name: Lint
       run: yarn fullCheck
@@ -42,6 +45,7 @@ jobs:
       uses: crytic/slither-action@v0.4.1
       with:
         ignore-compile: true
+        slither-args: "--compile-force-framework hardhat"
         node-version: ${{ matrix.node-version }}
 
     - name: Test deployment

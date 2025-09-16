@@ -18,6 +18,7 @@
         "slither.config.json",
         "coverage",
         "coverage.json",
-        "package.json"
+        "package.json",
+        "lib"
     ]
 }
