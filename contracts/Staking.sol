@@ -214,12 +214,16 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
         if(_rewardWallets[node] == IRewardWallet(payable(0))) {
             _deployRewardWallet(node);
         }
+
+        // Node should be set as disabled with 0 stake before anything
+        // SelfStake will be added (If any) while node is disabled
+        assert(_disabledNodesBalances.set(node, FundLibrary.ZERO_FAIR));
+
         _updateNodeFeeRate(node, DEFAULT_FEE_RATE);
         _checkProvidedSelfStake(node);
         if (msg.value > 0) {
             _stakeFor(node, nodeAddress);
         }
-        assert(_disabledNodesBalances.set(node, FundLibrary.ZERO_FAIR));
     }
 
     function nodeRemoved(NodeId node) external override restricted {

@@ -1372,9 +1372,11 @@ describe("Staking", () => {
             );
 
             nodeId = await nodes.getNodeId(nodeWallet.address);
+        });
 
-            // Enable the node manually
-            await staking.enable(nodeId);
+        it("should allow a user to stake", async () => {
+            // should be able to stake
+            await staking.connect(regularUser).stake(nodeId, {value: ethers.parseEther("1")});
         });
 
         it("should prevent node owners from retrieving their stake while their node exists", async () => {
