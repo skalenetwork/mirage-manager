@@ -72,10 +72,14 @@ class FairManagerUpgrader extends Upgrader {
 
 const main = async () => {
     const fairManager = await getFairManagerInstance();
+    // do not upgrade RewardWallet
+    // because it requires custom upgrade procedure
+    const contractNamesToUpgrade =
+        contracts.filter(contract => !["RewardWallet"].includes(contract));
     const upgrader = new FairManagerUpgrader({
-        contractNamesToUpgrade: contracts,
+        contractNamesToUpgrade,
         instance: fairManager,
-        targetVersion: "0.0.1-beta.2"
+        targetVersion: "0.0.1-beta.3"
     });
     await upgrader.upgrade();
 }
