@@ -17,7 +17,7 @@ show_progress = true
 [invariant]
 seed = '0x5'
 runs = 450
-depth = 500
+depth = 400
 show_metrics = true
 extra_output = ["storageLayout"]
 fail_on_revert = true

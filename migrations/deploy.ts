@@ -25,8 +25,6 @@ import {
     ISchainsInternal,
 } from "../typechain-types/@skalenetwork/skale-manager-interfaces";
 import { configurePermissions } from "./permissions";
-import { commonPublicKey, generateRandomNodes } from "../test/tools/fixtures";
-
 
 export const contracts = [
     "Committee",
@@ -318,13 +316,7 @@ const main = async () => {
     const version = await getVersion();
 
     console.log("Deploy contracts");
-    let deployedContracts: DeployedContracts;
-
-    if(process.env["PRODUCTION"] === "true") {
-        deployedContracts = await deploy();
-    } else {
-        deployedContracts = await deploy(await generateRandomNodes(22), commonPublicKey);
-    }
+    const deployedContracts = await deploy();
 
 
     console.log("Store addresses")

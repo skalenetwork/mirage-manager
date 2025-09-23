@@ -67,4 +67,9 @@ contract CommitteeHandler is Test {
         assert(wallet != address(0));
         vm.deal(wallet, wallet.balance + 1e14);
     }
+
+    // can simulate random time pass
+    function skipTime(uint8 time) public {
+        vm.warp(block.timestamp + uint256(time));
+    }
 }

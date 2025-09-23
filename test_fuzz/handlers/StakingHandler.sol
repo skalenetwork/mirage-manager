@@ -81,6 +81,22 @@ contract StakingHandler is Test {
         users.add(staker);
     }
 
+    function requestRetrieveAll(uint8 userIndex, uint8 nodeIndex) public {
+        NodeId node = fixtureNode[nodeIndex % fixtureNode.length];
+        assert(staking.nodes().activeNodeExists(node));
+        Fair totalStake = staking.getNodeTotalStake(node);
+
+        vm.assume(totalStake > Fair.wrap(0));
+        address[] memory stakedUsers = staking.getDelegatorsToNode(node);
+        vm.assume(stakedUsers.length > 0);
+
+        address staker = stakedUsers[userIndex % stakedUsers.length];
+        // node owners cannot retrieve
+        vm.assume(staker != staking.nodes().getNode(node).nodeAddress);
+
+        vm.prank(staker);
+        staking.requestRetrieveAll(node);
+    }
     // allow the fuzzer to alter picked user and node
     function requestRetrieve(uint8 userIndex, uint8 nodeIndex, uint32 amountToRetrieve) public {
 
@@ -93,14 +109,6 @@ contract StakingHandler is Test {
         // 1. Pick a random user
         address[] memory stakedUsers = staking.getDelegatorsToNode(node);
         vm.assume(stakedUsers.length > 0);
-        Fair usersStake = Fair.wrap(0);
-        for (uint256 i = 0; i < stakedUsers.length; i++) {
-            usersStake = usersStake + staking.getStakedToNodeAmountFor(node, stakedUsers[i]);
-        }
-
-        // This is because of rounding, precision is not perfect (i.e 3 wei could not be divided by 2 users)
-        assert(Fair.unwrap(usersStake) + Fair.unwrap(staking.getEarnedFeeAmount(node)) <= Fair.unwrap(totalStake));
-        assert(Fair.unwrap(usersStake) + Fair.unwrap(staking.getEarnedFeeAmount(node)) + fixtureNode.length >= Fair.unwrap(totalStake));
 
         address staker = stakedUsers[userIndex % stakedUsers.length];
         // node owners cannot retrieve
@@ -124,6 +132,17 @@ contract StakingHandler is Test {
         (bool success,) = address(staking).call{value: amount}("");
         require(success, "Donation call failed");
         assert(success);
+    }
+
+    /*function claimFees() public {
+
+    }
+    function claimAllFees() public {
+
+    }*/
+
+    function getNumNodes() external view returns (uint256 len) {
+        return fixtureNode.length;
     }
 
     /*function retrieve() public {

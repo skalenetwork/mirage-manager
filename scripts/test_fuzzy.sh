@@ -1,13 +1,6 @@
 #!/usr/bin/env bash
 
 set -e
-if [ -n "$INFURA_API_TOKEN" ]; then
-    export MAINNET_ENDPOINT="https://mainnet.infura.io/v3/${INFURA_API_TOKEN}"
-else
-    export MAINNET_ENDPOINT="https://eth.llamarpc.com"
-fi
-export CHAIN_NAME="affectionate-immediate-pollux"
-export TARGET="production"
 
 echo "Starting local Hardhat node in the background..."
 yarn hardhat node --port 8545 > /dev/null 2>&1 &
@@ -30,7 +23,7 @@ sleep 15
 # --- Deployment and Output Capture ---
 echo "Running deployment script..."
 # 6. Run the deployment script and capture its entire output into a variable.
-DEPLOY_OUTPUT=$(yarn hardhat run migrations/deploy.ts --network localhost)
+DEPLOY_OUTPUT=$(yarn hardhat run migrations/fuzzyTestsSetup.ts --network localhost)
 
 # echo $DEPLOY_OUTPUT
 echo "Filtering deployment output..."
@@ -61,4 +54,4 @@ export DKG=$DKG_ADDRESS
 export ACCESS_MANAGER=$ACCESS_MANAGER_ADDRESS
 export DEPLOYER=$DEPLOYER_ADDRESS
 
-forge test --rpc-url http://127.0.0.1:8545/ --mt invariant_dummyInvariant -vvv
+forge test --rpc-url http://127.0.0.1:8545/ --mt invariant_coreInvariants -vvv
