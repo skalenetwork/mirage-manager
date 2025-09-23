@@ -58,6 +58,7 @@ library FundLibrary {
 
     Fair private constant ALLOWED_ERROR = Fair.wrap(1e9);
 
+    error DepositAmountTooLow(Fair amount);
     error NotEnoughStaked(Fair staked);
     error NotEnoughFee(Fair earnedFee);
     error RoundingErrorTooHigh(Fair roundingError);
@@ -90,7 +91,8 @@ library FundLibrary {
         Fair holderBalance = getBalance(fund, fundBalance, holder);
         Credit credits;
         if (holderBalance == amount) {
-            credits = fund.credits.get(holder);
+            (, Credit c) = fund.credits.tryGet(holder);
+            credits = c;
         } else {
             credits = _toCreditsRoundedUp(fund, fundBalance, amount);
         }
@@ -135,6 +137,9 @@ library FundLibrary {
         fund.lastBalance = fundBalance + amount;
         Fair balanceAfter = getBalance(fund, fund.lastBalance, holder);
         _checkAllowedError(holderBalance, balanceAfter, amount + delayedReward);
+
+        // Blocks creation of phantom credits
+        require(balanceAfter > ZERO_FAIR, DepositAmountTooLow(amount));
     }
 
     function updateTotalBalance(Fund storage fund, Fair fundBalance) internal {
@@ -215,7 +220,6 @@ library FundLibrary {
         private
         returns (Fair removed)
     {
-        _processBalanceChange(fund, fundBalance);
         (bool exists, Credit holderCredits) = fund.credits.tryGet(holder);
         if (holderCredits < amount) {
             revert NotEnoughStaked(_toFairRoundedDown(fund, fundBalance, holderCredits));

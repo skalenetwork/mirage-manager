@@ -1083,6 +1083,10 @@ describe("Staking", () => {
         // User is protected from depositing and losing ALL funds
         await expect(staking.connect(user).stake(node, {value: sufficientlyHighAmount}))
         .to.be.revertedWithCustomError(staking, "RoundingErrorTooHigh").withArgs(sufficientlyHighAmount);
+
+        // Blocks creation of phantom credits - 1 wei lower than allowed error
+        await expect(staking.connect(user).stake(node, {value: 1n}))
+        .to.be.revertedWithCustomError(staking, "DepositAmountTooLow").withArgs(1n);
     });
 
     it("All calculations should not overflow with MAX_STAKED_FAIR", async () => {
@@ -1233,6 +1237,15 @@ describe("Staking", () => {
         await setBalance(rewardWallet, ethers.parseEther("3"));
         await setBalance(await ethers.resolveAddress(staking), ethers.parseEther("2"));
         await status.connect(node.wallet).alive();
+    });
+
+    it("Should disable/blacklist node with 0 stake", async () => {
+        const {nodesData, staking, status} = await registeredOnlyNodes();
+        await status.whitelistNode(12);
+        await staking.stake(12, {value: 200});
+        await status.connect(nodesData[11].wallet).alive();
+        await staking.requestRetrieveAll(12);
+        await status.removeNodeFromWhitelist(12);
     });
 
     it("Should update earned fees accordingly", async () => {
