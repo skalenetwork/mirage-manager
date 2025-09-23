@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 
-# cspell:words realpath
+# cspell:words realpath show-toplevel
 
 set -e
 
 if [ -z $GITHUB_WORKSPACE ]
 then
-    GITHUB_WORKSPACE="$(dirname "$(dirname "$(realpath "$0")")")"
+    GITHUB_WORKSPACE="$(git rev-parse --show-toplevel)"
 fi
 
 if [ -z $GITHUB_REPOSITORY ]
