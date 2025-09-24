@@ -49,10 +49,10 @@ jobs:
         INFURA_API_TOKEN: ${{ secrets.INFURA_API_TOKEN }}
       run: ./scripts/test_deploy.sh
 
-    # - name: Test upgrade
-    #   env:
-    #     NODE_VERSION: ${{ matrix.node-version }}
-    #   run: ./scripts/test_upgrade.sh
+    - name: Test upgrade
+      env:
+        NODE_VERSION: ${{ matrix.node-version }}
+      run: ./scripts/test_upgrade.sh
 
     - name: Test ABI generation
       run: yarn hardhat run scripts/generateAbi.ts
