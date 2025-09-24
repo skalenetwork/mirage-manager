@@ -3,10 +3,10 @@
 import {
     loadFixture
 } from "@nomicfoundation/hardhat-network-helpers";
-import { deploy } from "../../migrations/deploy";
+import { deploy, NodeStruct } from "../../migrations/deploy";
 import { HDNodeWallet, Wallet } from "ethers";
 import { ethers } from "hardhat";
-import { INodes, IDkg, Nodes, Status, Staking } from "../../typechain-types";
+import { IDkg, Nodes, Status, Staking } from "../../typechain-types";
 import { getPublicKey } from "./signatures";
 
 // Parameters
@@ -28,7 +28,7 @@ export const commonPublicKey: IDkg.G2PointStruct = {
 
 // Auxiliary functions
 
-export interface NodeData extends INodes.NodeStruct {
+export interface NodeData extends NodeStruct {
     wallet: HDNodeWallet;
 }
 
@@ -53,6 +53,7 @@ const generateRandomNodes = async (initialNumberOfNodes?: number) => {
             wallet: wallet,
             publicKey: await getPublicKey(wallet)
         });
+
     }
     return nodesData;
 }
@@ -91,6 +92,8 @@ const deployFixture = async () => {
     for (const node of nodesData) {
         node.id = await contracts.Nodes.getNodeId(node.wallet.address);
     };
+    const [deployer] = await ethers.getSigners();
+    await contracts.FairAccessManager.grantRole(await contracts.FairAccessManager.COMMITTEE_ROLE(), deployer, 0n);
     return {
         accessManager: contracts.FairAccessManager,
         committee: contracts.Committee,
@@ -104,9 +107,9 @@ const deployFixture = async () => {
 
 const registeredOnlyNodesFixture = async () => {
     const contracts = await cleanDeployment();
-    const { nodes } = contracts;
+    const { nodes, staking } = contracts;
     const nodesData = await generateRandomNodes(numberOfNodes - initialNumberOfNodes);
-
+    await staking.setSelfStakeRequirement(0n);
     await registerNodes(nodes, nodesData);
 
     return { ...contracts, nodesData:[...contracts.nodesData, ...nodesData] };

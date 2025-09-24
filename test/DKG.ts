@@ -3,6 +3,7 @@ import { NodeData, registeredOnlyNodes } from "./tools/fixtures";
 import { loadFixture } from "@nomicfoundation/hardhat-network-helpers";
 import { DKG } from "../typechain-types";
 import { DkgStatus, toEventFormat } from "./tools/dkg";
+import { ethers } from "hardhat";
 
 chai.should();
 
@@ -80,12 +81,17 @@ describe("DKG", () => {
             const receipt = await response.wait();
             assert(receipt);
 
-            (await dkg.rounds(1)).status.should.be.equal(DkgStatus.BROADCAST);
-            (await dkg.rounds(1)).startingBlockNumber.should.be.equal(receipt.blockNumber);
             (await dkg.getRound(1)).id.should.be.equal(1n);
             (await dkg.getRound(1)).status.should.be.equal(DkgStatus.BROADCAST);
             (await dkg.getRound(1)).startingBlockNumber.should.be.equal(receipt.blockNumber);
             (await dkg.getRound(1)).nodes.should.be.deep.equal(committee);
+        });
+
+        it("should restrict DKG", async () => {
+            const { dkg } = await registeredOnlyNodes();
+            const [,hacker] = await ethers.getSigners();
+            await expect(dkg.connect(hacker).generate(committee))
+                .to.be.reverted;
         });
 
         it("should not get missing round", async () => {
@@ -94,6 +100,16 @@ describe("DKG", () => {
                 .to.be.revertedWithCustomError(dkg, "RoundDoesNotExist")
                 .withArgs(0n);
             await expect(dkg.getRound(1n))
+                .to.be.revertedWithCustomError(dkg, "RoundDoesNotExist")
+                .withArgs(1n);
+        });
+
+        it("should not get public key for missing round", async () => {
+            const { dkg } = await registeredOnlyNodes();
+            await expect(dkg.getPublicKey(0n))
+                .to.be.revertedWithCustomError(dkg, "RoundDoesNotExist")
+                .withArgs(0n);
+            await expect(dkg.getPublicKey(1n))
                 .to.be.revertedWithCustomError(dkg, "RoundDoesNotExist")
                 .withArgs(1n);
         });
@@ -203,14 +219,14 @@ describe("DKG", () => {
                     await expect(dkg.connect(firstNode.wallet).alright(
                         dkgId
                     )).to.emit(dkg, "AllDataReceived")
-                        .withArgs(dkgId, firstNode.id, 0);
+                        .withArgs(dkgId, firstNode.id);
                 });
 
                 it("should send alright from 2 node", async () => {
                     await expect(dkg.connect(secondNode.wallet).alright(
                         dkgId
                     )).to.emit(dkg, "AllDataReceived")
-                        .withArgs(dkgId, secondNode.id, 1);
+                        .withArgs(dkgId, secondNode.id);
                 });
 
                 it("should not send alright from random node", async () => {

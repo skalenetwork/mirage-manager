@@ -23,7 +23,7 @@ pragma solidity ^0.8.24;
 import { EnumerableMap } from "@openzeppelin/contracts/utils/structs/EnumerableMap.sol";
 import { NodeId } from "@skalenetwork/fair-manager-interfaces/INodes.sol";
 import { Fair } from "@skalenetwork/fair-manager-interfaces/units.sol";
-
+import { Credit, Holder } from "../../utils/Fund.sol";
 import { TypedSet } from "./TypedSet.sol";
 
 library TypedMap {
@@ -37,7 +37,15 @@ library TypedMap {
         mapping(address => TypedSet.NodeIdSet) inner;
     }
 
+    struct NodeIdToBytes32Map {
+        EnumerableMap.UintToBytes32Map inner;
+    }
+
     struct NodeIdToFairMap {
+        EnumerableMap.UintToUintMap inner;
+    }
+
+    struct HolderToCreditMap {
         EnumerableMap.UintToUintMap inner;
     }
 
@@ -64,6 +72,16 @@ library TypedMap {
         removed = map.inner[key].remove(nodeId);
     }
 
+    // NodeIdToBytes32Map
+
+    function clear(NodeIdToBytes32Map storage map) internal {
+        EnumerableMap.clear(map.inner);
+    }
+
+    function set(NodeIdToBytes32Map storage map, NodeId key, bytes32 value) internal returns (bool added) {
+        added = EnumerableMap.set(map.inner, NodeId.unwrap(key), value);
+    }
+
     // NodeIdToFairMap
 
     function set(NodeIdToFairMap storage map, NodeId key, Fair value) internal returns (bool added) {
@@ -72,6 +90,16 @@ library TypedMap {
 
     function remove(NodeIdToFairMap storage map, NodeId key) internal returns (bool removed) {
         removed = EnumerableMap.remove(map.inner, NodeId.unwrap(key));
+    }
+
+    // HolderToCreditMap
+
+    function set(HolderToCreditMap storage map, Holder key, Credit value) internal returns (bool added) {
+        added = EnumerableMap.set(map.inner, Holder.unwrap(key), Credit.unwrap(value));
+    }
+
+    function remove(HolderToCreditMap storage map, Holder key) internal returns (bool removed) {
+        removed = EnumerableMap.remove(map.inner, Holder.unwrap(key));
     }
 
     // --------------
@@ -110,6 +138,20 @@ library TypedMap {
         result = map.inner[key].contains(nodeId);
     }
 
+    // NodeIdToBytes32Map
+
+    function contains(NodeIdToBytes32Map storage map, NodeId key) internal view returns (bool result) {
+        result = EnumerableMap.contains(map.inner, NodeId.unwrap(key));
+    }
+
+    function length(NodeIdToBytes32Map storage map) internal view returns (uint256 len) {
+        len = EnumerableMap.length(map.inner);
+    }
+
+    function tryGet(NodeIdToBytes32Map storage map, NodeId key) internal view returns (bool success, bytes32 value) {
+        (success, value) = EnumerableMap.tryGet(map.inner, NodeId.unwrap(key));
+    }
+
     // NodeIdToFairMap
 
     function get(NodeIdToFairMap storage map, NodeId key) internal view returns (Fair value) {
@@ -124,5 +166,43 @@ library TypedMap {
         uint256 rawValue;
         (success, rawValue) = EnumerableMap.tryGet(map.inner, NodeId.unwrap(key));
         value = Fair.wrap(rawValue);
+    }
+
+    function keys(NodeIdToFairMap storage map) internal view returns (NodeId[] memory nodes){
+        uint256[] memory values = EnumerableMap.keys(map.inner);
+        nodes = new NodeId[](values.length);
+        uint256 loops = values.length;
+        for (uint256 i = 0; i < loops; ++i) {
+            nodes[i] = NodeId.wrap(values[i]);
+        }
+    }
+
+    // HolderToCreditMap
+
+    function get(HolderToCreditMap storage map, Holder key) internal view returns (Credit value) {
+        return Credit.wrap(EnumerableMap.get(map.inner, Holder.unwrap(key)));
+    }
+
+    function contains(HolderToCreditMap storage map, Holder key) internal view returns (bool result) {
+        result = EnumerableMap.contains(map.inner, Holder.unwrap(key));
+    }
+
+    function tryGet(HolderToCreditMap storage map, Holder key) internal view returns (bool success, Credit value) {
+        uint256 rawValue;
+        (success, rawValue) = EnumerableMap.tryGet(map.inner, Holder.unwrap(key));
+        value = Credit.wrap(rawValue);
+    }
+
+    function keys(HolderToCreditMap storage map) internal view returns (Holder[] memory nodes){
+        uint256[] memory values = EnumerableMap.keys(map.inner);
+        nodes = new Holder[](values.length);
+        uint256 loops = values.length;
+        for (uint256 i = 0; i < loops; ++i) {
+            nodes[i] = Holder.wrap(values[i]);
+        }
+    }
+
+    function length(HolderToCreditMap storage map) internal view returns (uint256 len) {
+        return EnumerableMap.length(map.inner);
     }
 }

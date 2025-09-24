@@ -31,8 +31,10 @@ import {
 } from "@skalenetwork/fair-manager-interfaces/ICommittee.sol";
 import { DkgId, IDkg } from "@skalenetwork/fair-manager-interfaces/IDkg.sol";
 import { INodes, NodeId } from "@skalenetwork/fair-manager-interfaces/INodes.sol";
+import { IRewardWallet } from "@skalenetwork/fair-manager-interfaces/IRewardWallet.sol";
 import { IStaking } from "@skalenetwork/fair-manager-interfaces/IStaking.sol";
 import { Duration, IStatus } from "@skalenetwork/fair-manager-interfaces/IStatus.sol";
+
 import { TypedSet } from "./structs/typed/TypedSet.sol";
 import { G2Operations } from "./utils/fieldOperations/G2Operations.sol";
 import { FundLibrary } from "./utils/Fund.sol";
@@ -53,7 +55,7 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
     IDkg public dkg;
     INodes public nodes;
     IStatus public status;
-    IStaking public staking;
+    IStaking public override staking;
     address public skaleRng;
 
     mapping (CommitteeIndex index => Committee committee) public committees;
@@ -72,6 +74,17 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
     event SkaleRNGDisabled();
     event TransitionDelayUpdated(Duration oldDelay, Duration newDelay);
     event MinTransitionDelayUpdated(Duration oldDelay, Duration newDelay);
+    event CommitteeSelected(CommitteeIndex indexed committeeIndex, NodeId[] nodes, DkgId indexed dkgId);
+    event CommitteeSizeUpdated(uint256 indexed oldSize, uint256 indexed newSize);
+    event DkgUpdated(IDkg indexed oldDkg, IDkg indexed newDkg);
+    event NodesUpdated(INodes indexed oldNodes, INodes indexed newNodes);
+    event StatusUpdated(IStatus indexed oldStatus, IStatus indexed newStatus);
+    event StakingUpdated(IStaking indexed oldStaking, IStaking indexed newStaking);
+    event CommitteeDkgCompleted(
+        CommitteeIndex indexed committeeIndex,
+        DkgId indexed dkgId,
+        Timestamp startingTimestamp
+    );
 
     error SenderIsNotDkg(
         address sender
@@ -82,6 +95,7 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
     error InvalidSkaleRngContract(address rng);
     error NodeNotActive(NodeId node);
     error TransitionDelayTooShort();
+    error CommitteeRotationInProgress();
 
     modifier onlyDkg() {
         require(msg.sender == address(dkg), SenderIsNotDkg(msg.sender));
@@ -108,10 +122,16 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
     }
 
     function select() external override restricted {
+        require(
+            _canSelectNewCommittee(),
+            CommitteeRotationInProgress()
+        );
+        _flushReceivedRewards();
         IRandom.RandomGenerator memory generator = Random.create(_safeGetRandom());
         NodeId[] memory members = _pool.sample(committeeSize, generator);
         Committee storage committee = _createSuccessorCommittee(members);
         committee.dkg = dkg.generate(committee.nodes);
+        emit CommitteeSelected(lastCommitteeIndex, committee.nodes, committee.dkg);
     }
 
     function setMinTransitionDelay(Duration delay) external override restricted {
@@ -132,19 +152,23 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
     }
 
     function setDkg(IDkg dkgAddress) external override restricted {
+        emit DkgUpdated(dkg, dkgAddress);
         dkg = dkgAddress;
     }
 
     function setNodes(INodes nodesAddress) external override restricted {
+        emit NodesUpdated(nodes, nodesAddress);
         nodes = nodesAddress;
     }
 
     function setStatus(IStatus statusAddress) external override restricted {
+        emit StatusUpdated(status, statusAddress);
         status = statusAddress;
         _pool.status = statusAddress;
     }
 
     function setStaking(IStaking stakingAddress) external override restricted {
+        emit StakingUpdated(staking, stakingAddress);
         staking = stakingAddress;
     }
 
@@ -158,10 +182,12 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
         if (committee.dkg == round) {
             committee.commonPublicKey = dkg.getPublicKey(round);
             committee.startingTimestamp = Timestamp.wrap(block.timestamp + Duration.unwrap(transitionDelay));
+            emit CommitteeDkgCompleted(lastCommitteeIndex, round, committee.startingTimestamp);
         }
     }
 
     function setCommitteeSize(uint256 size) external override restricted {
+        emit CommitteeSizeUpdated(committeeSize, size);
         committeeSize = size;
     }
 
@@ -172,12 +198,6 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
         );
         emit TransitionDelayUpdated(transitionDelay, delay);
         transitionDelay = delay;
-    }
-
-    function nodeCreated(NodeId node) external override restricted {
-        if (status.isWhitelisted(node) && staking.getNodeShare(node) > 0 && status.isHealthy(node)) {
-            _setEligible(node);
-        }
     }
 
     function nodeRemoved(NodeId node) external override restricted {
@@ -214,19 +234,7 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
     }
 
     function updateWeight(NodeId node, uint256 share) external override restricted {
-        uint256 weight = _shareToWeight(share);
-        if (weight > 0) {
-            if (_pool.contains(node)) {
-                _pool.setWeight(node, weight);
-            } else if (status.isWhitelisted(node)) {
-                _pool.add(node);
-                emit NodeBecomesEligible(node);
-            }
-        } else {
-            if (_pool.remove(node)) {
-                emit NodeLosesEligibility(node);
-            }
-        }
+        _updateWeight(node, share, status.isWhitelisted(node));
     }
 
     function getCommittee(
@@ -342,6 +350,46 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
         }
     }
 
+    function _updateWeight(NodeId node, uint256 share, bool isWhitelisted) private {
+        uint256 weight = _shareToWeight(share);
+        if (weight > 0) {
+            if (_pool.contains(node)) {
+                _pool.setWeight(node, weight);
+            } else if (isWhitelisted) {
+                _pool.add(node);
+                emit NodeBecomesEligible(node);
+            }
+        } else {
+            if (_pool.remove(node)) {
+                emit NodeLosesEligibility(node);
+            }
+        }
+    }
+
+    function _flushReceivedRewards() private {
+        Committee storage activeCommittee = _getCommittee(getActiveCommitteeIndex());
+        uint256 committeeSize_ = activeCommittee.nodes.length;
+        // Block creation rewards are sent to reward wallets
+        // without executing smart contract code
+        // because of that we have to update weights
+        // to properly select the next committee
+        // The loop does external calls
+        // but number of iterations is reasonably small
+        // slither-disable-start calls-loop
+        for (uint256 i = 0; i < committeeSize_; ++i) {
+            NodeId node = activeCommittee.nodes[i];
+            IRewardWallet rewardWallet = staking.getRewardWallet(node);
+            if (address(rewardWallet).balance > 0) {
+                _updateWeight(
+                    node,
+                    staking.getNodeShare(node),
+                    status.isWhitelisted(node)
+                );
+            }
+        }
+        // slither-disable-end calls-loop
+    }
+
     function _isEligible(NodeId node) private view returns (bool eligible) {
         return _pool.contains(node);
     }
@@ -361,6 +409,12 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
         return Precompiled.getRandomNumber(skaleRng);
     }
 
+    function _canSelectNewCommittee() private view returns (bool canSelect) {
+        Committee memory latestCommittee = _getCommittee(lastCommitteeIndex);
+        return Timestamp.unwrap(latestCommittee.startingTimestamp) == type(uint256).max ||
+            latestCommittee.startingTimestamp < Timestamp.wrap(block.timestamp);
+    }
+
     function _next(CommitteeIndex index) private pure returns (CommitteeIndex nextIndex) {
         return CommitteeIndex.wrap(CommitteeIndex.unwrap(index) + 1);
     }
@@ -373,4 +427,5 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
     {
         return share;
     }
+
 }

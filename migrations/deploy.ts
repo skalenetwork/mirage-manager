@@ -3,6 +3,7 @@ import { ethers, network, upgrades } from "hardhat";
 import { promises as fs } from 'fs';
 import {
     getVersion,
+    verify as verifyImplementation,
     verifyProxy
 } from '@skalenetwork/upgrade-tools';
 import {
@@ -13,15 +14,17 @@ import {
     Nodes,
     FairAccessManager,
     Staking,
-    Status
+    Status,
+    RewardWallet
 } from "../typechain-types";
-import { AddressLike } from "ethers";
+import { AddressLike, BytesLike } from "ethers";
 import { skaleContracts } from "@skalenetwork/skale-contracts-ethers-v6";
 import {
     IKeyStorage,
     INodes as INodesInSkaleManager,
     ISchainsInternal,
 } from "../typechain-types/@skalenetwork/skale-manager-interfaces";
+import { configurePermissions } from "./permissions";
 
 
 export const contracts = [
@@ -29,11 +32,16 @@ export const contracts = [
     "DKG",
     "Nodes",
     "FairAccessManager",
+    "RewardWallet",
     "Status",
     "Staking"
 ];
 
-interface DeployedContracts {
+export interface NodeStruct extends INodes.NodeStruct {
+    publicKey: [BytesLike, BytesLike];
+}
+
+export interface DeployedContracts {
     Committee: Committee,
     DKG: DKG,
     Nodes: Nodes,
@@ -73,7 +81,7 @@ async function fetchNodes() {
     if (nodeIds.includes(0n)) {
         throw new Error("Node IDs cannot contain 0");
     }
-    const nodeList: INodes.NodeStruct[] = [];
+    const nodeList: NodeStruct[] = [];
     for (const nodeId of nodeIds) {
         const [ip, domainName ,nodeAddress, port, publicKey] = await Promise.all([
             nodes.getNodeIP(nodeId),
@@ -106,10 +114,12 @@ async function fetchDkgCommonPublicKey() {
     return commonPublicKey;
 }
 
-export const deploy = async (nodeList?: INodes.NodeStruct[], commonPublicKey?: IDkg.G2PointStruct): Promise<DeployedContracts> => {
+export const deploy = async (nodeList?: NodeStruct[], commonPublicKey?: IDkg.G2PointStruct): Promise<DeployedContracts> => {
     const [deployer] = await ethers.getSigners();
     const deployedContracts: DeployedContracts = {} as DeployedContracts;
-    nodeList = nodeList || await fetchNodes();
+    if (!nodeList) {
+        nodeList = await fetchNodes();
+    }
     commonPublicKey = commonPublicKey || await fetchDkgCommonPublicKey();
 
     deployedContracts.FairAccessManager = await deployFairAccessManager(deployer);
@@ -136,7 +146,8 @@ export const deploy = async (nodeList?: INodes.NodeStruct[], commonPublicKey?: I
     deployedContracts.Staking = await deployStaking(
         deployedContracts.FairAccessManager,
         deployedContracts.Committee,
-        deployedContracts.Nodes
+        deployedContracts.Nodes,
+        nodeList
     );
 
     let response = await deployedContracts.Committee.setDkg(deployedContracts.DKG);
@@ -152,7 +163,7 @@ export const deploy = async (nodeList?: INodes.NodeStruct[], commonPublicKey?: I
 
     await (await deployedContracts.Committee.setVersion(await getVersion())).wait();
 
-    await setupRoles(deployedContracts);
+    await configurePermissions(deployedContracts);
 
     return deployedContracts;
 }
@@ -193,12 +204,13 @@ const deployCommittee = async (
     ) as Committee;
 }
 
-const deployNodes = async (accessManager: FairAccessManager, nodeList: INodes.NodeStruct[]): Promise<Nodes> => {
+const deployNodes = async (accessManager: FairAccessManager, nodeList: NodeStruct[]): Promise<Nodes> => {
     return await deployContract(
         "Nodes",
         [
             await ethers.resolveAddress(accessManager),
-            nodeList
+            nodeList,
+            nodeList.map(node => node.publicKey)
         ]
     ) as Nodes;
 }
@@ -214,6 +226,13 @@ const deployDkg = async (authority: FairAccessManager, committee: Committee, nod
     ) as DKG;
 }
 
+const deployRewardWalletReference = async (): Promise<RewardWallet> => {
+    const factory = await ethers.getContractFactory("RewardWallet");
+    const instance = await factory.deploy();
+    await instance.waitForDeployment();
+    return instance as RewardWallet;
+}
+
 const deployStatus = async (authority: FairAccessManager, nodes: Nodes, committee: Committee): Promise<Status> => {
     return await deployContract(
         "Status",
@@ -225,15 +244,40 @@ const deployStatus = async (authority: FairAccessManager, nodes: Nodes, committe
     ) as Status;
 }
 
-const deployStaking = async (authority: FairAccessManager, committee: Committee, nodes: Nodes): Promise<Staking> => {
-    return await deployContract(
+const deployStaking = async (
+    authority: FairAccessManager,
+    committee: Committee,
+    nodes: Nodes,
+    initialNodes: NodeStruct[]
+): Promise<Staking> => {
+    const staking = await deployContract(
         "Staking",
         [
             await ethers.resolveAddress(authority),
             await ethers.resolveAddress(committee),
-            await ethers.resolveAddress(nodes)
+            await ethers.resolveAddress(nodes),
+            await ethers.resolveAddress(
+                await deployRewardWalletReference()
+            )
         ]
     ) as Staking;
+
+    // Nodes contract is deployed before Staking
+    // so the Staking contract can't be notified about initially existing nodes
+    // Providing this list to the initializer does not work
+    // because proxy admin address is not accessible in the initializer
+    // and corresponding RewardWallets can't be deployed
+    // To workaround this issue manually notify Staking about initial nodes
+
+    const selfStakeRequirement = await staking.selfStakeRequirement();
+    await staking.setSelfStakeRequirement(0n);
+    for (const node of initialNodes) {
+        const response = await staking.nodeCreated(node.id, node.nodeAddress);
+        await response.wait();
+    }
+    await staking.setSelfStakeRequirement(selfStakeRequirement);
+
+    return staking;
 }
 
 const storeAddresses = async (deployedContracts: DeployedContracts, version: string) => {
@@ -248,88 +292,23 @@ const storeAddresses = async (deployedContracts: DeployedContracts, version: str
         JSON.stringify(addresses, null, 4));
 }
 
-const setupRoles = async (deployedContracts: DeployedContracts) => {
-    const {
-        Committee: committee,
-        FairAccessManager: accessManager,
-        Nodes: nodes,
-        Staking: staking,
-        Status: status
-    } = deployedContracts;
-
-    // set up roles
-
-    //Committee
-    let response = await accessManager.setTargetFunctionRole(
-        await ethers.resolveAddress(committee),
-        [
-            committee.interface.getFunction("nodeCreated").selector,
-            committee.interface.getFunction("nodeRemoved").selector
-        ],
-        await accessManager.NODES_ROLE()
-    );
-    await response.wait();
-
-    response = await accessManager.setTargetFunctionRole(
-        await ethers.resolveAddress(committee),
-        [
-            committee.interface.getFunction("nodeBlacklisted").selector,
-            committee.interface.getFunction("nodeWhitelisted").selector,
-            committee.interface.getFunction("processHeartbeat").selector
-        ],
-        await accessManager.STATUS_ROLE()
-    );
-    await response.wait();
-
-    response = await accessManager.setTargetFunctionRole(
-        await ethers.resolveAddress(committee),
-        [committee.interface.getFunction("updateWeight").selector],
-        await accessManager.STAKING_ROLE()
-    );
-    await response.wait();
-
-    //Staking
-    response = await accessManager.setTargetFunctionRole(
-        await ethers.resolveAddress(staking),
-        [
-            staking.interface.getFunction("disable").selector,
-            staking.interface.getFunction("enable").selector
-        ],
-        await accessManager.COMMITTEE_ROLE()
-    );
-    await response.wait();
-
-    //Status
-    response = await accessManager.setTargetFunctionRole(
-        await ethers.resolveAddress(status),
-        [status.interface.getFunction("nodeRemoved").selector],
-        await accessManager.NODES_ROLE()
-    );
-    await response.wait();
-
-    // grant roles
-
-    response = await accessManager.grantRole(await accessManager.NODES_ROLE(), await ethers.resolveAddress(nodes), 0n);
-    await response.wait();
-
-    response = await accessManager.grantRole(await accessManager.STATUS_ROLE(), await ethers.resolveAddress(status), 0n);
-    await response.wait();
-
-    response = await accessManager.grantRole(await accessManager.STAKING_ROLE(), await ethers.resolveAddress(staking), 0n);
-    await response.wait();
-
-    response = await accessManager.grantRole(await accessManager.COMMITTEE_ROLE(), await ethers.resolveAddress(committee), 0n);
-    await response.wait();
-}
-
 const verify = async (deployedContracts: DeployedContracts) => {
     console.log("Verify contracts");
-    for (const contractName of contracts) {
+    for (const contractName in deployedContracts) {
         try {
             await verifyProxy(contractName, await ethers.resolveAddress(deployedContracts[contractName as keyof DeployedContracts]));
         } catch (error) {
             console.log(chalk.yellow(`Skipping verification for ${contractName}: ${error}`));
         }
+    }
+    try {
+        const rewardWalletAddress = await deployedContracts.Staking.rewardWalletReference();
+        await verifyImplementation(
+            "RewardWallet",
+            rewardWalletAddress
+        );
+    } catch (error) {
+        console.log(chalk.yellow(`Skipping verification for RewardWallet: ${error}`));
     }
 }
 

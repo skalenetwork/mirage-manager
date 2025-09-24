@@ -23,18 +23,18 @@ pragma solidity ^0.8.24;
 
 import { NodeId } from "@skalenetwork/fair-manager-interfaces/INodes.sol";
 import { IStatus } from "@skalenetwork/fair-manager-interfaces/IStatus.sol";
-import { SplayTree } from "../structs/SplayTree.sol";
+import { RedBlackTree } from "../structs/RedBlackTree.sol";
 import { TypedSet } from "../structs/typed/TypedSet.sol";
 import { IRandom, Random } from "./Random.sol";
 
 
 library PoolLibrary {
     using Random for IRandom.RandomGenerator;
-    using SplayTree for mapping(NodeId => SplayTree.Node);
+    using RedBlackTree for mapping(NodeId => RedBlackTree.Node);
     using TypedSet for TypedSet.NodeIdSet;
 
     struct Pool {
-        mapping (NodeId id => SplayTree.Node node) tree;
+        mapping (NodeId id => RedBlackTree.Node node) tree;
         NodeId root;
         TypedSet.NodeIdSet presentNodes;
         TypedSet.NodeIdSet incomingNodes;
@@ -59,7 +59,7 @@ library PoolLibrary {
 
     function remove(Pool storage pool, NodeId node) internal returns (bool removed) {
         if (pool.presentNodes.remove(node)) {
-            pool.root = pool.tree.remove(node);
+            pool.root = pool.tree.remove(pool.root, node);
             removed = true;
         } else {
             return pool.incomingNodes.remove(node);
@@ -76,17 +76,13 @@ library PoolLibrary {
     {
         nodesSample = new NodeId[](size);
         NodeId lastHealthy = _findLastHealthyNode(pool);
-        require(lastHealthy != SplayTree.NULL, TooFewCandidates(size, 0));
-        pool.root = pool.tree.splay(lastHealthy);
-        uint256 totalWeight = pool.tree[lastHealthy].totalWeight
-                - pool.tree[pool.tree[lastHealthy].right].totalWeight;
+        require(lastHealthy != RedBlackTree.NULL, TooFewCandidates(size, 0));
+        uint256 totalWeight = pool.tree.getWeightTill(lastHealthy);
         for (uint256 i = 0; i < size; ++i) {
             require(totalWeight > 0, TooFewCandidates(size, i));
             uint256 randomValue = generator.random(totalWeight);
             NodeId choice = pool.tree.findByWeight(pool.root, randomValue);
-            // findByWeight did splay
-            uint256 weight = pool.tree[choice].totalWeight -
-                (pool.tree[pool.tree[choice].left].totalWeight + pool.tree[pool.tree[choice].right].totalWeight);
+            uint256 weight = pool.tree.getWeight(choice);
             remove(pool, choice);
             add(pool, choice);
             nodesSample[i] = choice;
@@ -100,19 +96,18 @@ library PoolLibrary {
         uint256 weight
     ) internal {
         if (pool.presentNodes.contains(node)) {
-            pool.root = pool.tree.setWeight(node, weight);
+            pool.tree.setWeight(node, weight);
         }
     }
 
-    function getOldestIsh(Pool storage pool) internal returns (NodeId oldest) {
+    function getOldestIsh(Pool storage pool) internal view returns (NodeId oldest) {
         if (pool.incomingNodes.length() > 0) {
             return pool.incomingNodes.at(0);
         }
-        if (pool.root == SplayTree.NULL) {
-            return SplayTree.NULL;
+        if (pool.root == RedBlackTree.NULL) {
+            return RedBlackTree.NULL;
         }
-        pool.root = pool.tree.findLast(pool.root);
-        return pool.root;
+        return pool.tree.findLast(pool.root);
     }
 
     function contains(Pool storage pool, NodeId node) internal view returns (bool present) {
@@ -126,10 +121,10 @@ library PoolLibrary {
     // private
 
     function _findLastHealthyNode(Pool storage pool) private view returns (NodeId lastHealthy) {
-        lastHealthy = SplayTree.NULL;
+        lastHealthy = RedBlackTree.NULL;
         NodeId node = pool.root;
         IStatus status = pool.status;
-        while (node != SplayTree.NULL) {
+        while (node != RedBlackTree.NULL) {
             if (status.isHealthy(node)) {
                 lastHealthy = node;
                 node = pool.tree[node].right;
