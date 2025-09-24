@@ -75,9 +75,9 @@ contract StakingHandler is Test {
 
         // 3. Orchestrate the multi-contract call sequence
         assert(address(staking).balance + address(staking.getRewardWallet(node)).balance >= Fair.unwrap(staking.getNodeTotalStake(node)));
-        vm.deal(staker, uint256(amountToStake) + 1e5); // add some extra (amount could be 0)
+        vm.deal(staker, uint256(amountToStake) + 1e13); // add some extra
         vm.prank(staker);
-        staking.stake{value: uint256(amountToStake) + 1e5}(node);
+        staking.stake{value: uint256(amountToStake) + 1e13}(node);
         users.add(staker);
     }
 
@@ -99,7 +99,7 @@ contract StakingHandler is Test {
     }
     // allow the fuzzer to alter picked user and node
     function requestRetrieve(uint8 userIndex, uint8 nodeIndex, uint32 amountToRetrieve) public {
-
+        vm.assume(amountToRetrieve > 0);
         // Pick a node
         NodeId node = fixtureNode[nodeIndex % fixtureNode.length];
         assert(staking.nodes().activeNodeExists(node));
@@ -117,15 +117,15 @@ contract StakingHandler is Test {
         // 2. Constrain inputs to valid scenarios
         uint256 maxRetrievable = Fair.unwrap(staking.getStakedToNodeAmountFor(node, staker));
         assert(maxRetrievable > 0); // this is possible because stake operations are not allowed with very little stake
-        uint256 retrieveAmount = bound(amountToRetrieve, 1, maxRetrievable);
-        assert(retrieveAmount > 0); // discard retrieve of 0 FAIR
+        vm.assume(amountToRetrieve < maxRetrievable);
 
         vm.prank(staker);
-        staking.requestRetrieve(node, Fair.wrap(retrieveAmount));
+        staking.requestRetrieve(node, Fair.wrap(uint256(amountToRetrieve)));
     }
 
-    function donate(uint16 donationAmount) public {
-        uint256 amount = uint256(donationAmount) + 1;
+    function donate(uint32 donationAmount) public {
+        vm.assume(donationAmount > 1e2);
+        uint256 amount = uint256(donationAmount);
         vm.deal(DONATOR_ADDRESS, amount);
 
         vm.prank(DONATOR_ADDRESS);

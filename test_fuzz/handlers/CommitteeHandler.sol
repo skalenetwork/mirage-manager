@@ -46,10 +46,9 @@ contract CommitteeHandler is Test {
         }
     }
 
-    function forceEjectNodes(uint16 numNodes) public {
-        uint256 nNodes = bound(numNodes, 1, fixtureNode.length);
+    function forceEjectNodes(uint8 numNodes) public {
         vm.warp(block.timestamp + Duration.unwrap(Status(address(committee.status())).heartbeatInterval()) + 1);
-        for (uint256 i = 0; i < nNodes; i++) {
+        for (uint8 i = 0; i < numNodes; i++) {
             committee.ejectUnhealthyNode();
         }
     }
@@ -60,7 +59,7 @@ contract CommitteeHandler is Test {
     }
 
     // can randomly simulate consensus rewards
-    function paySomeConsensusRewards(uint256 nodeIndex) public {
+    function paySomeConsensusRewards(uint16 nodeIndex) public {
         vm.deal(address(committee.staking()), address(committee.staking()).balance + 1 ether);
         NodeId node = fixtureNode[nodeIndex % fixtureNode.length];
         address wallet = address(committee.staking().getRewardWallet(node));

@@ -72,7 +72,7 @@ contract FuzzyTestsWithDefaultSetup is StdInvariant, RootSetup {
         require(!(totalFees > totalStake), "Fees are higher than stake");
         require(
             Fair.unwrap(totalStake - walletsBalance + totalInExitQueue) <= address(staking.staking()).balance,
-            "Not enought balance in staking"
+            "Not enough balance in staking"
         );
         require(
             Fair.unwrap(disabledStake) <= address(staking.staking()).balance,
