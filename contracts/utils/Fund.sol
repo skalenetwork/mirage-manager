@@ -137,6 +137,11 @@ library FundLibrary {
         _checkAllowedError(holderBalance, balanceAfter, amount + delayedReward);
     }
 
+    function updateTotalBalance(Fund storage fund, Fair fundBalance) internal {
+        _processBalanceChange(fund, fundBalance);
+    }
+
+
     function getBalance(
         Fund storage fund,
         Fair fundBalance,
@@ -190,8 +195,13 @@ library FundLibrary {
     )
         private
     {
-        if (fundBalance > fund.lastBalance) {
-            fund.earnedFee = fund.earnedFee + _getUncountedFee(fund, fundBalance);
+        if (!(fundBalance == fund.lastBalance)) {
+            if (fundBalance > fund.lastBalance) {
+                fund.earnedFee = fund.earnedFee + _getUncountedFee(fund, fundBalance);
+            }
+            if (fund.earnedFee > fundBalance) {
+                fund.earnedFee = fundBalance;
+            }
             fund.lastBalance = fundBalance;
         }
     }
