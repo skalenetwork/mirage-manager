@@ -207,6 +207,16 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
         );
         assert(_disabledNodesBalances.remove(node));
         totalDisabled = totalDisabled - value;
+
+        // Node might have changed it's balance due to rounding in supply()
+        // Force update on nodeFund
+        Fair finalBalance = _rootFund.getBalance(_getTotalBalance(), FundLibrary.nodeToHolder(node));
+        if(!(finalBalance == value)){
+            _nodesFunds[node].updateTotalBalance(
+                _rootFund.getBalance(_getTotalBalance(), FundLibrary.nodeToHolder(node))
+            );
+        }
+
         emit NodeEnabled(node);
     }
 

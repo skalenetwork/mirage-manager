@@ -6,7 +6,7 @@ import { setBalance } from "@nomicfoundation/hardhat-network-helpers";
 import { skipTime } from "./tools/time";
 import { Nodes, Staking } from "../typechain-types";
 import { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers";
-import { HDNodeWallet } from "ethers";
+import { BigNumberish, HDNodeWallet } from "ethers";
 
 chai.should();
 
@@ -1233,6 +1233,53 @@ describe("Staking", () => {
         await setBalance(rewardWallet, ethers.parseEther("3"));
         await setBalance(await ethers.resolveAddress(staking), ethers.parseEther("2"));
         await status.connect(node.wallet).alive();
+    });
+
+    it("Should update earned fees accordingly", async () => {
+        const {nodesData, staking, status} = await registeredOnlyNodes();
+        const [node,] = nodesData;
+        const stakingReward = ethers.parseEther("1");
+        const walletReward = 10n**14n;
+        const grantRewards = async (node: BigNumberish) => {
+            const balance = await ethers.provider.getBalance(staking);
+            await setBalance(await ethers.resolveAddress(staking),balance + stakingReward);
+            const rewardWallet = await staking.getRewardWallet(node);
+            await setBalance(rewardWallet, await ethers.provider.getBalance(rewardWallet) + walletReward);
+        }
+        await grantRewards(21n);
+        await grantRewards(node.id);
+        await status.whitelistNode(21n);
+
+        await staking.connect(node.wallet).setFeeRate(24);
+        expect(await staking.getEarnedFeeAmount(node.id)).to.be.equal(walletReward);
+        expect(await staking.getEarnedFeeAmount(21n)).to.be.equal(walletReward);
+        await skipTime(await status.heartbeatInterval() + 1n);
+
+        for (const n of nodesData) {
+            await status.connect(n.wallet).alive();
+        }
+
+        expect(await ethers.provider.getBalance(staking)).to.be.gt(await staking.totalDisabled() + await staking.getTotalInExitQueue());
+        expect(await staking.isNodeEnabled(21n)).to.be.equal(true);
+        // Node was the first to be whitelisted and enabled and thus collected all rewards
+        expect(await staking.getNodeTotalStake(21n)).to.be.equal(stakingReward*2n + walletReward);
+        expect(await staking.getNodeTotalStake(node.id)).to.be.equal(walletReward);
+
+        expect(await staking.getNodeShare(node.id)).to.be.eql(0n);
+        // All nodes sent alive. Node is not whitelisted so it should not be enabled
+        expect(await staking.isNodeEnabled(node.id)).to.be.equal(false);
+        await grantRewards(18n);
+        expect(await staking.getNodeTotalStake(node.id)).to.be.eql(walletReward);
+        expect(await staking.getEarnedFeeAmount(node.id)).to.be.eql(walletReward);
+        await status.whitelistNode(node.id);
+
+        // Node becomes enabled, and "loses" 1 wei due to rounding
+        // We expect the earned fee to have been updated accordingly
+        expect(await staking.getNodeTotalStake(node.id)).to.be.eql(walletReward - 1n);
+        expect(await staking.getEarnedFeeAmount(node.id)).to.be.eql(walletReward - 1n);
+
+        // Should not panic
+        await staking.stake(node.id, {value: 232731540842n});
     });
 
     it("should correctly process delayed rewards when fee rate is 0", async () => {
