@@ -80,31 +80,22 @@ export const sendHeartbeat = async (status: Status, nodesData: NodeData[]) => {
 }
 
 
-export const grantRewardToNode = async (
+export const grantNetworkRewards = async (
     staking: Staking,
-    node: BigNumberish,
     stakingReward: bigint,
-    walletReward: bigint
 ) => {
     const balance = await ethers.provider.getBalance(staking);
     await setBalance(await ethers.resolveAddress(staking), balance + stakingReward);
-    const rewardWallet = await staking.getRewardWallet(node);
-    await setBalance(rewardWallet, await ethers.provider.getBalance(rewardWallet) + walletReward);
 }
 
-export const grantRewardsToEligibleNodes = async (
+export const grantNodeRewards = async (
     staking: Staking,
     nodes: BigNumberish[],
-    stakingReward: bigint,
     walletReward: bigint
 ) => {
-    const balance = await ethers.provider.getBalance(staking);
-    await setBalance(await ethers.resolveAddress(staking), balance + stakingReward);
     for (const node of nodes) {
-        if(await staking.isNodeEnabled(node)) {
-            const rewardWallet = await staking.getRewardWallet(node);
-            await setBalance(rewardWallet, await ethers.provider.getBalance(rewardWallet) + walletReward);
-        }
+        const rewardWallet = await staking.getRewardWallet(node);
+        await setBalance(rewardWallet, await ethers.provider.getBalance(rewardWallet) + walletReward);
     }
 }
 

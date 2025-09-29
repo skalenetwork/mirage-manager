@@ -1,5 +1,5 @@
 import chai, { assert, expect } from "chai";
-import { grantRewardToNode, registeredOnlyNodes, sendHeartbeat, stakedNodes, whitelistedNodes } from "./tools/fixtures";
+import { grantNodeRewards, grantNetworkRewards, registeredOnlyNodes, sendHeartbeat, stakedNodes, whitelistedNodes } from "./tools/fixtures";
 import { ethers } from "hardhat";
 import { zip } from "lodash";
 import { setBalance } from "@nomicfoundation/hardhat-network-helpers";
@@ -1249,8 +1249,8 @@ describe("Staking", () => {
         await staking.connect(user1).requestRetrieveAll(node.id);
         // Should it be true? It is with current implementation
         expect(await staking.isNodeEnabled(node.id)).to.be.eql(true);
-
-        await grantRewardToNode(staking, node.id, stakingReward, walletReward);
+        await grantNetworkRewards(staking, stakingReward);
+        await grantNodeRewards(staking, [node.id], walletReward);
 
         await status.connect(node.wallet).alive();
     });
@@ -1270,9 +1270,8 @@ describe("Staking", () => {
         const [node,] = nodesData;
         const stakingReward = ethers.parseEther("1");
         const walletReward = 10n**14n;
-
-        await grantRewardToNode(staking, 21n, stakingReward, walletReward);
-        await grantRewardToNode(staking, node.id, stakingReward, walletReward);
+        await grantNetworkRewards(staking, stakingReward * 2n);
+        await grantNodeRewards(staking, [node.id, 21n], walletReward);
 
         await status.whitelistNode(21n);
 
@@ -1294,7 +1293,8 @@ describe("Staking", () => {
         expect(await staking.getNodeShare(node.id)).to.be.eql(0n);
         // All nodes sent alive. Node is not whitelisted so it should not be enabled
         expect(await staking.isNodeEnabled(node.id)).to.be.equal(false);
-        await grantRewardToNode(staking, 18n, stakingReward, walletReward);
+        await grantNetworkRewards(staking, stakingReward);
+        await grantNodeRewards(staking, [18n], walletReward);
 
         expect(await staking.getNodeTotalStake(node.id)).to.be.eql(walletReward);
         expect(await staking.getEarnedFeeAmount(node.id)).to.be.eql(walletReward);
