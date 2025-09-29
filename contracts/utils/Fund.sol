@@ -58,7 +58,6 @@ library FundLibrary {
 
     Fair private constant ALLOWED_ERROR = Fair.wrap(1e9);
 
-    error DepositAmountTooLow(Fair amount);
     error NotEnoughStaked(Fair staked);
     error NotEnoughFee(Fair earnedFee);
     error RoundingErrorTooHigh(Fair roundingError);
@@ -88,17 +87,19 @@ library FundLibrary {
         internal
     {
         _processBalanceChange(fund, fundBalance);
-        Fair holderBalance = getBalance(fund, fundBalance, holder);
-        Credit credits;
-        if (holderBalance == amount) {
-            (, Credit c) = fund.credits.tryGet(holder);
-            credits = c;
-        } else {
-            credits = _toCreditsRoundedUp(fund, fundBalance, amount);
+        if (amount > ZERO_FAIR) {
+            Fair holderBalance = getBalance(fund, fundBalance, holder);
+            Credit credits;
+
+            if (holderBalance == amount) {
+                credits = fund.credits.get(holder);
+            } else {
+                credits = _toCreditsRoundedUp(fund, fundBalance, amount);
+            }
+            _remove(fund, fundBalance, holder, credits);
+            Fair balanceAfter = getBalance(fund, fund.lastBalance, holder);
+            _checkAllowedError(holderBalance, balanceAfter, amount);
         }
-        _remove(fund, fundBalance, holder, credits);
-        Fair balanceAfter = getBalance(fund, fund.lastBalance, holder);
-        _checkAllowedError(holderBalance, balanceAfter, amount);
     }
 
     function setFeeRate(
@@ -138,8 +139,11 @@ library FundLibrary {
         Fair balanceAfter = getBalance(fund, fund.lastBalance, holder);
         _checkAllowedError(holderBalance, balanceAfter, amount + delayedReward);
 
-        // Blocks creation of phantom credits
-        require(balanceAfter > ZERO_FAIR, DepositAmountTooLow(amount));
+        // Credits that result in zero balance are removed
+        if (ZERO_CREDIT < credits && balanceAfter == ZERO_FAIR) {
+            assert(fund.credits.remove(holder));
+            fund.totalCredits = fund.totalCredits - credits;
+        }
     }
 
     function updateTotalBalance(Fund storage fund, Fair fundBalance) internal {

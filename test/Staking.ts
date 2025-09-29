@@ -1,12 +1,12 @@
 import chai, { assert, expect } from "chai";
-import { registeredOnlyNodes, sendHeartbeat, stakedNodes, whitelistedNodes } from "./tools/fixtures";
+import { grantRewardToNode, registeredOnlyNodes, sendHeartbeat, stakedNodes, whitelistedNodes } from "./tools/fixtures";
 import { ethers } from "hardhat";
 import { zip } from "lodash";
 import { setBalance } from "@nomicfoundation/hardhat-network-helpers";
 import { skipTime } from "./tools/time";
 import { Nodes, Staking } from "../typechain-types";
 import { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers";
-import { BigNumberish, HDNodeWallet } from "ethers";
+import { HDNodeWallet } from "ethers";
 
 chai.should();
 
@@ -1083,10 +1083,6 @@ describe("Staking", () => {
         // User is protected from depositing and losing ALL funds
         await expect(staking.connect(user).stake(node, {value: sufficientlyHighAmount}))
         .to.be.revertedWithCustomError(staking, "RoundingErrorTooHigh").withArgs(sufficientlyHighAmount);
-
-        // Blocks creation of phantom credits - 1 wei lower than allowed error
-        await expect(staking.connect(user).stake(node, {value: 1n}))
-        .to.be.revertedWithCustomError(staking, "DepositAmountTooLow").withArgs(1n);
     });
 
     it("All calculations should not overflow with MAX_STAKED_FAIR", async () => {
@@ -1238,6 +1234,27 @@ describe("Staking", () => {
         await setBalance(await ethers.resolveAddress(staking), ethers.parseEther("2"));
         await status.connect(node.wallet).alive();
     });
+    it("should not cause alive() to PANIC", async() => {
+        const {nodesData, staking, status} = await registeredOnlyNodes();
+        const [node,] = nodesData;
+        const stakingReward = ethers.parseEther("1");
+        const [user1,] = await ethers.getSigners();
+        const walletReward = 10n**14n;
+
+        await staking.connect(node.wallet).setFeeRate(0);
+        await staking.connect(user1).stake(node.id, {value: ethers.parseEther("1")});
+        await status.connect(node.wallet).alive();
+        await status.whitelistNode(node.id);
+        expect(await staking.isNodeEnabled(node.id)).to.be.eql(true);
+        await staking.connect(user1).requestRetrieveAll(node.id);
+        // Should it be true? It is with current implementation
+        expect(await staking.isNodeEnabled(node.id)).to.be.eql(true);
+
+        await grantRewardToNode(staking, node.id, stakingReward, walletReward);
+
+        await status.connect(node.wallet).alive();
+    });
+
 
     it("Should disable/blacklist node with 0 stake", async () => {
         const {nodesData, staking, status} = await registeredOnlyNodes();
@@ -1253,14 +1270,10 @@ describe("Staking", () => {
         const [node,] = nodesData;
         const stakingReward = ethers.parseEther("1");
         const walletReward = 10n**14n;
-        const grantRewards = async (node: BigNumberish) => {
-            const balance = await ethers.provider.getBalance(staking);
-            await setBalance(await ethers.resolveAddress(staking),balance + stakingReward);
-            const rewardWallet = await staking.getRewardWallet(node);
-            await setBalance(rewardWallet, await ethers.provider.getBalance(rewardWallet) + walletReward);
-        }
-        await grantRewards(21n);
-        await grantRewards(node.id);
+
+        await grantRewardToNode(staking, 21n, stakingReward, walletReward);
+        await grantRewardToNode(staking, node.id, stakingReward, walletReward);
+
         await status.whitelistNode(21n);
 
         await staking.connect(node.wallet).setFeeRate(24);
@@ -1281,7 +1294,8 @@ describe("Staking", () => {
         expect(await staking.getNodeShare(node.id)).to.be.eql(0n);
         // All nodes sent alive. Node is not whitelisted so it should not be enabled
         expect(await staking.isNodeEnabled(node.id)).to.be.equal(false);
-        await grantRewards(18n);
+        await grantRewardToNode(staking, 18n, stakingReward, walletReward);
+
         expect(await staking.getNodeTotalStake(node.id)).to.be.eql(walletReward);
         expect(await staking.getEarnedFeeAmount(node.id)).to.be.eql(walletReward);
         await status.whitelistNode(node.id);
