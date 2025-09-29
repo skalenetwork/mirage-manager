@@ -1265,6 +1265,28 @@ describe("Staking", () => {
         await status.removeNodeFromWhitelist(12);
     });
 
+    it("Should not add user as a holder if staking very small amount", async () => {
+        const {nodesData, staking, status} = await registeredOnlyNodes();
+        await status.whitelistNode(1);
+        await staking.stake(1, {value: 1});
+        await status.connect(nodesData[0].wallet).alive();
+        const [deployer, user1, user2] = await ethers.getSigners();
+        await staking.connect(user1).stake(1, {value: 2});
+        await staking.connect(nodesData[0].wallet).setFeeRate(0);
+        await setBalance(await staking.getRewardWallet(1), HUGE_AMOUNT_OF_FAIR);
+
+        expect(await staking.getNodeTotalStake(1)).to.be.eql(HUGE_AMOUNT_OF_FAIR + 1n + 2n);
+        expect(await staking.getStakedToNodeAmountFor(1, deployer)).to.be.eql(HUGE_AMOUNT_OF_FAIR / 3n + 1n);
+        expect(await staking.getStakedToNodeAmountFor(1, user1)).to.be.eql(HUGE_AMOUNT_OF_FAIR * 2n / 3n + 2n);
+        expect(await staking.getDelegatorsToNodeCount(1)).to.be.eql(2n);
+        await staking.connect(user2).stake(1, {value: 1});
+
+        // tx accepted, user has no stake, but amount was received by the node
+        expect(await staking.getStakedToNodeAmountFor(1, user2)).to.be.eql(0n);
+        expect(await staking.getNodeTotalStake(1)).to.be.eql(HUGE_AMOUNT_OF_FAIR + 1n + 2n + 1n);
+        expect(await staking.getDelegatorsToNodeCount(1)).to.be.eql(2n);
+    });
+
     it("Should update earned fees accordingly", async () => {
         const {nodesData, staking, status} = await registeredOnlyNodes();
         const [node,] = nodesData;
