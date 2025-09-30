@@ -13,8 +13,8 @@ seed = '0x3e8'
 
 # Invariant testing profile
 [invariant]
-runs = 400
-depth = 450
+runs = 600
+depth = 150
 show_metrics = true
 extra_output = ["storageLayout"]
 fail_on_revert = true

@@ -25,13 +25,13 @@ pragma solidity ^0.8.24;
 import {Test} from "forge-std/Test.sol";
 import {StdInvariant} from "forge-std/StdInvariant.sol";
 
-import {RedBlackTreeTesterV2, NodeId} from "../contracts/test/structs/RedBlackTreeTesterV2.sol";
+import {RedBlackTreeTester, NodeId} from "../contracts/test/structs/RedBlackTreeTester.sol";
 
 // 3. Your test contract must inherit from `Test`
 
 // This is your Handler contract
 contract RBTHandler is Test {
-    RedBlackTreeTesterV2 rbt;
+    RedBlackTreeTester rbt;
     // Keep track of which keys have been inserted
     mapping(NodeId => bool) public insertedKeys;
     NodeId[] public keyList;
@@ -52,7 +52,7 @@ contract RBTHandler is Test {
         NodeId.wrap(13)
     ];
 
-    constructor(RedBlackTreeTesterV2 _rbt) {
+    constructor(RedBlackTreeTester _rbt) {
         rbt = _rbt;
     }
 
@@ -100,16 +100,16 @@ contract RBTHandler is Test {
 
 
 contract RBTTest is StdInvariant, Test {
-    RedBlackTreeTesterV2 public rbt;
+    RedBlackTreeTester public rbt;
     RBTHandler public handler;
     // This function is called before each test case
     function setUp() public {
-        rbt = new RedBlackTreeTesterV2();
+        rbt = new RedBlackTreeTester();
         handler = new RBTHandler(rbt);
         targetContract(address(handler));
     }
 
     function invariant_treeIsValid() public view {
-        assertEq(rbt.validate(), true, "TreeIsInvalid");
+        require(rbt.validate(), "TreeIsInvalid");
     }
 }

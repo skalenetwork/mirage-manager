@@ -28,8 +28,13 @@ import {RedBlackTree} from "../../structs/RedBlackTree.sol";
 interface IRedBlackTreeTester {
     function insertSmallest(NodeId node, uint256 weight) external;
     function remove(NodeId node) external;
+    function setWeight(
+        NodeId node,
+        uint256 weight
+    ) external;
     function getNodes() external view returns (NodeId[] memory nodes);
-    function validate() external view;
+    function validate() external view returns(bool result);
+    function getNumNodes() external view returns (uint256 numNodes);
 
 }
 
@@ -62,18 +67,31 @@ contract RedBlackTreeTester is IRedBlackTreeTester{
         root = tree.remove(root, node);
     }
 
-    function validate() external view override {
+    function setWeight(
+        NodeId node,
+        uint256 weight
+    ) external override {
+        weights[node] = weight;
+        tree.setWeight(node, weight);
+    }
+
+    function validate() external view override returns(bool result) {
         if (root == NULL) {
-            return;
+            return true;
         }
         require(_isBlack(root), RootIsNotBlack(root));
         require(tree[root].parent == NULL, RootHasParent(root, tree[root].parent));
         _validate(root);
+        return true;
     }
 
     function getNodes() external view override returns (NodeId[] memory nodes) {
         nodes = new NodeId[](_count(root));
         _getNodes(root, nodes, 0);
+    }
+
+    function getNumNodes() external view override returns (uint256 numNodes) {
+        return _count(root);
     }
 
     // private

@@ -39,8 +39,8 @@ contract StakingHandler is Test {
     EnumerableSet.AddressSet private users;
     NodeId[] public fixtureNode;
 
-    address public constant DONATOR_ADDRESS = 0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B; // Vitalik's address, has a lot of ETH
-    constructor(address _staking, address) {
+    address public constant DONATOR_ADDRESS = 0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B;
+    constructor(address _staking, address admin) {
         staking = Staking(payable(_staking));
         require(address(staking) != address(0), "STAKING not set");
 
@@ -50,6 +50,9 @@ contract StakingHandler is Test {
                 fixtureNode.push(node);
             }
         }
+        vm.prank(admin);
+        staking.setRetrievingDelay(Timestamp.wrap(1)); // set to 1 second
+
     }
 
     function setFeeRate(uint8 feeRate, uint8 nodeIndex) public {
@@ -63,8 +66,10 @@ contract StakingHandler is Test {
     }
 
     function stakeFor(address user, uint8 nodeIndex, uint48 amountToStake) public {
+
         // 1. Pick a random user
         vm.assume(user != address(0)); // user cannot be zero address
+        vm.assume(user.code.length == 0); // user should not be a contract (for tests)
 
         // Pick a random of the nodes
         NodeId node = fixtureNode[nodeIndex % fixtureNode.length];
@@ -78,7 +83,6 @@ contract StakingHandler is Test {
         vm.deal(staker, uint256(amountToStake) + 1e13); // add some extra
         vm.prank(staker);
         staking.stake{value: uint256(amountToStake) + 1e13}(node);
-        users.add(staker);
     }
 
     function requestRetrieveAll(uint8 userIndex, uint8 nodeIndex) public {
@@ -96,6 +100,8 @@ contract StakingHandler is Test {
 
         vm.prank(staker);
         staking.requestRetrieveAll(node);
+
+        users.add(staker);
     }
     // allow the fuzzer to alter picked user and node
     function requestRetrieve(uint8 userIndex, uint8 nodeIndex, uint32 amountToRetrieve) public {
@@ -121,6 +127,8 @@ contract StakingHandler is Test {
 
         vm.prank(staker);
         staking.requestRetrieve(node, Fair.wrap(uint256(amountToRetrieve)));
+
+        users.add(staker);
     }
 
     function donate(uint32 donationAmount) public {
@@ -134,34 +142,28 @@ contract StakingHandler is Test {
         assert(success);
     }
 
-    /*function claimFees() public {
-
-    }
     function claimAllFees() public {
 
-    }*/
+    }
+
+    function retrieve(uint8 userIndex) public {
+        vm.warp(block.timestamp + 2);
+        // 1. Pick a random user
+        vm.assume(users.length() > 0);
+
+        address user = users.at(userIndex % users.length());
+
+        uint256 requestId = staking.getUnlockedExitRequestFor(user, 0).requestId;
+
+        vm.prank(user);
+        staking.claimRequest(requestId);
+
+        if(Fair.unwrap(staking.getTotalInExitQueueFor(user)) == 0){
+            users.remove(user);
+        }
+    }
 
     function getNumNodes() external view returns (uint256 len) {
         return fixtureNode.length;
     }
-
-    /*function retrieve() public {
-        vm.warp(block.timestamp + 1);
-        // 1. Pick a random user
-        address staker = users[block.timestamp % users.length];
-
-        if(Fair.unwrap(staking.getTotalInExitQueueFor(staker)) == 0) return;
-
-        uint256 requestId = staking.getUnlockedExitRequestFor(staker, 0).requestId;
-
-        // 3. Orchestrate the multi-contract call sequence
-        uint256 beforeBalance = staker.balance;
-        vm.prank(staker);
-        staking.claimRequest(requestId);
-        uint256 afterBalance = staker.balance;
-        // 4. Update our shadow state
-        tokenBalances[staker] += (afterBalance - beforeBalance);
-    }*/
-
-    // TODO: add more complex functions
 }
