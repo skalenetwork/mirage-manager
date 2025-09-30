@@ -168,7 +168,6 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
     }
 
     function disable(NodeId node) external override restricted {
-        _pullReward(node);
         Fair balance = _getTotalBalance();
         Fair nodeFundBalance = _rootFund.getBalance(balance, FundLibrary.nodeToHolder(node));
         _rootFund.remove(
