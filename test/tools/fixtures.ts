@@ -1,10 +1,11 @@
 // cspell:words hexlify
 
 import {
-    loadFixture
+    loadFixture,
+    setBalance
 } from "@nomicfoundation/hardhat-network-helpers";
 import { deploy, NodeStruct } from "../../migrations/deploy";
-import { HDNodeWallet, Wallet } from "ethers";
+import { BigNumberish, HDNodeWallet, Wallet } from "ethers";
 import { ethers } from "hardhat";
 import { IDkg, Nodes, Status, Staking } from "../../typechain-types";
 import { getPublicKey } from "./signatures";
@@ -75,6 +76,29 @@ const whitelistNodes = async (status: Status, nodesData: NodeData[]) => {
 export const sendHeartbeat = async (status: Status, nodesData: NodeData[]) => {
     for (const node of nodesData) {
         await status.connect(node.wallet).alive();
+    }
+}
+
+
+export const grantNetworkRewards = async (
+    staking: Staking,
+    stakingReward: bigint,
+) => {
+    const balance = await ethers.provider.getBalance(staking);
+    await setBalance(await ethers.resolveAddress(staking), balance + stakingReward);
+}
+
+export const grantNodeRewards = async (
+    staking: Staking,
+    nodes: BigNumberish | BigNumberish[],
+    walletReward: bigint
+) => {
+    if (!Array.isArray(nodes)){
+        nodes = [nodes];
+    }
+    for (const node of nodes) {
+        const rewardWallet = await staking.getRewardWallet(node);
+        await setBalance(rewardWallet, await ethers.provider.getBalance(rewardWallet) + walletReward);
     }
 }
 

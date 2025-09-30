@@ -87,16 +87,19 @@ library FundLibrary {
         internal
     {
         _processBalanceChange(fund, fundBalance);
-        Fair holderBalance = getBalance(fund, fundBalance, holder);
-        Credit credits;
-        if (holderBalance == amount) {
-            credits = fund.credits.get(holder);
-        } else {
-            credits = _toCreditsRoundedUp(fund, fundBalance, amount);
+        if (amount > ZERO_FAIR) {
+            Fair holderBalance = getBalance(fund, fundBalance, holder);
+            Credit credits;
+
+            if (holderBalance == amount) {
+                credits = fund.credits.get(holder);
+            } else {
+                credits = _toCreditsRoundedUp(fund, fundBalance, amount);
+            }
+            _remove(fund, fundBalance, holder, credits);
+            Fair balanceAfter = getBalance(fund, fund.lastBalance, holder);
+            _checkAllowedError(holderBalance, balanceAfter, amount);
         }
-        _remove(fund, fundBalance, holder, credits);
-        Fair balanceAfter = getBalance(fund, fund.lastBalance, holder);
-        _checkAllowedError(holderBalance, balanceAfter, amount);
     }
 
     function setFeeRate(
@@ -135,6 +138,12 @@ library FundLibrary {
         fund.lastBalance = fundBalance + amount;
         Fair balanceAfter = getBalance(fund, fund.lastBalance, holder);
         _checkAllowedError(holderBalance, balanceAfter, amount + delayedReward);
+
+        // Credits that result in zero balance are removed
+        if (ZERO_CREDIT < credits && balanceAfter == ZERO_FAIR) {
+            assert(fund.credits.remove(holder));
+            fund.totalCredits = fund.totalCredits - credits;
+        }
     }
 
     function updateTotalBalance(Fund storage fund, Fair fundBalance) internal {
@@ -215,7 +224,6 @@ library FundLibrary {
         private
         returns (Fair removed)
     {
-        _processBalanceChange(fund, fundBalance);
         (bool exists, Credit holderCredits) = fund.credits.tryGet(holder);
         if (holderCredits < amount) {
             revert NotEnoughStaked(_toFairRoundedDown(fund, fundBalance, holderCredits));

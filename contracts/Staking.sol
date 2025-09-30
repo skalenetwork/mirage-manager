@@ -351,7 +351,6 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
             return 0;
         }
         Fair totalBalance = _getTotalBalance();
-        assert((totalBalance == FundLibrary.ZERO_FAIR) == (_rootFund.totalCredits == FundLibrary.ZERO_CREDIT));
         uint256 unPulledCredits = 0;
         uint256 rewardWalletBalance = address(_rewardWallets[node]).balance;
         if (rewardWalletBalance > 0) {
