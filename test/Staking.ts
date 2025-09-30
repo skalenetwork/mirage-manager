@@ -1250,7 +1250,7 @@ describe("Staking", () => {
         // Should it be true? It is with current implementation
         expect(await staking.isNodeEnabled(node.id)).to.be.eql(true);
         await grantNetworkRewards(staking, stakingReward);
-        await grantNodeRewards(staking, [node.id], walletReward);
+        await grantNodeRewards(staking, node.id, walletReward);
 
         await status.connect(node.wallet).alive();
     });
@@ -1316,7 +1316,7 @@ describe("Staking", () => {
         // All nodes sent alive. Node is not whitelisted so it should not be enabled
         expect(await staking.isNodeEnabled(node.id)).to.be.equal(false);
         await grantNetworkRewards(staking, stakingReward);
-        await grantNodeRewards(staking, [18n], walletReward);
+        await grantNodeRewards(staking, 18n, walletReward);
 
         expect(await staking.getNodeTotalStake(node.id)).to.be.eql(walletReward);
         expect(await staking.getEarnedFeeAmount(node.id)).to.be.eql(walletReward);

@@ -90,9 +90,12 @@ export const grantNetworkRewards = async (
 
 export const grantNodeRewards = async (
     staking: Staking,
-    nodes: BigNumberish[],
+    nodes: BigNumberish | BigNumberish[],
     walletReward: bigint
 ) => {
+    if (!Array.isArray(nodes)){
+        nodes = [nodes];
+    }
     for (const node of nodes) {
         const rewardWallet = await staking.getRewardWallet(node);
         await setBalance(rewardWallet, await ethers.provider.getBalance(rewardWallet) + walletReward);
