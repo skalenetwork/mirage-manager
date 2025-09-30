@@ -2,31 +2,27 @@
 
 set -e
 
-echo "Starting local Hardhat node in the background..."
-yarn hardhat node --port 8545 > /dev/null 2>&1 &
+HARDHAT_NODE_SESSION="hardhat-node"
+yarn pm2 start "yarn hardhat node" --name "$HARDHAT_NODE_SESSION"
 
-# 4. Define a function to kill the node.
+echo "Node Initialized."
+
 cleanup() {
-    echo "Stopping Hardhat node (PID: $(lsof -ti :8545))..."
-    kill $(lsof -ti :8545)
-    sleep 15
-    echo "DONE"
-    lsof -ti :8545
+    echo "Stopping Hardhat Node"
+    yarn pm2 delete "$HARDHAT_NODE_SESSION"
+    echo "SUCCESS"
 }
 
 trap cleanup EXIT
 
-echo "Waiting for node to initialize..."
-# 5. Wait for a few seconds to ensure the node is fully up and running.
-sleep 15
-
 # --- Deployment and Output Capture ---
-echo "Running deployment script..."
+echo "Running deployment setup script for fuzzy tests."
+
 # 6. Run the deployment script and capture its entire output into a variable.
 DEPLOY_OUTPUT=$(yarn hardhat run migrations/fuzzyTestsSetup.ts --network localhost)
 
 # echo $DEPLOY_OUTPUT
-echo "Filtering deployment output..."
+echo "Deployed! Filtering deployment output..."
 
 NODES_ADDRESS=$(echo "$DEPLOY_OUTPUT" | grep "Nodes: 0x" | awk '{print $2}')
 STATUS_ADDRESS=$(echo "$DEPLOY_OUTPUT" | grep "Status: 0x" | awk '{print $2}')

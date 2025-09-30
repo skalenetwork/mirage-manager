@@ -32,7 +32,7 @@ jobs:
       run: yarn cleanCompile
 
     - name: Run RBT fuzzy tests
-      run: yarn test-rbt-fuzz
+      run: yarn test-foundry:rbt
 
   fair-manager:
     runs-on: ubuntu-latest
@@ -58,4 +58,4 @@ jobs:
       run: yarn cleanCompile
 
     - name: Run Project fuzzy tests
-      run: yarn test-project-fuzz
+      run: yarn test-foundry:fair-manager

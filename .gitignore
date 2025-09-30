@@ -134,3 +134,7 @@ data/
 
 # OpenZeppelin
 .openzeppelin/unknown-*.json
+
+# Foundry
+.foundry-artifacts
+.foundry-cache
