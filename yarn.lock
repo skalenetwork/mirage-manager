@@ -3148,6 +3148,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@solidity-parser/parser@npm:^0.20.1":
+  version: 0.20.2
+  resolution: "@solidity-parser/parser@npm:0.20.2"
+  checksum: 10c0/23b0b7ed343a4fa55cb8621cf4fc81b0bdd791a4ee7e96ced7778db07de66d4e418db2c2dc1525b1f82fc0310ac829c78382327292b37e35cb30a19961fcb429
+  languageName: node
+  linkType: hard
+
 "@szmarczak/http-timer@npm:^5.0.1":
   version: 5.0.1
   resolution: "@szmarczak/http-timer@npm:5.0.1"
@@ -5580,7 +5587,7 @@ __metadata:
     pm2: "npm:^6.0.11"
     seedrandom: "npm:^3.0.5"
     solhint: "npm:^5.0.5"
-    solidity-coverage: "npm:^0.8.0"
+    solidity-coverage: "npm:^0.8.16"
     ts-node: "npm:>=8.0.0"
     typechain: "npm:^8.3.0"
     typescript: "npm:>=5.8.3"
@@ -8823,12 +8830,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"solidity-coverage@npm:^0.8.0":
-  version: 0.8.14
-  resolution: "solidity-coverage@npm:0.8.14"
+"solidity-coverage@npm:^0.8.16":
+  version: 0.8.16
+  resolution: "solidity-coverage@npm:0.8.16"
   dependencies:
     "@ethersproject/abi": "npm:^5.0.9"
-    "@solidity-parser/parser": "npm:^0.19.0"
+    "@solidity-parser/parser": "npm:^0.20.1"
     chalk: "npm:^2.4.2"
     death: "npm:^1.1.0"
     difflib: "npm:^0.2.4"
@@ -8850,7 +8857,7 @@ __metadata:
     hardhat: ^2.11.0
   bin:
     solidity-coverage: plugins/bin.js
-  checksum: 10c0/7a971d3c5bee6aff341188720a72c7544521c1afbde36593e4933ba230d46530ece1db8e6394d6283a13918fd7f05ab37a0d75e6a0a52d965a2fdff672d3a7a6
+  checksum: 10c0/6a5d643f8cc11c926a898f2bc60720c893634a65d17b1a99f5df32c485ea25404022555c22c66ee85c388e67c96ea8366895111ed592539dd45697e1a6208203
   languageName: node
   linkType: hard
 
