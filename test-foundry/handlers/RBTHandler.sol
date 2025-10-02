@@ -43,20 +43,20 @@ contract RBTHandler is Test {
 
     function insert(uint8 nodeIndex, uint48 weight) public {
         NodeId node = fixtureNode[nodeIndex % fixtureNode.length];
-        vm.assume(!insertedKeys[node]);
+        vm.assume(!insertedKeys[NodeId.wrap(NodeId.unwrap(node) - 1)]);
         vm.assume(weight > 0);
         _insert(node, weight);
     }
 
     function remove(uint8 nodeIndex) external {
         NodeId node = fixtureNode[nodeIndex % fixtureNode.length];
-        vm.assume(insertedKeys[node]);
+        vm.assume(insertedKeys[NodeId.wrap(NodeId.unwrap(node) - 1)]);
         _remove(node);
     }
 
     function setWeight(uint8 nodeIndex, uint48 weight) external {
         NodeId node = fixtureNode[nodeIndex % fixtureNode.length];
-        vm.assume(insertedKeys[node]);
+        vm.assume(insertedKeys[NodeId.wrap(NodeId.unwrap(node) - 1)]);
         vm.assume(weight > 0);
 
         rbt.setWeight(node, weight);
@@ -64,16 +64,16 @@ contract RBTHandler is Test {
 
     function _insert(NodeId node, uint256 weight) private {
         rbt.insertSmallest(node, weight);
-        insertedKeys[node] = true;
+        insertedKeys[NodeId.wrap(NodeId.unwrap(node) - 1)] = true;
         keyList.push(node);
     }
 
     function _remove(NodeId node) private {
         rbt.remove(node);
 
-        insertedKeys[node] = false;
-        if (NodeId.unwrap(node) < keyList.length - 1) {
-            keyList[NodeId.unwrap(node)] = keyList[keyList.length - 1];
+        insertedKeys[NodeId.wrap(NodeId.unwrap(node) - 1)] = false;
+        if (NodeId.unwrap(node) - 1 < keyList.length - 1) {
+            keyList[NodeId.unwrap(node) - 1] = keyList[keyList.length - 1];
         }
         keyList.pop();
     }

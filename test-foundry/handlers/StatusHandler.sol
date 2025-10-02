@@ -127,11 +127,12 @@ contract StatusHandler is Test {
         for (uint256 i = 0; i < n; i++) {
             arr[i] = NodeId.unwrap(fixtureNode[i]);
         }
+
         uint256[] memory arrCopy = new uint256[](n);
         for (uint256 i = 0; i < n; i++) {
-
             arrCopy[i] = arr[i];
         }
+
         for (uint256 i = 0; i < x; i++) {
             // Generate a random index from the unshuffled part of the array
             uint256 j = i + (uint256(keccak256(abi.encodePacked(block.timestamp, i))) % (n - i));

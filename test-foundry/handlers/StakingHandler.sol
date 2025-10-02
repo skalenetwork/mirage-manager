@@ -135,10 +135,6 @@ contract StakingHandler is Test {
         assert(success);
     }
 
-    function claimAllFees() public {
-
-    }
-
     function retrieve(uint8 userIndex) public {
         vm.warp(block.timestamp + 2);
         vm.assume(users.length() > 0);
@@ -146,7 +142,7 @@ contract StakingHandler is Test {
         uint256 requestId = staking.getUnlockedExitRequestFor(user, 0).requestId;
         vm.prank(user);
         staking.claimRequest(requestId);
-        if(Fair.unwrap(staking.getTotalInExitQueueFor(user)) == 0){
+        if (Fair.unwrap(staking.getTotalInExitQueueFor(user)) == 0) {
             users.remove(user);
         }
     }
