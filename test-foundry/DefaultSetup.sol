@@ -18,15 +18,14 @@
     You should have received a copy of the GNU Affero General Public License
     along with fair-manager.  If not, see <https://www.gnu.org/licenses/>.
 */
+
 pragma solidity ^0.8.24;
 
 import {Test} from "forge-std/Test.sol";
 
-// import handlers
 import {StatusHandler} from "./handlers/StatusHandler.sol";
 import {CommitteeHandler} from "./handlers/CommitteeHandler.sol";
 import {StakingHandler} from "./handlers/StakingHandler.sol";
-
 
 contract DefaultSetup is Test {
     StatusHandler public status;
@@ -37,8 +36,5 @@ contract DefaultSetup is Test {
         staking = new StakingHandler(payable(vm.envAddress("STAKING")), vm.envAddress("DEPLOYER"));
         status = new StatusHandler(vm.envAddress("STATUS"), vm.envAddress("DEPLOYER"));
         committee = new CommitteeHandler(payable(vm.envAddress("COMMITTEE")));
-        require(address(status) != address(0), "STATUS not set");
-        require(address(committee) != address(0), "COMMITTEE not set");
-        require(address(staking) != address(0), "STAKING not set");
     }
 }

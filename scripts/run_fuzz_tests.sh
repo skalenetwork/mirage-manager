@@ -15,13 +15,10 @@ cleanup() {
 
 trap cleanup EXIT
 
-# --- Deployment and Output Capture ---
 echo "Running deployment setup script for fuzzy tests."
 
-# 6. Run the deployment script and capture its entire output into a variable.
-DEPLOY_OUTPUT=$(yarn hardhat run migrations/fuzzyTestsSetup.ts --network localhost)
+DEPLOY_OUTPUT=$(yarn hardhat run migrations/fuzzTestsSetup.ts --network localhost)
 
-# echo $DEPLOY_OUTPUT
 echo "Deployed! Filtering deployment output..."
 
 NODES_ADDRESS=$(echo "$DEPLOY_OUTPUT" | grep "Nodes: 0x" | awk '{print $2}')

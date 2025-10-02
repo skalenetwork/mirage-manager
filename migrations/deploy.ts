@@ -316,8 +316,8 @@ const main = async () => {
     const version = await getVersion();
 
     console.log("Deploy contracts");
-    const deployedContracts = await deploy();
 
+    const deployedContracts = await deploy();
 
     console.log("Store addresses")
 

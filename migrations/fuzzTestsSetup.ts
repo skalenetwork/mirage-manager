@@ -3,7 +3,7 @@ import { commonPublicKey, generateRandomNodes } from "../test/tools/fixtures";
 import { deploy } from "./deploy";
 
 /*
-* Deployment used for fuzzy tests
+* Deployment used for fuzz tests
 *
 */
 const main = async () => {
@@ -11,9 +11,6 @@ const main = async () => {
     console.log("Deploy contracts");
     const deployedContracts = await deploy(await generateRandomNodes(22), commonPublicKey);
     console.log("Done");
-
-    // TODO: Register more nodes
-
 
     const addresses = Object.fromEntries(await Promise.all(Object.entries(deployedContracts).map(
             async ([name, contract]) => [name, await ethers.resolveAddress(contract)]

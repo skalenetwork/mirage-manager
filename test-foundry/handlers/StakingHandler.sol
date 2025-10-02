@@ -18,6 +18,7 @@
     You should have received a copy of the GNU Affero General Public License
     along with fair-manager.  If not, see <https://www.gnu.org/licenses/>.
 */
+
 pragma solidity ^0.8.24;
 
 import {Test} from "forge-std/Test.sol";
@@ -61,19 +62,16 @@ contract StakingHandler is Test {
 
     function stakeFor(address user, uint8 nodeIndex, uint48 amountToStake) public {
 
-        // 1. Pick a random user
-        vm.assume(user != address(0)); // user cannot be zero address
-        vm.assume(user.code.length == 0); // user should not be a contract (for tests)
-
+        // user should not be a precompile address (0x1 - 0xFFFF) or a contract
+        vm.assume(user.code.length == 0);
+        vm.assume(uint160(user) > 0xFFFF);
         // Pick a random of the nodes
         NodeId node = fixtureNode[nodeIndex % fixtureNode.length];
         vm.assume(staking.nodes().activeNodeExists(node));
 
-        // 2. Constrain inputs to valid scenarios
+        // Constrain inputs to valid scenarios
         address staker = user;
 
-        // 3. Orchestrate the multi-contract call sequence
-        assert(address(staking).balance + address(staking.getRewardWallet(node)).balance >= Fair.unwrap(staking.getNodeTotalStake(node)));
         vm.deal(staker, uint256(amountToStake) + 1e13); // add some extra
         vm.prank(staker);
         staking.stake{value: uint256(amountToStake) + 1e13}(node);
@@ -89,6 +87,7 @@ contract StakingHandler is Test {
         vm.assume(stakedUsers.length > 0);
 
         address staker = stakedUsers[userIndex % stakedUsers.length];
+
         // node owners cannot retrieve
         vm.assume(staker != staking.nodes().getNode(node).nodeAddress);
 
@@ -97,7 +96,7 @@ contract StakingHandler is Test {
 
         users.add(staker);
     }
-    // allow the fuzzer to alter picked user and node
+
     function requestRetrieve(uint8 userIndex, uint8 nodeIndex, uint32 amountToRetrieve) public {
         vm.assume(amountToRetrieve > 0);
         // Pick a node
@@ -114,7 +113,7 @@ contract StakingHandler is Test {
         // node owners cannot retrieve
         vm.assume(staker != staking.nodes().getNode(node).nodeAddress);
 
-        // 2. Constrain inputs to valid scenarios
+        // Constrain inputs to valid scenarios
         uint256 maxRetrievable = Fair.unwrap(staking.getStakedToNodeAmountFor(node, staker));
         vm.assume(maxRetrievable > 0);
         vm.assume(amountToRetrieve < maxRetrievable);

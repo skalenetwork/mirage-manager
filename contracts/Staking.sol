@@ -49,6 +49,7 @@ import {TypedMap} from "./structs/typed/TypedMap.sol";
 import {TypedSet} from "./structs/typed/TypedSet.sol";
 import {ExitQueueLibrary, Timestamp} from "./utils/ExitQueue.sol";
 import {Credit, FundLibrary, Fair, Holder} from "./utils/Fund.sol";
+
 contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaking {
     using Address for address payable;
     using EnumerableSet for EnumerableSet.AddressSet;

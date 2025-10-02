@@ -18,9 +18,9 @@
     You should have received a copy of the GNU Affero General Public License
     along with fair-manager.  If not, see <https://www.gnu.org/licenses/>.
 */
+
 pragma solidity ^0.8.24;
 
-// 1. Import Foundry's standard test library
 import {Test} from "forge-std/Test.sol";
 import {RedBlackTreeTester, NodeId} from "../../contracts/test/structs/RedBlackTreeTester.sol";
 
@@ -36,7 +36,6 @@ contract RBTHandler is Test {
         rbt = _rbt;
 
         // 150 nodes corresponds to a tree height of 8
-        // More is time consuming to run in git actions
         for(uint256 i = 1; i <= 150; ++i){
             fixtureNode.push(NodeId.wrap(i));
         }

@@ -21,17 +21,13 @@
 
 pragma solidity ^0.8.24;
 
-// 1. Import Foundry's standard test library
 import {Test} from "forge-std/Test.sol";
 import {StdInvariant} from "forge-std/StdInvariant.sol";
 import {DefaultSetup} from "./DefaultSetup.sol";
 import {Fair, NodeId} from "./handlers/StakingHandler.sol";
 
-
-//
 contract FairManagerFuzzDefaultSetup is StdInvariant, DefaultSetup {
 
-    // This function is called before each test case
     function setUp() public override{
         super.setUp();
     }
