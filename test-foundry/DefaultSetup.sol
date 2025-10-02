@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 /*
-    Setup.sol - fair-manager
+    DefaultSetup.sol - fair-manager
     Copyright (C) 2025-Present SKALE Labs
     @author Dmytro Stebaiev
 
@@ -28,19 +28,13 @@ import {CommitteeHandler} from "./handlers/CommitteeHandler.sol";
 import {StakingHandler} from "./handlers/StakingHandler.sol";
 
 
-// Staked, whitelisted nodes
-// If used on fork, this setup will whitelist all blacklisted nodes and stake some ETH to all active nodes before testing
-// Recommend to change it if used on a fork to maintain state.
-contract RootSetup is Test {
+contract DefaultSetup is Test {
     StatusHandler public status;
     CommitteeHandler public committee;
     StakingHandler public staking;
 
-    // This function is called before each test case
     function setUp() public virtual{
-        // first Stake - setup sets some stake to nodes
         staking = new StakingHandler(payable(vm.envAddress("STAKING")), vm.envAddress("DEPLOYER"));
-        // then Status - whitelisted and alive at start
         status = new StatusHandler(vm.envAddress("STATUS"), vm.envAddress("DEPLOYER"));
         committee = new CommitteeHandler(payable(vm.envAddress("COMMITTEE")));
         require(address(status) != address(0), "STATUS not set");

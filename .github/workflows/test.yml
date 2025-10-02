@@ -33,7 +33,7 @@ jobs:
       run: yarn cspell
 
     - name: Compile
-      run: yarn cleanCompile
+      run: yarn compile
 
     - name: Lint
       run: yarn fullCheck

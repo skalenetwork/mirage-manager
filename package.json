@@ -49,7 +49,7 @@
     "slither": "yarn cleanCompile && slither . --compile-force-framework hardhat --ignore-compile",
     "test": "yarn tsc && npx hardhat test",
     "test-foundry:rbt": "forge test --mt invariant_treeIsValid -vvv",
-    "test-foundry:fair-manager": "bash ./scripts/test_fuzzy.sh ",
+    "test-foundry:fair-manager": "bash ./scripts/run_fuzz_tests.sh ",
     "tsc": "yarn exec tsc --noEmit"
   },
   "dependencies": {

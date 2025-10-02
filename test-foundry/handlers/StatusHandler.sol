@@ -23,10 +23,6 @@ pragma solidity ^0.8.24;
 
 import {Test} from "forge-std/Test.sol";
 
-// 1. Import Foundry's standard test library
-import {RootSetup} from "../Setup.sol";
-
-// 2. Import the contract you want to test from your 'contracts' folder
 import {Duration, NodeId, Status} from "../../contracts/Status.sol";
 import {Fair} from "../../contracts/utils/Fund.sol";
 
@@ -117,7 +113,7 @@ contract StatusHandler is Test {
         view
         returns (uint256[] memory)
     {
-        // 1. Handle edge cases
+        // Handle edge cases
         if (x == 0) {
             return new uint256[](0);
         }
@@ -125,7 +121,7 @@ contract StatusHandler is Test {
             revert("Sample size cannot be larger than the array length.");
         }
 
-        // 2. Create a copy to avoid modifying the original array
+        // Create a copy to avoid modifying the original array
         uint256[] memory arr = new uint256[](n);
         for (uint256 i = 0; i < n; i++) {
             arr[i] = NodeId.unwrap(fixtureNode[i]);
@@ -135,8 +131,6 @@ contract StatusHandler is Test {
 
             arrCopy[i] = arr[i];
         }
-
-        // 3. Perform a partial Fisher-Yates shuffle
         for (uint256 i = 0; i < x; i++) {
             // Generate a random index from the unshuffled part of the array
             uint256 j = i + (uint256(keccak256(abi.encodePacked(block.timestamp, i))) % (n - i));
@@ -147,7 +141,7 @@ contract StatusHandler is Test {
             arrCopy[j] = temp;
         }
 
-        // 4. Create the result array and copy the first X elements from the shuffled copy
+        // Create the result array and copy the first X elements from the shuffled copy
         uint256[] memory result = new uint256[](x);
         for (uint256 i = 0; i < x; i++) {
             result[i] = arrCopy[i];

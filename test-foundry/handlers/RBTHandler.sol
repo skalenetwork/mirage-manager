@@ -1,8 +1,7 @@
-
 // SPDX-License-Identifier: AGPL-3.0-only
 
 /*
-    RedBlackTreeFuzzy.t.sol - fair-manager
+    RBTHandler.sol - fair-manager
     Copyright (C) 2025-Present SKALE Labs
     @author Dmytro Stebaiev
 
@@ -23,45 +22,30 @@ pragma solidity ^0.8.24;
 
 // 1. Import Foundry's standard test library
 import {Test} from "forge-std/Test.sol";
-import {StdInvariant} from "forge-std/StdInvariant.sol";
+import {RedBlackTreeTester, NodeId} from "../../contracts/test/structs/RedBlackTreeTester.sol";
 
-import {RedBlackTreeTester, NodeId} from "../contracts/test/structs/RedBlackTreeTester.sol";
 
-// 3. Your test contract must inherit from `Test`
-
-// This is your Handler contract
 contract RBTHandler is Test {
     RedBlackTreeTester rbt;
-    // Keep track of which keys have been inserted
     mapping(NodeId => bool) public insertedKeys;
     NodeId[] public keyList;
 
-    NodeId[] public fixtureNode = [
-        NodeId.wrap(1),
-        NodeId.wrap(2),
-        NodeId.wrap(3),
-        NodeId.wrap(4),
-        NodeId.wrap(5),
-        NodeId.wrap(6),
-        NodeId.wrap(7),
-        NodeId.wrap(8),
-        NodeId.wrap(9),
-        NodeId.wrap(10),
-        NodeId.wrap(11),
-        NodeId.wrap(12),
-        NodeId.wrap(13)
-    ];
+    NodeId[] public fixtureNode;
 
     constructor(RedBlackTreeTester _rbt) {
         rbt = _rbt;
+
+        // 150 nodes corresponds to a tree height of 8
+        // More is time consuming to run in git actions
+        for(uint256 i = 1; i <= 150; ++i){
+            fixtureNode.push(NodeId.wrap(i));
+        }
     }
 
-    // A wrapper for the insert function
     function insert(uint8 nodeIndex, uint48 weight) public {
         NodeId node = fixtureNode[nodeIndex % fixtureNode.length];
         vm.assume(!insertedKeys[node]);
         vm.assume(weight > 0);
-
         _insert(node, weight);
     }
 
@@ -85,31 +69,13 @@ contract RBTHandler is Test {
         keyList.push(node);
     }
 
-    // A wrapper for the remove function
     function _remove(NodeId node) private {
         rbt.remove(node);
 
-        // Update our state tracking
         insertedKeys[node] = false;
         if (NodeId.unwrap(node) < keyList.length - 1) {
             keyList[NodeId.unwrap(node)] = keyList[keyList.length - 1];
         }
         keyList.pop();
-    }
-}
-
-
-contract RBTTest is StdInvariant, Test {
-    RedBlackTreeTester public rbt;
-    RBTHandler public handler;
-    // This function is called before each test case
-    function setUp() public {
-        rbt = new RedBlackTreeTester();
-        handler = new RBTHandler(rbt);
-        targetContract(address(handler));
-    }
-
-    function invariant_treeIsValid() public view {
-        require(rbt.validate(), "TreeIsInvalid");
     }
 }

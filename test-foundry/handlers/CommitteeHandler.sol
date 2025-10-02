@@ -18,18 +18,14 @@
     You should have received a copy of the GNU Affero General Public License
     along with fair-manager.  If not, see <https://www.gnu.org/licenses/>.
 */
+
 pragma solidity ^0.8.24;
 
 import {Test} from "forge-std/Test.sol";
 
-// 1. Import Foundry's standard test library
-import {RootSetup} from "../Setup.sol";
-
-// 2. Import the contract you want to test from your 'contracts' folder
 import {Committee, NodeId} from "../../contracts/Committee.sol";
 import {Duration, Status} from "../../contracts/Status.sol";
 
-// 3. Your test contract must inherit from `Test`
 contract CommitteeHandler is Test {
 
     Committee public committee;
@@ -58,7 +54,6 @@ contract CommitteeHandler is Test {
         committee.ejectUnhealthyNode();
     }
 
-    // can randomly simulate consensus rewards
     function paySomeConsensusRewards(uint16 nodeIndex) public {
         vm.deal(address(committee.staking()), address(committee.staking()).balance + 1 ether);
         NodeId node = fixtureNode[nodeIndex % fixtureNode.length];
@@ -67,7 +62,6 @@ contract CommitteeHandler is Test {
         vm.deal(wallet, wallet.balance + 1e14);
     }
 
-    // can simulate random time pass
     function skipTime(uint8 time) public {
         vm.warp(block.timestamp + uint256(time));
     }

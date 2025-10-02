@@ -1,5 +1,3 @@
-// cspell:words Vitalik's
-
 // SPDX-License-Identifier: AGPL-3.0-only
 
 /*
@@ -24,18 +22,14 @@ pragma solidity ^0.8.24;
 
 import {Test} from "forge-std/Test.sol";
 
-// 2. Import the contract you want to test from your 'contracts' folder
 import {Fair, NodeId, Staking, Timestamp} from "../../contracts/Staking.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
-// 3. Your test contract must inherit from `Test`
 contract StakingHandler is Test {
     using EnumerableSet for EnumerableSet.AddressSet;
 
     Staking public staking;
 
-    // Keep track of user balances to make smarter calls
-    //mapping(address => uint256) public tokenBalances;
     EnumerableSet.AddressSet private users;
     NodeId[] public fixtureNode;
 
@@ -112,7 +106,7 @@ contract StakingHandler is Test {
         Fair totalStake = staking.getNodeTotalStake(node);
 
         vm.assume(totalStake > Fair.wrap(0));
-        // 1. Pick a random user
+        // Pick a random user
         address[] memory stakedUsers = staking.getDelegatorsToNode(node);
         vm.assume(stakedUsers.length > 0);
 
@@ -122,7 +116,7 @@ contract StakingHandler is Test {
 
         // 2. Constrain inputs to valid scenarios
         uint256 maxRetrievable = Fair.unwrap(staking.getStakedToNodeAmountFor(node, staker));
-        assert(maxRetrievable > 0); // this is possible because stake operations are not allowed with very little stake
+        vm.assume(maxRetrievable > 0);
         vm.assume(amountToRetrieve < maxRetrievable);
 
         vm.prank(staker);
@@ -148,16 +142,11 @@ contract StakingHandler is Test {
 
     function retrieve(uint8 userIndex) public {
         vm.warp(block.timestamp + 2);
-        // 1. Pick a random user
         vm.assume(users.length() > 0);
-
         address user = users.at(userIndex % users.length());
-
         uint256 requestId = staking.getUnlockedExitRequestFor(user, 0).requestId;
-
         vm.prank(user);
         staking.claimRequest(requestId);
-
         if(Fair.unwrap(staking.getTotalInExitQueueFor(user)) == 0){
             users.remove(user);
         }

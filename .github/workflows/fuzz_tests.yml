@@ -1,6 +1,6 @@
 # cspell:words solcoverjs
 
-name: fuzzy-tests
+name: fuzz-tests
 
 on: [push]
 

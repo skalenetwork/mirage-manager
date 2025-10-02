@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 /*
-    FuzzyTestsWithDefaultSetup.t.sol - fair-manager
+    FairManagerFuzzDefaultSetup.t.sol - fair-manager
     Copyright (C) 2025-Present SKALE Labs
     @author Dmytro Stebaiev
 
@@ -24,10 +24,12 @@ pragma solidity ^0.8.24;
 // 1. Import Foundry's standard test library
 import {Test} from "forge-std/Test.sol";
 import {StdInvariant} from "forge-std/StdInvariant.sol";
-import {RootSetup} from "./Setup.sol";
+import {DefaultSetup} from "./DefaultSetup.sol";
 import {Fair, NodeId} from "./handlers/StakingHandler.sol";
 
-contract FuzzyTestsWithDefaultSetup is StdInvariant, RootSetup {
+
+//
+contract FairManagerFuzzDefaultSetup is StdInvariant, DefaultSetup {
 
     // This function is called before each test case
     function setUp() public override{
@@ -76,11 +78,11 @@ contract FuzzyTestsWithDefaultSetup is StdInvariant, RootSetup {
         );
         require(
             Fair.unwrap(disabledStake) <= address(staking.staking()).balance,
-            "Total Disabled is incorrect"
+            "Total Disabled is more than total balance"
         );
         require(
             disabledStake == staking.staking().totalDisabled(),
-            "Total Disabled is incorrect"
+            "Total Disabled does not match sum of stake of disabled nodes"
         );
     }
 }
