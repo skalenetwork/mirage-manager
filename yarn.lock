@@ -2521,10 +2521,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@skalenetwork/fair-manager-interfaces@npm:0.1.0-develop.94":
-  version: 0.1.0-develop.94
-  resolution: "@skalenetwork/fair-manager-interfaces@npm:0.1.0-develop.94"
-  checksum: 10c0/37b781de4c640e947a0746d198700955e41a43c63121b92bffa28f533e21ec2834e6888e59fdcfd7cb9b878edf8579b03d2479d43ebf02f0fca442ccfa8b0fcb
+"@skalenetwork/fair-manager-interfaces@npm:0.1.0-rename-fair.2":
+  version: 0.1.0-rename-fair.2
+  resolution: "@skalenetwork/fair-manager-interfaces@npm:0.1.0-rename-fair.2"
+  checksum: 10c0/7440e8bb2a7b235ecfdf33309b9917d88ff0c8f807a3963b1454df30c71f28cb8d48471819a5bf9e5f8c2cc5ecb27f9a32f5a7e74711194c467544da9af5c19c
   languageName: node
   linkType: hard
 
@@ -5521,7 +5521,7 @@ __metadata:
     "@openzeppelin/contracts-upgradeable": "npm:^5.3.0"
     "@openzeppelin/hardhat-upgrades": "npm:^3.9.0"
     "@openzeppelin/upgrades-core": "npm:^1.44.1"
-    "@skalenetwork/fair-manager-interfaces": "npm:0.1.0-develop.94"
+    "@skalenetwork/fair-manager-interfaces": "npm:0.1.0-rename-fair.2"
     "@skalenetwork/skale-contracts-ethers-v6": "npm:^2.0.0-develop.1"
     "@skalenetwork/skale-manager-interfaces": "npm:3.2.0-develop.3"
     "@skalenetwork/upgrade-tools": "npm:4.0.0-develop.1"
