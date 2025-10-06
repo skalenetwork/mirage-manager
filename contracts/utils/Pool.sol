@@ -27,14 +27,14 @@ import { RedBlackTree } from "../structs/RedBlackTree.sol";
 import { TypedSet } from "../structs/typed/TypedSet.sol";
 import { IRandom, Random } from "./Random.sol";
 
-
 library PoolLibrary {
+
     using Random for IRandom.RandomGenerator;
     using RedBlackTree for mapping(NodeId => RedBlackTree.Node);
     using TypedSet for TypedSet.NodeIdSet;
 
     struct Pool {
-        mapping (NodeId id => RedBlackTree.Node node) tree;
+        mapping(NodeId id => RedBlackTree.Node node) tree;
         NodeId root;
         TypedSet.NodeIdSet presentNodes;
         TypedSet.NodeIdSet incomingNodes;
@@ -42,10 +42,7 @@ library PoolLibrary {
     }
 
     error NodeIsMissing(NodeId id);
-    error TooFewCandidates(
-        uint256 needed,
-        uint256 available
-    );
+    error TooFewCandidates(uint256 needed, uint256 available);
 
     function add(Pool storage pool, NodeId id) internal {
         assert(pool.incomingNodes.add(id));
@@ -90,11 +87,7 @@ library PoolLibrary {
         }
     }
 
-    function setWeight(
-        Pool storage pool,
-        NodeId node,
-        uint256 weight
-    ) internal {
+    function setWeight(Pool storage pool, NodeId node, uint256 weight) internal {
         if (pool.presentNodes.contains(node)) {
             pool.tree.setWeight(node, weight);
         }
@@ -133,4 +126,5 @@ library PoolLibrary {
             }
         }
     }
+
 }

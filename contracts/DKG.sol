@@ -23,19 +23,18 @@
 
 pragma solidity ^0.8.24;
 
-import {
-    AccessManagedUpgradeable
-} from "@openzeppelin/contracts-upgradeable/access/manager/AccessManagedUpgradeable.sol";
-import {ICommittee} from "@skalenetwork/fair-manager-interfaces/ICommittee.sol";
-import {DkgId, IDkg} from "@skalenetwork/fair-manager-interfaces/IDkg.sol";
-import {INodes, NodeId} from "@skalenetwork/fair-manager-interfaces/INodes.sol";
+import { AccessManagedUpgradeable } from
+    "@openzeppelin/contracts-upgradeable/access/manager/AccessManagedUpgradeable.sol";
+import { ICommittee } from "@skalenetwork/fair-manager-interfaces/ICommittee.sol";
+import { DkgId, IDkg } from "@skalenetwork/fair-manager-interfaces/IDkg.sol";
+import { INodes, NodeId } from "@skalenetwork/fair-manager-interfaces/INodes.sol";
 
-import {TypedMap} from "./structs/typed/TypedMap.sol";
-import {TypedSet} from "./structs/typed/TypedSet.sol";
-import {G2Operations} from "./utils/fieldOperations/G2Operations.sol";
-
+import { TypedMap } from "./structs/typed/TypedMap.sol";
+import { TypedSet } from "./structs/typed/TypedSet.sol";
+import { G2Operations } from "./utils/fieldOperations/G2Operations.sol";
 
 contract DKG is AccessManagedUpgradeable, IDkg {
+
     using G2Operations for G2Point;
     using TypedMap for TypedMap.NodeIdToBytes32Map;
     using TypedSet for TypedSet.NodeIdSet;
@@ -58,34 +57,20 @@ contract DKG is AccessManagedUpgradeable, IDkg {
     DkgId public lastDkgId;
 
     event BroadcastAndKeyShare(
-        DkgId dkg,
-        NodeId indexed node,
-        G2Point[] verificationVector,
-        KeyShare[] secretKeyContribution
+        DkgId dkg, NodeId indexed node, G2Point[] verificationVector, KeyShare[] secretKeyContribution
     );
 
-    event AllDataReceived(
-        DkgId dkg,
-        NodeId indexed node
-    );
+    event AllDataReceived(DkgId dkg, NodeId indexed node);
 
-    event SuccessfulDkg(
-        DkgId dkg
-    );
+    event SuccessfulDkg(DkgId dkg);
 
     event DkgRoundCreated(DkgId indexed dkgId, NodeId[] participants, uint256 startingBlockNumber);
 
     error DkgIsNotSuccessful(DkgId id);
     error DkgIsNotInBroadcastStage(DkgId id);
     error DkgIsNotInAlrightStage(DkgId id);
-    error IncorrectVerificationsVectorQuantity(
-        uint256 actual,
-        uint256 expected
-    );
-    error IncorrectSecretKeyContributionQuantity(
-        uint256 actual,
-        uint256 expected
-    );
+    error IncorrectVerificationsVectorQuantity(uint256 actual, uint256 expected);
+    error IncorrectSecretKeyContributionQuantity(uint256 actual, uint256 expected);
     error DuplicatedNodeId(NodeId node);
     error NodeDoesNotParticipateInDkg(NodeId node);
     error NodeAlreadyBroadcasted(NodeId node);
@@ -114,7 +99,7 @@ contract DKG is AccessManagedUpgradeable, IDkg {
         ICommittee committeeAddress,
         INodes nodesAddress
     )
-        public
+        external
         override
         initializer
     {
@@ -139,7 +124,11 @@ contract DKG is AccessManagedUpgradeable, IDkg {
         DkgId dkg,
         G2Point[] calldata verificationVector,
         KeyShare[] calldata secretKeyContribution
-    ) external onlyBroadcastingDkg(dkg) override {
+    )
+        external
+        override
+        onlyBroadcastingDkg(dkg)
+    {
         uint256 n = _rounds[dkg].nodes.length();
         uint256 t = _getT(n);
         // the verificationVector length should be strictly be equal t
@@ -150,8 +139,7 @@ contract DKG is AccessManagedUpgradeable, IDkg {
         // disable the warning because of false positive
         // slither-disable-next-line incorrect-equality
         require(
-            secretKeyContribution.length == n,
-            IncorrectSecretKeyContributionQuantity(secretKeyContribution.length, n)
+            secretKeyContribution.length == n, IncorrectSecretKeyContributionQuantity(secretKeyContribution.length, n)
         );
         NodeId node = nodes.getNodeId(msg.sender);
         RoundData storage round = _rounds[dkg];
@@ -161,18 +149,13 @@ contract DKG is AccessManagedUpgradeable, IDkg {
             NodeAlreadyBroadcasted(node)
         );
 
-        if ( round.hashedData.length() + 1 > n ) {
+        if (round.hashedData.length() + 1 > n) {
             round.status = Status.ALRIGHT;
         }
 
         _contributeToPublicKey(round, verificationVector[0]);
 
-        emit BroadcastAndKeyShare(
-            dkg,
-            node,
-            verificationVector,
-            secretKeyContribution
-        );
+        emit BroadcastAndKeyShare(dkg, node, verificationVector, secretKeyContribution);
     }
 
     function generate(NodeId[] calldata participants) external override restricted returns (DkgId dkg) {
@@ -269,4 +252,5 @@ contract DKG is AccessManagedUpgradeable, IDkg {
     {
         return keccak256(abi.encode(secretKeyContribution, verificationVector));
     }
+
 }

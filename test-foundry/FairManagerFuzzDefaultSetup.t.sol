@@ -21,14 +21,14 @@
 
 pragma solidity ^0.8.24;
 
-import {Test} from "forge-std/Test.sol";
-import {StdInvariant} from "forge-std/StdInvariant.sol";
-import {DefaultSetup} from "./DefaultSetup.sol";
-import {Fair, NodeId} from "./handlers/StakingHandler.sol";
+import { Test } from "forge-std/Test.sol";
+import { StdInvariant } from "forge-std/StdInvariant.sol";
+import { DefaultSetup } from "./DefaultSetup.sol";
+import { Fair, NodeId } from "./handlers/StakingHandler.sol";
 
 contract FairManagerFuzzDefaultSetup is StdInvariant, DefaultSetup {
 
-    function setUp() public override{
+    function setUp() public override {
         super.setUp();
     }
 
@@ -41,7 +41,7 @@ contract FairManagerFuzzDefaultSetup is StdInvariant, DefaultSetup {
         uint256 numNodes = staking.getNumNodes();
         for (uint256 i = 0; i < numNodes; ++i) {
             NodeId node = staking.fixtureNode(i);
-            if (!status.status().isWhitelisted(node)){
+            if (!status.status().isWhitelisted(node)) {
                 require(!staking.staking().isNodeEnabled(node), "Node should be disabled");
             }
         }
@@ -81,4 +81,5 @@ contract FairManagerFuzzDefaultSetup is StdInvariant, DefaultSetup {
             "Total Disabled does not match sum of stake of disabled nodes"
         );
     }
+
 }

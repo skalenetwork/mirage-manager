@@ -21,33 +21,32 @@
 
 pragma solidity ^0.8.24;
 
-import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
-import {NodeId} from "@skalenetwork/fair-manager-interfaces/INodes.sol";
-import {RedBlackTree} from "../../structs/RedBlackTree.sol";
+import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
+import { NodeId } from "@skalenetwork/fair-manager-interfaces/INodes.sol";
+import { RedBlackTree } from "../../structs/RedBlackTree.sol";
 
 interface IRedBlackTreeTester {
+
     function insertSmallest(NodeId node, uint256 weight) external;
     function remove(NodeId node) external;
-    function setWeight(
-        NodeId node,
-        uint256 weight
-    ) external;
+    function setWeight(NodeId node, uint256 weight) external;
     function getNodes() external view returns (NodeId[] memory nodes);
-    function validate() external view returns(bool result);
+    function validate() external view returns (bool result);
     function getNumNodes() external view returns (uint256 numNodes);
 
 }
 
+contract RedBlackTreeTester is IRedBlackTreeTester {
 
-contract RedBlackTreeTester is IRedBlackTreeTester{
     using RedBlackTree for mapping(NodeId => RedBlackTree.Node);
     using Strings for uint256;
+
+    NodeId public constant NULL = RedBlackTree.NULL;
+    NodeId public constant EMPTY = NodeId.wrap(type(uint256).max);
 
     mapping(NodeId node => RedBlackTree.Node data) public tree;
     mapping(NodeId node => uint256 weight) public weights;
     NodeId public root;
-    NodeId public constant NULL = RedBlackTree.NULL;
-    NodeId public constant EMPTY = NodeId.wrap(type(uint256).max);
 
     error IncorrectBlackHeight(NodeId node, uint256 leftBlackHeight, uint256 rightBlackHeight);
     error IncorrectParentOfLeftChild(NodeId parent, NodeId child, NodeId actualParent);
@@ -67,15 +66,12 @@ contract RedBlackTreeTester is IRedBlackTreeTester{
         root = tree.remove(root, node);
     }
 
-    function setWeight(
-        NodeId node,
-        uint256 weight
-    ) external override {
+    function setWeight(NodeId node, uint256 weight) external override {
         weights[node] = weight;
         tree.setWeight(node, weight);
     }
 
-    function validate() external view override returns(bool result) {
+    function validate() external view override returns (bool result) {
         if (root == NULL) {
             return true;
         }
@@ -107,7 +103,7 @@ contract RedBlackTreeTester is IRedBlackTreeTester{
         return tree[node].red;
     }
 
-    function _getNodes(NodeId node, NodeId[] memory nodes, uint256 index) private view returns (uint256 newIndex){
+    function _getNodes(NodeId node, NodeId[] memory nodes, uint256 index) private view returns (uint256 newIndex) {
         if (node == NULL) {
             return index;
         }
@@ -134,15 +130,11 @@ contract RedBlackTreeTester is IRedBlackTreeTester{
         NodeId right = tree[currentRoot].right;
 
         if (left != NULL) {
-            require(
-                tree[left].parent == currentRoot,
-                IncorrectParentOfLeftChild(currentRoot, left, tree[left].parent)
-            );
+            require(tree[left].parent == currentRoot, IncorrectParentOfLeftChild(currentRoot, left, tree[left].parent));
         }
         if (right != NULL) {
             require(
-                tree[right].parent == currentRoot,
-                IncorrectParentOfRightChild(currentRoot, right, tree[right].parent)
+                tree[right].parent == currentRoot, IncorrectParentOfRightChild(currentRoot, right, tree[right].parent)
             );
         }
 
@@ -154,15 +146,12 @@ contract RedBlackTreeTester is IRedBlackTreeTester{
         (uint256 leftBlackHeight, uint256 leftWeight) = _validate(left);
         (uint256 rightBlackHeight, uint256 rightWeight) = _validate(right);
         require(
-            leftBlackHeight == rightBlackHeight,
-            IncorrectBlackHeight(currentRoot, leftBlackHeight, rightBlackHeight)
+            leftBlackHeight == rightBlackHeight, IncorrectBlackHeight(currentRoot, leftBlackHeight, rightBlackHeight)
         );
         require(
             leftWeight + rightWeight + weights[currentRoot] == tree[currentRoot].totalWeight,
             TotalWeightIsIncorrect(
-                currentRoot,
-                leftWeight + rightWeight + weights[currentRoot],
-                tree[currentRoot].totalWeight
+                currentRoot, leftWeight + rightWeight + weights[currentRoot], tree[currentRoot].totalWeight
             )
         );
 
@@ -172,4 +161,5 @@ contract RedBlackTreeTester is IRedBlackTreeTester{
         }
         weight = tree[currentRoot].totalWeight;
     }
+
 }

@@ -18,16 +18,18 @@
  *   You should have received a copy of the GNU Affero General Public License
  *   along with fair-manager.  If not, see <https://www.gnu.org/licenses/>.
  */
-
 pragma solidity ^0.8.24;
 
 import { Committee, ICommittee, NodeId, TypedSet } from "../Committee.sol";
 
 interface ICommitteeTester is ICommittee {
+
     function isNodeInRBTree(NodeId node) external view returns (bool result);
+
 }
 
 contract CommitteeTester is Committee, ICommitteeTester {
+
     using TypedSet for TypedSet.NodeIdSet;
 
     function isNodeInRBTree(NodeId node) external view override returns (bool result) {

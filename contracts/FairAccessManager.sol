@@ -21,18 +21,18 @@
 
 pragma solidity ^0.8.24;
 
-import {
-    AccessManagerUpgradeable
-} from "@openzeppelin/contracts-upgradeable/access/manager/AccessManagerUpgradeable.sol";
-
+import { AccessManagerUpgradeable } from
+    "@openzeppelin/contracts-upgradeable/access/manager/AccessManagerUpgradeable.sol";
 
 contract FairAccessManager is AccessManagerUpgradeable {
+
     uint64 public constant COMMITTEE_ROLE = 1;
     uint64 public constant NODES_ROLE = 2;
     uint64 public constant STAKING_ROLE = 3;
     uint64 public constant STATUS_ROLE = 4;
 
-    function initialize(address initialAdmin) public initializer override {
+    function initialize(address initialAdmin) public override initializer {
         __AccessManager_init(initialAdmin);
     }
+
 }

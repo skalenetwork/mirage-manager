@@ -18,21 +18,18 @@
  *   You should have received a copy of the GNU Affero General Public License
  *   along with fair-manager.  If not, see <https://www.gnu.org/licenses/>.
  */
-
 pragma solidity ^0.8.24;
 
-import {
-    AccessManagedUpgradeable
-} from "@openzeppelin/contracts-upgradeable/access/manager/AccessManagedUpgradeable.sol";
-import {
-    Address
-} from "@openzeppelin/contracts/utils/Address.sol";
+import { AccessManagedUpgradeable } from
+    "@openzeppelin/contracts-upgradeable/access/manager/AccessManagedUpgradeable.sol";
+import { Address } from "@openzeppelin/contracts/utils/Address.sol";
 
-import {INodes, NodeId} from "@skalenetwork/fair-manager-interfaces/INodes.sol";
-import {IRewardWallet} from "@skalenetwork/fair-manager-interfaces/IRewardWallet.sol";
-import {IStaking} from "@skalenetwork/fair-manager-interfaces/IStaking.sol";
+import { INodes, NodeId } from "@skalenetwork/fair-manager-interfaces/INodes.sol";
+import { IRewardWallet } from "@skalenetwork/fair-manager-interfaces/IRewardWallet.sol";
+import { IStaking } from "@skalenetwork/fair-manager-interfaces/IStaking.sol";
 
 contract RewardWallet is AccessManagedUpgradeable, IRewardWallet {
+
     using Address for address payable;
 
     IStaking public staking;
@@ -47,12 +44,13 @@ contract RewardWallet is AccessManagedUpgradeable, IRewardWallet {
         _;
     }
 
-    modifier onlyWithinStakeLimit(){
-        require(
-            staking.isWithinStakeLimit(ownerNode),
-            ValueExceedsStakeLimit()
-        );
+    modifier onlyWithinStakeLimit() {
+        require(staking.isWithinStakeLimit(ownerNode), ValueExceedsStakeLimit());
         _;
+    }
+
+    receive() external payable override onlyIfNodeExists onlyWithinStakeLimit {
+        flush();
     }
 
     function initialize(
@@ -71,10 +69,6 @@ contract RewardWallet is AccessManagedUpgradeable, IRewardWallet {
         nodes = nodes_;
     }
 
-    receive() external payable override onlyIfNodeExists onlyWithinStakeLimit {
-        flush();
-    }
-
     // Public
 
     function flush() public override {
@@ -83,14 +77,12 @@ contract RewardWallet is AccessManagedUpgradeable, IRewardWallet {
                 // Both staking and ownerNode is set during deployment
                 // by Staking contract so the warning is false positive
                 // slither-disable-next-line arbitrary-send-eth
-                staking.payReward{value: address(this).balance}(ownerNode);
-            }
-            else {
+                staking.payReward{ value: address(this).balance }(ownerNode);
+            } else {
                 // Rewards are sent as network rewards
                 // This is a failsafe mechanism, it's expected to never happen under normal conditions
                 payable(staking).sendValue(address(this).balance);
             }
-
         }
     }
 
@@ -98,4 +90,5 @@ contract RewardWallet is AccessManagedUpgradeable, IRewardWallet {
     function _nodeExists(NodeId nodeId) private view returns (bool exists) {
         return nodes.activeNodeExists(nodeId);
     }
+
 }

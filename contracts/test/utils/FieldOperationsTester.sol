@@ -21,25 +21,32 @@
 
 pragma solidity ^0.8.24;
 
-import {IDkg} from "@skalenetwork/fair-manager-interfaces/IDkg.sol";
+import { IDkg } from "@skalenetwork/fair-manager-interfaces/IDkg.sol";
 
 import { Fp2Operations } from "../../utils/fieldOperations/Fp2Operations.sol";
 import { G2Operations } from "../../utils/fieldOperations/G2Operations.sol";
 
-
 interface IFiedOperationsTester {
-    function addG2(IDkg.G2Point calldata value1, IDkg.G2Point calldata value2)
+
+    function addG2(
+        IDkg.G2Point calldata value1,
+        IDkg.G2Point calldata value2
+    )
         external
         view
         returns (IDkg.G2Point memory result);
+
 }
 
-contract FieldOperationsTester is IFiedOperationsTester{
+contract FieldOperationsTester is IFiedOperationsTester {
 
     using Fp2Operations for IDkg.Fp2Point;
     using G2Operations for IDkg.G2Point;
 
-    function addG2(IDkg.G2Point calldata value1, IDkg.G2Point calldata value2)
+    function addG2(
+        IDkg.G2Point calldata value1,
+        IDkg.G2Point calldata value2
+    )
         external
         view
         override
@@ -47,4 +54,5 @@ contract FieldOperationsTester is IFiedOperationsTester{
     {
         return value1.addG2(value2);
     }
+
 }

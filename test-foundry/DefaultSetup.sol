@@ -21,20 +21,22 @@
 
 pragma solidity ^0.8.24;
 
-import {Test} from "forge-std/Test.sol";
+import { Test } from "forge-std/Test.sol";
 
-import {StatusHandler} from "./handlers/StatusHandler.sol";
-import {CommitteeHandler} from "./handlers/CommitteeHandler.sol";
-import {StakingHandler} from "./handlers/StakingHandler.sol";
+import { StatusHandler } from "./handlers/StatusHandler.sol";
+import { CommitteeHandler } from "./handlers/CommitteeHandler.sol";
+import { StakingHandler } from "./handlers/StakingHandler.sol";
 
 contract DefaultSetup is Test {
+
     StatusHandler public status;
     CommitteeHandler public committee;
     StakingHandler public staking;
 
-    function setUp() public virtual{
+    function setUp() public virtual {
         staking = new StakingHandler(payable(vm.envAddress("STAKING")), vm.envAddress("DEPLOYER"));
         status = new StatusHandler(vm.envAddress("STATUS"), vm.envAddress("DEPLOYER"));
         committee = new CommitteeHandler(payable(vm.envAddress("COMMITTEE")), vm.envAddress("DEPLOYER"));
     }
+
 }

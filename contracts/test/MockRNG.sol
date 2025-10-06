@@ -20,11 +20,15 @@
 */
 
 pragma solidity ^0.8.24;
+
 interface IMockRNG {
+
     fallback(bytes calldata) external returns (bytes memory result);
     function burnEth() external;
+
 }
-contract MockRNG is IMockRNG{
+
+contract MockRNG is IMockRNG {
 
     // If make fallback function payable
     // compiler throws a warning to include a receive function.
@@ -41,4 +45,5 @@ contract MockRNG is IMockRNG{
     function burnEth() external override {
         payable(address(0)).transfer(address(this).balance);
     }
+
 }

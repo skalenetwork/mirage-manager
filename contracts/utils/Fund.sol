@@ -29,17 +29,13 @@ import { Fair } from "@skalenetwork/fair-manager-interfaces/units.sol";
 import { TypedMap } from "../structs/typed/TypedMap.sol";
 
 type Credit is uint256;
+
 type Holder is uint256;
 
-using {
-    _creditAdd as +,
-    _creditEqual as ==,
-    _creditLess as <,
-    _creditSubtract as -
-} for Credit global;
-
+using { _creditAdd as +, _creditEqual as ==, _creditLess as <, _creditSubtract as - } for Credit global;
 
 library FundLibrary {
+
     using TypedMap for TypedMap.HolderToCreditMap;
 
     struct Fund {
@@ -62,13 +58,7 @@ library FundLibrary {
     error NotEnoughFee(Fair earnedFee);
     error RoundingErrorTooHigh(Fair roundingError);
 
-    function claimFee(
-        Fund storage fund,
-        Fair fundBalance,
-        Fair amount
-    )
-        internal
-    {
+    function claimFee(Fund storage fund, Fair fundBalance, Fair amount) internal {
         _processBalanceChange(fund, fundBalance);
 
         if (fund.earnedFee < amount) {
@@ -78,14 +68,7 @@ library FundLibrary {
         fund.lastBalance = fundBalance - amount;
     }
 
-    function remove(
-        Fund storage fund,
-        Fair fundBalance,
-        Holder holder,
-        Fair amount
-    )
-        internal
-    {
+    function remove(Fund storage fund, Fair fundBalance, Holder holder, Fair amount) internal {
         _processBalanceChange(fund, fundBalance);
         if (amount > ZERO_FAIR) {
             Fair holderBalance = getBalance(fund, fundBalance, holder);
@@ -102,25 +85,12 @@ library FundLibrary {
         }
     }
 
-    function setFeeRate(
-        Fund storage fund,
-        Fair fundBalance,
-        uint16 feeRate
-    )
-        internal
-    {
+    function setFeeRate(Fund storage fund, Fair fundBalance, uint16 feeRate) internal {
         _processBalanceChange(fund, fundBalance);
         fund.feeRate = feeRate;
     }
 
-    function supply(
-        Fund storage fund,
-        Fair fundBalance,
-        Holder holder,
-        Fair amount
-    )
-        internal
-    {
+    function supply(Fund storage fund, Fair fundBalance, Holder holder, Fair amount) internal {
         _processBalanceChange(fund, fundBalance);
         Fair holderBalance = getBalance(fund, fundBalance, holder);
         Credit credits = _toCreditsRoundedDown(fund, fundBalance, amount);
@@ -150,16 +120,7 @@ library FundLibrary {
         _processBalanceChange(fund, fundBalance);
     }
 
-
-    function getBalance(
-        Fund storage fund,
-        Fair fundBalance,
-        Holder holder
-    )
-        internal
-        view
-        returns (Fair amount)
-    {
+    function getBalance(Fund storage fund, Fair fundBalance, Holder holder) internal view returns (Fair amount) {
         if (fund.totalCredits == ZERO_CREDIT) {
             return ZERO_FAIR;
         }
@@ -169,14 +130,7 @@ library FundLibrary {
         return _toFairRoundedDown(fund, fundBalance, holderCredits);
     }
 
-    function getEarnedFee(
-        Fund storage fund,
-        Fair balance
-    )
-        internal
-        view
-        returns (Fair amount)
-    {
+    function getEarnedFee(Fund storage fund, Fair balance) internal view returns (Fair amount) {
         return fund.earnedFee + _getUncountedFee(fund, balance);
     }
 
@@ -198,12 +152,7 @@ library FundLibrary {
 
     // private
 
-    function _processBalanceChange(
-        Fund storage fund,
-        Fair fundBalance
-    )
-        private
-    {
+    function _processBalanceChange(Fund storage fund, Fair fundBalance) private {
         if (!(fundBalance == fund.lastBalance)) {
             if (fundBalance > fund.lastBalance) {
                 fund.earnedFee = fund.earnedFee + _getUncountedFee(fund, fundBalance);
@@ -232,8 +181,7 @@ library FundLibrary {
         if (holderCredits == amount) {
             // Holders with Zero credits are always removed from the map.
             assert(fund.credits.remove(holder) == exists);
-        }
-        else {
+        } else {
             // Set must return false because holder already exists in the map.
             assert(!fund.credits.set(holder, holderCredits - amount));
         }
@@ -242,34 +190,18 @@ library FundLibrary {
         fund.lastBalance = fundBalance - removed;
     }
 
-    function _getHoldersBalance(
-        Fund storage fund,
-        Fair fundBalance
-    )
-        private
-        view
-        returns (Fair amount)
-    {
+    function _getHoldersBalance(Fund storage fund, Fair fundBalance) private view returns (Fair amount) {
         return fundBalance - (fund.earnedFee + _getUncountedFee(fund, fundBalance));
     }
 
-    function _getUncountedFee(
-        Fund storage fund,
-        Fair balance
-    )
-        private
-        view
-        returns (Fair fee)
-    {
+    function _getUncountedFee(Fund storage fund, Fair balance) private view returns (Fair fee) {
         if (balance > fund.lastBalance && fund.feeRate > 0) {
             Fair balanceChange = balance - fund.lastBalance;
             if (fund.totalCredits == ZERO_CREDIT) {
                 // If there is no holders, all income goes to the owner.
                 fee = balanceChange;
             } else {
-                fee = Fair.wrap(
-                    Fair.unwrap(balanceChange) * fund.feeRate / 1000
-                );
+                fee = Fair.wrap(Fair.unwrap(balanceChange) * fund.feeRate / 1000);
             }
             return fee;
         }
@@ -294,10 +226,7 @@ library FundLibrary {
         }
         return Credit.wrap(
             Math.mulDiv(
-                Credit.unwrap(fund.totalCredits),
-                Fair.unwrap(amount),
-                Fair.unwrap(holdersBalance),
-                Math.Rounding.Floor
+                Credit.unwrap(fund.totalCredits), Fair.unwrap(amount), Fair.unwrap(holdersBalance), Math.Rounding.Floor
             )
         );
     }
@@ -320,23 +249,12 @@ library FundLibrary {
         }
         return Credit.wrap(
             Math.mulDiv(
-                Fair.unwrap(amount),
-                Credit.unwrap(fund.totalCredits),
-                Fair.unwrap(holdersBalance),
-                Math.Rounding.Ceil
+                Fair.unwrap(amount), Credit.unwrap(fund.totalCredits), Fair.unwrap(holdersBalance), Math.Rounding.Ceil
             )
         );
     }
 
-    function _toFairRoundedDown(
-        Fund storage fund,
-        Fair fundBalance,
-        Credit amount
-    )
-        private
-        view
-        returns (Fair fair)
-    {
+    function _toFairRoundedDown(Fund storage fund, Fair fundBalance, Credit amount) private view returns (Fair fair) {
         if (fund.totalCredits == ZERO_CREDIT) {
             return ZERO_FAIR;
         }
@@ -350,14 +268,7 @@ library FundLibrary {
         );
     }
 
-    function _checkAllowedError(
-        Fair balanceBefore,
-        Fair balanceAfter,
-        Fair amount
-    )
-        private
-        pure
-    {
+    function _checkAllowedError(Fair balanceBefore, Fair balanceAfter, Fair amount) private pure {
         Fair max = Fair.wrap(Math.max(Fair.unwrap(balanceBefore), Fair.unwrap(balanceAfter)));
         Fair min = Fair.wrap(Math.min(Fair.unwrap(balanceBefore), Fair.unwrap(balanceAfter)));
         Fair delta = max - min;
@@ -374,6 +285,7 @@ library FundLibrary {
             revert RoundingErrorTooHigh(err);
         }
     }
+
 }
 
 // operators

@@ -27,6 +27,7 @@ import { Credit, Holder } from "../../utils/Fund.sol";
 import { TypedSet } from "./TypedSet.sol";
 
 library TypedMap {
+
     using TypedSet for TypedSet.NodeIdSet;
 
     struct AddressToNodeIdMap {
@@ -168,7 +169,7 @@ library TypedMap {
         value = Fair.wrap(rawValue);
     }
 
-    function keys(NodeIdToFairMap storage map) internal view returns (NodeId[] memory nodes){
+    function keys(NodeIdToFairMap storage map) internal view returns (NodeId[] memory nodes) {
         uint256[] memory values = EnumerableMap.keys(map.inner);
         nodes = new NodeId[](values.length);
         uint256 loops = values.length;
@@ -193,7 +194,7 @@ library TypedMap {
         value = Credit.wrap(rawValue);
     }
 
-    function keys(HolderToCreditMap storage map) internal view returns (Holder[] memory nodes){
+    function keys(HolderToCreditMap storage map) internal view returns (Holder[] memory nodes) {
         uint256[] memory values = EnumerableMap.keys(map.inner);
         nodes = new Holder[](values.length);
         uint256 loops = values.length;
@@ -205,4 +206,5 @@ library TypedMap {
     function length(HolderToCreditMap storage map) internal view returns (uint256 len) {
         return EnumerableMap.length(map.inner);
     }
+
 }

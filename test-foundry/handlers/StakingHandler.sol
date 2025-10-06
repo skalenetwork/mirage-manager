@@ -21,12 +21,13 @@
 
 pragma solidity ^0.8.24;
 
-import {Test} from "forge-std/Test.sol";
+import { Test } from "forge-std/Test.sol";
 
-import {Fair, NodeId, Staking, Timestamp} from "../../contracts/Staking.sol";
-import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+import { Fair, NodeId, Staking, Timestamp } from "../../contracts/Staking.sol";
+import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
 contract StakingHandler is Test {
+
     using EnumerableSet for EnumerableSet.AddressSet;
 
     Staking public staking;
@@ -35,6 +36,7 @@ contract StakingHandler is Test {
     NodeId[] public fixtureNode;
 
     address public constant DONATOR_ADDRESS = 0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B;
+
     constructor(address _staking, address admin) {
         staking = Staking(payable(_staking));
         require(address(staking) != address(0), "STAKING not set");
@@ -60,7 +62,6 @@ contract StakingHandler is Test {
     }
 
     function stakeFor(address user, uint8 nodeIndex, uint48 amountToStake) public {
-
         // user should not be a precompile address (0x1 - 0xFFFF) or a contract
         vm.assume(user.code.length == 0);
         vm.assume(uint160(user) > 0xFFFF);
@@ -73,7 +74,7 @@ contract StakingHandler is Test {
 
         vm.deal(staker, uint256(amountToStake) + 1e13); // add some extra
         vm.prank(staker);
-        staking.stake{value: uint256(amountToStake) + 1e13}(node);
+        staking.stake{ value: uint256(amountToStake) + 1e13 }(node);
     }
 
     function requestRetrieveAll(uint8 userIndex, uint8 nodeIndex) public {
@@ -129,7 +130,7 @@ contract StakingHandler is Test {
         vm.deal(DONATOR_ADDRESS, amount);
 
         vm.prank(DONATOR_ADDRESS);
-        (bool success,) = address(staking).call{value: amount}("");
+        (bool success,) = address(staking).call{ value: amount }("");
         require(success, "Donation call failed");
         assert(success);
     }
@@ -174,4 +175,5 @@ contract StakingHandler is Test {
     function getNumNodes() external view returns (uint256 len) {
         return fixtureNode.length;
     }
+
 }

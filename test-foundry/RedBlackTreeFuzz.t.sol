@@ -1,4 +1,3 @@
-
 // SPDX-License-Identifier: AGPL-3.0-only
 
 /*
@@ -22,11 +21,12 @@
 
 pragma solidity ^0.8.24;
 
-import {Test} from "forge-std/Test.sol";
-import {StdInvariant} from "forge-std/StdInvariant.sol";
-import {RBTHandler, RedBlackTreeTester} from "./handlers/RBTHandler.sol";
+import { Test } from "forge-std/Test.sol";
+import { StdInvariant } from "forge-std/StdInvariant.sol";
+import { RBTHandler, RedBlackTreeTester } from "./handlers/RBTHandler.sol";
 
 contract RBTFuzzTest is StdInvariant, Test {
+
     RedBlackTreeTester public rbt;
     RBTHandler public handler;
 
@@ -39,4 +39,5 @@ contract RBTFuzzTest is StdInvariant, Test {
     function invariant_treeIsValid() public view {
         require(rbt.validate(), "TreeIsInvalid");
     }
+
 }

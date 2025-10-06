@@ -29,7 +29,8 @@ import { IStaking } from "@skalenetwork/fair-manager-interfaces/IStaking.sol";
 import { Fair, Timestamp } from "@skalenetwork/fair-manager-interfaces/units.sol";
 import { FundLibrary } from "./Fund.sol";
 
-library ExitQueueLibrary{
+library ExitQueueLibrary {
+
     using EnumerableSet for EnumerableSet.UintSet;
 
     struct UserExitData {
@@ -48,19 +49,11 @@ library ExitQueueLibrary{
     uint256 public constant MAX_ITERATIONS = 2000;
 
     event RequestCreated(
-        address indexed user,
-        uint256 indexed requestId,
-        NodeId indexed nodeId,
-        Fair amount,
-        Timestamp unlockDate
+        address indexed user, uint256 indexed requestId, NodeId indexed nodeId, Fair amount, Timestamp unlockDate
     );
 
     event RequestClaimed(
-        address indexed user,
-        uint256 indexed requestId,
-        NodeId indexed nodeId,
-        Fair amount,
-        Timestamp claimDate
+        address indexed user, uint256 indexed requestId, NodeId indexed nodeId, Fair amount, Timestamp claimDate
     );
 
     error RequestDoesNotExist(uint256 requestId);
@@ -71,36 +64,23 @@ library ExitQueueLibrary{
 
     // internal
 
-    function createRequest(
-        ExitQueue storage queue,
-        address user,
-        NodeId nodeId,
-        Fair amount
-    )
-        internal
-    {
+    function createRequest(ExitQueue storage queue, address user, NodeId nodeId, Fair amount) internal {
         if (amount == FundLibrary.ZERO_FAIR) {
             return;
         }
         Timestamp unlockDate = Timestamp.wrap(block.timestamp) + queue.retrievingDelay;
         UserExitData storage userData = queue.userExitData[user];
-        uint256 requestId = queue.numRequests;
-        assert(userData.requestIds.add(requestId));
-        assert(queue.exitRequests[requestId].user == address(0));
-        queue.exitRequests[requestId] = IStaking.ExitRequest({
-            requestId: requestId,
+        uint256 reqId = queue.numRequests;
+        assert(userData.requestIds.add(reqId));
+        assert(queue.exitRequests[reqId].user == address(0));
+        queue.exitRequests[reqId] = IStaking.ExitRequest({
+            requestId: reqId,
             user: user,
             nodeId: nodeId,
             amount: amount,
             unlockDate: unlockDate
         });
-        emit RequestCreated({
-            user: user,
-            requestId: requestId,
-            nodeId: nodeId,
-            amount: amount,
-            unlockDate: unlockDate
-        });
+        emit RequestCreated({ user: user, requestId: reqId, nodeId: nodeId, amount: amount, unlockDate: unlockDate });
         ++queue.numRequests;
         userData.totalLeaving = userData.totalLeaving + amount;
         queue.totalInExitQueue = queue.totalInExitQueue + amount;
@@ -110,10 +90,7 @@ library ExitQueueLibrary{
         IStaking.ExitRequest storage request = getRequest(queue, id);
 
         require(request.user == user, RequestDoesNotExistForUser(user, id));
-        require(
-            _isRequestUnlocked(request),
-            RequestIsStillLocked(Timestamp.wrap(block.timestamp), request.unlockDate)
-        );
+        require(_isRequestUnlocked(request), RequestIsStillLocked(Timestamp.wrap(block.timestamp), request.unlockDate));
 
         amount = request.amount;
         UserExitData storage userData = queue.userExitData[user];
@@ -182,7 +159,7 @@ library ExitQueueLibrary{
         for (uint256 i = from; i < end; ++i) {
             uint256 id = userData.requestIds.at(i);
             IStaking.ExitRequest storage req = queue.exitRequests[id];
-            if(_isRequestUnlocked(req)){
+            if (_isRequestUnlocked(req)) {
                 return req;
             }
         }
@@ -195,7 +172,8 @@ library ExitQueueLibrary{
 
     // private
 
-    function _isRequestUnlocked(IStaking.ExitRequest storage request) private view returns (bool isUnlocked){
+    function _isRequestUnlocked(IStaking.ExitRequest storage request) private view returns (bool isUnlocked) {
         return request.unlockDate < Timestamp.wrap(block.timestamp);
     }
+
 }

@@ -72,4 +72,5 @@ library TypedSet {
     function at(NodeIdSet storage set, uint256 index) internal view returns (NodeId nodeId) {
         nodeId = NodeId.wrap(EnumerableSet.at(set.inner, index));
     }
+
 }

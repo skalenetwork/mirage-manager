@@ -28,17 +28,14 @@ import { IDkg } from "@skalenetwork/fair-manager-interfaces/IDkg.sol";
 
 import { Fp2Operations } from "./Fp2Operations.sol";
 
-
 library G1Operations {
+
     using Fp2Operations for IDkg.Fp2Point;
 
     function getG1Generator() internal pure returns (IDkg.Fp2Point memory generator) {
         // Current solidity version does not support Constants of non-value type
         // so we implemented this function
-        return IDkg.Fp2Point({
-            a: 1,
-            b: 2
-        });
+        return IDkg.Fp2Point({ a: 1, b: 2 });
     }
 
     function isG1Point(uint256 x, uint256 y) internal pure returns (bool result) {
@@ -47,8 +44,7 @@ library G1Operations {
             return true;
         }
         uint256 p = Fp2Operations.P;
-        return mulmod(y, y, p) ==
-            addmod(mulmod(mulmod(x, x, p), x, p), 3, p);
+        return mulmod(y, y, p) == addmod(mulmod(mulmod(x, x, p), x, p), 3, p);
     }
 
     function isG1(IDkg.Fp2Point memory point) internal pure returns (bool result) {

@@ -21,14 +21,14 @@
 
 pragma solidity ^0.8.24;
 
-import {Test} from "forge-std/Test.sol";
+import { Test } from "forge-std/Test.sol";
 
-import {CommitteeTester, NodeId} from "../../contracts/test/CommitteeTester.sol";
-import {Timestamp, Committee} from "../../contracts/Committee.sol";
-import {IStatus} from "../../contracts/Status.sol";
-import {PoolLibrary} from "../../contracts/utils/Pool.sol";
-import {Fair, IStaking} from "../../contracts/Staking.sol";
-import {Duration, Status} from "../../contracts/Status.sol";
+import { CommitteeTester, NodeId } from "../../contracts/test/CommitteeTester.sol";
+import { Timestamp, Committee } from "../../contracts/Committee.sol";
+import { IStatus } from "../../contracts/Status.sol";
+import { PoolLibrary } from "../../contracts/utils/Pool.sol";
+import { Fair, IStaking } from "../../contracts/Staking.sol";
+import { Duration, Status } from "../../contracts/Status.sol";
 
 contract CommitteeHandler is Test {
 
@@ -36,7 +36,8 @@ contract CommitteeHandler is Test {
     NodeId[] public fixtureNode;
     address private admin;
     uint256 private selectCount = 0;
-    constructor (address _committee, address _admin) {
+
+    constructor(address _committee, address _admin) {
         committee = CommitteeTester(_committee);
         require(address(committee) != address(0), "COMMITTEE not set");
         // scans for first 256 Nodes
@@ -63,20 +64,17 @@ contract CommitteeHandler is Test {
         uint256 eligibleNodes = 0;
         for (uint256 i = 0; i < fixtureNode.length; ++i) {
             NodeId node = fixtureNode[i];
-            if(
-                committee.staking().getNodeShare(node) > 0 &&
-                committee.status().isWhitelisted(node) &&
-                committee.status().isHealthy(node) &&
-                committee.isNodeInRBTree(node)
-            ){
+            if (
+                committee.staking().getNodeShare(node) > 0 && committee.status().isWhitelisted(node)
+                    && committee.status().isHealthy(node) && committee.isNodeInRBTree(node)
+            ) {
                 eligibleNodes++;
             }
         }
-        if (type(uint256).max != timestamp && timestamp >= block.timestamp){
+        if (type(uint256).max != timestamp && timestamp >= block.timestamp) {
             // partialRevert only matches the selector
             vm.expectPartialRevert(Committee.CommitteeRotationInProgress.selector);
-        }
-        else if (eligibleNodes < committee.committeeSize()) {
+        } else if (eligibleNodes < committee.committeeSize()) {
             vm.expectPartialRevert(PoolLibrary.TooFewCandidates.selector);
         }
         vm.prank(admin);
@@ -109,4 +107,5 @@ contract CommitteeHandler is Test {
     function skipTime(uint8 time) public {
         vm.warp(block.timestamp + uint256(time));
     }
+
 }

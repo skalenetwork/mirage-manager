@@ -28,20 +28,15 @@ import { IDkg } from "@skalenetwork/fair-manager-interfaces/IDkg.sol";
 
 import { Fp2Operations } from "./Fp2Operations.sol";
 
-
 library G2Operations {
+
     using Fp2Operations for IDkg.Fp2Point;
 
-    function doubleG2(IDkg.G2Point memory value)
-        internal
-        view
-        returns (IDkg.G2Point memory result)
-    {
+    function doubleG2(IDkg.G2Point memory value) internal view returns (IDkg.G2Point memory result) {
         if (isG2Zero(value)) {
             return value;
         } else {
-            IDkg.Fp2Point memory s =
-                value.x.squaredFp2().scalarMulFp2(3).mulFp2(value.y.scalarMulFp2(2).inverseFp2());
+            IDkg.Fp2Point memory s = value.x.squaredFp2().scalarMulFp2(3).mulFp2(value.y.scalarMulFp2(2).inverseFp2());
             result.x = s.squaredFp2().minusFp2(value.x.addFp2(value.x));
             result.y = value.y.addFp2(s.mulFp2(result.x.minusFp2(value.x)));
             uint256 p = Fp2Operations.P;
@@ -75,13 +70,7 @@ library G2Operations {
             return sum;
         }
 
-        IDkg.Fp2Point memory s = value2.y
-            .minusFp2(value1.y)
-            .mulFp2(
-                value2.x
-                    .minusFp2(value1.x)
-                    .inverseFp2()
-            );
+        IDkg.Fp2Point memory s = value2.y.minusFp2(value1.y).mulFp2(value2.x.minusFp2(value1.x).inverseFp2());
         sum.x = s.squaredFp2().minusFp2(value1.x.addFp2(value2.x));
         sum.y = value1.y.addFp2(s.mulFp2(sum.x.minusFp2(value1.x)));
         uint256 p = Fp2Operations.P;
@@ -116,26 +105,10 @@ library G2Operations {
     function getG2Zero() internal pure returns (IDkg.G2Point memory point) {
         // Current solidity version does not support Constants of non-value type
         // so we implemented this function
-        return IDkg.G2Point({
-            x: IDkg.Fp2Point({
-                a: 0,
-                b: 0
-            }),
-            y: IDkg.Fp2Point({
-                a: 1,
-                b: 0
-            })
-        });
+        return IDkg.G2Point({ x: IDkg.Fp2Point({ a: 0, b: 0 }), y: IDkg.Fp2Point({ a: 1, b: 0 }) });
     }
 
-    function isG2Point(
-        IDkg.Fp2Point memory x,
-        IDkg.Fp2Point memory y
-    )
-        internal
-        pure
-        returns (bool result)
-    {
+    function isG2Point(IDkg.Fp2Point memory x, IDkg.Fp2Point memory y) internal pure returns (bool result) {
         uint256 p = Fp2Operations.P;
         if (!(x.a < p && x.b < p && y.a < p && y.b < p)) {
             return false;
@@ -144,9 +117,7 @@ library G2Operations {
             return true;
         }
         IDkg.Fp2Point memory squaredY = y.squaredFp2();
-        IDkg.Fp2Point memory res = squaredY.minusFp2(
-                x.squaredFp2().mulFp2(x)
-            ).minusFp2(getTWISTB());
+        IDkg.Fp2Point memory res = squaredY.minusFp2(x.squaredFp2().mulFp2(x)).minusFp2(getTWISTB());
         return res.a == 0 && res.b == 0;
     }
 
@@ -154,14 +125,7 @@ library G2Operations {
         return isG2Point(value.x, value.y);
     }
 
-    function isG2ZeroPoint(
-        IDkg.Fp2Point memory x,
-        IDkg.Fp2Point memory y
-    )
-        internal
-        pure
-        returns (bool result)
-    {
+    function isG2ZeroPoint(IDkg.Fp2Point memory x, IDkg.Fp2Point memory y) internal pure returns (bool result) {
         return x.a == 0 && x.b == 0 && y.a == 1 && y.b == 0;
     }
 
@@ -175,14 +139,8 @@ library G2Operations {
      * This function will return false if following coordinates
      * of points are different, even if its different on P.
      */
-    function isEqual(
-        IDkg.G2Point memory value1,
-        IDkg.G2Point memory value2
-    )
-        internal
-        pure
-        returns (bool result)
-    {
+    function isEqual(IDkg.G2Point memory value1, IDkg.G2Point memory value2) internal pure returns (bool result) {
         return value1.x.isEqual(value2.x) && value1.y.isEqual(value2.y);
     }
+
 }

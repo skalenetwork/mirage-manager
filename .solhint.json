@@ -23,6 +23,26 @@
     "no-inline-assembly": "error",
     "no-unused-import": "error",
     "no-unused-vars": "error",
-    "ordering": "error"
+    "ordering": "error",
+    "use-natspec": [
+      "warn",
+      {
+        "title": {
+          "enabled": false
+        },
+        "author": {
+          "enabled": false
+        },
+        "notice": {
+          "enabled": false
+        },
+        "param": {
+          "enabled": false
+        },
+        "return": {
+          "enabled": false
+        }
+      }
+    ]
   }
 }

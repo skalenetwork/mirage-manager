@@ -33,17 +33,11 @@ library Random {
      * @dev Create an instance of RandomGenerator
      */
     function create(uint256 seed) internal pure returns (IRandom.RandomGenerator memory generator) {
-        return IRandom.RandomGenerator({seed: seed});
+        return IRandom.RandomGenerator({ seed: seed });
     }
 
-    function createFromEntropy(
-        bytes memory entropy
-    )
-        internal
-        pure
-        returns (IRandom.RandomGenerator memory generator)
-    {
-        return create(uint(keccak256(entropy)));
+    function createFromEntropy(bytes memory entropy) internal pure returns (IRandom.RandomGenerator memory generator) {
+        return create(uint256(keccak256(entropy)));
     }
 
     /**
@@ -57,14 +51,7 @@ library Random {
     /**
      * @dev Generates random value in range [0, max)
      */
-    function random(
-        IRandom.RandomGenerator memory self,
-        uint256 max
-    )
-        internal
-        pure
-        returns (uint256 value)
-    {
+    function random(IRandom.RandomGenerator memory self, uint256 max) internal pure returns (uint256 value) {
         assert(max > 0);
         uint256 maxRand = type(uint256).max - type(uint256).max % max;
         uint256 rand;
@@ -88,4 +75,5 @@ library Random {
     {
         return random(self, max - min) + min;
     }
+
 }

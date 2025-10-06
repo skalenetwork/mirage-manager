@@ -22,10 +22,10 @@
 
 pragma solidity ^0.8.24;
 
-import {Test} from "forge-std/Test.sol";
+import { Test } from "forge-std/Test.sol";
 
-import {Duration, NodeId, Status} from "../../contracts/Status.sol";
-import {Fair} from "../../contracts/utils/Fund.sol";
+import { Duration, NodeId, Status } from "../../contracts/Status.sol";
+import { Fair } from "../../contracts/utils/Fund.sol";
 
 contract StatusHandler is Test {
 
@@ -106,14 +106,7 @@ contract StatusHandler is Test {
 
     // Helpers
 
-    function _getRandomSample(
-        uint256 x,
-        uint256 n
-    )
-        private
-        view
-        returns (uint256[] memory)
-    {
+    function _getRandomSample(uint256 x, uint256 n) private view returns (uint256[] memory) {
         // Handle edge cases
         if (x == 0) {
             return new uint256[](0);
@@ -151,4 +144,5 @@ contract StatusHandler is Test {
 
         return result;
     }
+
 }

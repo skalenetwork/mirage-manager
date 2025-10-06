@@ -18,25 +18,22 @@
  *   You should have received a copy of the GNU Affero General Public License
  *   along with fair-manager.  If not, see <https://www.gnu.org/licenses/>.
  */
-
 pragma solidity ^0.8.24;
 
-import {
-    AccessManagedUpgradeable
-} from "@openzeppelin/contracts-upgradeable/access/manager/AccessManagedUpgradeable.sol";
+import { AccessManagedUpgradeable } from
+    "@openzeppelin/contracts-upgradeable/access/manager/AccessManagedUpgradeable.sol";
 import { ICommittee } from "@skalenetwork/fair-manager-interfaces/ICommittee.sol";
 import { INodes, NodeId } from "@skalenetwork/fair-manager-interfaces/INodes.sol";
 import { Duration, IStatus } from "@skalenetwork/fair-manager-interfaces/IStatus.sol";
 
 import { TypedSet } from "./structs/typed/TypedSet.sol";
 
-
 contract Status is AccessManagedUpgradeable, IStatus {
 
     using TypedSet for TypedSet.NodeIdSet;
 
     Duration public heartbeatInterval;
-    mapping (NodeId id => uint256 timestamp) public lastHeartbeatTimestamp;
+    mapping(NodeId id => uint256 timestamp) public lastHeartbeatTimestamp;
     TypedSet.NodeIdSet private _whitelist;
 
     ICommittee public committee;
@@ -57,7 +54,7 @@ contract Status is AccessManagedUpgradeable, IStatus {
         INodes nodesAddress,
         ICommittee committeeAddress
     )
-        public
+        external
         override
         initializer
     {
@@ -78,6 +75,7 @@ contract Status is AccessManagedUpgradeable, IStatus {
             committee.processHeartbeat(nodeId);
         }
     }
+
     function setHeartbeatInterval(Duration interval) external override restricted {
         Duration oldInterval = heartbeatInterval;
         heartbeatInterval = interval;
@@ -86,10 +84,7 @@ contract Status is AccessManagedUpgradeable, IStatus {
 
     function whitelistNode(NodeId nodeId) external override restricted {
         bool isActive = nodes.activeNodeExists(nodeId);
-        require(
-            isActive || nodes.passiveNodeExists(nodeId),
-            NodeDoesNotExist(nodeId)
-        );
+        require(isActive || nodes.passiveNodeExists(nodeId), NodeDoesNotExist(nodeId));
 
         require(_whitelist.add(nodeId), NodeAlreadyWhitelisted(nodeId));
         emit NodeWhitelisted(nodeId);
@@ -108,7 +103,7 @@ contract Status is AccessManagedUpgradeable, IStatus {
     }
 
     function nodeRemoved(NodeId nodeId) external override restricted {
-        if(_whitelist.contains(nodeId)){
+        if (_whitelist.contains(nodeId)) {
             assert(_whitelist.remove(nodeId));
         }
         delete lastHeartbeatTimestamp[nodeId];
@@ -127,4 +122,5 @@ contract Status is AccessManagedUpgradeable, IStatus {
         uint256 interval = block.timestamp - lastHeartbeatTimestamp[nodeId];
         healthy = interval < Duration.unwrap(heartbeatInterval);
     }
+
 }

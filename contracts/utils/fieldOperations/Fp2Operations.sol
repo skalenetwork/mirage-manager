@@ -28,19 +28,12 @@ import { IDkg } from "@skalenetwork/fair-manager-interfaces/IDkg.sol";
 
 import { Precompiled } from "../Precompiled.sol";
 
-
 library Fp2Operations {
 
-    uint256 constant public P =
-        21888242871839275222246405745257275088696311157297823662689037894645226208583;
+    uint256 public constant P =
+        21_888_242_871_839_275_222_246_405_745_257_275_088_696_311_157_297_823_662_689_037_894_645_226_208_583;
 
-    function inverseFp2(
-        IDkg.Fp2Point memory value
-    )
-        internal
-        view
-        returns (IDkg.Fp2Point memory result)
-    {
+    function inverseFp2(IDkg.Fp2Point memory value) internal view returns (IDkg.Fp2Point memory result) {
         uint256 p = P;
         uint256 t0 = mulmod(value.a, value.a, p);
         uint256 t1 = mulmod(value.b, value.b, p);
@@ -55,18 +48,21 @@ library Fp2Operations {
         result.b = (p - mulmod(value.b, t3, p)) % p;
     }
 
-    function addFp2(IDkg.Fp2Point memory value1, IDkg.Fp2Point memory value2)
+    function addFp2(
+        IDkg.Fp2Point memory value1,
+        IDkg.Fp2Point memory value2
+    )
         internal
         pure
         returns (IDkg.Fp2Point memory result)
     {
-        return IDkg.Fp2Point({
-            a: addmod(value1.a, value2.a, P),
-            b: addmod(value1.b, value2.b, P)
-        });
+        return IDkg.Fp2Point({ a: addmod(value1.a, value2.a, P), b: addmod(value1.b, value2.b, P) });
     }
 
-    function scalarMulFp2(IDkg.Fp2Point memory value, uint256 scalar)
+    function scalarMulFp2(
+        IDkg.Fp2Point memory value,
+        uint256 scalar
+    )
         internal
         pure
         returns (IDkg.Fp2Point memory result)
@@ -104,47 +100,23 @@ library Fp2Operations {
         returns (IDkg.Fp2Point memory result)
     {
         uint256 p = P;
-        IDkg.Fp2Point memory point = IDkg.Fp2Point({
-            a: mulmod(value1.a, value2.a, p),
-            b: mulmod(value1.b, value2.b, p)});
-        result.a = addmod(
-            point.a,
-            mulmod(p - 1, point.b, p),
-            p);
+        IDkg.Fp2Point memory point =
+            IDkg.Fp2Point({ a: mulmod(value1.a, value2.a, p), b: mulmod(value1.b, value2.b, p) });
+        result.a = addmod(point.a, mulmod(p - 1, point.b, p), p);
         result.b = addmod(
-            mulmod(
-                addmod(value1.a, value1.b, p),
-                addmod(value2.a, value2.b, p),
-                p),
-            p - addmod(point.a, point.b, p),
-            p);
+            mulmod(addmod(value1.a, value1.b, p), addmod(value2.a, value2.b, p), p), p - addmod(point.a, point.b, p), p
+        );
     }
 
-    function squaredFp2(
-        IDkg.Fp2Point memory value
-    )
-        internal
-        pure
-        returns (IDkg.Fp2Point memory result)
-    {
+    function squaredFp2(IDkg.Fp2Point memory value) internal pure returns (IDkg.Fp2Point memory result) {
         uint256 p = P;
         uint256 ab = mulmod(value.a, value.b, p);
-        uint256 multiplication = mulmod(
-            addmod(value.a, value.b, p),
-            addmod(value.a, mulmod(p - 1, value.b, p), p),
-            p
-        );
+        uint256 multiplication = mulmod(addmod(value.a, value.b, p), addmod(value.a, mulmod(p - 1, value.b, p), p), p);
         return IDkg.Fp2Point({ a: multiplication, b: addmod(ab, ab, p) });
     }
 
-    function isEqual(
-        IDkg.Fp2Point memory value1,
-        IDkg.Fp2Point memory value2
-    )
-        internal
-        pure
-        returns (bool result)
-    {
+    function isEqual(IDkg.Fp2Point memory value1, IDkg.Fp2Point memory value2) internal pure returns (bool result) {
         return value1.a == value2.a && value1.b == value2.b;
     }
+
 }
