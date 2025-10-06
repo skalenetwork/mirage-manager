@@ -1,4 +1,4 @@
-import { ethers } from "hardhat";
+import { ethers, upgrades } from "hardhat";
 import { commonPublicKey, generateRandomNodes } from "../test/tools/fixtures";
 import { deploy } from "./deploy";
 
@@ -19,6 +19,10 @@ const main = async () => {
     for (const contract in addresses) {
         console.log(`${contract}: ${addresses[contract]}`);
     }
+
+    // Upgrade for testers
+    const committeeTesterFactory = await ethers.getContractFactory("CommitteeTester");
+    await upgrades.upgradeProxy(deployedContracts.Committee, committeeTesterFactory);
 };
 
 if (require.main === module) {

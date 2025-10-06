@@ -35,6 +35,6 @@ contract DefaultSetup is Test {
     function setUp() public virtual{
         staking = new StakingHandler(payable(vm.envAddress("STAKING")), vm.envAddress("DEPLOYER"));
         status = new StatusHandler(vm.envAddress("STATUS"), vm.envAddress("DEPLOYER"));
-        committee = new CommitteeHandler(payable(vm.envAddress("COMMITTEE")));
+        committee = new CommitteeHandler(payable(vm.envAddress("COMMITTEE")), vm.envAddress("DEPLOYER"));
     }
 }

@@ -47,7 +47,6 @@ contract StakingHandler is Test {
         }
         vm.prank(admin);
         staking.setRetrievingDelay(Timestamp.wrap(1)); // set to 1 second
-
     }
 
     function setFeeRate(uint8 feeRate, uint8 nodeIndex) public {
@@ -145,6 +144,31 @@ contract StakingHandler is Test {
         if (Fair.unwrap(staking.getTotalInExitQueueFor(user)) == 0) {
             users.remove(user);
         }
+    }
+
+    function claimAllFee(uint8 nodeIndex) public {
+        NodeId node = fixtureNode[nodeIndex % fixtureNode.length];
+        assert(staking.nodes().activeNodeExists(node));
+        Fair fees = staking.getEarnedFeeAmount(node);
+        vm.assume(fees > Fair.wrap(0));
+        address nodeOwner = staking.nodes().getNode(node).nodeAddress;
+        vm.prank(nodeOwner);
+        staking.requestAllFees(node);
+
+        users.add(nodeOwner);
+    }
+
+    function claimFee(uint8 nodeIndex, uint32 amount) public {
+        NodeId node = fixtureNode[nodeIndex % fixtureNode.length];
+        assert(staking.nodes().activeNodeExists(node));
+        Fair fees = staking.getEarnedFeeAmount(node);
+        vm.assume(fees > Fair.wrap(0));
+        vm.assume(Fair.unwrap(fees) >= uint256(amount) && amount != 0);
+        address nodeOwner = staking.nodes().getNode(node).nodeAddress;
+        vm.prank(nodeOwner);
+        staking.requestFees(node, Fair.wrap(uint256(amount)));
+
+        users.add(nodeOwner);
     }
 
     function getNumNodes() external view returns (uint256 len) {
