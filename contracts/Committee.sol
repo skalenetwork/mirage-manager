@@ -166,32 +166,6 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
     }
 
     /**
-     * @notice Initializes the Committee contract.
-     * @param initialAuthority The address of the initial authority.
-     * @param nodesAddress The address of the Nodes contract.
-     * @param commonPublicKey The common public key for the initial committee.
-     * @param nodeIds The array of node IDs for the initial committee.
-     */
-    function initialize(
-        address initialAuthority,
-        INodes nodesAddress,
-        IDkg.G2Point calldata commonPublicKey,
-        NodeId[] calldata nodeIds
-    )
-        external
-        override
-        initializer
-    {
-        __AccessManaged_init(initialAuthority);
-        committeeSize = 22;
-        transitionDelay = Duration.wrap(1 days);
-        nodes = nodesAddress;
-        skaleRng = address(0);
-        minTransitionDelay = Duration.wrap(10 minutes);
-        _initializeCommittee(commonPublicKey, nodeIds);
-    }
-
-    /**
      * @notice Selects a new committee using weighted-random selection.
      */
     function select() external override restricted {
@@ -392,6 +366,32 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
     }
 
     // Public
+
+    /**
+     * @notice Initializes the Committee contract.
+     * @param initialAuthority The address of the initial authority.
+     * @param nodesAddress The address of the Nodes contract.
+     * @param commonPublicKey The common public key for the initial committee.
+     * @param nodeIds The array of node IDs for the initial committee.
+     */
+    function initialize(
+        address initialAuthority,
+        INodes nodesAddress,
+        IDkg.G2Point calldata commonPublicKey,
+        NodeId[] calldata nodeIds
+    )
+        public
+        override
+        initializer
+    {
+        __AccessManaged_init(initialAuthority);
+        committeeSize = 22;
+        transitionDelay = Duration.wrap(1 days);
+        nodes = nodesAddress;
+        skaleRng = address(0);
+        minTransitionDelay = Duration.wrap(10 minutes);
+        _initializeCommittee(commonPublicKey, nodeIds);
+    }
 
     /**
      * @notice Ejects an unhealthy node from the selection pool.
