@@ -32,6 +32,10 @@ import { IStatus } from "@skalenetwork/fair-manager-interfaces/IStatus.sol";
 import { TypedMap } from "./structs/typed/TypedMap.sol";
 import { TypedSet } from "./structs/typed/TypedSet.sol";
 
+/**
+ * @title Nodes
+ * @notice Manages the registration, deletion, and status of nodes.
+ */
 contract Nodes is AccessManagedUpgradeable, INodes {
 
     using TypedSet for TypedSet.NodeIdSet;
@@ -44,15 +48,18 @@ contract Nodes is AccessManagedUpgradeable, INodes {
         bytes32[2] publicKey;
     }
 
+    /// @notice A zero-value IPv4 address.
     bytes4 public constant ZERO_IPV4 = bytes4(0);
+    /// @notice A zero-value IPv6 address.
     bytes16 public constant ZERO_IPV6 = bytes16(0);
 
-    // Mapping from node ID to Node struct
+    /// @notice Mapping from node ID to Node data.
     mapping(NodeId nodeId => Node node) public nodes;
 
-    // Stores requests to change owner before committing changes
+    /// @notice Mapping from node ID to a pending new owner address.
     mapping(NodeId nodeId => address newNodeOwner) public ownerChangeRequests;
 
+    /// @notice The Committee contract instance.
     ICommittee public committeeContract;
 
     // Mapping from node ID to publicKey - only for active nodes, including deleted
@@ -129,6 +136,12 @@ contract Nodes is AccessManagedUpgradeable, INodes {
         _;
     }
 
+    /**
+     * @notice Initializes the Nodes contract.
+     * @param initialAuthority The address of the initial authority.
+     * @param initialNodes An array of initial nodes.
+     * @param nodesPublicKeys An array of public keys for the initial nodes.
+     */
     function initialize(
         address initialAuthority,
         Node[] calldata initialNodes,
@@ -142,10 +155,20 @@ contract Nodes is AccessManagedUpgradeable, INodes {
         _initializeGroup(initialNodes, nodesPublicKeys);
     }
 
+    /**
+     * @notice Sets the Committee contract address.
+     * @param committeeAddress The address of the Committee contract.
+     */
     function setCommittee(ICommittee committeeAddress) external override restricted {
         committeeContract = committeeAddress;
     }
 
+    /**
+     * @notice Registers a new active node.
+     * @param ip The IP address of the node.
+     * @param publicKey The public key of the node.
+     * @param port The port of the node.
+     */
     function registerNode(
         bytes calldata ip,
         bytes32[2] calldata publicKey,
@@ -174,14 +197,27 @@ contract Nodes is AccessManagedUpgradeable, INodes {
         committeeContract.staking().nodeCreated{ value: msg.value }(nextNodeId, msg.sender);
     }
 
+    /**
+     * @notice Deletes a node.
+     * @param nodeId The ID of the node to delete.
+     */
     function deleteNode(NodeId nodeId) external override nodeExists(nodeId) onlyNodeOwner(nodeId) {
         _deleteNode(nodeId);
     }
 
+    /**
+     * @notice Deletes a node by the foundation.
+     * @param nodeId The ID of the node to delete.
+     */
     function deleteNodeByFoundation(NodeId nodeId) external override nodeExists(nodeId) restricted {
         _deleteNode(nodeId);
     }
 
+    /**
+     * @notice Requests to change the owner of a passive node.
+     * @param nodeId The ID of the node.
+     * @param newOwner The address of the new owner.
+     */
     function requestChangeOwner(
         NodeId nodeId,
         address newOwner
@@ -197,6 +233,10 @@ contract Nodes is AccessManagedUpgradeable, INodes {
         ownerChangeRequests[nodeId] = newOwner;
     }
 
+    /**
+     * @notice Confirms the change of ownership of a passive node.
+     * @param nodeId The ID of the node.
+     */
     function confirmOwnerChange(NodeId nodeId) external override nodeExists(nodeId) {
         require(_isPassiveNode(nodeId), ActiveNodesCannotChangeOwnership());
         address newOwner = ownerChangeRequests[nodeId];
@@ -219,6 +259,11 @@ contract Nodes is AccessManagedUpgradeable, INodes {
         emit NodeOwnerChanged(nodeId, oldOwner, newOwner);
     }
 
+    /**
+     * @notice Registers a new passive node.
+     * @param ip The IP address of the node.
+     * @param port The port of the node.
+     */
     function registerPassiveNode(bytes calldata ip, uint16 port) external override validIp(ip) validPort(port) {
         unchecked {
             ++_nodeIdCounter;
@@ -235,6 +280,12 @@ contract Nodes is AccessManagedUpgradeable, INodes {
         emit NodeRegistered(nodeId, msg.sender, ip, port);
     }
 
+    /**
+     * @notice Sets the IP address of a node.
+     * @param nodeId The ID of the node.
+     * @param ip The new IP address.
+     * @param port The new port.
+     */
     function setIpAddress(
         NodeId nodeId,
         bytes calldata ip,
@@ -254,6 +305,11 @@ contract Nodes is AccessManagedUpgradeable, INodes {
         emit NodeIpChanged(nodeId, msg.sender, ip, port);
     }
 
+    /**
+     * @notice Sets the domain name of a node.
+     * @param nodeId The ID of the node.
+     * @param name The new domain name.
+     */
     function setDomainName(
         NodeId nodeId,
         string calldata name
@@ -269,15 +325,30 @@ contract Nodes is AccessManagedUpgradeable, INodes {
         emit NodeDomainNameChanged(nodeId, msg.sender, name);
     }
 
+    /**
+     * @notice Retrieves the details of a node.
+     * @param nodeId The ID of the node.
+     * @return node The node details.
+     */
     function getNode(NodeId nodeId) external view override nodeExists(nodeId) returns (Node memory node) {
         return nodes[nodeId];
     }
 
+    /**
+     * @notice Retrieves the ID of a node by its address.
+     * @param nodeAddress The address of the node.
+     * @return nodeId The ID of the node.
+     */
     function getNodeId(address nodeAddress) external view override returns (NodeId nodeId) {
         require(_isAddressOfActiveNode(nodeAddress), AddressIsNotAssignedToAnyNode(nodeAddress));
         nodeId = _activeNodesAddressToId.get(nodeAddress);
     }
 
+    /**
+     * @notice Retrieves the passive node IDs for a given address.
+     * @param nodeAddress The address to query.
+     * @return nodeIds An array of passive node IDs.
+     */
     function getPassiveNodeIdsForAddress(address nodeAddress)
         external
         view
@@ -288,27 +359,59 @@ contract Nodes is AccessManagedUpgradeable, INodes {
         nodeIds = _passiveNodeIdByAddress.getValuesAt(nodeAddress);
     }
 
+    /**
+     * @notice Retrieves all passive node IDs.
+     * @return nodeIds An array of all passive node IDs.
+     */
     function getPassiveNodeIds() external view override returns (NodeId[] memory nodeIds) {
         nodeIds = _passiveNodeIds.values();
     }
 
+    /**
+     * @notice Retrieves the public key of a node.
+     * @param nodeId The ID of the node.
+     * @return publicKey The public key of the node.
+     */
     function getPublicKey(NodeId nodeId) external view override returns (bytes32[2] memory publicKey) {
         publicKey = _nodesInfo[nodeId].publicKey;
         require(publicKey[0] != bytes32(0) && publicKey[1] != bytes32(0), ActiveNodeWasNeverRegistered(nodeId));
     }
 
+    /**
+     * @notice Retrieves all active node IDs.
+     * @return nodeIds An array of all active node IDs.
+     */
     function getActiveNodeIds() external view override returns (NodeId[] memory nodeIds) {
         nodeIds = _activeNodeIds.values();
     }
 
+    /**
+     * @notice Checks if an active node exists.
+     * @param nodeId The ID of the node.
+     * @return result True if the active node exists, false otherwise.
+     */
     function activeNodeExists(NodeId nodeId) external view override returns (bool result) {
         result = _isActiveNode(nodeId);
     }
 
+    /**
+     * @notice Checks if a passive node exists.
+     * @param nodeId The ID of the node.
+     * @return result True if the passive node exists, false otherwise.
+     */
     function passiveNodeExists(NodeId nodeId) external view override returns (bool result) {
         result = _isPassiveNode(nodeId);
     }
 
+    /**
+     * @notice Creates a new active node.
+     * @param nodeId The ID of the new node.
+     * @param nodeAddress The address of the new node.
+     * @param ip The IP address of the new node.
+     * @param port The port of the new node.
+     * @param domainName The domain name of the new node.
+     * @param publicKey The public key of the new node.
+     */
     function _createActiveNode(
         NodeId nodeId,
         address nodeAddress,
@@ -332,6 +435,10 @@ contract Nodes is AccessManagedUpgradeable, INodes {
         emit NodeRegistered(nodeId, nodeAddress, ip, port);
     }
 
+    /**
+     * @notice Deletes a node.
+     * @param id The ID of the node to delete.
+     */
     function _deleteNode(NodeId id) private nodeNotInCurrentOrNextCommittee(id) {
         Node storage node = nodes[id];
         address nodeOwner = node.nodeAddress;
@@ -369,19 +476,37 @@ contract Nodes is AccessManagedUpgradeable, INodes {
         }
     }
 
+    /**
+     * @notice Adds a passive node ID to the set of passive node IDs.
+     * @param nodeId The ID of the passive node to add.
+     */
     function _addPassiveNodeId(NodeId nodeId) private {
         assert(_passiveNodeIds.add(nodeId));
     }
 
+    /**
+     * @notice Adds an active node ID to the set of active node IDs.
+     * @param nodeId The ID of the active node to add.
+     */
     function _addActiveNodeId(NodeId nodeId) private {
         assert(_activeNodeIds.add(nodeId));
     }
 
+    /**
+     * @notice Sets the active node ID for a given address.
+     * @param nodeAddress The address to set the node ID for.
+     * @param nodeId The node ID to set.
+     */
     function _setActiveNodeIdForAddress(address nodeAddress, NodeId nodeId) private {
         require(!_isAddressOfPassiveNodes(nodeAddress), AddressInUseByPassiveNodes(nodeAddress));
         require(_activeNodesAddressToId.set(nodeAddress, nodeId), AddressWasAlreadyAssignedToNode(nodeAddress));
     }
 
+    /**
+     * @notice Sets the passive node ID for a given address.
+     * @param nodeAddress The address to set the node ID for.
+     * @param nodeId The node ID to set.
+     */
     function _setPassiveNodeIdForAddress(address nodeAddress, NodeId nodeId) private {
         require(!_isAddressOfActiveNode(nodeAddress), AddressWasAlreadyAssignedToNode(nodeAddress));
 
@@ -394,6 +519,11 @@ contract Nodes is AccessManagedUpgradeable, INodes {
         }
     }
 
+    /**
+     * @notice Initializes a group of nodes.
+     * @param initialNodes An array of initial nodes.
+     * @param publicKeys An array of public keys for the initial nodes.
+     */
     function _initializeGroup(Node[] calldata initialNodes, bytes32[2][] calldata publicKeys) private {
         uint256 length = initialNodes.length;
         for (uint256 i; i < length; ++i) {
@@ -409,22 +539,47 @@ contract Nodes is AccessManagedUpgradeable, INodes {
         }
     }
 
+    /**
+     * @notice Checks if a node is an active node.
+     * @param nodeId The ID of the node to check.
+     * @return result True if the node is an active node, false otherwise.
+     */
     function _isActiveNode(NodeId nodeId) private view returns (bool result) {
         result = _activeNodeIds.contains(nodeId);
     }
 
+    /**
+     * @notice Checks if a node is a passive node.
+     * @param nodeId The ID of the node to check.
+     * @return result True if the node is a passive node, false otherwise.
+     */
     function _isPassiveNode(NodeId nodeId) private view returns (bool result) {
         result = _passiveNodeIds.contains(nodeId);
     }
 
+    /**
+     * @notice Checks if an address is associated with any passive nodes.
+     * @param nodeAddress The address to check.
+     * @return result True if the address is associated with any passive nodes, false otherwise.
+     */
     function _isAddressOfPassiveNodes(address nodeAddress) private view returns (bool result) {
         result = _passiveNodeAddresses.contains(nodeAddress);
     }
 
+    /**
+     * @notice Checks if an address is associated with an active node.
+     * @param nodeAddress The address to check.
+     * @return result True if the address is associated with an active node, false otherwise.
+     */
     function _isAddressOfActiveNode(address nodeAddress) private view returns (bool result) {
         result = _activeNodesAddressToId.contains(nodeAddress);
     }
 
+    /**
+     * @notice Converts a public key to an address.
+     * @param pubKey The public key to convert.
+     * @return nodeAddress The address corresponding to the public key.
+     */
     function _publicKeyToAddress(bytes32[2] memory pubKey) private pure returns (address nodeAddress) {
         bytes32 hash = keccak256(abi.encodePacked(pubKey[0], pubKey[1]));
         return address(uint160(uint256(hash)));

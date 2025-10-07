@@ -28,12 +28,19 @@ import { INodes, NodeId } from "@skalenetwork/fair-manager-interfaces/INodes.sol
 import { IRewardWallet } from "@skalenetwork/fair-manager-interfaces/IRewardWallet.sol";
 import { IStaking } from "@skalenetwork/fair-manager-interfaces/IStaking.sol";
 
+/**
+ * @title RewardWallet
+ * @notice A wallet for receiving rewards to nodes.
+ */
 contract RewardWallet is AccessManagedUpgradeable, IRewardWallet {
 
     using Address for address payable;
 
+    /// @notice The Staking contract instance.
     IStaking public staking;
+    /// @notice The Nodes contract instance.
     INodes public nodes;
+    /// @notice The ID of the node that owns this reward wallet.
     NodeId public ownerNode;
 
     error OwnerNodeDoesNotExist();
@@ -49,10 +56,18 @@ contract RewardWallet is AccessManagedUpgradeable, IRewardWallet {
         _;
     }
 
+    /// @notice Receives Ether and flushes it to the staking contract.
     receive() external payable override onlyIfNodeExists onlyWithinStakeLimit {
         flush();
     }
 
+    /**
+     * @notice Initializes the RewardWallet contract.
+     * @param initialAuthority The address of the initial authority.
+     * @param staking_ The address of the Staking contract.
+     * @param nodes_ The address of the Nodes contract.
+     * @param ownerNode_ The ID of the node that the wallet corresponds to.
+     */
     function initialize(
         address initialAuthority,
         IStaking staking_,
@@ -71,6 +86,7 @@ contract RewardWallet is AccessManagedUpgradeable, IRewardWallet {
 
     // Public
 
+    /// @notice Flushes the entire balance of the wallet to the staking contract as a reward for the owner node.
     function flush() public override {
         if (address(this).balance > 0) {
             if (_nodeExists(ownerNode)) {
@@ -87,6 +103,12 @@ contract RewardWallet is AccessManagedUpgradeable, IRewardWallet {
     }
 
     // Private
+
+    /**
+     * @notice Checks if a node exists.
+     * @param nodeId The ID of the node to check.
+     * @return exists True if the node exists, false otherwise.
+     */
     function _nodeExists(NodeId nodeId) private view returns (bool exists) {
         return nodes.activeNodeExists(nodeId);
     }

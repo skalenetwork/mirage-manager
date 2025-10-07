@@ -1,3 +1,7 @@
+// cSpell:words natspec
+// Test file, disabling NatSpec
+// solhint-disable use-natspec
+
 // SPDX-License-Identifier: AGPL-3.0-only
 
 /*

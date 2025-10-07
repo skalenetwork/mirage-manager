@@ -27,19 +27,7 @@
     "use-natspec": [
       "warn",
       {
-        "title": {
-          "enabled": false
-        },
         "author": {
-          "enabled": false
-        },
-        "notice": {
-          "enabled": false
-        },
-        "param": {
-          "enabled": false
-        },
-        "return": {
           "enabled": false
         }
       }

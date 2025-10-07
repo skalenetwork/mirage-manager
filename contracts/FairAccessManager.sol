@@ -24,13 +24,25 @@ pragma solidity ^0.8.24;
 import { AccessManagerUpgradeable } from
     "@openzeppelin/contracts-upgradeable/access/manager/AccessManagerUpgradeable.sol";
 
+/**
+ * @title FairAccessManager
+ * @notice Manages access control roles for the fair manager contracts.
+ */
 contract FairAccessManager is AccessManagerUpgradeable {
 
+    /// @notice Role for managing the Committee contract
     uint64 public constant COMMITTEE_ROLE = 1;
+    /// @notice Role for managing the Nodes contract
     uint64 public constant NODES_ROLE = 2;
+    /// @notice Role for managing the Staking contract
     uint64 public constant STAKING_ROLE = 3;
+    /// @notice Role for managing the Status contract
     uint64 public constant STATUS_ROLE = 4;
 
+    /**
+     * @notice Initializes the FairAccessManager contract
+     * @param initialAdmin The address of the initial admin
+     */
     function initialize(address initialAdmin) public override initializer {
         __AccessManager_init(initialAdmin);
     }

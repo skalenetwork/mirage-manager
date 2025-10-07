@@ -1,3 +1,5 @@
+// cSpell:words unstake
+
 // SPDX-License-Identifier: AGPL-3.0-only
 
 /**
@@ -42,6 +44,10 @@ import { TypedSet } from "./structs/typed/TypedSet.sol";
 import { ExitQueueLibrary, Timestamp } from "./utils/ExitQueue.sol";
 import { Credit, FundLibrary, Fair, Holder } from "./utils/Fund.sol";
 
+/**
+ * @title Staking
+ * @notice Manages staking, rewards, and related features for Fair Network.
+ */
 contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaking {
 
     using Address for address payable;
@@ -52,13 +58,20 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
     using TypedMap for TypedMap.NodeIdToFairMap;
     using ExitQueueLibrary for ExitQueueLibrary.ExitQueue;
 
+    /// @notice Default fee rate for nodes
     uint16 public constant DEFAULT_FEE_RATE = 1000;
 
+    /// @notice The Committee contract interface
     ICommittee public committee;
+    /// @notice The Nodes contract interface
     INodes public nodes;
+    /// @notice The reference for the RewardWallet implementation
     IRewardWallet public rewardWalletReference;
+    /// @notice The total stake of disabled nodes
     Fair public totalDisabled;
+    /// @notice The maximum stake allowed per node
     Fair public stakeLimit;
+    /// @notice The minimum self-stake required for a node
     Fair public selfStakeRequirement;
 
     FundLibrary.Fund private _rootFund;
@@ -69,24 +82,117 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
     mapping(address holder => TypedSet.NodeIdSet nodeIds) private _stakedNodes;
     TypedMap.NodeIdToFairMap private _disabledNodesBalances;
 
+    /**
+     * @notice Emitted when an allowed receiver is added for a node
+     * @param node The ID of the node.
+     * @param receiver The address of the receiver.
+     */
     event AllowedReceiverAdded(NodeId indexed node, address indexed receiver);
+    /**
+     * @notice Emitted when an allowed receiver is removed for a node
+     * @param node The ID of the node.
+     * @param receiver The address of the receiver.
+     */
     event AllowedReceiverRemoved(NodeId indexed node, address indexed receiver);
+    /**
+     * @notice Emitted when a fee claim is requested
+     * @param node The ID of the node.
+     * @param from The address of the requester.
+     * @param to The address of the receiver.
+     * @param amount The amount of the fee claim.
+     */
     event FeeClaimRequested(NodeId indexed node, address from, address indexed to, Fair indexed amount);
+    /**
+     * @notice Emitted when a reward is received for a node
+     * @param node The ID of the node.
+     * @param amount The amount of the reward.
+     */
     event NodeRewardReceived(NodeId indexed node, Fair indexed amount);
+    /**
+     * @notice Emitted when a retrieve is requested
+     * @param sender The address of the requester.
+     * @param node The ID of the node.
+     * @param amount The amount of the retrieve.
+     */
     event RetrieveRequested(address indexed sender, NodeId indexed node, Fair indexed amount);
+    /**
+     * @notice Emitted when a reward is received
+     * @param sender The address of the sender.
+     * @param amount The amount of the reward.
+     */
     event RewardReceived(address indexed sender, uint256 indexed amount);
+    /**
+     * @notice Emitted when a reward wallet is created for a node
+     * @param node The ID of the node.
+     */
     event RewardWalletCreated(NodeId indexed node);
+    /**
+     * @notice Emitted when a user stakes to a node
+     * @param sender The address of the staker.
+     * @param node The ID of the node.
+     * @param amount The amount staked.
+     */
     event Staked(address indexed sender, NodeId indexed node, Fair indexed amount);
+    /**
+     * @notice Emitted when a user stakes to a new node
+     * @param sender The address of the staker.
+     * @param node The ID of the node.
+     */
     event StakedToNewNode(address indexed sender, NodeId indexed node);
+    /**
+     * @notice Emitted when a user stops staking to a node
+     * @param sender The address of the staker.
+     * @param node The ID of the node.
+     */
     event StoppedStaking(address indexed sender, NodeId indexed node);
+    /**
+     * @notice Emitted when a node's data is removed
+     * @param node The ID of the node.
+     */
     event NodeDataRemoved(NodeId indexed node);
+    /**
+     * @notice Emitted when a node is disabled
+     * @param node The ID of the node.
+     */
     event NodeDisabled(NodeId indexed node);
+    /**
+     * @notice Emitted when a node is enabled
+     * @param node The ID of the node.
+     */
     event NodeEnabled(NodeId indexed node);
+    /**
+     * @notice Emitted when the retrieving delay is updated
+     * @param retrievingDelay The new retrieving delay.
+     */
     event RetrievingDelayUpdated(Timestamp indexed retrievingDelay);
+    /**
+     * @notice Emitted when the stake limit is updated
+     * @param newLimit The new stake limit.
+     */
     event StakeLimitUpdated(Fair indexed newLimit);
+    /**
+     * @notice Emitted when a node's fee rate is updated
+     * @param node The ID of the node.
+     * @param oldFeeRate The old fee rate.
+     * @param newFeeRate The new fee rate.
+     */
     event NodeFeeRateUpdated(NodeId indexed node, uint16 oldFeeRate, uint16 newFeeRate);
+    /**
+     * @notice Emitted when the reward wallet reference is updated
+     * @param oldReference The old reward wallet reference.
+     * @param newReference The new reward wallet reference.
+     */
     event RewardWalletReferenceUpdated(IRewardWallet indexed oldReference, IRewardWallet indexed newReference);
+    /**
+     * @notice Emitted when the self-stake requirement is updated
+     * @param amount The new self-stake requirement.
+     */
     event SelfStakeRequirementUpdated(Fair indexed amount);
+    /**
+     * @notice Emitted when self-stake is provided for a node
+     * @param nodeId The ID of the node.
+     * @param amount The amount of self-stake provided.
+     */
     event SelfStakeProvided(NodeId indexed nodeId, Fair amount);
 
     error FeeRateIsIncorrect(uint16 feeRate);
@@ -108,10 +214,18 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
         _;
     }
 
+    /// @notice Receives ether and emits a RewardReceived event
     receive() external payable override {
         emit RewardReceived(msg.sender, msg.value);
     }
 
+    /**
+     * @notice Initializes the Staking contract
+     * @param initialAuthority The address of the initial authority
+     * @param committee_ The address of the committee contract
+     * @param nodes_ The address of the nodes contract
+     * @param rewardWalletReference_ The address of the reward wallet reference
+     */
     function initialize(
         address initialAuthority,
         ICommittee committee_,
@@ -133,6 +247,10 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
         emit RetrievingDelayUpdated(Timestamp.wrap(1 days));
     }
 
+    /**
+     * @notice Adds an allowed receiver of Fees for a Node
+     * @param receiver The address of the receiver to add
+     */
     function addAllowedReceiver(address receiver) external override {
         NodeId node = nodes.getNodeId(msg.sender);
         bool added = _nodesAllowedReceivers[node].add(receiver);
@@ -140,6 +258,10 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
         emit AllowedReceiverAdded(node, receiver);
     }
 
+    /**
+     * @notice Removes an allowed receiver of Fees for a Node
+     * @param receiver The address of the receiver to remove
+     */
     function removeAllowedReceiver(address receiver) external override {
         NodeId node = nodes.getNodeId(msg.sender);
         bool removed = _nodesAllowedReceivers[node].remove(receiver);
@@ -147,19 +269,35 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
         emit AllowedReceiverRemoved(node, receiver);
     }
 
+    /**
+     * @notice Requests all fees for a node
+     * @param node The ID of the node
+     */
     function requestAllFees(NodeId node) external override {
         requestFees(node, getEarnedFeeAmount(node));
     }
 
+    /**
+     * @notice Requests to send all fees to a specific address
+     * @param to The address to send the fees to
+     */
     function requestSendAllFees(address payable to) external override {
         requestSendFees(to, getEarnedFeeAmount(nodes.getNodeId(msg.sender)));
     }
 
+    /**
+     * @notice Sets the minimum self-stake requirement
+     * @param amount The new self-stake requirement
+     */
     function setSelfStakeRequirement(Fair amount) external override restricted {
         selfStakeRequirement = amount;
         emit SelfStakeRequirementUpdated(amount);
     }
 
+    /**
+     * @notice Disables a node (callable by Committee)
+     * @param node The ID of the node to disable
+     */
     function disable(NodeId node) external override restricted {
         Fair balance = _getTotalBalance();
         Fair nodeFundBalance = _rootFund.getBalance(balance, FundLibrary.nodeToHolder(node));
@@ -176,6 +314,10 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
         }
     }
 
+    /**
+     * @notice Enables a node (callable by Committee)
+     * @param node The ID of the node to enable
+     */
     function enable(NodeId node) external override restricted onlyExistingActiveNode(node) {
         _pullReward(node);
         (bool wasDisabled, Fair value) = _disabledNodesBalances.tryGet(node);
@@ -197,6 +339,11 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
         emit NodeEnabled(node);
     }
 
+    /**
+     * @notice Handles the creation of a new node (callable by Nodes)
+     * @param node The ID of the node
+     * @param nodeAddress The address of the node
+     */
     function nodeCreated(NodeId node, address nodeAddress) external payable override restricted {
         if (_rewardWallets[node] == IRewardWallet(payable(0))) {
             _deployRewardWallet(node);
@@ -213,6 +360,10 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
         }
     }
 
+    /**
+     * @notice Handles the removal of a node (callable by Nodes)
+     * @param node The ID of the node to remove
+     */
     function nodeRemoved(NodeId node) external override restricted {
         // Committee should disable node first
         require(!isNodeEnabled(node), NodeIsNotDisabled(node));
@@ -239,6 +390,10 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
         _exitQueue.createRequest(nodeOwner, node, amountToRetrieve);
     }
 
+    /**
+     * @notice Pays a reward to a node and its stakers
+     * @param node The ID of the node
+     */
     function payReward(NodeId node) external payable override onlyExistingActiveNode(node) {
         require(msg.value > 0, ZeroAmount());
         bool nodeIsEnabled = !_disabledNodesBalances.contains(node);
@@ -265,21 +420,37 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
         }
     }
 
+    /**
+     * @notice Claims an exit request
+     * @param requestId The ID of the exit request
+     */
     function claimRequest(uint256 requestId) external override nonReentrant {
         Fair amount = _exitQueue.claim(msg.sender, requestId);
         payable(msg.sender).sendValue(Fair.unwrap(amount));
     }
 
+    /**
+     * @notice Sets the stake limit for each Node
+     * @param limit The new stake limit
+     */
     function setStakeLimit(Fair limit) external override restricted {
         emit StakeLimitUpdated(limit);
         stakeLimit = limit;
     }
 
+    /**
+     * @notice Sets the retrieving delay of a request
+     * @param delay The new retrieving delay
+     */
     function setRetrievingDelay(Timestamp delay) external override restricted {
         _exitQueue.retrievingDelay = delay;
         emit RetrievingDelayUpdated(delay);
     }
 
+    /**
+     * @notice Sets the fee rate for a node
+     * @param feeRate The new fee rate
+     */
     function setFeeRate(uint16 feeRate) external override {
         require(!(feeRate > 1000), FeeRateIsIncorrect(feeRate));
         NodeId node = nodes.getNodeId(msg.sender);
@@ -294,19 +465,36 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
         _updateNodeFeeRate(node, feeRate);
     }
 
+    /**
+     * @notice Sets the reward wallet implementation reference
+     * @param rewardWalletReference_ The new reward wallet reference
+     */
     function setRewardWalletReference(IRewardWallet rewardWalletReference_) external override restricted {
         emit RewardWalletReferenceUpdated(rewardWalletReference, rewardWalletReference_);
         rewardWalletReference = rewardWalletReference_;
     }
 
+    /**
+     * @notice Allows sender to retrieve all staked tokens for a node
+     * @param node The ID of the node
+     */
     function requestRetrieveAll(NodeId node) external override {
         requestRetrieve(node, getStakedToNodeAmountFor(node, msg.sender));
     }
 
+    /**
+     * @notice Stakes funds to a node
+     * @param node The ID of the node
+     */
     function stake(NodeId node) external payable override onlyExistingActiveNode(node) {
         _stakeFor(node, msg.sender);
     }
 
+    /**
+     * @notice Gets number of shares for a node
+     * @param node The ID of the node
+     * @return share The share of the node
+     */
     function getNodeShare(NodeId node) external view override returns (uint256 share) {
         if (!isNodeEnabled(node)) {
             return 0;
@@ -329,31 +517,64 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
         return Credit.unwrap(_getNodeCredits(node)) + unPulledCredits;
     }
 
+    /**
+     * @notice Gets the reward wallet address of a node
+     * @param node The ID of the node
+     * @return rewardWallet The reward wallet of the node
+     */
     function getRewardWallet(NodeId node) external view override returns (IRewardWallet rewardWallet) {
         rewardWallet = _rewardWallets[node];
         require(rewardWallet != IRewardWallet(payable(0)), RewardWalletDoesNotExist(node));
     }
 
+    /**
+     * @notice Gets the total staked amount for the sender
+     * @return amount The total staked amount
+     */
     function getStakedAmount() external view override returns (Fair amount) {
         return getStakedAmountFor(msg.sender);
     }
 
+    /**
+     * @notice Gets the sender's staked amount for a specific node
+     * @param node The ID of the node
+     * @return amount The staked amount for the node
+     */
     function getStakedToNodeAmount(NodeId node) external view override returns (Fair amount) {
         return getStakedToNodeAmountFor(node, msg.sender);
     }
 
+    /**
+     * @notice Gets the list of nodes the sender has staked to
+     * @return stakedNodes The list of staked nodes
+     */
     function getStakedNodes() external view override returns (NodeId[] memory stakedNodes) {
         return getStakedNodesFor(msg.sender);
     }
 
+    /**
+     * @notice Gets the total stake of a specific node
+     * @param node The ID of the node
+     * @return amount The total stake of the node
+     */
     function getNodeTotalStake(NodeId node) external view override returns (Fair amount) {
         return _getNodeTotalStakeBeforeAmount(node, FundLibrary.ZERO_FAIR);
     }
 
+    /**
+     * @notice Gets the fee rate of a specific node
+     * @param node The ID of the node
+     * @return feeRate The fee rate of the node
+     */
     function getNodeFeeRate(NodeId node) external view override returns (uint16 feeRate) {
         return _nodesFunds[node].feeRate;
     }
 
+    /**
+     * @notice Gets the list of delegators for a specific node
+     * @param node The ID of the node
+     * @return delegators The list of delegators
+     */
     function getDelegatorsToNode(NodeId node) external view override returns (address[] memory delegators) {
         Holder[] memory holders = _nodesFunds[node].credits.keys();
         delegators = new address[](holders.length);
@@ -363,30 +584,64 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
         }
     }
 
+    /**
+     * @notice Gets the count of delegators for a specific node
+     * @param node The ID of the node
+     * @return count The count of delegators
+     */
     function getDelegatorsToNodeCount(NodeId node) external view override returns (uint256 count) {
         count = _nodesFunds[node].credits.length();
     }
 
+    /**
+     * @notice Gets the count of exit requests for a user
+     * @param user The address of the user
+     * @return count The count of exit requests
+     */
     function getExitRequestsCountFor(address user) external view override returns (uint256 count) {
         return _exitQueue.getNumRequestsForUser(user);
     }
 
+    /**
+     * @notice Gets the total amount in the exit queue for the sender
+     * @return amount The total amount in the exit queue
+     */
     function getMyTotalInExitQueue() external view override returns (Fair amount) {
         return _exitQueue.getTotalInQueueForUser(msg.sender);
     }
 
+    /**
+     * @notice Gets the count of exit requests for the sender
+     * @return count The count of exit requests
+     */
     function getMyExitRequestsCount() external view override returns (uint256 count) {
         return _exitQueue.getNumRequestsForUser(msg.sender);
     }
 
+    /**
+     * @notice Checks if a node is within the stake limit
+     * @param node The ID of the node
+     * @return result True if within the stake limit, false otherwise
+     */
     function isWithinStakeLimit(NodeId node) external view override returns (bool result) {
         (result,) = _isWithinStakeLimit(node, FundLibrary.ZERO_FAIR);
     }
 
+    /**
+     * @notice Gets an exit request by its ID
+     * @param requestId The ID of the exit request
+     * @return request The exit request
+     */
     function getExitRequest(uint256 requestId) external view override returns (ExitRequest memory request) {
         request = _exitQueue.getRequest(requestId);
     }
 
+    /**
+     * @notice Gets an unlocked exit request for a user starting from a specific index
+     * @param user The address of the user
+     * @param fromIndex The starting index to lookup from
+     * @return request The unlocked exit request
+     */
     function getUnlockedExitRequestFor(
         address user,
         uint256 fromIndex
@@ -399,6 +654,12 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
         return _exitQueue.getUnlockedRequest(user, fromIndex);
     }
 
+    /**
+     * @notice Gets an exit request at a specific index for a user
+     * @param user The address of the user
+     * @param index The index of the exit request
+     * @return request The exit request
+     */
     function getExitRequestAt(
         address user,
         uint256 index
@@ -411,20 +672,39 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
         request = _exitQueue.getRequestAt(user, index);
     }
 
+    /**
+     * @notice Checks if an exit request is unlocked
+     * @param requestId The ID of the exit request
+     * @return unlocked True if the request is unlocked, false otherwise
+     */
     function isRequestUnlocked(uint256 requestId) external view override returns (bool unlocked) {
         return _exitQueue.isRequestUnlocked(requestId);
     }
 
+    /**
+     * @notice Gets the currently active retrieving delay for exit requests
+     * @return delay The retrieving delay
+     */
     function getRetrievingDelay() external view override returns (Timestamp delay) {
         return _exitQueue.retrievingDelay;
     }
 
+    /**
+     * @notice Gets the total amount in the exit queue for a user
+     * @param user The address of the user
+     * @return amount The total amount in the exit queue
+     */
     function getTotalInExitQueueFor(address user) external view override returns (Fair amount) {
         return _exitQueue.getTotalInQueueForUser(user);
     }
 
     // Public
 
+    /**
+     * @notice Allows user to unstake from a specific node (creates an exit request)
+     * @param node The ID of the node
+     * @param value The amount of funds to retrieve
+     */
     function requestRetrieve(NodeId node, Fair value) public override {
         // Private helper does all internal state changes and verifications
         (bool nodeIsEnabled) = _retrieveFunds(node, value);
@@ -435,6 +715,11 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
         }
     }
 
+    /**
+     * @notice Claims fees from a specific node (creates an exit request)
+     * @param node The ID of the node
+     * @param amount The amount of fees to request
+     */
     function requestFees(NodeId node, Fair amount) public override onlyExistingActiveNode(node) {
         require(amount > FundLibrary.ZERO_FAIR, ZeroAmount());
         bool senderIsOwner = msg.sender == nodes.getNode(node).nodeAddress;
@@ -445,6 +730,11 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
         _exitQueue.createRequest(payable(msg.sender), node, amount);
     }
 
+    /**
+     * @notice Requests to send fees to a specific address (creates an exit request for 'to' that needs to be claimed)
+     * @param to The address to send the fees to
+     * @param amount The amount of fees to send
+     */
     function requestSendFees(address payable to, Fair amount) public override {
         require(amount > FundLibrary.ZERO_FAIR, ZeroAmount());
         NodeId node = nodes.getNodeId(msg.sender);
@@ -458,10 +748,20 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
         _exitQueue.createRequest(to, node, amount);
     }
 
+    /**
+     * @notice Checks if a node is enabled
+     * @param node The ID of the node
+     * @return enabled True if the node is enabled, false otherwise
+     */
     function isNodeEnabled(NodeId node) public view override returns (bool enabled) {
         return !_disabledNodesBalances.contains(node);
     }
 
+    /**
+     * @notice Gets the earned fee amount for a specific node
+     * @param node The ID of the node
+     * @return amount The earned fee amount
+     */
     function getEarnedFeeAmount(NodeId node) public view override returns (Fair amount) {
         Fair nonPulledReward = _getNonPulledReward(node);
         if (!isNodeEnabled(node)) {
@@ -472,6 +772,11 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
         );
     }
 
+    /**
+     * @notice Gets the total staked amount for a specific holder
+     * @param holder The address of the holder
+     * @return amount The total staked amount
+     */
     function getStakedAmountFor(address holder) public view override returns (Fair amount) {
         uint256 nodesCount = _stakedNodes[holder].length();
         for (uint256 nodeIndex; nodeIndex < nodesCount; ++nodeIndex) {
@@ -480,10 +785,21 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
         }
     }
 
+    /**
+     * @notice Gets the list of nodes a holder has staked to
+     * @param holder The address of the holder
+     * @return stakedNodes The list of staked nodes
+     */
     function getStakedNodesFor(address holder) public view override returns (NodeId[] memory stakedNodes) {
         return _stakedNodes[holder].values();
     }
 
+    /**
+     * @notice Gets the staked amount for a specific node and holder
+     * @param node The ID of the node
+     * @param holder The address of the holder
+     * @return amount The staked amount
+     */
     function getStakedToNodeAmountFor(NodeId node, address holder) public view override returns (Fair amount) {
         Fair nodeBalance;
         Fair nonPulledReward = _getNonPulledReward(node);
@@ -495,12 +811,21 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
         return _nodesFunds[node].getBalance(nodeBalance, FundLibrary.addressToHolder(holder));
     }
 
+    /**
+     * @notice Gets the total amount of funds in the Staking exit queue
+     * @return amount The total amount in the exit queue
+     */
     function getTotalInExitQueue() public view override returns (Fair amount) {
         return _exitQueue.totalInExitQueue;
     }
 
     // Private
 
+    /**
+     * @notice Stakes funds for a specific staker to a node.
+     * @param node The ID of the node to stake to.
+     * @param staker The address of the staker.
+     */
     function _stakeFor(NodeId node, address staker) private {
         require(msg.value > 0, ZeroAmount());
         bool nodeIsEnabled = isNodeEnabled(node);
@@ -534,6 +859,12 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
         }
     }
 
+    /**
+     * @notice Requests to send fees to a specific address.
+     * @param node The ID of the node.
+     * @param amount The amount of fees to send.
+     * @param to The address to send the fees to.
+     */
     function _requestSendFees(NodeId node, Fair amount, address to) private {
         // sender can be allowed user, nodeOwner, or Nodes.sol contract (node deleted)
         emit FeeClaimRequested(node, msg.sender, to, amount);
@@ -556,6 +887,13 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
         }
     }
 
+    /**
+     * @notice Retrieves funds for a specific staker from a node.
+     * @param node The ID of the node.
+     * @param value The amount of funds to retrieve.
+     * @param staker The address of the staker.
+     * @return nodeIsEnabled True if the node is enabled, false otherwise.
+     */
     function _retrieveFundsFor(NodeId node, Fair value, address staker) private returns (bool nodeIsEnabled) {
         require(value > FundLibrary.ZERO_FAIR, ZeroAmount());
         require(_stakedNodes[staker].contains(node), ZeroStakeToNode(node));
@@ -587,10 +925,20 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
         }
     }
 
+    /**
+     * @notice Retrieves funds for the message sender from a node.
+     * @param node The ID of the node.
+     * @param value The amount of funds to retrieve.
+     * @return nodeIsEnabled True if the node is enabled, false otherwise.
+     */
     function _retrieveFunds(NodeId node, Fair value) private returns (bool nodeIsEnabled) {
         return _retrieveFundsFor(node, value, msg.sender);
     }
 
+    /**
+     * @notice Deploys a new reward wallet for a node.
+     * @param node The ID of the node.
+     */
     function _deployRewardWallet(NodeId node) private {
         ProxyAdmin proxyAdmin = ProxyAdmin(ERC1967Utils.getAdmin());
         emit RewardWalletCreated(node);
@@ -607,6 +955,10 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
         );
     }
 
+    /**
+     * @notice Pulls rewards from a node's reward wallet.
+     * @param node The ID of the node.
+     */
     function _pullReward(NodeId node) private nonReentrant {
         // safe because getNonPulledReward returns 0 if rewardWallet does not exist
         if (_getNonPulledReward(node) > FundLibrary.ZERO_FAIR) {
@@ -619,6 +971,11 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
         }
     }
 
+    /**
+     * @notice Updates the fee rate for a node.
+     * @param node The ID of the node.
+     * @param feeRate The new fee rate.
+     */
     function _updateNodeFeeRate(NodeId node, uint16 feeRate) private {
         Fair balance;
         if (isNodeEnabled(node)) {
@@ -629,12 +986,21 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
         _nodesFunds[node].setFeeRate(balance, feeRate);
     }
 
+    /**
+     * @notice Checks if msg.value meets the minimum self-stake requirement.
+     * @param nodeId The ID of the node.
+     */
     function _checkProvidedSelfStake(NodeId nodeId) private {
         Fair providedStake = Fair.wrap(msg.value);
         require(!(selfStakeRequirement > providedStake), InsufficientSelfStake(providedStake, selfStakeRequirement));
         emit SelfStakeProvided(nodeId, providedStake);
     }
 
+    /**
+     * @notice Gets the credits of a node.
+     * @param node The ID of the node.
+     * @return credits The credits of the node.
+     */
     function _getNodeCredits(NodeId node) private view returns (Credit credits) {
         (bool exists, Credit amount) = _rootFund.credits.tryGet(FundLibrary.nodeToHolder(node));
         credits = amount;
@@ -642,6 +1008,12 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
         assert(exists != (credits == FundLibrary.ZERO_CREDIT));
     }
 
+    /**
+     * @notice Gets the total stake of a node before a certain amount is added.
+     * @param node The ID of the node.
+     * @param amount The amount to be added.
+     * @return total The total stake of the node.
+     */
     function _getNodeTotalStakeBeforeAmount(NodeId node, Fair amount) private view returns (Fair total) {
         if (isNodeEnabled(node)) {
             Fair balance = _getTotalBalance() - amount;
@@ -652,6 +1024,11 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
         total = total + _getNonPulledReward(node);
     }
 
+    /**
+     * @notice Gets the non-pulled reward for a node.
+     * @param node The ID of the node.
+     * @return nonPulledReward The non-pulled reward.
+     */
     function _getNonPulledReward(NodeId node) private view returns (Fair nonPulledReward) {
         if (_rewardWallets[node] == IRewardWallet(payable(0))) {
             return FundLibrary.ZERO_FAIR;
@@ -659,10 +1036,21 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
         return Fair.wrap(address(_rewardWallets[node]).balance);
     }
 
+    /**
+     * @notice Gets the total stake of enabled nodes in the contract.
+     * @return balance The total stake.
+     */
     function _getTotalBalance() private view returns (Fair balance) {
         return Fair.wrap(address(this).balance) - totalDisabled - getTotalInExitQueue();
     }
 
+    /**
+     * @notice Checks if a node is within the stake limit.
+     * @param node The ID of the node.
+     * @param amount The extra amount to check.
+     * @return result True if the node's stake + amount is within the stake limit, false otherwise.
+     * @return currentNodeStake The current stake of the node (before amount).
+     */
     function _isWithinStakeLimit(NodeId node, Fair amount) private view returns (bool result, Fair currentNodeStake) {
         result = true;
         if (stakeLimit > FundLibrary.ZERO_FAIR) {
@@ -672,15 +1060,30 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
         }
     }
 
+    /**
+     * @notice Validates if an extra amount results in exceeding the stake limit.
+     * @param node The ID of the node.
+     * @param amount The extra amount to be staked.
+     */
     function _validateStakeLimit(NodeId node, Fair amount) private view {
         (bool isWithinLimit, Fair currentNodeStake) = _isWithinStakeLimit(node, amount);
         require(isWithinLimit, StakeLimitExceeded(currentNodeStake, amount, stakeLimit));
     }
 
+    /**
+     * @notice Checks if a node has any allowed receivers for fees.
+     * @param node The ID of the node.
+     * @return result True if the node has allowed receivers, false otherwise.
+     */
     function _hasAllowedReceiver(NodeId node) private view returns (bool result) {
         return _nodesAllowedReceivers[node].length() > 0;
     }
 
+    /**
+     * @notice Checks if the sender is the node owner, for non-deleted active nodes.
+     * @param sender The address of the message sender.
+     * @param node The ID of the node.
+     */
     function _checkNodeOwnerRestriction(address sender, NodeId node) private view {
         if (nodes.activeNodeExists(node)) {
             address nodeOwner = nodes.getNode(node).nodeAddress;
@@ -688,6 +1091,11 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
         }
     }
 
+    /**
+     * @notice Converts a public key to an Ethereum address.
+     * @param pubKey The public key to convert.
+     * @return nodeAddress The resulting Ethereum address.
+     */
     function _publicKeyToAddress(bytes32[2] memory pubKey) private pure returns (address nodeAddress) {
         bytes32 hash = keccak256(abi.encodePacked(pubKey[0], pubKey[1]));
         return address(uint160(uint256(hash)));

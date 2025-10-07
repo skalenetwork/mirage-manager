@@ -24,6 +24,10 @@ pragma solidity ^0.8.24;
 import { SafeCast } from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import { NodeId } from "@skalenetwork/fair-manager-interfaces/INodes.sol";
 
+/**
+ * @title RedBlackTree
+ * @notice A library for handling Red-Black Tree data structures.
+ */
 library RedBlackTree {
 
     using SafeCast for uint256;
@@ -37,6 +41,7 @@ library RedBlackTree {
         bool red;
     }
 
+    /// @notice Represents a null node in the tree.
     NodeId public constant NULL = NodeId.wrap(0);
 
     error ChildIsMissing(NodeId node, NodeId child);
@@ -45,6 +50,14 @@ library RedBlackTree {
     error RemoveNullNode();
     error SetWeightOfNullNode();
 
+    /**
+     * @notice Inserts a node into the top of the tree.
+     * @param nodes The mapping of nodes in the tree.
+     * @param root The root of the tree.
+     * @param newNode The new node to insert.
+     * @param weight The weight of the new node.
+     * @return newRoot The new root of the tree.
+     */
     function insertSmallest(
         mapping(NodeId => Node) storage nodes,
         NodeId root,
@@ -74,6 +87,13 @@ library RedBlackTree {
         return _balance(nodes, root, newNode);
     }
 
+    /**
+     * @notice Removes a node from the tree.
+     * @param nodes The mapping of nodes in the tree.
+     * @param root The root of the tree.
+     * @param node The node to remove.
+     * @return newRoot The new root of the tree.
+     */
     function remove(
         mapping(NodeId => Node) storage nodes,
         NodeId root,
@@ -116,6 +136,12 @@ library RedBlackTree {
         }
     }
 
+    /**
+     * @notice Updates the weight of a node in the tree.
+     * @param nodes The mapping of nodes in the tree.
+     * @param node The node to set the weight of.
+     * @param weight The new weight of the node.
+     */
     function setWeight(mapping(NodeId => Node) storage nodes, NodeId node, uint256 weight) internal {
         require(node != NULL, SetWeightOfNullNode());
         uint248 oldWeight = getWeight(nodes, node);
@@ -125,6 +151,13 @@ library RedBlackTree {
         }
     }
 
+    /**
+     * @notice Finds a node in the tree by its weight.
+     * @param nodes The mapping of nodes in the tree.
+     * @param root The root of the tree.
+     * @param weight The weight to search for.
+     * @return node The node with the specified weight.
+     */
     function findByWeight(
         mapping(NodeId => Node) storage nodes,
         NodeId root,
@@ -153,6 +186,12 @@ library RedBlackTree {
         revert NotFound();
     }
 
+    /**
+     * @notice Gets the rightmost node in the tree.
+     * @param nodes The mapping of nodes in the tree.
+     * @param root The root of the tree.
+     * @return biggest The rightmost node in the tree.
+     */
     function findLast(mapping(NodeId => Node) storage nodes, NodeId root) internal view returns (NodeId biggest) {
         for (NodeId node = root; node != NULL; node = nodes[node].right) {
             if (nodes[node].right == NULL) {
@@ -162,6 +201,12 @@ library RedBlackTree {
         revert NotFound();
     }
 
+    /**
+     * @notice Gets the weight of a node.
+     * @param nodes The mapping of nodes in the tree.
+     * @param node The node to get the weight of.
+     * @return weight The weight of the node.
+     */
     function getWeight(mapping(NodeId => Node) storage nodes, NodeId node) internal view returns (uint248 weight) {
         if (node == NULL) {
             return 0;
@@ -177,6 +222,12 @@ library RedBlackTree {
         }
     }
 
+    /**
+     * @notice Gets the weight of the tree up to a certain node.
+     * @param nodes The mapping of nodes in the tree.
+     * @param bound The node to get the weight up to.
+     * @return weight The weight of the tree up to the specified node.
+     */
     function getWeightTill(
         mapping(NodeId => Node) storage nodes,
         NodeId bound
@@ -204,6 +255,13 @@ library RedBlackTree {
 
     // Private
 
+    /**
+     * @notice Balances the tree after an insertion.
+     * @param nodes The mapping of nodes in the tree.
+     * @param root The root of the tree.
+     * @param node The node to balance from.
+     * @return newRoot The new root of the tree.
+     */
     function _balance(
         mapping(NodeId => Node) storage nodes,
         NodeId root,
@@ -239,10 +297,24 @@ library RedBlackTree {
         return node;
     }
 
+    /**
+     * @notice Creates a new node in the tree.
+     * @param nodes The mapping of nodes in the tree.
+     * @param id The ID of the new node.
+     * @param parent The parent of the new node.
+     * @param weight The weight of the new node.
+     */
     function _createNode(mapping(NodeId => Node) storage nodes, NodeId id, NodeId parent, uint248 weight) private {
         nodes[id] = Node({ id: id, parent: parent, left: NULL, right: NULL, totalWeight: weight, red: true });
     }
 
+    /**
+     * @notice Removes a black leaf from the tree.
+     * @param nodes The mapping of nodes in the tree.
+     * @param root The root of the tree.
+     * @param node The node to remove.
+     * @return newRoot The new root of the tree.
+     */
     function _removeBlackLeaf(
         mapping(NodeId => Node) storage nodes,
         NodeId root,
@@ -277,6 +349,13 @@ library RedBlackTree {
         }
     }
 
+    /**
+     * @notice Removes a red leaf from the tree.
+     * @param nodes The mapping of nodes in the tree.
+     * @param root The root of the tree.
+     * @param node The node to remove.
+     * @return newRoot The new root of the tree.
+     */
     function _removeRedLeaf(
         mapping(NodeId => Node) storage nodes,
         NodeId root,
@@ -293,6 +372,14 @@ library RedBlackTree {
         return root;
     }
 
+    /**
+     * @notice Fixes the black height of the tree.
+     * @param nodes The mapping of nodes in the tree.
+     * @param root The root of the tree.
+     * @param parent The parent of the removed node.
+     * @return newRoot The new root of the tree.
+     * @return success True if the black height was fixed, false otherwise.
+     */
     function _fixBlackHeightRightNode(
         mapping(NodeId => Node) storage nodes,
         NodeId root,
@@ -309,6 +396,14 @@ library RedBlackTree {
         }
     }
 
+    /**
+     * @notice Fixes the black height of the tree.
+     * @param nodes The mapping of nodes in the tree.
+     * @param root The root of the tree.
+     * @param parent The parent of the removed node.
+     * @return newRoot The new root of the tree.
+     * @return success True if the black height was fixed, false otherwise.
+     */
     function _fixBlackHeightLeftNode(
         mapping(NodeId => Node) storage nodes,
         NodeId root,
@@ -325,6 +420,14 @@ library RedBlackTree {
         }
     }
 
+    /**
+     * @notice Fixes the black height of the tree after a right node removal with a red parent.
+     * @param nodes The mapping of nodes in the tree.
+     * @param root The root of the tree.
+     * @param parent The parent of the removed node.
+     * @param sibling The sibling of the removed node.
+     * @return newRoot The new root of the tree.
+     */
     function _fixBlackHeightRightNodeRedParent(
         mapping(NodeId => Node) storage nodes,
         NodeId root,
@@ -367,6 +470,14 @@ library RedBlackTree {
         }
     }
 
+    /**
+     * @notice Fixes the black height of the tree after a left node removal with a red parent.
+     * @param nodes The mapping of nodes in the tree.
+     * @param root The root of the tree.
+     * @param parent The parent of the removed node.
+     * @param sibling The sibling of the removed node.
+     * @return newRoot The new root of the tree.
+     */
     function _fixBlackHeightLeftNodeRedParent(
         mapping(NodeId => Node) storage nodes,
         NodeId root,
@@ -409,6 +520,15 @@ library RedBlackTree {
         }
     }
 
+    /**
+     * @notice Fixes the black height of the tree after a right node removal with a black parent.
+     * @param nodes The mapping of nodes in the tree.
+     * @param root The root of the tree.
+     * @param parent The parent of the removed node.
+     * @param sibling The sibling of the removed node.
+     * @return newRoot The new root of the tree.
+     * @return success True if the black height was fixed, false otherwise.
+     */
     function _fixBlackHeightRightNodeBlackParent(
         mapping(NodeId => Node) storage nodes,
         NodeId root,
@@ -424,6 +544,15 @@ library RedBlackTree {
         return _fixBlackHeightRightNodeBlackParentBlackSibling(nodes, root, parent, sibling);
     }
 
+    /**
+     * @notice Fixes the black height of the tree after a left node removal with a black parent.
+     * @param nodes The mapping of nodes in the tree.
+     * @param root The root of the tree.
+     * @param parent The parent of the removed node.
+     * @param sibling The sibling of the removed node.
+     * @return newRoot The new root of the tree.
+     * @return success True if the black height was fixed, false otherwise.
+     */
     function _fixBlackHeightLeftNodeBlackParent(
         mapping(NodeId => Node) storage nodes,
         NodeId root,
@@ -439,6 +568,14 @@ library RedBlackTree {
         return _fixBlackHeightLeftNodeBlackParentBlackSibling(nodes, root, parent, sibling);
     }
 
+    /**
+     * @notice Fixes the black height of the tree after a right node removal with a black parent and red sibling.
+     * @param nodes The mapping of nodes in the tree.
+     * @param root The root of the tree.
+     * @param parent The parent of the removed node.
+     * @param sibling The sibling of the removed node.
+     * @return newRoot The new root of the tree.
+     */
     function _fixBlackHeightRightNodeBlackParentRedSibling(
         mapping(NodeId => Node) storage nodes,
         NodeId root,
@@ -475,6 +612,14 @@ library RedBlackTree {
         }
     }
 
+    /**
+     * @notice Fixes the black height of the tree after a left node removal with a black parent and red sibling.
+     * @param nodes The mapping of nodes in the tree.
+     * @param root The root of the tree.
+     * @param parent The parent of the removed node.
+     * @param sibling The sibling of the removed node.
+     * @return newRoot The new root of the tree.
+     */
     function _fixBlackHeightLeftNodeBlackParentRedSibling(
         mapping(NodeId => Node) storage nodes,
         NodeId root,
@@ -509,6 +654,15 @@ library RedBlackTree {
         }
     }
 
+    /**
+     * @notice Fixes the black height of the tree after a right node removal with a black parent and black sibling.
+     * @param nodes The mapping of nodes in the tree.
+     * @param root The root of the tree.
+     * @param parent The parent of the removed node.
+     * @param sibling The sibling of the removed node.
+     * @return newRoot The new root of the tree.
+     * @return success True if the black height was fixed, false otherwise.
+     */
     function _fixBlackHeightRightNodeBlackParentBlackSibling(
         mapping(NodeId => Node) storage nodes,
         NodeId root,
@@ -547,6 +701,15 @@ library RedBlackTree {
         return (root, false);
     }
 
+    /**
+     * @notice Fixes the black height of the tree after a left node removal with a black parent and black sibling.
+     * @param nodes The mapping of nodes in the tree.
+     * @param root The root of the tree.
+     * @param parent The parent of the removed node.
+     * @param sibling The sibling of the removed node.
+     * @return newRoot The new root of the tree.
+     * @return success True if the black height was fixed, false otherwise.
+     */
     function _fixBlackHeightLeftNodeBlackParentBlackSibling(
         mapping(NodeId => Node) storage nodes,
         NodeId root,
@@ -585,6 +748,12 @@ library RedBlackTree {
         return (root, false);
     }
 
+    /**
+     * @notice Performs a left rotation on the tree.
+     * @param nodes The mapping of nodes in the tree.
+     * @param parent The parent of the node to rotate.
+     * @param node The node to rotate.
+     */
     function _rotateLeft(mapping(NodeId => Node) storage nodes, NodeId parent, NodeId node) private {
         NodeId beta = nodes[node].right;
 
@@ -599,6 +768,13 @@ library RedBlackTree {
         _updateTotalWeight(nodes, node, nodeWeight);
     }
 
+    /**
+     * @notice Performs a left-right rotation on the tree.
+     * @param nodes The mapping of nodes in the tree.
+     * @param grandfather The grandfather of the node to rotate.
+     * @param parent The parent of the node to rotate.
+     * @param node The node to rotate.
+     */
     function _rotateLeftRight(
         mapping(NodeId => Node) storage nodes,
         NodeId grandfather,
@@ -625,6 +801,12 @@ library RedBlackTree {
         _updateTotalWeight(nodes, node, nodeWeight);
     }
 
+    /**
+     * @notice Performs a right rotation on the tree.
+     * @param nodes The mapping of nodes in the tree.
+     * @param parent The parent of the node to rotate.
+     * @param node The node to rotate.
+     */
     function _rotateRight(mapping(NodeId => Node) storage nodes, NodeId parent, NodeId node) private {
         NodeId beta = nodes[node].left;
 
@@ -639,6 +821,13 @@ library RedBlackTree {
         _updateTotalWeight(nodes, node, nodeWeight);
     }
 
+    /**
+     * @notice Performs a right-left rotation on the tree.
+     * @param nodes The mapping of nodes in the tree.
+     * @param grandfather The grandfather of the node to rotate.
+     * @param parent The parent of the node to rotate.
+     * @param node The node to rotate.
+     */
     function _rotateRightLeft(
         mapping(NodeId => Node) storage nodes,
         NodeId grandfather,
@@ -665,17 +854,33 @@ library RedBlackTree {
         _updateTotalWeight(nodes, node, nodeWeight);
     }
 
+    /**
+     * @notice Sets a node to black.
+     * @param nodes The mapping of nodes in the tree.
+     * @param node The node to set to black.
+     */
     function _setBlack(mapping(NodeId => Node) storage nodes, NodeId node) private {
         if (node != NULL) {
             nodes[node].red = false;
         }
     }
 
+    /**
+     * @notice Sets a node to red.
+     * @param nodes The mapping of nodes in the tree.
+     * @param node The node to set to red.
+     */
     function _setRed(mapping(NodeId => Node) storage nodes, NodeId node) private {
         assert(node != NULL);
         nodes[node].red = true;
     }
 
+    /**
+     * @notice Swaps two nodes in the tree.
+     * @param nodes The mapping of nodes in the tree.
+     * @param base The base node.
+     * @param node The node to swap with the base node.
+     */
     /// @dev node has to be a descendant of base
     function _swap(mapping(NodeId => Node) storage nodes, NodeId base, NodeId node) private {
         uint248 nodeWeight = getWeight(nodes, node);
@@ -703,6 +908,13 @@ library RedBlackTree {
         (nodes[base].red, nodes[node].red) = (nodes[node].red, nodes[base].red);
     }
 
+    /**
+     * @notice Updates a child of a node.
+     * @param nodes The mapping of nodes in the tree.
+     * @param node The node to update the child of.
+     * @param oldChild The old child of the node.
+     * @param newChild The new child of the node.
+     */
     function _updateChild(
         mapping(NodeId => Node) storage nodes,
         NodeId node,
@@ -726,12 +938,24 @@ library RedBlackTree {
         }
     }
 
+    /**
+     * @notice Updates the total weight of a node.
+     * @param nodes The mapping of nodes in the tree.
+     * @param node The node to update the total weight of.
+     * @param weight The new weight of the node.
+     */
     function _updateTotalWeight(mapping(NodeId => Node) storage nodes, NodeId node, uint248 weight) private {
         assert(node != NULL);
         nodes[node].totalWeight =
             weight + _getTotalWeight(nodes, nodes[node].left) + _getTotalWeight(nodes, nodes[node].right);
     }
 
+    /**
+     * @notice Gets the total weight of a node.
+     * @param nodes The mapping of nodes in the tree.
+     * @param node The node to get the total weight of.
+     * @return totalWeight The total weight of the node.
+     */
     function _getTotalWeight(
         mapping(NodeId => Node) storage nodes,
         NodeId node
@@ -746,6 +970,12 @@ library RedBlackTree {
         return nodes[node].totalWeight;
     }
 
+    /**
+     * @notice Gets the grandfather of a node.
+     * @param nodes The mapping of nodes in the tree.
+     * @param node The node to get the grandfather of.
+     * @return grandfather The grandfather of the node.
+     */
     function _grandfather(
         mapping(NodeId => Node) storage nodes,
         NodeId node
@@ -757,6 +987,12 @@ library RedBlackTree {
         return _parent(nodes, _parent(nodes, node));
     }
 
+    /**
+     * @notice Checks if a node has a red child.
+     * @param nodes The mapping of nodes in the tree.
+     * @param node The node to check.
+     * @return has True if the node has a red child, false otherwise.
+     */
     function _hasRedChild(mapping(NodeId => Node) storage nodes, NodeId node) private view returns (bool has) {
         if (node == NULL) {
             return false;
@@ -764,10 +1000,22 @@ library RedBlackTree {
         return _isRed(nodes, nodes[node].left) || _isRed(nodes, nodes[node].right);
     }
 
+    /**
+     * @notice Checks if a node is black.
+     * @param nodes The mapping of nodes in the tree.
+     * @param node The node to check.
+     * @return black True if the node is black, false otherwise.
+     */
     function _isBlack(mapping(NodeId => Node) storage nodes, NodeId node) private view returns (bool black) {
         return !_isRed(nodes, node);
     }
 
+    /**
+     * @notice Checks if a node is red.
+     * @param nodes The mapping of nodes in the tree.
+     * @param node The node to check.
+     * @return red True if the node is red, false otherwise.
+     */
     function _isRed(mapping(NodeId => Node) storage nodes, NodeId node) private view returns (bool red) {
         if (node == NULL) {
             return false;
@@ -775,6 +1023,12 @@ library RedBlackTree {
         return nodes[node].red;
     }
 
+    /**
+     * @notice Gets the parent of a node.
+     * @param nodes The mapping of nodes in the tree.
+     * @param node The node to get the parent of.
+     * @return parent The parent of the node.
+     */
     function _parent(mapping(NodeId => Node) storage nodes, NodeId node) private view returns (NodeId parent) {
         if (node == NULL) {
             return NULL;
@@ -782,6 +1036,12 @@ library RedBlackTree {
         return nodes[node].parent;
     }
 
+    /**
+     * @notice Gets the uncle of a node.
+     * @param nodes The mapping of nodes in the tree.
+     * @param node The node to get the uncle of.
+     * @return uncle The uncle of the node.
+     */
     function _uncle(mapping(NodeId => Node) storage nodes, NodeId node) private view returns (NodeId uncle) {
         NodeId grandfather = _grandfather(nodes, node);
         if (grandfather == NULL) {

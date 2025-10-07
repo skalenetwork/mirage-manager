@@ -28,10 +28,21 @@ import { IDkg } from "@skalenetwork/fair-manager-interfaces/IDkg.sol";
 
 import { Fp2Operations } from "./Fp2Operations.sol";
 
+/**
+ * @title G2Operations
+ * @notice Library for operations on G2 elliptic curve points
+ * @dev Provides functions for point addition, doubling, and validation on the G2 elliptic curve.
+ */
 library G2Operations {
 
     using Fp2Operations for IDkg.Fp2Point;
 
+    /**
+     * @notice Doubles a G2 point
+     * @dev Performs point doubling on the elliptic curve.
+     * @param value The G2 point to double
+     * @return result The resulting G2 point after doubling
+     */
     function doubleG2(IDkg.G2Point memory value) internal view returns (IDkg.G2Point memory result) {
         if (isG2Zero(value)) {
             return value;
@@ -45,6 +56,13 @@ library G2Operations {
         }
     }
 
+    /**
+     * @notice Adds two G2 points
+     * @dev Performs point addition on the elliptic curve.
+     * @param value1 The first G2 point
+     * @param value2 The second G2 point
+     * @return sum The resulting G2 point after addition
+     */
     function addG2(
         IDkg.G2Point memory value1,
         IDkg.G2Point memory value2
@@ -78,6 +96,11 @@ library G2Operations {
         sum.y.b = (p - sum.y.b) % p;
     }
 
+    /**
+     * @notice Retrieves the constant TWISTB
+     * @dev Returns the twist parameter of the elliptic curve.
+     * @return point The TWISTB constant as an Fp2 point
+     */
     function getTWISTB() internal pure returns (IDkg.Fp2Point memory point) {
         // Current solidity version does not support Constants of non-value type
         // so we implemented this function
@@ -87,6 +110,11 @@ library G2Operations {
         });
     }
 
+    /**
+     * @notice Retrieves the G2 generator point
+     * @dev Returns the generator point of the G2 group.
+     * @return point The G2 generator point
+     */
     function getG2Generator() internal pure returns (IDkg.G2Point memory point) {
         // Current solidity version does not support Constants of non-value type
         // so we implemented this function
@@ -102,12 +130,24 @@ library G2Operations {
         });
     }
 
+    /**
+     * @notice Retrieves the G2 zero point
+     * @dev Returns the zero point of the G2 group.
+     * @return point The G2 zero point
+     */
     function getG2Zero() internal pure returns (IDkg.G2Point memory point) {
         // Current solidity version does not support Constants of non-value type
         // so we implemented this function
         return IDkg.G2Point({ x: IDkg.Fp2Point({ a: 0, b: 0 }), y: IDkg.Fp2Point({ a: 1, b: 0 }) });
     }
 
+    /**
+     * @notice Checks if the given coordinates form a valid G2 point
+     * @dev Verifies the point satisfies the elliptic curve equation.
+     * @param x The x-coordinate of the point
+     * @param y The y-coordinate of the point
+     * @return result True if the coordinates form a valid G2 point, false otherwise
+     */
     function isG2Point(IDkg.Fp2Point memory x, IDkg.Fp2Point memory y) internal pure returns (bool result) {
         uint256 p = Fp2Operations.P;
         if (!(x.a < p && x.b < p && y.a < p && y.b < p)) {
@@ -121,23 +161,44 @@ library G2Operations {
         return res.a == 0 && res.b == 0;
     }
 
+    /**
+     * @notice Checks if the given G2 point is valid
+     * @dev Verifies the point satisfies the elliptic curve equation.
+     * @param value The G2 point to check
+     * @return result True if the point is valid, false otherwise
+     */
     function isG2(IDkg.G2Point memory value) internal pure returns (bool result) {
         return isG2Point(value.x, value.y);
     }
 
+    /**
+     * @notice Checks if the given coordinates form the G2 zero point
+     * @dev Verifies the point is the zero point of the G2 group.
+     * @param x The x-coordinate of the point
+     * @param y The y-coordinate of the point
+     * @return result True if the coordinates form the G2 zero point, false otherwise
+     */
     function isG2ZeroPoint(IDkg.Fp2Point memory x, IDkg.Fp2Point memory y) internal pure returns (bool result) {
         return x.a == 0 && x.b == 0 && y.a == 1 && y.b == 0;
     }
 
+    /**
+     * @notice Checks if the given G2 point is the zero point
+     * @dev Verifies the point is the zero point of the G2 group.
+     * @param value The G2 point to check
+     * @return result True if the point is the zero point, false otherwise
+     */
     function isG2Zero(IDkg.G2Point memory value) internal pure returns (bool result) {
         return value.x.a == 0 && value.x.b == 0 && value.y.a == 1 && value.y.b == 0;
         // return isG2ZeroPoint(value.x, value.y);
     }
 
     /**
-     * @dev Checks are G2 points identical.
-     * This function will return false if following coordinates
-     * of points are different, even if its different on P.
+     * @notice Checks if two G2 points are identical
+     * @dev Compares the coordinates of the two points. Returns false even if the points are different on P
+     * @param value1 The first G2 point
+     * @param value2 The second G2 point
+     * @return result True if the points are identical, false otherwise
      */
     function isEqual(IDkg.G2Point memory value1, IDkg.G2Point memory value2) internal pure returns (bool result) {
         return value1.x.isEqual(value2.x) && value1.y.isEqual(value2.y);

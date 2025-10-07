@@ -28,11 +28,21 @@ import { IDkg } from "@skalenetwork/fair-manager-interfaces/IDkg.sol";
 
 import { Precompiled } from "../Precompiled.sol";
 
+/**
+ * @title Fp2Operations
+ * @notice Library for operations on Fp2 elements
+ */
 library Fp2Operations {
 
-    uint256 public constant P =
-        21_888_242_871_839_275_222_246_405_745_257_275_088_696_311_157_297_823_662_689_037_894_645_226_208_583;
+    /// @notice Prime number defining the finite field for Fp2 operations
+    uint256 public constant P = 21888242871839275222246405745257275088696311157297823662689037894645226208583;
 
+    /**
+     * @notice Computes the modular inverse of an Fp2 element
+     * @dev Uses the extended Euclidean algorithm to compute the inverse.
+     * @param value The Fp2 element to invert
+     * @return result The modular inverse of the Fp2 element
+     */
     function inverseFp2(IDkg.Fp2Point memory value) internal view returns (IDkg.Fp2Point memory result) {
         uint256 p = P;
         uint256 t0 = mulmod(value.a, value.a, p);
@@ -48,6 +58,13 @@ library Fp2Operations {
         result.b = (p - mulmod(value.b, t3, p)) % p;
     }
 
+    /**
+     * @notice Adds two Fp2 elements
+     * @dev Performs element-wise addition modulo the field prime.
+     * @param value1 The first Fp2 element
+     * @param value2 The second Fp2 element
+     * @return result The resulting Fp2 element after addition
+     */
     function addFp2(
         IDkg.Fp2Point memory value1,
         IDkg.Fp2Point memory value2
@@ -59,6 +76,13 @@ library Fp2Operations {
         return IDkg.Fp2Point({ a: addmod(value1.a, value2.a, P), b: addmod(value1.b, value2.b, P) });
     }
 
+    /**
+     * @notice Multiplies an Fp2 element by a scalar
+     * @dev Performs scalar multiplication modulo the field prime.
+     * @param value The Fp2 element to multiply
+     * @param scalar The scalar value to multiply by
+     * @return result The resulting Fp2 element after scalar multiplication
+     */
     function scalarMulFp2(
         IDkg.Fp2Point memory value,
         uint256 scalar
@@ -70,6 +94,13 @@ library Fp2Operations {
         return IDkg.Fp2Point({ a: mulmod(scalar, value.a, P), b: mulmod(scalar, value.b, P) });
     }
 
+    /**
+     * @notice Subtracts one Fp2 element from another
+     * @dev Performs element-wise subtraction modulo the field prime.
+     * @param diminished The Fp2 element to subtract from
+     * @param subtracted The Fp2 element to subtract
+     * @return difference The resulting Fp2 element after subtraction
+     */
     function minusFp2(
         IDkg.Fp2Point memory diminished,
         IDkg.Fp2Point memory subtracted
@@ -91,6 +122,13 @@ library Fp2Operations {
         }
     }
 
+    /**
+     * @notice Multiplies two Fp2 elements
+     * @dev Performs element-wise multiplication modulo the field prime.
+     * @param value1 The first Fp2 element
+     * @param value2 The second Fp2 element
+     * @return result The resulting Fp2 element after multiplication
+     */
     function mulFp2(
         IDkg.Fp2Point memory value1,
         IDkg.Fp2Point memory value2
@@ -108,6 +146,12 @@ library Fp2Operations {
         );
     }
 
+    /**
+     * @notice Squares an Fp2 element
+     * @dev Computes the square of the Fp2 element modulo the field prime.
+     * @param value The Fp2 element to square
+     * @return result The resulting Fp2 element after squaring
+     */
     function squaredFp2(IDkg.Fp2Point memory value) internal pure returns (IDkg.Fp2Point memory result) {
         uint256 p = P;
         uint256 ab = mulmod(value.a, value.b, p);
@@ -115,6 +159,13 @@ library Fp2Operations {
         return IDkg.Fp2Point({ a: multiplication, b: addmod(ab, ab, p) });
     }
 
+    /**
+     * @notice Checks if two Fp2Points are equal
+     * @dev Compares the a and b components of the two Fp2Points.
+     * @param value1 The first Fp2Point
+     * @param value2 The second Fp2Point
+     * @return result True if the elements are equal, false otherwise
+     */
     function isEqual(IDkg.Fp2Point memory value1, IDkg.Fp2Point memory value2) internal pure returns (bool result) {
         return value1.a == value2.a && value1.b == value2.b;
     }

@@ -33,6 +33,10 @@ import { TypedMap } from "./structs/typed/TypedMap.sol";
 import { TypedSet } from "./structs/typed/TypedSet.sol";
 import { G2Operations } from "./utils/fieldOperations/G2Operations.sol";
 
+/**
+ * @title DKG
+ * @notice Handles the Distributed Key Generation process for the committees.
+ */
 contract DKG is AccessManagedUpgradeable, IDkg {
 
     using G2Operations for G2Point;
@@ -49,21 +53,46 @@ contract DKG is AccessManagedUpgradeable, IDkg {
         TypedSet.NodeIdSet completed;
     }
 
+    /// @notice The Nodes contract instance.
     INodes public nodes;
+    /// @notice The Committee contract instance.
     ICommittee public committee;
 
     mapping(DkgId dkg => RoundData round) private _rounds;
 
+    /// @notice The ID of the last DKG round.
     DkgId public lastDkgId;
 
+    /**
+     * @notice Emitted when a node broadcasts its key share and verification vector.
+     * @param dkg The ID of the DKG round.
+     * @param node The ID of the node.
+     * @param verificationVector The node's verification vector.
+     * @param secretKeyContribution The node's secret key contribution.
+     */
     event BroadcastAndKeyShare(
         DkgId dkg, NodeId indexed node, G2Point[] verificationVector, KeyShare[] secretKeyContribution
     );
 
+    /**
+     * @notice Emitted when all data has been received from a node.
+     * @param dkg The ID of the DKG round.
+     * @param node The ID of the node.
+     */
     event AllDataReceived(DkgId dkg, NodeId indexed node);
 
+    /**
+     * @notice Emitted when a DKG round is successful.
+     * @param dkg The ID of the DKG round.
+     */
     event SuccessfulDkg(DkgId dkg);
 
+    /**
+     * @notice Emitted when a new DKG round is created.
+     * @param dkgId The ID of the newly created DKG round.
+     * @param participants The array of node IDs participating in the DKG.
+     * @param startingBlockNumber The block number when the DKG round was created.
+     */
     event DkgRoundCreated(DkgId indexed dkgId, NodeId[] participants, uint256 startingBlockNumber);
 
     error DkgIsNotSuccessful(DkgId id);
@@ -94,6 +123,12 @@ contract DKG is AccessManagedUpgradeable, IDkg {
         _;
     }
 
+    /**
+     * @notice Initializes the DKG contract.
+     * @param initialAuthority The address of the initial authority.
+     * @param committeeAddress The address of the Committee contract.
+     * @param nodesAddress The address of the Nodes contract.
+     */
     function initialize(
         address initialAuthority,
         ICommittee committeeAddress,
@@ -108,6 +143,10 @@ contract DKG is AccessManagedUpgradeable, IDkg {
         nodes = nodesAddress;
     }
 
+    /**
+     * @notice Signals that a node is ready to proceed to the next phase of the DKG.
+     * @param dkg The ID of the DKG round.
+     */
     function alright(DkgId dkg) external override onlyAlrightDkg(dkg) {
         uint256 n = _rounds[dkg].nodes.length();
         NodeId node = nodes.getNodeId(msg.sender);
@@ -120,6 +159,12 @@ contract DKG is AccessManagedUpgradeable, IDkg {
         }
     }
 
+    /**
+     * @notice Broadcasts a node's verification vector and secret key contribution.
+     * @param dkg The ID of the DKG round.
+     * @param verificationVector The node's verification vector.
+     * @param secretKeyContribution The node's secret key contribution.
+     */
     function broadcast(
         DkgId dkg,
         G2Point[] calldata verificationVector,
@@ -158,18 +203,39 @@ contract DKG is AccessManagedUpgradeable, IDkg {
         emit BroadcastAndKeyShare(dkg, node, verificationVector, secretKeyContribution);
     }
 
+    /**
+     * @notice Generates a new DKG round with the given participants.
+     * @param participants The array of node IDs participating in the DKG.
+     * @return dkg The ID of the newly generated DKG round.
+     */
     function generate(NodeId[] calldata participants) external override restricted returns (DkgId dkg) {
         return _createRound(participants);
     }
 
+    /**
+     * @notice Checks if a node has broadcasted its data in a specific DKG round.
+     * @param dkg The ID of the DKG round.
+     * @param node The ID of the node.
+     * @return broadcasted True if the node has broadcasted, false otherwise.
+     */
     function isNodeBroadcasted(DkgId dkg, NodeId node) external view override returns (bool broadcasted) {
         return _rounds[dkg].hashedData.contains(node);
     }
 
+    /**
+     * @notice Retrieves the participants of a specific DKG round.
+     * @param dkg The ID of the DKG round.
+     * @return participants An array of node IDs participating in the DKG.
+     */
     function getParticipants(DkgId dkg) external view override returns (NodeId[] memory participants) {
         return _rounds[dkg].nodes.values();
     }
 
+    /**
+     * @notice Retrieves the public key of a successful DKG round.
+     * @param dkg The ID of the DKG round.
+     * @return publicKey The public key of the DKG round.
+     */
     function getPublicKey(DkgId dkg) external view override returns (G2Point memory publicKey) {
         require(dkg != DkgId.wrap(0), RoundDoesNotExist(dkg));
         require(_rounds[dkg].id == dkg, RoundDoesNotExist(dkg));
@@ -180,6 +246,11 @@ contract DKG is AccessManagedUpgradeable, IDkg {
         return _rounds[dkg].publicKey;
     }
 
+    /**
+     * @notice Retrieves the details of a specific DKG round.
+     * @param dkg The ID of the DKG round.
+     * @return round The details of the DKG round.
+     */
     function getRound(DkgId dkg) external view override returns (Round memory round) {
         require(dkg != DkgId.wrap(0), RoundDoesNotExist(dkg));
         require(_rounds[dkg].id == dkg, RoundDoesNotExist(dkg));
@@ -211,12 +282,21 @@ contract DKG is AccessManagedUpgradeable, IDkg {
 
     // Private
 
+    /**
+     * @notice Processes a successful DKG round.
+     * @param dkg The ID of the DKG round.
+     */
     function _processSuccessfulDkg(DkgId dkg) private {
         _rounds[dkg].status = Status.SUCCESS;
         emit SuccessfulDkg(dkg);
         committee.processSuccessfulDkg(dkg);
     }
 
+    /**
+     * @notice Creates a new DKG round.
+     * @param participants The array of node IDs participating in the DKG.
+     * @return id The ID of the newly created DKG round.
+     */
     function _createRound(NodeId[] calldata participants) private returns (DkgId id) {
         uint256 n = participants.length;
         lastDkgId = DkgId.wrap(DkgId.unwrap(lastDkgId) + 1);
@@ -233,15 +313,31 @@ contract DKG is AccessManagedUpgradeable, IDkg {
         emit DkgRoundCreated(id, participants, block.number);
     }
 
+    /**
+     * @notice Contributes to the public key of a DKG round.
+     * @param round The DKG round data.
+     * @param value The G2 point to contribute.
+     */
     function _contributeToPublicKey(RoundData storage round, G2Point memory value) private {
         require(value.isG2(), IncorrectG2Point(value));
         round.publicKey = value.addG2(round.publicKey);
     }
 
+    /**
+     * @notice Calculates the threshold `t` for a given number of participants `n`.
+     * @param n The number of participants.
+     * @return t The threshold value.
+     */
     function _getT(uint256 n) private pure returns (uint256 t) {
         return (n * 2 + 1) / 3;
     }
 
+    /**
+     * @notice Hashes the secret key contribution and verification vector.
+     * @param secretKeyContribution The secret key contribution.
+     * @param verificationVector The verification vector.
+     * @return hash The hash of the data.
+     */
     function _hashData(
         KeyShare[] calldata secretKeyContribution,
         G2Point[] calldata verificationVector
