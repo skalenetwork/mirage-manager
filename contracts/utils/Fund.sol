@@ -51,11 +51,11 @@ library FundLibrary {
     }
 
     uint256 public constant CREDIT_PRECISION = 1 << 80;
+    uint256 public constant FEE_RATE_PRECISION = 1000;
 
     Holder public constant NULL = Holder.wrap(0);
     Fair public constant ZERO_FAIR = Fair.wrap(0);
     Credit public constant ZERO_CREDIT = Credit.wrap(0);
-
     Fair private constant ALLOWED_ERROR = Fair.wrap(1e9);
 
     error NotEnoughStaked(Fair staked);
@@ -268,7 +268,7 @@ library FundLibrary {
                 fee = balanceChange;
             } else {
                 fee = Fair.wrap(
-                    Fair.unwrap(balanceChange) * fund.feeRate / 1000
+                    Fair.unwrap(balanceChange) * fund.feeRate / FEE_RATE_PRECISION
                 );
             }
             return fee;

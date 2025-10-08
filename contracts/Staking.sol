@@ -49,6 +49,7 @@ import {TypedMap} from "./structs/typed/TypedMap.sol";
 import {TypedSet} from "./structs/typed/TypedSet.sol";
 import {ExitQueueLibrary, Timestamp} from "./utils/ExitQueue.sol";
 import {Credit, FundLibrary, Fair, Holder} from "./utils/Fund.sol";
+import { DEFAULT_MIN_STAKE, DEFAULT_RETRIEVING_DELAY } from "./utils/constants.sol";
 
 contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaking {
     using Address for address payable;
@@ -131,9 +132,9 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
         nodes = nodes_;
         rewardWalletReference = rewardWalletReference_;
         // Default on initialize
-        _exitQueue.retrievingDelay = Timestamp.wrap(1 days);
-        selfStakeRequirement = Fair.wrap(1);
-        emit RetrievingDelayUpdated(Timestamp.wrap(1 days));
+        _exitQueue.retrievingDelay = Timestamp.wrap(DEFAULT_RETRIEVING_DELAY);
+        selfStakeRequirement = Fair.wrap(DEFAULT_MIN_STAKE);
+        emit RetrievingDelayUpdated(Timestamp.wrap(DEFAULT_RETRIEVING_DELAY));
     }
 
     receive() external override payable {
@@ -319,7 +320,7 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
     }
 
     function setFeeRate(uint16 feeRate) external override {
-        require(!(feeRate > 1000), FeeRateIsIncorrect(feeRate));
+        require(!(feeRate > DEFAULT_FEE_RATE), FeeRateIsIncorrect(feeRate));
         NodeId node = nodes.getNodeId(msg.sender);
         uint16 currentFeeRate = _nodesFunds[node].feeRate;
         require(
