@@ -36,12 +36,12 @@ import { IStaking } from "@skalenetwork/fair-manager-interfaces/IStaking.sol";
 import { Duration, IStatus } from "@skalenetwork/fair-manager-interfaces/IStatus.sol";
 
 import { TypedSet } from "./structs/typed/TypedSet.sol";
+import { DEFAULT_COMMITTEE_SIZE, DEFAULT_MIN_TRANSITION_DELAY, DEFAULT_TRANSITION_DELAY} from "./utils/constants.sol";
 import { G2Operations } from "./utils/fieldOperations/G2Operations.sol";
 import { FundLibrary } from "./utils/Fund.sol";
 import { PoolLibrary } from "./utils/Pool.sol";
 import { Precompiled } from "./utils/Precompiled.sol";
 import { IRandom, Random } from "./utils/Random.sol";
-import { DEFAULT_COMMITTEE_SIZE, DEFAULT_MIN_TRANSITION_DELAY, DEFAULT_TRANSITION_DELAY} from "./utils/constants.sol";
 
 
 contract Committee is AccessManagedUpgradeable, ICommittee {
