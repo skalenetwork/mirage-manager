@@ -80,11 +80,14 @@ contract Nodes is AccessManagedUpgradeable, INodes {
     // Set to track active node IDs
     TypedSet.NodeIdSet private _activeNodeIds;
 
+    event CommitteeUpdated(ICommittee newCommittee);
+
     error NodeIsInCommittee(NodeId nodeId);
     error AddressWasAlreadyAssignedToNode(address nodeAddress);
     error AddressIsNotAssignedToAnyNode(address nodeAddress);
     error PassiveNodeAlreadyExistsForAddress(address nodeAddress, NodeId nodeId);
     error AddressInUseByPassiveNodes(address nodeAddress);
+    error InvalidCommitteeAddress();
     error InvalidPublicKey(bytes32[2] publicKey);
     error InvalidPublicKeyForSender(bytes32[2] publicKey, address expected, address sender);
     error ActiveNodesCannotChangeOwnership();
@@ -153,7 +156,9 @@ contract Nodes is AccessManagedUpgradeable, INodes {
     }
 
     function setCommittee(ICommittee committeeAddress) external override restricted {
+        require(address(committeeAddress) != address(0), InvalidCommitteeAddress());
         committeeContract = committeeAddress;
+        emit CommitteeUpdated(committeeAddress);
     }
 
     function registerNode(

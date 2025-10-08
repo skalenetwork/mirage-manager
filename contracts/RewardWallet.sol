@@ -41,6 +41,8 @@ contract RewardWallet is AccessManagedUpgradeable, IRewardWallet {
 
     error OwnerNodeDoesNotExist();
     error ValueExceedsStakeLimit();
+    error InvalidNodesAddress();
+    error InvalidStakingAddress();
 
     modifier onlyIfNodeExists() {
         require(_nodeExists(ownerNode), OwnerNodeDoesNotExist());
@@ -65,6 +67,8 @@ contract RewardWallet is AccessManagedUpgradeable, IRewardWallet {
         override
         initializer
     {
+        require(address(nodes_) != address(0), InvalidNodesAddress());
+        require(address(staking_) != address(0), InvalidStakingAddress());
         __AccessManaged_init(initialAuthority);
         staking = staking_;
         ownerNode = ownerNode_;

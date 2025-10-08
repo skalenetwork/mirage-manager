@@ -92,6 +92,8 @@ contract DKG is AccessManagedUpgradeable, IDkg {
     error IncorrectG2Point(G2Point value);
     error NodeIsAlreadyAlright(NodeId node);
     error RoundDoesNotExist(DkgId dkg);
+    error InvalidCommitteeAddress();
+    error InvalidNodesAddress();
 
     modifier onlyBroadcastingDkg(DkgId dkg) {
         // the modifier checks that the DKG is only in BROADCAST stage
@@ -118,6 +120,8 @@ contract DKG is AccessManagedUpgradeable, IDkg {
         override
         initializer
     {
+        require(address(committeeAddress) != address(0), InvalidCommitteeAddress());
+        require(address(nodesAddress) != address(0), InvalidNodesAddress());
         __AccessManaged_init(initialAuthority);
         committee = committeeAddress;
         nodes = nodesAddress;

@@ -111,6 +111,9 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
     error RewardWalletDoesNotExist(NodeId node);
     error NodeOwnerCannotRetrieveWhileNodeExists(address nodeOwner, NodeId node);
     error InsufficientSelfStake(Fair provided, Fair required);
+    error InvalidCommitteeAddress();
+    error InvalidNodesAddress();
+    error InvalidRewardWalletAddress();
 
     modifier onlyExistingActiveNode(NodeId node) {
         require(nodes.activeNodeExists(node), Nodes.NodeDoesNotExist(node));
@@ -127,6 +130,9 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
         initializer
         override
     {
+        require(address(committee_) != address(0), InvalidCommitteeAddress());
+        require(address(nodes_) != address(0), InvalidNodesAddress());
+        require(address(rewardWalletReference_) != address(0), InvalidRewardWalletAddress());
         __AccessManaged_init(initialAuthority);
         __ReentrancyGuard_init();
         committee = committee_;

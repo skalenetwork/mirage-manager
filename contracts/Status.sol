@@ -79,6 +79,7 @@ contract Status is AccessManagedUpgradeable, IStatus {
             committee.processHeartbeat(nodeId);
         }
     }
+
     function setHeartbeatInterval(Duration interval) external override restricted {
         Duration oldInterval = heartbeatInterval;
         heartbeatInterval = interval;

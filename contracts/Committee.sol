@@ -97,9 +97,16 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
     error NodeNotActive(NodeId node);
     error TransitionDelayTooShort();
     error CommitteeRotationInProgress();
+    error InvalidNodesAddress();
+    error AddressIsZero();
 
     modifier onlyDkg() {
         require(msg.sender == address(dkg), SenderIsNotDkg(msg.sender));
+        _;
+    }
+
+    modifier onlyNonZeroAddress(address addr) {
+        require(addr != address(0), AddressIsZero());
         _;
     }
 
@@ -113,6 +120,7 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
         initializer
         override
     {
+        require(address(nodesAddress) != address(0), InvalidNodesAddress());
         __AccessManaged_init(initialAuthority);
         committeeSize = DEFAULT_COMMITTEE_SIZE;
         transitionDelay = Duration.wrap(DEFAULT_TRANSITION_DELAY);
@@ -140,8 +148,7 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
         minTransitionDelay = delay;
     }
 
-    function setRNG(address newRNG) external override restricted {
-        require(newRNG != address(0), InvalidSkaleRngContract(newRNG));
+    function setRNG(address newRNG) external override restricted onlyNonZeroAddress(newRNG) {
         skaleRng = newRNG;
         require(_safeGetRandom() > 0, InvalidSkaleRngContract(newRNG));
         emit SkaleRNGEnabled(newRNG);
@@ -152,23 +159,30 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
         emit SkaleRNGDisabled();
     }
 
-    function setDkg(IDkg dkgAddress) external override restricted {
+    function setDkg(IDkg dkgAddress) external override restricted onlyNonZeroAddress(address(dkgAddress)) {
         emit DkgUpdated(dkg, dkgAddress);
         dkg = dkgAddress;
     }
 
-    function setNodes(INodes nodesAddress) external override restricted {
+    function setNodes(INodes nodesAddress) external override restricted onlyNonZeroAddress(address(nodesAddress)) {
         emit NodesUpdated(nodes, nodesAddress);
         nodes = nodesAddress;
     }
 
-    function setStatus(IStatus statusAddress) external override restricted {
+    function setStatus(IStatus statusAddress) external override restricted onlyNonZeroAddress(address(statusAddress)) {
         emit StatusUpdated(status, statusAddress);
         status = statusAddress;
         _pool.status = statusAddress;
     }
 
-    function setStaking(IStaking stakingAddress) external override restricted {
+    function setStaking(
+        IStaking stakingAddress
+    )
+        external
+        override
+        restricted
+        onlyNonZeroAddress(address(stakingAddress))
+    {
         emit StakingUpdated(staking, stakingAddress);
         staking = stakingAddress;
     }

@@ -6,7 +6,7 @@ import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers";
 import ip from "ip";
-import { BigNumberish, BytesLike, getBytes, ZeroHash } from 'ethers';
+import { BigNumberish, BytesLike, getBytes, ZeroAddress, ZeroHash } from 'ethers';
 import { getPublicKey } from "./tools/signatures";
 
 const INVALID_IPV4 = "0.0.0.0"
@@ -58,6 +58,10 @@ describe("Nodes", function () {
         );
 
         selfStakeRequirement = await stakingContract.selfStakeRequirement();
+    });
+
+    it("should reject invalid committee addresses", async () => {
+        await expect(nodesContract.setCommittee(ZeroAddress)).to.be.revertedWithCustomError(nodesContract, "InvalidCommitteeAddress");
     });
 
     it("should register Active Nodes", async () => {
