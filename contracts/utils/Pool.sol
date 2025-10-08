@@ -41,7 +41,6 @@ library PoolLibrary {
         IStatus status;
     }
 
-    error NodeIsMissing(NodeId id);
     error TooFewCandidates(
         uint256 needed,
         uint256 available

@@ -164,7 +164,7 @@ library FundLibrary {
             return ZERO_FAIR;
         }
         (bool exists, Credit holderCredits) = fund.credits.tryGet(holder);
-        // If exists credits is 0, otherwise it is not.
+        // If the holder does not exist, there should be no credits.
         assert(exists != (holderCredits == ZERO_CREDIT));
         return _toFairRoundedDown(fund, fundBalance, holderCredits);
     }

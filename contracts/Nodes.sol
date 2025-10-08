@@ -85,7 +85,6 @@ contract Nodes is AccessManagedUpgradeable, INodes {
     error AddressIsNotAssignedToAnyNode(address nodeAddress);
     error PassiveNodeAlreadyExistsForAddress(address nodeAddress, NodeId nodeId);
     error AddressInUseByPassiveNodes(address nodeAddress);
-    error InvalidPortNumber(uint16 port);
     error InvalidPublicKey(bytes32[2] publicKey);
     error InvalidPublicKeyForSender(bytes32[2] publicKey, address expected, address sender);
     error ActiveNodesCannotChangeOwnership();
