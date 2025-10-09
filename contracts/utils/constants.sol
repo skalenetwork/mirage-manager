@@ -27,6 +27,16 @@ pragma solidity ^0.8.24;
  * Only non-trivial constants should be added here - i.e. values that may easily change over time
  */
 
+// General constants
+
+uint256 constant MAX_ITERATIONS = 2000; // reasonable number of iterations for heavier loops
+
+
+// Field Operations
+
+uint256 constant LARGE_PRIME = 21888242871839275222246405745257275088696311157297823662689037894645226208583;
+
+
 // Committee
 
 uint256 constant DEFAULT_COMMITTEE_SIZE = 22;
@@ -38,6 +48,14 @@ uint256 constant DEFAULT_MIN_TRANSITION_DELAY = 10 minutes;
 
 uint256 constant DEFAULT_MIN_STAKE = 1 wei;
 uint256 constant DEFAULT_RETRIEVING_DELAY = 1 days;
+uint16 constant MAX_FEE_RATE = 1000; // 100.0%
+
+
+// Fund
+
+uint256 constant DEFAULT_FEE_RATE_PRECISION = 1000; // Decimal precision for fees 0.0% - 100.0%
+uint256 constant DEFAULT_CREDIT_PRECISION = 1 << 80;
+uint256 constant ALLOWED_ERROR = 1e9; // 0.000000001 FAIR
 
 
 // Status
