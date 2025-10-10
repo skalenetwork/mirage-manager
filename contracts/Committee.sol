@@ -36,6 +36,7 @@ import { IStaking } from "@skalenetwork/fair-manager-interfaces/IStaking.sol";
 import { Duration, IStatus } from "@skalenetwork/fair-manager-interfaces/IStatus.sol";
 
 import { TypedSet } from "./structs/typed/TypedSet.sol";
+import { DEFAULT_COMMITTEE_SIZE, DEFAULT_MIN_TRANSITION_DELAY, DEFAULT_TRANSITION_DELAY} from "./utils/constants.sol";
 import { G2Operations } from "./utils/fieldOperations/G2Operations.sol";
 import { FundLibrary } from "./utils/Fund.sol";
 import { PoolLibrary } from "./utils/Pool.sol";
@@ -113,11 +114,11 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
         override
     {
         __AccessManaged_init(initialAuthority);
-        committeeSize = 22;
-        transitionDelay = Duration.wrap(1 days);
+        committeeSize = DEFAULT_COMMITTEE_SIZE;
+        transitionDelay = Duration.wrap(DEFAULT_TRANSITION_DELAY);
         nodes = nodesAddress;
         skaleRng = address(0);
-        minTransitionDelay = Duration.wrap(10 minutes);
+        minTransitionDelay = Duration.wrap(DEFAULT_MIN_TRANSITION_DELAY);
         _initializeCommittee(commonPublicKey, nodeIds);
     }
 

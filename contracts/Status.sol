@@ -29,6 +29,7 @@ import { INodes, NodeId } from "@skalenetwork/fair-manager-interfaces/INodes.sol
 import { Duration, IStatus } from "@skalenetwork/fair-manager-interfaces/IStatus.sol";
 
 import { TypedSet } from "./structs/typed/TypedSet.sol";
+import { DEFAULT_HEARTBEAT_INTERVAL } from "./utils/constants.sol";
 
 
 contract Status is AccessManagedUpgradeable, IStatus {
@@ -64,7 +65,7 @@ contract Status is AccessManagedUpgradeable, IStatus {
         __AccessManaged_init(initialAuthority);
         nodes = nodesAddress;
         committee = committeeAddress;
-        heartbeatInterval = Duration.wrap(5 minutes);
+        heartbeatInterval = Duration.wrap(DEFAULT_HEARTBEAT_INTERVAL);
     }
 
     function alive() external override {

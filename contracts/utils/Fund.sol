@@ -27,6 +27,7 @@ import { NodeId } from "@skalenetwork/fair-manager-interfaces/INodes.sol";
 import { Fair } from "@skalenetwork/fair-manager-interfaces/units.sol";
 
 import { TypedMap } from "../structs/typed/TypedMap.sol";
+import { ALLOWED_ERROR, FEE_RATE_PRECISION_VALUE } from "./constants.sol";
 
 type Credit is uint256;
 type Holder is uint256;
@@ -51,12 +52,11 @@ library FundLibrary {
     }
 
     uint256 public constant CREDIT_PRECISION = 1 << 80;
+    uint16 public constant FEE_RATE_PRECISION = FEE_RATE_PRECISION_VALUE;
 
     Holder public constant NULL = Holder.wrap(0);
     Fair public constant ZERO_FAIR = Fair.wrap(0);
     Credit public constant ZERO_CREDIT = Credit.wrap(0);
-
-    Fair private constant ALLOWED_ERROR = Fair.wrap(1e9);
 
     error NotEnoughStaked(Fair staked);
     error NotEnoughFee(Fair earnedFee);
@@ -268,7 +268,7 @@ library FundLibrary {
                 fee = balanceChange;
             } else {
                 fee = Fair.wrap(
-                    Fair.unwrap(balanceChange) * fund.feeRate / 1000
+                    Fair.unwrap(balanceChange) * fund.feeRate / FEE_RATE_PRECISION
                 );
             }
             return fee;
@@ -367,7 +367,7 @@ library FundLibrary {
 
         Fair err = max - min;
 
-        if (err > ALLOWED_ERROR) {
+        if (Fair.unwrap(err) > ALLOWED_ERROR) {
             // If the error is too high, we revert with a custom error
             // This is to prevent any potential exploits or issues with rounding errors
             // that could lead to funds lost.
