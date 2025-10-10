@@ -26,10 +26,8 @@ pragma solidity ^0.8.24;
 
 import { IDkg } from "@skalenetwork/fair-manager-interfaces/IDkg.sol";
 
-import { Precompiled } from "../Precompiled.sol";
-
 import { LARGE_PRIME } from "../constants.sol";
-
+import { Precompiled } from "../Precompiled.sol";
 
 library Fp2Operations {
 

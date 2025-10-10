@@ -27,8 +27,9 @@ import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableS
 import { NodeId } from "@skalenetwork/fair-manager-interfaces/INodes.sol";
 import { IStaking } from "@skalenetwork/fair-manager-interfaces/IStaking.sol";
 import { Fair, Timestamp } from "@skalenetwork/fair-manager-interfaces/units.sol";
-import { FundLibrary } from "./Fund.sol";
+
 import { MAX_ITERATIONS } from "./constants.sol";
+import { FundLibrary } from "./Fund.sol";
 
 library ExitQueueLibrary{
     using EnumerableSet for EnumerableSet.UintSet;
