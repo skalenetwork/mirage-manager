@@ -47,7 +47,7 @@ import {IStaking} from "@skalenetwork/fair-manager-interfaces/IStaking.sol";
 import {Nodes} from "./Nodes.sol";
 import {TypedMap} from "./structs/typed/TypedMap.sol";
 import {TypedSet} from "./structs/typed/TypedSet.sol";
-import { DEFAULT_MIN_STAKE, DEFAULT_RETRIEVING_DELAY, MAX_FEE_RATE } from "./utils/constants.sol";
+import { DEFAULT_MIN_STAKE, DEFAULT_RETRIEVING_DELAY } from "./utils/constants.sol";
 import {ExitQueueLibrary, Timestamp} from "./utils/ExitQueue.sol";
 import {Credit, FundLibrary, Fair, Holder} from "./utils/Fund.sol";
 
@@ -60,7 +60,8 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
     using TypedMap for TypedMap.NodeIdToFairMap;
     using ExitQueueLibrary for ExitQueueLibrary.ExitQueue;
 
-    uint16 public constant DEFAULT_FEE_RATE = MAX_FEE_RATE;
+    // Starts equal to precision (max possible fee rate)
+    uint16 public constant DEFAULT_FEE_RATE = FundLibrary.FEE_RATE_PRECISION;
 
     ICommittee public committee;
     INodes public nodes;
@@ -320,7 +321,7 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
     }
 
     function setFeeRate(uint16 feeRate) external override {
-        require(!(feeRate > MAX_FEE_RATE), FeeRateIsIncorrect(feeRate));
+        require(!(feeRate > FundLibrary.FEE_RATE_PRECISION), FeeRateIsIncorrect(feeRate));
         NodeId node = nodes.getNodeId(msg.sender);
         uint16 currentFeeRate = _nodesFunds[node].feeRate;
         require(

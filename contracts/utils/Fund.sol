@@ -27,7 +27,7 @@ import { NodeId } from "@skalenetwork/fair-manager-interfaces/INodes.sol";
 import { Fair } from "@skalenetwork/fair-manager-interfaces/units.sol";
 
 import { TypedMap } from "../structs/typed/TypedMap.sol";
-import { ALLOWED_ERROR, DEFAULT_CREDIT_PRECISION, DEFAULT_FEE_RATE_PRECISION } from "./constants.sol";
+import { ALLOWED_ERROR, FEE_RATE_PRECISION_VALUE } from "./constants.sol";
 
 type Credit is uint256;
 type Holder is uint256;
@@ -51,8 +51,8 @@ library FundLibrary {
         uint16 feeRate; // 0 - 1000‰
     }
 
-    uint256 public constant CREDIT_PRECISION = DEFAULT_CREDIT_PRECISION;
-    uint256 public constant FEE_RATE_PRECISION = DEFAULT_FEE_RATE_PRECISION;
+    uint256 public constant CREDIT_PRECISION = 1 << 80;
+    uint16 public constant FEE_RATE_PRECISION = FEE_RATE_PRECISION_VALUE;
 
     Holder public constant NULL = Holder.wrap(0);
     Fair public constant ZERO_FAIR = Fair.wrap(0);

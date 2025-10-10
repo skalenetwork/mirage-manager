@@ -48,13 +48,10 @@ uint256 constant DEFAULT_MIN_TRANSITION_DELAY = 10 minutes;
 
 uint256 constant DEFAULT_MIN_STAKE = 1 wei;
 uint256 constant DEFAULT_RETRIEVING_DELAY = 1 days;
-uint16 constant MAX_FEE_RATE = 1000; // 100.0%
-
 
 // Fund
 
-uint256 constant DEFAULT_FEE_RATE_PRECISION = 1000; // Decimal precision for fees 0.0% - 100.0%
-uint256 constant DEFAULT_CREDIT_PRECISION = 1 << 80;
+uint16 constant FEE_RATE_PRECISION_VALUE = 1000; // Decimal precision for fees 0.0% - 100.0%
 uint256 constant ALLOWED_ERROR = 1e9; // 0.000000001 FAIR
 
 
