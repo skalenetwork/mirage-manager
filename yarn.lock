@@ -2043,6 +2043,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@openzeppelin/contracts@npm:^5.4.0":
+  version: 5.4.0
+  resolution: "@openzeppelin/contracts@npm:5.4.0"
+  checksum: 10c0/7e05646dee4905fea4493f0fb2ad208abaff84b9f5ef1b9e1a5fc61d0e74d9bc30759bdf0d09a08049cfef6a290623330d83469eadc990a7bba6c2cd09a27e1d
+  languageName: node
+  linkType: hard
+
 "@openzeppelin/defender-sdk-base-client@npm:^2.1.0, @openzeppelin/defender-sdk-base-client@npm:^2.4.0":
   version: 2.4.0
   resolution: "@openzeppelin/defender-sdk-base-client@npm:2.4.0"
@@ -2494,10 +2501,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@skalenetwork/fair-manager-interfaces@npm:0.1.0-develop.95":
-  version: 0.1.0-develop.95
-  resolution: "@skalenetwork/fair-manager-interfaces@npm:0.1.0-develop.95"
-  checksum: 10c0/6abfdc6fc289b53a58f8037d8ecca7f73722b7bd0b5f45dda27fed03065cc2ad1d92cd1d72fa6834549d3890c8b16ef11f8f876f31d3424bf80dada6615db6fa
+"@skalenetwork/fair-manager-interfaces@npm:0.1.0-beacon.1":
+  version: 0.1.0-beacon.1
+  resolution: "@skalenetwork/fair-manager-interfaces@npm:0.1.0-beacon.1"
+  dependencies:
+    "@openzeppelin/contracts": "npm:^5.4.0"
+  checksum: 10c0/b3917f49911128fb572d12cd600498ebfb9850b29cdf8f00892e270e0c53e5778824915a97df74e8d86a55dd99d32a6658a96db849a00283e30a7a67209cf453
   languageName: node
   linkType: hard
 
@@ -5502,7 +5511,7 @@ __metadata:
     "@openzeppelin/contracts-upgradeable": "npm:^5.3.0"
     "@openzeppelin/hardhat-upgrades": "npm:^3.9.1"
     "@openzeppelin/upgrades-core": "npm:^1.44.1"
-    "@skalenetwork/fair-manager-interfaces": "npm:0.1.0-develop.95"
+    "@skalenetwork/fair-manager-interfaces": "npm:0.1.0-beacon.1"
     "@skalenetwork/skale-contracts-ethers-v6": "npm:^2.0.0-develop.1"
     "@skalenetwork/skale-manager-interfaces": "npm:3.2.0-develop.3"
     "@skalenetwork/upgrade-tools": "npm:4.0.0-develop.1"

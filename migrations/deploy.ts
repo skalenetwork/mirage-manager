@@ -15,7 +15,7 @@ import {
     FairAccessManager,
     Staking,
     Status,
-    RewardWallet
+    IBeacon
 } from "../typechain-types";
 import { AddressLike, BytesLike } from "ethers";
 import { skaleContracts } from "@skalenetwork/skale-contracts-ethers-v6";
@@ -226,11 +226,12 @@ const deployDkg = async (authority: FairAccessManager, committee: Committee, nod
     ) as DKG;
 }
 
-const deployRewardWalletReference = async (): Promise<RewardWallet> => {
-    const factory = await ethers.getContractFactory("RewardWallet");
-    const instance = await factory.deploy();
+const deployRewardWalletBeacon = async (): Promise<IBeacon> => {
+    const instance = await upgrades.deployBeacon(
+        await ethers.getContractFactory("RewardWallet")
+    );
     await instance.waitForDeployment();
-    return instance as RewardWallet;
+    return instance as unknown as IBeacon;
 }
 
 const deployStatus = async (authority: FairAccessManager, nodes: Nodes, committee: Committee): Promise<Status> => {
@@ -257,7 +258,7 @@ const deployStaking = async (
             await ethers.resolveAddress(committee),
             await ethers.resolveAddress(nodes),
             await ethers.resolveAddress(
-                await deployRewardWalletReference()
+                await deployRewardWalletBeacon()
             )
         ]
     ) as Staking;
@@ -302,10 +303,13 @@ const verify = async (deployedContracts: DeployedContracts) => {
         }
     }
     try {
-        const rewardWalletAddress = await deployedContracts.Staking.rewardWalletReference();
+        const rewardWalletBeacon = await ethers.getContractAt(
+            "IBeacon",
+            await deployedContracts.Staking.rewardWalletBeacon()
+        );
         await verifyImplementation(
             "RewardWallet",
-            rewardWalletAddress
+            await rewardWalletBeacon.implementation()
         );
     } catch (error) {
         console.log(chalk.yellow(`Skipping verification for RewardWallet: ${error}`));

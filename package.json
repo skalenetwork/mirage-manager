@@ -55,7 +55,7 @@
     "@openzeppelin/contracts-upgradeable": "^5.3.0",
     "@openzeppelin/hardhat-upgrades": "^3.9.1",
     "@openzeppelin/upgrades-core": "^1.44.1",
-    "@skalenetwork/fair-manager-interfaces": "0.1.0-develop.95",
+    "@skalenetwork/fair-manager-interfaces": "0.1.0-beacon.1",
     "@skalenetwork/skale-contracts-ethers-v6": "^2.0.0-develop.1",
     "@skalenetwork/skale-manager-interfaces": "3.2.0-develop.3",
     "@skalenetwork/upgrade-tools": "4.0.0-develop.1",
