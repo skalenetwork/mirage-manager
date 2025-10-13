@@ -30,6 +30,7 @@ import { Duration, IStatus } from "@skalenetwork/fair-manager-interfaces/IStatus
 
 import { TypedSet } from "./structs/typed/TypedSet.sol";
 import { DEFAULT_HEARTBEAT_INTERVAL } from "./utils/constants.sol";
+import { NodeDoesNotExist } from "./utils/errors.sol";
 
 
 contract Status is AccessManagedUpgradeable, IStatus {
@@ -51,7 +52,6 @@ contract Status is AccessManagedUpgradeable, IStatus {
 
     error NodeAlreadyWhitelisted(NodeId nodeId);
     error NodeNotWhitelisted(NodeId nodeId);
-    error NodeDoesNotExist(NodeId nodeId);
 
     function initialize(
         address initialAuthority,

@@ -32,6 +32,7 @@ import {INodes, NodeId} from "@skalenetwork/fair-manager-interfaces/INodes.sol";
 
 import {TypedMap} from "./structs/typed/TypedMap.sol";
 import {TypedSet} from "./structs/typed/TypedSet.sol";
+import { InvalidCommitteeAddress, InvalidNodesAddress } from "./utils/errors.sol";
 import {G2Operations} from "./utils/fieldOperations/G2Operations.sol";
 
 
@@ -92,8 +93,6 @@ contract DKG is AccessManagedUpgradeable, IDkg {
     error IncorrectG2Point(G2Point value);
     error NodeIsAlreadyAlright(NodeId node);
     error RoundDoesNotExist(DkgId dkg);
-    error InvalidCommitteeAddress();
-    error InvalidNodesAddress();
 
     modifier onlyBroadcastingDkg(DkgId dkg) {
         // the modifier checks that the DKG is only in BROADCAST stage

@@ -37,6 +37,7 @@ import { Duration, IStatus } from "@skalenetwork/fair-manager-interfaces/IStatus
 
 import { TypedSet } from "./structs/typed/TypedSet.sol";
 import { DEFAULT_COMMITTEE_SIZE, DEFAULT_MIN_TRANSITION_DELAY, DEFAULT_TRANSITION_DELAY} from "./utils/constants.sol";
+import { AddressIsZero, InvalidNodesAddress } from "./utils/errors.sol";
 import { G2Operations } from "./utils/fieldOperations/G2Operations.sol";
 import { FundLibrary } from "./utils/Fund.sol";
 import { PoolLibrary } from "./utils/Pool.sol";
@@ -97,8 +98,6 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
     error NodeNotActive(NodeId node);
     error TransitionDelayTooShort();
     error CommitteeRotationInProgress();
-    error InvalidNodesAddress();
-    error AddressIsZero();
 
     modifier onlyDkg() {
         require(msg.sender == address(dkg), SenderIsNotDkg(msg.sender));

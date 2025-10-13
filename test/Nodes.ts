@@ -61,7 +61,7 @@ describe("Nodes", function () {
     });
 
     it("should reject invalid committee addresses", async () => {
-        await expect(nodesContract.setCommittee(ZeroAddress)).to.be.revertedWithCustomError(nodesContract, "InvalidCommitteeAddress");
+        await expect(nodesContract.setCommittee(ZeroAddress)).to.be.revertedWithCustomError(nodesContract, "AddressIsZero");
     });
 
     it("should register Active Nodes", async () => {

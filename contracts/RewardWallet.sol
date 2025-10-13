@@ -32,6 +32,8 @@ import {INodes, NodeId} from "@skalenetwork/fair-manager-interfaces/INodes.sol";
 import {IRewardWallet} from "@skalenetwork/fair-manager-interfaces/IRewardWallet.sol";
 import {IStaking} from "@skalenetwork/fair-manager-interfaces/IStaking.sol";
 
+import { InvalidNodesAddress, InvalidStakingAddress } from "./utils/errors.sol";
+
 contract RewardWallet is AccessManagedUpgradeable, IRewardWallet {
     using Address for address payable;
 
@@ -41,8 +43,6 @@ contract RewardWallet is AccessManagedUpgradeable, IRewardWallet {
 
     error OwnerNodeDoesNotExist();
     error ValueExceedsStakeLimit();
-    error InvalidNodesAddress();
-    error InvalidStakingAddress();
 
     modifier onlyIfNodeExists() {
         require(_nodeExists(ownerNode), OwnerNodeDoesNotExist());

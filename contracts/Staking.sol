@@ -44,10 +44,10 @@ import {INodes, NodeId} from "@skalenetwork/fair-manager-interfaces/INodes.sol";
 import {IRewardWallet} from "@skalenetwork/fair-manager-interfaces/IRewardWallet.sol";
 import {IStaking} from "@skalenetwork/fair-manager-interfaces/IStaking.sol";
 
-import {Nodes} from "./Nodes.sol";
 import {TypedMap} from "./structs/typed/TypedMap.sol";
 import {TypedSet} from "./structs/typed/TypedSet.sol";
 import { DEFAULT_MIN_STAKE, DEFAULT_RETRIEVING_DELAY } from "./utils/constants.sol";
+import { InvalidCommitteeAddress, InvalidNodesAddress, NodeDoesNotExist } from "./utils/errors.sol";
 import {ExitQueueLibrary, Timestamp} from "./utils/ExitQueue.sol";
 import {Credit, FundLibrary, Fair, Holder} from "./utils/Fund.sol";
 
@@ -111,12 +111,10 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
     error RewardWalletDoesNotExist(NodeId node);
     error NodeOwnerCannotRetrieveWhileNodeExists(address nodeOwner, NodeId node);
     error InsufficientSelfStake(Fair provided, Fair required);
-    error InvalidCommitteeAddress();
-    error InvalidNodesAddress();
     error InvalidRewardWalletAddress();
 
     modifier onlyExistingActiveNode(NodeId node) {
-        require(nodes.activeNodeExists(node), Nodes.NodeDoesNotExist(node));
+        require(nodes.activeNodeExists(node), NodeDoesNotExist(node));
         _;
     }
 
