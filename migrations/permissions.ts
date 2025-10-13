@@ -15,7 +15,7 @@ const setupCommitteeRoles = async (accessManager: FairAccessManager, committee: 
     response = await accessManager.setTargetFunctionRole(
         await ethers.resolveAddress(committee),
         [
-            committee.interface.getFunction("nodeBlacklisted").selector,
+            committee.interface.getFunction("nodeRemovedFromWhitelist").selector,
             committee.interface.getFunction("nodeWhitelisted").selector,
             committee.interface.getFunction("processHeartbeat").selector
         ],

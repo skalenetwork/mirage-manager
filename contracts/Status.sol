@@ -104,7 +104,7 @@ contract Status is AccessManagedUpgradeable, IStatus {
         bool isActive = nodes.activeNodeExists(nodeId);
         emit NodeRemovedFromWhitelist(nodeId);
         if (isActive) {
-            committee.nodeBlacklisted(nodeId);
+            committee.nodeRemovedFromWhitelist(nodeId);
         }
     }
 
