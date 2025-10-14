@@ -25,13 +25,32 @@ import {
     AccessManagerUpgradeable
 } from "@openzeppelin/contracts-upgradeable/access/manager/AccessManagerUpgradeable.sol";
 
-
+/**
+ * @title FairAccessManager
+ * @author SKALE Labs
+ * @notice Manages role-based access control for the FAIR network contracts
+ * @dev Extends OpenZeppelin's AccessManagerUpgradeable to define specific roles
+ * for Committee, Nodes, Staking, and Status contracts. Each role controls access
+ * to specific contract functions.
+ */
 contract FairAccessManager is AccessManagerUpgradeable {
+    /// @notice Role ID for Committee contract operations
     uint64 public constant COMMITTEE_ROLE = 1;
+
+    /// @notice Role ID for Nodes contract operations
     uint64 public constant NODES_ROLE = 2;
+
+    /// @notice Role ID for Staking contract operations
     uint64 public constant STAKING_ROLE = 3;
+
+    /// @notice Role ID for Status contract operations
     uint64 public constant STATUS_ROLE = 4;
 
+    /**
+     * @notice Initializes the FairAccessManager contract
+     * @dev Sets up the initial admin with full access control privileges
+     * @param initialAdmin The address that will be granted admin role
+     */
     function initialize(address initialAdmin) public initializer override {
         __AccessManager_init(initialAdmin);
     }
