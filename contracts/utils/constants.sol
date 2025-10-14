@@ -29,32 +29,42 @@ pragma solidity ^0.8.24;
 
 // General constants
 
-uint256 constant MAX_ITERATIONS = 2000; // reasonable number of iterations for heavier loops
+/// @dev Maximum number of iterations allowed for heavier loops
+uint256 constant MAX_ITERATIONS = 2000;
 
 
 // Field Operations
 
+/// @dev Large prime number used for DKG cryptographic operations
 uint256 constant LARGE_PRIME = 21888242871839275222246405745257275088696311157297823662689037894645226208583;
 
 
 // Committee
 
+/// @dev Default size of the committee
 uint256 constant DEFAULT_COMMITTEE_SIZE = 22;
+/// @dev Default delay for committee transitions
 uint256 constant DEFAULT_TRANSITION_DELAY = 1 days;
+/// @dev Minimum allowed transition delay - reasonable interval for off-chain components to react
 uint256 constant DEFAULT_MIN_TRANSITION_DELAY = 10 minutes;
 
 
 // Staking
 
+/// @dev Default value for minimum stake amount required
 uint256 constant DEFAULT_MIN_STAKE = 1 wei;
+/// @dev Default waiting period untill unstaked tokens can be claimed
 uint256 constant DEFAULT_RETRIEVING_DELAY = 1 days;
 
 // Fund
 
-uint16 constant FEE_RATE_PRECISION_VALUE = 1000; // Decimal precision for fees 0.0% - 100.0%
-uint256 constant ALLOWED_ERROR = 1e9; // 0.000000001 FAIR
+/// @dev Decimal precision for fee rates (0.0% - 100.0%)
+uint16 constant FEE_RATE_PRECISION_VALUE = 1000;
+/// @dev Allowed error margin for fund calculations (0.000000001 FAIR)
+uint256 constant ALLOWED_ERROR = 1e9;
 
 
 // Status
 
+/// @dev Default interval for heartbeat checks
 uint256 constant DEFAULT_HEARTBEAT_INTERVAL = 5 minutes;

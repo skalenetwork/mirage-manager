@@ -24,18 +24,28 @@ pragma solidity ^0.8.24;
 import { IRandom } from "@skalenetwork/fair-manager-interfaces/IRandom.sol";
 
 /**
- * @title Random
- * @dev The library for generating of pseudo random numbers
+ * @title Random Library
+ * @author SKALE Labs
+ * @dev Library for generating pseudo-random numbers using seed-based generation
+ * Provides utilities for creating random number generators and generating values
+ * within specified ranges for weighted sampling and selection algorithms.
  */
 library Random {
 
     /**
-     * @dev Create an instance of RandomGenerator
+     * @dev Creates a RandomGenerator instance from a seed value
+     * @param seed The initial seed value for random generation
+     * @return generator The initialized RandomGenerator
      */
     function create(uint256 seed) internal pure returns (IRandom.RandomGenerator memory generator) {
         return IRandom.RandomGenerator({seed: seed});
     }
 
+    /**
+     * @dev Creates a RandomGenerator instance from entropy bytes
+     * @param entropy The entropy bytes to hash into a seed
+     * @return generator The initialized RandomGenerator
+     */
     function createFromEntropy(
         bytes memory entropy
     )
@@ -47,7 +57,9 @@ library Random {
     }
 
     /**
-     * @dev Generates random value
+     * @dev Generates a random value and updates the generator state
+     * @param self The RandomGenerator instance (modified in place)
+     * @return value The generated random uint256 value
      */
     function random(IRandom.RandomGenerator memory self) internal pure returns (uint256 value) {
         self.seed = uint256(sha256(abi.encodePacked(self.seed)));
@@ -55,7 +67,10 @@ library Random {
     }
 
     /**
-     * @dev Generates random value in range [0, max)
+     * @dev Generates a random value in the range [0, max)
+     * @param self The RandomGenerator instance (modified in place)
+     * @param max The exclusive upper bound (must be greater than 0)
+     * @return value The generated random value in range [0, max)
      */
     function random(
         IRandom.RandomGenerator memory self,
@@ -75,7 +90,11 @@ library Random {
     }
 
     /**
-     * @dev Generates random value in range [min, max)
+     * @dev Generates a random value in the range [min, max)
+     * @param self The RandomGenerator instance (modified in place)
+     * @param min The inclusive lower bound
+     * @param max The exclusive upper bound (must be greater than min)
+     * @return value The generated random value in range [min, max)
      */
     function random(
         IRandom.RandomGenerator memory self,

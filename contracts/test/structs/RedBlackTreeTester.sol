@@ -43,11 +43,11 @@ contract RedBlackTreeTester is IRedBlackTreeTester{
     using RedBlackTree for mapping(NodeId => RedBlackTree.Node);
     using Strings for uint256;
 
+    NodeId public constant NULL = RedBlackTree.NULL;
+    NodeId public constant EMPTY = NodeId.wrap(type(uint256).max);
     mapping(NodeId node => RedBlackTree.Node data) public tree;
     mapping(NodeId node => uint256 weight) public weights;
     NodeId public root;
-    NodeId public constant NULL = RedBlackTree.NULL;
-    NodeId public constant EMPTY = NodeId.wrap(type(uint256).max);
 
     error IncorrectBlackHeight(NodeId node, uint256 leftBlackHeight, uint256 rightBlackHeight);
     error IncorrectParentOfLeftChild(NodeId parent, NodeId child, NodeId actualParent);

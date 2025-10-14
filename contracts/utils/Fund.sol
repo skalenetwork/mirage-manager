@@ -29,7 +29,10 @@ import { Fair } from "@skalenetwork/fair-manager-interfaces/units.sol";
 import { TypedMap } from "../structs/typed/TypedMap.sol";
 import { ALLOWED_ERROR, FEE_RATE_PRECISION_VALUE } from "./constants.sol";
 
+/// @dev Represents credits in the fund system with high precision
 type Credit is uint256;
+
+/// @dev Represents a holder identifier that can be either an address or a node ID
 type Holder is uint256;
 
 using {
@@ -39,10 +42,16 @@ using {
     _creditSubtract as -
 } for Credit global;
 
-
+/**
+ * @title Fund Library
+ * @author SKALE Labs
+ * @notice Manages fund balances, credits, and fee collection for SKALE FAIR network participants
+ * @dev Implements a credit system for tracking proportional ownership in funds with fee management
+ */
 library FundLibrary {
     using TypedMap for TypedMap.HolderToCreditMap;
 
+    /// @dev Stores fund state including balances, credits, and fee tracking
     struct Fund {
         Fair lastBalance;
         Credit totalCredits;
@@ -51,17 +60,36 @@ library FundLibrary {
         uint16 feeRate; // 0 - 1000‰
     }
 
+    /// @notice Precision multiplier for credit calculations
     uint256 public constant CREDIT_PRECISION = 1 << 80;
+
+    /// @notice Precision value for fee rate calculations
     uint16 public constant FEE_RATE_PRECISION = FEE_RATE_PRECISION_VALUE;
 
+    /// @notice Null holder identifier constant
     Holder public constant NULL = Holder.wrap(0);
+
+    /// @notice Zero FAIR token amount constant
     Fair public constant ZERO_FAIR = Fair.wrap(0);
+
+    /// @notice Zero credit amount constant
     Credit public constant ZERO_CREDIT = Credit.wrap(0);
 
+    /// @dev Indicates insufficient staked balance for a holder
     error NotEnoughStaked(Fair staked);
+
+    /// @dev Indicates insufficient earned fees for the node owner
     error NotEnoughFee(Fair earnedFee);
+
+    /// @dev Indicates a rounding error exceeds the allowed threshold
     error RoundingErrorTooHigh(Fair roundingError);
 
+    /**
+     * @dev Claims accumulated fees from the fund - Relevant only for Node Funds
+     * @param fund Storage reference to the fund
+     * @param fundBalance Current balance of the fund
+     * @param amount Amount of fees to claim
+     */
     function claimFee(
         Fund storage fund,
         Fair fundBalance,
@@ -78,6 +106,13 @@ library FundLibrary {
         fund.lastBalance = fundBalance - amount;
     }
 
+    /**
+     * @dev Removes a specified amount from a holder's balance
+     * @param fund Storage reference to the fund
+     * @param fundBalance Current balance of the fund
+     * @param holder The holder to remove funds from
+     * @param amount Amount to remove
+     */
     function remove(
         Fund storage fund,
         Fair fundBalance,
@@ -106,6 +141,12 @@ library FundLibrary {
         _checkAllowedError(holderBalance, balanceAfter, amount);
     }
 
+    /**
+     * @dev Sets the fee rate for the fund
+     * @param fund Storage reference to the fund
+     * @param fundBalance Current balance of the fund
+     * @param feeRate New fee rate to set
+     */
     function setFeeRate(
         Fund storage fund,
         Fair fundBalance,
@@ -117,6 +158,13 @@ library FundLibrary {
         fund.feeRate = feeRate;
     }
 
+    /**
+     * @dev Adds funds to a holder's balance
+     * @param fund Storage reference to the fund
+     * @param fundBalance Current balance of the fund
+     * @param holder The holder to add funds to
+     * @param amount Amount to supply
+     */
     function supply(
         Fund storage fund,
         Fair fundBalance,
@@ -150,11 +198,23 @@ library FundLibrary {
         }
     }
 
+    /**
+     * @dev Updates the total balance of the fund and processes any balance changes
+     * @param fund Storage reference to the fund
+     * @param fundBalance Current balance of the fund
+     */
     function updateTotalBalance(Fund storage fund, Fair fundBalance) internal {
         _processBalanceChange(fund, fundBalance);
     }
 
 
+    /**
+     * @dev Retrieves the balance for a specific holder
+     * @param fund Storage reference to the fund
+     * @param fundBalance Current balance of the fund
+     * @param holder The holder to query
+     * @return amount The holder's balance
+     */
     function getBalance(
         Fund storage fund,
         Fair fundBalance,
@@ -173,6 +233,12 @@ library FundLibrary {
         return _toFairRoundedDown(fund, fundBalance, holderCredits);
     }
 
+    /**
+     * @dev Calculates total earned fees including uncounted fees
+     * @param fund Storage reference to the fund
+     * @param balance Current balance to calculate against
+     * @return amount Total earned fees
+     */
     function getEarnedFee(
         Fund storage fund,
         Fair balance
@@ -184,24 +250,49 @@ library FundLibrary {
         return fund.earnedFee + _getUncountedFee(fund, balance);
     }
 
+    /**
+     * @dev Converts a Holder to an address
+     * @param holder The holder identifier to convert
+     * @return holderAddress The converted address
+     */
     function holderToAddress(Holder holder) internal pure returns (address holderAddress) {
         return address(uint160(Holder.unwrap(holder)));
     }
 
+    /**
+     * @dev Converts a Holder to a NodeId
+     * @param holder The holder identifier to convert
+     * @return node The converted NodeId
+     */
     function holderToNode(Holder holder) internal pure returns (NodeId node) {
         return NodeId.wrap(Holder.unwrap(holder));
     }
 
+    /**
+     * @dev Converts an address to a Holder
+     * @param holder The address to convert
+     * @return typedHolder The converted Holder identifier
+     */
     function addressToHolder(address holder) internal pure returns (Holder typedHolder) {
         return Holder.wrap(uint256(uint160(holder)));
     }
 
+    /**
+     * @dev Converts a NodeId to a Holder
+     * @param holder The NodeId to convert
+     * @return typedHolder The converted Holder identifier
+     */
     function nodeToHolder(NodeId holder) internal pure returns (Holder typedHolder) {
         return Holder.wrap(NodeId.unwrap(holder));
     }
 
     // private
 
+    /**
+     * @dev Processes balance changes and updates accrued fees
+     * @param fund Storage reference to the fund
+     * @param fundBalance Current balance of the fund
+     */
     function _processBalanceChange(
         Fund storage fund,
         Fair fundBalance
@@ -219,6 +310,14 @@ library FundLibrary {
         }
     }
 
+    /**
+     * @dev Private function to remove ALL credits from a holder
+     * @dev Calls _remove with the holder's total owned credits (if any)
+     * @param fund Storage reference to the fund
+     * @param fundBalance Current balance of the fund
+     * @param holder The holder to remove credits from
+     * @return removed Amount of FAIR tokens removed
+     */
     function _removeAll(
         Fund storage fund,
         Fair fundBalance,
@@ -234,6 +333,14 @@ library FundLibrary {
         removed = _remove(fund, fundBalance, holder, holderCredits);
     }
 
+    /**
+     * @dev Private function to remove credits from a holder
+     * @param fund Storage reference to the fund
+     * @param fundBalance Current balance of the fund
+     * @param holder The holder to remove credits from
+     * @param amount Amount of credits to remove
+     * @return removed Amount of FAIR tokens removed
+     */
     function _remove(
         Fund storage fund,
         Fair fundBalance,
@@ -261,6 +368,12 @@ library FundLibrary {
         fund.lastBalance = fundBalance - removed;
     }
 
+    /**
+     * @dev Calculates the total balance that belongs to holders (total fund balance excluding fees)
+     * @param fund Storage reference to the fund
+     * @param fundBalance Current balance of the fund
+     * @return amount The holders' available balance
+     */
     function _getHoldersBalance(
         Fund storage fund,
         Fair fundBalance
@@ -272,6 +385,12 @@ library FundLibrary {
         return fundBalance - (fund.earnedFee + _getUncountedFee(fund, fundBalance));
     }
 
+    /**
+     * @dev Calculates uncounted fees based on balance changes
+     * @param fund Storage reference to the fund
+     * @param balance Current balance to calculate against
+     * @return fee The uncounted fee amount
+     */
     function _getUncountedFee(
         Fund storage fund,
         Fair balance
@@ -295,6 +414,13 @@ library FundLibrary {
         return ZERO_FAIR;
     }
 
+    /**
+     * @dev Converts FAIR amount to credits rounded down
+     * @param fund Storage reference to the fund
+     * @param fundBalance Current balance of the fund
+     * @param amount Amount of FAIR to convert
+     * @return credits Converted credit amount
+     */
     function _toCreditsRoundedDown(
         Fund storage fund,
         Fair fundBalance,
@@ -321,6 +447,13 @@ library FundLibrary {
         );
     }
 
+    /**
+     * @dev Converts FAIR amount to credits rounded up
+     * @param fund Storage reference to the fund
+     * @param fundBalance Current balance of the fund
+     * @param amount Amount of FAIR to convert
+     * @return credits Converted credit amount
+     */
     function _toCreditsRoundedUp(
         Fund storage fund,
         Fair fundBalance,
@@ -347,6 +480,13 @@ library FundLibrary {
         );
     }
 
+    /**
+     * @dev Converts credits to FAIR amount rounded down
+     * @param fund Storage reference to the fund
+     * @param fundBalance Current balance of the fund
+     * @param amount Amount of credits to convert
+     * @return fair Converted FAIR amount
+     */
     function _toFairRoundedDown(
         Fund storage fund,
         Fair fundBalance,
@@ -369,6 +509,12 @@ library FundLibrary {
         );
     }
 
+    /**
+     * @dev Validates that rounding errors are within acceptable limits
+     * @param balanceBefore Balance before the operation
+     * @param balanceAfter Balance after the operation
+     * @param amount The amount involved in the operation
+     */
     function _checkAllowedError(
         Fair balanceBefore,
         Fair balanceAfter,
@@ -399,6 +545,9 @@ library FundLibrary {
 
 // Credit
 
+// Simple operation wrappers for Credit type. Self-explanatory
+/* solhint-disable use-natspec */
+
 function _creditAdd(Credit a, Credit b) pure returns (Credit sum) {
     return Credit.wrap(Credit.unwrap(a) + Credit.unwrap(b));
 }
@@ -414,3 +563,5 @@ function _creditLess(Credit a, Credit b) pure returns (bool less) {
 function _creditSubtract(Credit a, Credit b) pure returns (Credit diff) {
     return Credit.wrap(Credit.unwrap(a) - Credit.unwrap(b));
 }
+
+/* solhint-enable use-natspec */

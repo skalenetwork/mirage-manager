@@ -31,14 +31,22 @@ import { Fair, Timestamp } from "@skalenetwork/fair-manager-interfaces/units.sol
 import { MAX_ITERATIONS } from "./constants.sol";
 import { FundLibrary } from "./Fund.sol";
 
+/**
+ * @title Exit Queue Library
+ * @author SKALE Labs
+ * @notice Manages delayed retrieval of staked tokens
+ */
 library ExitQueueLibrary{
     using EnumerableSet for EnumerableSet.UintSet;
 
+    /// @dev Stores exit request data for a specific user
     struct UserExitData {
         EnumerableSet.UintSet requestIds;
         Fair totalLeaving;
     }
 
+    /// @dev Main exit queue storage structure
+    /// @dev Includes all exit requests, user-specific data, configuration, and data tracking values
     struct ExitQueue {
         mapping(uint256 requestId => IStaking.ExitRequest request) exitRequests;
         mapping(address user => UserExitData exitData) userExitData;
@@ -46,6 +54,15 @@ library ExitQueueLibrary{
         Fair totalInExitQueue; // total amount in exit queue
         uint256 numRequests; // total requests ever created (serves as unique id)
     }
+
+    /**
+     * @notice Emitted when a new exit request is created
+     * @param user The address of the user creating the request
+     * @param requestId The unique identifier of the request
+     * @param nodeId The node identifier associated with the request
+     * @param amount The amount of tokens in the request
+     * @param unlockDate The timestamp when the request can be claimed
+     */
 
     event RequestCreated(
         address indexed user,
@@ -55,6 +72,14 @@ library ExitQueueLibrary{
         Timestamp unlockDate
     );
 
+    /**
+     * @notice Emitted when an exit request is claimed
+     * @param user The address of the user claiming the request
+     * @param requestId The unique identifier of the request
+     * @param nodeId The node identifier associated with the request
+     * @param amount The amount of tokens claimed
+     * @param claimDate The timestamp when the request was claimed
+     */
     event RequestClaimed(
         address indexed user,
         uint256 indexed requestId,
@@ -63,14 +88,30 @@ library ExitQueueLibrary{
         Timestamp claimDate
     );
 
+    /// @dev The request with the given ID does not exist
     error RequestDoesNotExist(uint256 requestId);
+
+    /// @dev The request does not exist for the specified user
     error RequestDoesNotExistForUser(address user, uint256 requestId);
+
+    /// @dev The request is still locked and cannot be claimed yet
     error RequestIsStillLocked(Timestamp currentTime, Timestamp releaseTime);
+
+    /// @dev The user does not have a request at the specified index
     error UserDoesNotHaveRequestAt(address user, uint256 index);
+
+    /// @dev No unlocked requests found between start and end indexes
     error ZeroUnlockedRequests(address user, uint256 startIndex, uint256 endIndex);
 
     // internal
 
+    /**
+     * @dev Creates a new exit request for a user
+     * @param queue The exit queue storage
+     * @param user The address of the user
+     * @param nodeId The node identifier
+     * @param amount The amount of tokens to exit
+     */
     function createRequest(
         ExitQueue storage queue,
         address user,
@@ -106,6 +147,13 @@ library ExitQueueLibrary{
         queue.totalInExitQueue = queue.totalInExitQueue + amount;
     }
 
+    /**
+     * @dev Claims an exit request for a user
+     * @param queue The exit queue storage
+     * @param user The address of the user claiming the request
+     * @param id The unique identifier of the request
+     * @return amount The amount of tokens claimed
+     */
     function claim(ExitQueue storage queue, address user, uint256 id) internal returns (Fair amount) {
         IStaking.ExitRequest storage request = getRequest(queue, id);
 
@@ -131,14 +179,32 @@ library ExitQueueLibrary{
         delete queue.exitRequests[id];
     }
 
+    /**
+     * @dev Checks if a request is unlocked
+     * @param queue The exit queue storage
+     * @param id The unique identifier of the request
+     * @return isUnlocked True if the request is unlocked
+     */
     function isRequestUnlocked(ExitQueue storage queue, uint256 id) internal view returns (bool isUnlocked) {
         return _isRequestUnlocked(getRequest(queue, id));
     }
 
+    /**
+     * @dev Returns the number of exit requests for a user
+     * @param queue The exit queue storage
+     * @param user The address of the user
+     * @return numRequests The number of requests
+     */
     function getNumRequestsForUser(ExitQueue storage queue, address user) internal view returns (uint256 numRequests) {
         return queue.userExitData[user].requestIds.length();
     }
 
+    /**
+     * @dev Retrieves an exit request by its ID
+     * @param queue The exit queue storage
+     * @param id The unique identifier of the request
+     * @return request The exit request
+     */
     function getRequest(
         ExitQueue storage queue,
         uint256 id
@@ -151,6 +217,13 @@ library ExitQueueLibrary{
         require(request.user != address(0), RequestDoesNotExist(id));
     }
 
+    /**
+     * @dev Retrieves an exit request for a user at a specific index
+     * @param queue The exit queue storage
+     * @param user The address of the user
+     * @param index The index of the request in the user's request list
+     * @return request The exit request
+     */
     function getRequestAt(
         ExitQueue storage queue,
         address user,
@@ -165,7 +238,13 @@ library ExitQueueLibrary{
         return queue.exitRequests[id];
     }
 
-    //@dev Looks up for an unlocked request in the first MAX_ITERATIONS requests starting after 'from'
+    /**
+     * @dev Looks up for an unlocked request in the first MAX_ITERATIONS requests starting after 'from'
+     * @param queue The exit queue storage
+     * @param user The address of the user
+     * @param from The starting index to search from
+     * @return request The first unlocked exit request found
+     */
     function getUnlockedRequest(
         ExitQueue storage queue,
         address user,
@@ -189,12 +268,23 @@ library ExitQueueLibrary{
         revert ZeroUnlockedRequests(user, from, end);
     }
 
+    /**
+     * @dev Returns the total amount in the exit queue for a user
+     * @param queue The exit queue storage
+     * @param user The address of the user
+     * @return amount The total amount in the queue
+     */
     function getTotalInQueueForUser(ExitQueue storage queue, address user) internal view returns (Fair amount) {
         return queue.userExitData[user].totalLeaving;
     }
 
     // private
 
+    /**
+     * @dev Checks if a request is unlocked based on its unlock date
+     * @param request The exit request to check
+     * @return isUnlocked True if the request is unlocked
+     */
     function _isRequestUnlocked(IStaking.ExitRequest storage request) private view returns (bool isUnlocked){
         return request.unlockDate < Timestamp.wrap(block.timestamp);
     }
