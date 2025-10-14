@@ -32,6 +32,7 @@ import {INodes, NodeId} from "@skalenetwork/fair-manager-interfaces/INodes.sol";
 
 import {TypedMap} from "./structs/typed/TypedMap.sol";
 import {TypedSet} from "./structs/typed/TypedSet.sol";
+import { InvalidCommitteeAddress, InvalidNodesAddress } from "./utils/errors.sol";
 import {G2Operations} from "./utils/fieldOperations/G2Operations.sol";
 
 
@@ -118,6 +119,8 @@ contract DKG is AccessManagedUpgradeable, IDkg {
         override
         initializer
     {
+        require(address(committeeAddress) != address(0), InvalidCommitteeAddress());
+        require(address(nodesAddress) != address(0), InvalidNodesAddress());
         __AccessManaged_init(initialAuthority);
         committee = committeeAddress;
         nodes = nodesAddress;

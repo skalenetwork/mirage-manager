@@ -138,6 +138,25 @@ describe("Committee", () => {
             .should.be.revertedWithCustomError(committee, "AccessManagedUnauthorized");
     });
 
+    it("should not allow everyone to set staking contract", async () => {
+        const [, hacker] = await ethers.getSigners();
+        const {committee} = await cleanDeployment();
+        await committee.connect(hacker).setStaking(hacker)
+            .should.be.revertedWithCustomError(committee, "AccessManagedUnauthorized");
+    });
+
+    it("should not allow to set zero address contracts", async () => {
+        const {committee} = await cleanDeployment();
+        await committee.setDkg(ethers.ZeroAddress)
+            .should.be.revertedWithCustomError(committee, "AddressIsZero");
+        await committee.setNodes(ethers.ZeroAddress)
+            .should.be.revertedWithCustomError(committee, "AddressIsZero");
+        await committee.setStatus(ethers.ZeroAddress)
+            .should.be.revertedWithCustomError(committee, "AddressIsZero");
+        await committee.setStaking(ethers.ZeroAddress)
+            .should.be.revertedWithCustomError(committee, "AddressIsZero");
+    });
+
     it("should not allow everyone to call successful dkg", async () => {
         const {committee} = await cleanDeployment();
         await committee.processSuccessfulDkg(0xd2n)
