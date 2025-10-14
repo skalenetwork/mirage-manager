@@ -317,10 +317,7 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
     error InsufficientSelfStake(Fair provided, Fair required);
     error InvalidRewardWalletAddress();
 
-    /**
-     * @notice Ensures that the specified node exists and is active
-     * @param node The node ID to validate
-     */
+    /// @dev Ensures that the specified node exists and is active
     modifier onlyExistingActiveNode(NodeId node) {
         require(nodes.activeNodeExists(node), NodeDoesNotExist(node));
         _;
