@@ -194,7 +194,9 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
 
     function setTransitionDelay(Duration delay) external override restricted {
         require(
-            Duration.unwrap(delay) + 1 > Duration.unwrap(minTransitionDelay),
+            // false-positive: No real improvement in gas from replacing non-strict inequality
+            // solhint-disable-next-line gas-strict-inequalities
+            Duration.unwrap(delay) >= Duration.unwrap(minTransitionDelay),
             TransitionDelayTooShort()
         );
         emit TransitionDelayUpdated(transitionDelay, delay);
@@ -251,9 +253,10 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
     }
 
     function isNodeInCurrentOrNextCommittee(NodeId node) external view override returns (bool result) {
+        uint256 upperBound = 1 + CommitteeIndex.unwrap(lastCommitteeIndex);
         for (
             uint256 i = CommitteeIndex.unwrap(getActiveCommitteeIndex());
-            i < 1 + CommitteeIndex.unwrap(lastCommitteeIndex);
+            i < upperBound;
             ++i
         ) {
             CommitteeIndex committeeIndex = CommitteeIndex.wrap(i);
@@ -400,7 +403,9 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
     }
 
     function _committeeExists(CommitteeIndex index) private view returns (bool exists) {
-        return !(CommitteeIndex.unwrap(lastCommitteeIndex) < CommitteeIndex.unwrap(index));
+        // false-positive: No real improvement in gas from replacing non-strict inequality
+        // solhint-disable-next-line gas-strict-inequalities
+        return CommitteeIndex.unwrap(lastCommitteeIndex) >= CommitteeIndex.unwrap(index);
     }
 
     function _safeGetRandom() private view returns (uint256 randomNumber) {

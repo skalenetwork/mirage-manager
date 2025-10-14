@@ -130,7 +130,9 @@ contract DKG is AccessManagedUpgradeable, IDkg {
         require(round.nodes.contains(node), NodeDoesNotParticipateInDkg(node));
         require(round.completed.add(node), NodeIsAlreadyAlright(node));
         emit AllDataReceived(dkg, node);
-        if (round.completed.length() + 1 > n) {
+        // false-positive: No real improvement in gas from replacing non-strict inequality
+        // solhint-disable-next-line gas-strict-inequalities
+        if (round.completed.length() >= n) {
             _processSuccessfulDkg(dkg);
         }
     }
@@ -161,7 +163,9 @@ contract DKG is AccessManagedUpgradeable, IDkg {
             NodeAlreadyBroadcasted(node)
         );
 
-        if ( round.hashedData.length() + 1 > n ) {
+        // false-positive: No real improvement in gas from replacing non-strict inequality
+        // solhint-disable-next-line gas-strict-inequalities
+        if ( round.hashedData.length() >= n ) {
             round.status = Status.ALRIGHT;
         }
 
