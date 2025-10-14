@@ -1,0 +1,12 @@
+{
+    "extends": "solhint:recommended",
+    "rules": {
+        "use-natspec": [
+            "warn",
+            {
+                "param":{ "enabled": false },
+                "return":{ "enabled": false }
+            }
+        ]
+    }
+}

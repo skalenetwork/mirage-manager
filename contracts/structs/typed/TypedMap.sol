@@ -26,6 +26,13 @@ import { Fair } from "@skalenetwork/fair-manager-interfaces/units.sol";
 import { Credit, Holder } from "../../utils/Fund.sol";
 import { TypedSet } from "./TypedSet.sol";
 
+/**
+ * @title TypedMap
+ * @author SKALE Labs
+ * @dev Library providing type-safe wrappers around OpenZeppelin's EnumerableMap
+ * Implements strongly-typed maps for NodeId, Fair, Credit, and Holder types
+ * to prevent type confusion and improve code safety and readability.
+ */
 library TypedMap {
     using TypedSet for TypedSet.NodeIdSet;
 
@@ -54,6 +61,7 @@ library TypedMap {
     // ----------
 
     // AddressToNodeIdMap
+
     function set(AddressToNodeIdMap storage map, address key, NodeId value) internal returns (bool added) {
         added = EnumerableMap.set(map.inner, key, NodeId.unwrap(value));
     }
@@ -107,6 +115,7 @@ library TypedMap {
     // --------------
 
     // AddressToNodeIdMap
+
     function contains(AddressToNodeIdMap storage map, address key) internal view returns (bool result) {
         result = EnumerableMap.contains(map.inner, key);
     }
@@ -126,6 +135,7 @@ library TypedMap {
     }
 
     // AddressToNodeIdMap
+
     function lengthOf(AddressToNodeIdSetMap storage map, address key) internal view returns (uint256 len) {
         len = map.inner[key].length();
     }
