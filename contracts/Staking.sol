@@ -664,7 +664,7 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
     }
 
     /**
-     * @notice Stakes ETH to a specific node
+     * @notice Stakes to a specific node
      * @dev Only works on existing active nodes
      * @dev msg.value must be greater than 0
      * @param node The node to stake to
@@ -676,7 +676,7 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
     /**
      * @notice Gets the node's share of the total credits
      * @dev Returns 0 if node is disabled
-     * @dev Includes unpulled rewards from the reward wallet
+     * @dev Accounts for unpulled rewards from the node's reward wallet
      * @param node The node to query
      * @return share The node's share in credits
      */
@@ -715,7 +715,7 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
 
     /**
      * @notice Gets the total amount staked by the caller
-     * @return amount The total staked amount across all nodes
+     * @return amount The total staked amount
      */
     function getStakedAmount() external view override returns (Fair amount) {
         return getStakedAmountFor(msg.sender);
@@ -731,7 +731,7 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
     }
 
     /**
-     * @notice Gets the list of nodes the caller has staked to
+     * @notice Gets the list of nodes the caller has stake in
      * @return stakedNodes Array of node IDs
      */
     function getStakedNodes() external view override returns (NodeId[] memory stakedNodes) {
@@ -748,7 +748,7 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
     }
 
     /**
-     * @notice Gets the fee rate for a specific node
+     * @notice Gets the current fee rate for a specific node
      * @param node The node to query
      * @return feeRate The node's current fee rate
      */
@@ -805,7 +805,7 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
     }
 
     /**
-     * @notice Checks if staking to a node would be within the stake limit
+     * @notice Checks if a node's current stake is within the configured stake limit
      * @param node The node to check
      * @return result True if within stake limit, false otherwise
      */
@@ -830,7 +830,8 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
     }
 
     /**
-     * @notice Gets the first unlocked exit request for a user starting from a specific index
+     * @notice Gets the first unlocked exit request found for a user starting from a specific index
+     * @dev Does limited iterations to avoid DoS and gas limit issues
      * @param user The user to query
      * @param fromIndex The index to start searching from
      * @return request The unlocked exit request
@@ -896,6 +897,7 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
     /**
      * @notice Requests to retrieve a specific amount of stake from a node
      * @dev Creates an exit request and updates committee weight if node is enabled
+     * @dev value must be greater than 0 and less than or equal to caller's stake in the node
      * @param node The node from which to retrieve stake
      * @param value The amount to retrieve
      */
@@ -912,7 +914,7 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
     /**
      * @notice Requests a specific amount of fees for a node
      * @dev Only callable by allowed receivers or node owner
-     * @dev Creates an exit request for the fees
+     * @dev Creates an exit request for the sender
      * @param node The node from which to request fees
      * @param amount The amount of fees to request
      */
@@ -1245,7 +1247,7 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
 
     /**
      * @notice Checks that the provided self-stake meets the requirement
-     * @dev Reverts if provided stake is less than the self-stake requirement
+     * @dev Reverts if provided stake (msg.value) is less than the minimum self-stake requirement
      * @param nodeId The node being created
      */
     function _checkProvidedSelfStake(NodeId nodeId) private {
@@ -1359,7 +1361,7 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
 
     /**
      * @notice Checks that a node owner cannot retrieve stake while their node exists
-     * @dev Reverts with NodeOwnerCannotRetrieveWhileNodeExists if sender is the node owner and node is active
+     * @dev Reverts if the node is active and sender is the node owner
      * @param sender The address attempting to retrieve
      * @param node The node from which retrieval is attempted
      */
@@ -1374,10 +1376,10 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
     }
 
     /**
-     * @notice Converts a public key to an Ethereum address
+     * @notice Converts a public key to a solidity address
      * @dev Uses keccak256 hash of the concatenated public key components
      * @param pubKey The public key as a 2-element bytes32 array
-     * @return nodeAddress The derived Ethereum address
+     * @return nodeAddress The derived solidity address
      */
     function _publicKeyToAddress(
         bytes32[2] memory pubKey
