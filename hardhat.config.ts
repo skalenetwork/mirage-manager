@@ -8,6 +8,7 @@ import "solidity-coverage"
 import "@typechain/hardhat";
 import "hardhat-dependency-compiler";
 import "@nomicfoundation/hardhat-verify";
+import "solidity-docgen";
 import * as dotenv from "dotenv";
 
 // Cspell:words sourcify
@@ -55,6 +56,16 @@ const config: HardhatUserConfig = {
       "@skalenetwork/skale-manager-interfaces/IKeyStorage.sol"
     ],
     keep: true
+  },
+  docgen: {
+    outputDir: "docs",
+    pages: "files",
+    exclude: [
+      "hardhat-dependency-compiler",
+      "test",
+      "utils/constants.sol",
+      "utils/errors.sol"
+    ]
   }
 };
 

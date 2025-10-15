@@ -5635,6 +5635,7 @@ __metadata:
     seedrandom: "npm:^3.0.5"
     solhint: "npm:^6.0.1"
     solidity-coverage: "npm:^0.8.16"
+    solidity-docgen: "npm:^0.6.0-beta.36"
     ts-node: "npm:>=8.0.0"
     typechain: "npm:^8.3.0"
     typescript: "npm:>=5.8.3"
@@ -6251,7 +6252,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"handlebars@npm:^4.0.1":
+"handlebars@npm:^4.0.1, handlebars@npm:^4.7.7":
   version: 4.7.8
   resolution: "handlebars@npm:4.7.8"
   dependencies:
@@ -8866,17 +8867,17 @@ __metadata:
   languageName: node
   linkType: hard
 
+"solidity-ast@npm:^0.4.38, solidity-ast@npm:^0.4.60":
+  version: 0.4.61
+  resolution: "solidity-ast@npm:0.4.61"
+  checksum: 10c0/525f4f2f52d580a23fdaa6975d09e7507074a5892aa0a0964ce3865463392f16a831177856377f7022ba2ea83cff0c18f3513ee8c281ce080aca70fd8e1d5c36
+  languageName: node
+  linkType: hard
+
 "solidity-ast@npm:^0.4.51":
   version: 0.4.60
   resolution: "solidity-ast@npm:0.4.60"
   checksum: 10c0/941475435e7da7696b1e8cbbc42c515f21ba614dd2fe8b5f7c180b0e3de4acb24361b57925cfa112d273a4763986a7efd092f2123e83fd198f2e1eff31d10538
-  languageName: node
-  linkType: hard
-
-"solidity-ast@npm:^0.4.60":
-  version: 0.4.61
-  resolution: "solidity-ast@npm:0.4.61"
-  checksum: 10c0/525f4f2f52d580a23fdaa6975d09e7507074a5892aa0a0964ce3865463392f16a831177856377f7022ba2ea83cff0c18f3513ee8c281ce080aca70fd8e1d5c36
   languageName: node
   linkType: hard
 
@@ -8908,6 +8909,18 @@ __metadata:
   bin:
     solidity-coverage: plugins/bin.js
   checksum: 10c0/6a5d643f8cc11c926a898f2bc60720c893634a65d17b1a99f5df32c485ea25404022555c22c66ee85c388e67c96ea8366895111ed592539dd45697e1a6208203
+  languageName: node
+  linkType: hard
+
+"solidity-docgen@npm:^0.6.0-beta.36":
+  version: 0.6.0-beta.36
+  resolution: "solidity-docgen@npm:0.6.0-beta.36"
+  dependencies:
+    handlebars: "npm:^4.7.7"
+    solidity-ast: "npm:^0.4.38"
+  peerDependencies:
+    hardhat: ^2.8.0
+  checksum: 10c0/34ca1c18b2f662e5b6e407fad9346da91807b18ca57c877d909a4e730935475b0d3a5d8e91d79113c96741f4275944f9f3176a612894f4118e16cd9a9de80c02
   languageName: node
   linkType: hard
 
