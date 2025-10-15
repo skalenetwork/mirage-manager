@@ -226,7 +226,7 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
         }
     }
 
-    function nodeBlacklisted(NodeId node) external override restricted {
+    function nodeRemovedFromWhitelist(NodeId node) external override restricted {
         _setIneligible(node);
     }
 
