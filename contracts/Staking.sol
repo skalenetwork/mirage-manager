@@ -50,7 +50,7 @@ import { Credit, FundLibrary, Fair, Holder } from "./utils/Fund.sol";
  * @title Staking
  * @author SKALE Labs
  * @notice Manages staking operations for FAIR network nodes
- * @dev Implements a two-level fund structure with reward distribution, fee collection, and exit queue management
+ * @dev Implements a two-level fund structure with reward distribution, fee collection, and exit-queue management
  */
 contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaking {
     using Address for address payable;
@@ -61,7 +61,7 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
     using TypedMap for TypedMap.NodeIdToFairMap;
     using ExitQueueLibrary for ExitQueueLibrary.ExitQueue;
 
-    /// @notice Default fee rate starting value (100% of precision, maximum possible fee rate)
+    /// @notice Default fee rate starting value (100% of precision; maximum possible fee rate)
     uint16 public constant DEFAULT_FEE_RATE = FundLibrary.FEE_RATE_PRECISION;
 
     /// @notice Reference to the Committee contract
@@ -241,7 +241,7 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
     error FeeRateIsIncorrect(uint16 feeRate);
 
     /**
-     * @notice Thrown when attempting to increase the fee rate of nodes with stake (only reduction is allowed)
+     * @notice Thrown when attempting to increase the fee rate of nodes with stake (only reductions are allowed)
      * @param currentRate The current fee rate
      * @param newRate The attempted new fee rate
      */
@@ -325,7 +325,9 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
 
     /**
      * @notice Fallback function to receive rewards
-     * @dev Emits RewardReceived event when ETH is sent to the contract
+     * @dev Emits RewardReceived when funds are sent to the contract
+     * @dev Received funds are automatically shared among all enabled nodes
+     * @dev Staking the root fund to distribute rewards proportionally based on stake
      */
     receive() external override payable {
         emit RewardReceived(msg.sender, msg.value);
@@ -429,7 +431,7 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
 
     /**
      * @notice Disables a node from receiving network rewards and removes it from the active pool
-     * @dev Only callable by Committee contract (restricted)
+     * @dev Only callable by the Committee contract (restricted)
      * @dev Updates committee weight to 0 if the node is active
      * @param node The node to disable
      */
@@ -480,7 +482,7 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
         assert(_disabledNodesBalances.remove(node));
         totalDisabled = totalDisabled - value;
 
-        // Node might have changed it's balance due to rounding in supply()
+        // Node might have changed its balance due to rounding in supply()
         // Force update on nodeFund
         Fair finalBalance = _rootFund.getBalance(_getTotalBalance(), FundLibrary.nodeToHolder(node));
         if(!(finalBalance == value)){
@@ -506,7 +508,7 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
         }
 
         // Node should be set as disabled with 0 stake before anything
-        // SelfStake will be added (If any) while node is disabled
+        // Self-stake will be added (if any) while the node is disabled
         assert(_disabledNodesBalances.set(node, FundLibrary.ZERO_FAIR));
 
         _updateNodeFeeRate(node, DEFAULT_FEE_RATE);
@@ -600,7 +602,7 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
 
     /**
      * @notice Claims an exit request and transfers funds to the caller
-     * @dev Reverts if request is still locked or doesn't belong to caller
+     * @dev Reverts if the request is still locked or doesn't belong to the caller
      * @param requestId The ID of the exit request to claim
      */
     function claimRequest(uint256 requestId) external override nonReentrant {
@@ -893,8 +895,8 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
 
     /**
      * @notice Requests to retrieve a specific amount of stake from a node
-     * @dev Creates an exit request and updates committee weight if node is enabled
-     * @dev value must be greater than 0 and less than or equal to caller's stake in the node
+     * @dev Creates an exit request and updates committee weight if the node is enabled
+     * @dev value must be greater than 0 and less than or equal to the caller's stake in the node
      * @param node The node from which to retrieve stake
      * @param value The amount to retrieve
      */
@@ -1357,7 +1359,7 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
     }
 
     /**
-     * @notice Checks that a node owner cannot retrieve stake while their node exists
+     * @notice Ensures a node owner cannot retrieve stake while their node exists
      * @dev Reverts if the node is active and sender is the node owner
      * @param sender The address attempting to retrieve
      * @param node The node from which retrieval is attempted

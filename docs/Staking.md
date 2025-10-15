@@ -4,7 +4,7 @@
 
 Manages staking operations for FAIR network nodes
 
-_Implements a two-level fund structure with reward distribution, fee collection, and exit queue management_
+_Implements a two-level fund structure with reward distribution, fee collection, and exit-queue management_
 
 ### DEFAULT_FEE_RATE
 
@@ -12,7 +12,7 @@ _Implements a two-level fund structure with reward distribution, fee collection,
 uint16 DEFAULT_FEE_RATE
 ```
 
-Default fee rate starting value (100% of precision, maximum possible fee rate)
+Default fee rate starting value (100% of precision; maximum possible fee rate)
 
 ### committee
 
@@ -365,7 +365,7 @@ Thrown when the provided fee rate exceeds the maximum allowed
 error OnlyFeeReductionIsAllowed(uint16 currentRate, uint16 newRate)
 ```
 
-Thrown when attempting to increase the fee rate of nodes with stake (only reduction is allowed)
+Thrown when attempting to increase the fee rate of nodes with stake (only reductions are allowed)
 
 #### Parameters
 
@@ -548,7 +548,9 @@ receive() external payable
 
 Fallback function to receive rewards
 
-_Emits RewardReceived event when ETH is sent to the contract_
+_Emits RewardReceived when funds are sent to the contract
+Received funds are automatically shared among all enabled nodes
+Staking the root fund to distribute rewards proportionally based on stake_
 
 ### initialize
 
@@ -658,7 +660,7 @@ function disable(NodeId node) external
 
 Disables a node from receiving network rewards and removes it from the active pool
 
-_Only callable by Committee contract (restricted)
+_Only callable by the Committee contract (restricted)
 Updates committee weight to 0 if the node is active_
 
 #### Parameters
@@ -748,7 +750,7 @@ function claimRequest(uint256 requestId) external
 
 Claims an exit request and transfers funds to the caller
 
-_Reverts if request is still locked or doesn't belong to caller_
+_Reverts if the request is still locked or doesn't belong to the caller_
 
 #### Parameters
 
@@ -1223,8 +1225,8 @@ function requestRetrieve(NodeId node, Fair value) public
 
 Requests to retrieve a specific amount of stake from a node
 
-_Creates an exit request and updates committee weight if node is enabled
-value must be greater than 0 and less than or equal to caller's stake in the node_
+_Creates an exit request and updates committee weight if the node is enabled
+value must be greater than 0 and less than or equal to the caller's stake in the node_
 
 #### Parameters
 

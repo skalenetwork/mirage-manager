@@ -4,9 +4,9 @@
 
 Manages Distributed Key Generation (DKG) rounds for committee formation
 
-_Implements the DKG protocol with broadcast and alright stages for generating
+_Implements the DKG protocol with BROADCAST and ALRIGHT stages to generate
 shared public keys. Participants broadcast verification vectors and secret key
-contributions, then confirm receipt of all data before the DKG is marked successful._
+contributions, then confirm receipt of all required data before the DKG is marked successful._
 
 ### RoundData
 
@@ -54,7 +54,7 @@ The ID of the most recently created DKG round
 event BroadcastAndKeyShare(DkgId dkg, NodeId node, struct IDkg.G2Point[] verificationVector, struct IDkg.KeyShare[] secretKeyContribution)
 ```
 
-Emitted when a node broadcasts verification vector and key shares
+Emitted when a node broadcasts its verification vector and key shares
 
 #### Parameters
 
@@ -71,7 +71,7 @@ Emitted when a node broadcasts verification vector and key shares
 event AllDataReceived(DkgId dkg, NodeId node)
 ```
 
-Emitted when a node confirms receipt of all DKG data
+Emitted when a node confirms receipt of all required DKG data
 
 #### Parameters
 
@@ -272,7 +272,7 @@ The specified DKG round does not exist
 modifier onlyBroadcastingDkg(DkgId dkg)
 ```
 
-_Ensures DKG is in BROADCAST stage_
+_Ensures DKG is in the BROADCAST stage_
 
 ### onlyAlrightDkg
 
@@ -280,7 +280,7 @@ _Ensures DKG is in BROADCAST stage_
 modifier onlyAlrightDkg(DkgId dkg)
 ```
 
-_Ensures DKG is in ALRIGHT stage_
+_Ensures DKG is in the ALRIGHT stage_
 
 ### initialize
 

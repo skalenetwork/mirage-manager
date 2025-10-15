@@ -2,15 +2,15 @@
 
 ## Committee
 
-Manages committee selection and rotation for FAIR network
+Manages committee selection and rotation for the FAIR network
 
 _Orchestrates node eligibility, committee formation, and DKG integration
-Maintains updated Node pool for random sampling for committee member selection based on stake_
+Maintains a weighted pool of eligible nodes for random, stake-weighted sampling_
 
 ### CommitteeAuxiliary
 
 _Auxiliary structure to store committee node information
-Contains a set of node IDs for efficient membership checks_
+Contains a set of node IDs for efficient O(1) membership checks_
 
 ```solidity
 struct CommitteeAuxiliary {
@@ -494,7 +494,7 @@ function setStatus(contract IStatus statusAddress) external
 Sets the Status contract address
 
 _Only callable by authorized addresses (restricted)
-Also updates the pool's status reference_
+Also updates the pool's Status reference_
 
 #### Parameters
 
@@ -724,7 +724,7 @@ function ejectUnhealthyNode() public
 Ejects an unhealthy node from the eligible pool
 
 _Checks the oldest node in the pool and removes it if unhealthy
-Returns early if pool is empty. Only affects nodes that are not healthy._
+Returns early if the pool is empty. Only affects nodes that are not healthy._
 
 ### getActiveCommitteeIndex
 

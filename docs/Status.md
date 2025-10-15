@@ -10,7 +10,7 @@ Manages node health monitoring and whitelisting in the FAIR network
 Duration heartbeatInterval
 ```
 
-The maximum time interval allowed between heartbeats before a node is considered unhealthy
+Maximum allowed time between heartbeats before a node is considered unhealthy
 
 ### lastHeartbeatTimestamp
 

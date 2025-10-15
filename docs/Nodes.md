@@ -4,7 +4,7 @@
 
 Manages node registration, configuration, and lifecycle in the FAIR network
 
-_Handles both active nodes (can participate in consensus) and passive nodes (indexers, historic, etc.)_
+_Handles both active nodes (participate in consensus) and passive nodes (indexers, archival, etc.)_
 
 ### NodeInfo
 
@@ -62,13 +62,13 @@ Reference to the Committee contract
 event CommitteeUpdated(contract ICommittee newCommittee)
 ```
 
-Thrown when reference to committee contract is updated
+Emitted when the Committee contract reference is updated
 
 #### Parameters
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-| newCommittee | contract ICommittee | The new committee contract address |
+| newCommittee | contract ICommittee | The new Committee contract address |
 
 ### NodeIsInCommittee
 
@@ -407,9 +407,9 @@ Node must not be in current or next committee_
 function deleteNodeByFoundation(NodeId nodeId) external
 ```
 
-Deletes a node - restricted to foundation
+Deletes a node — restricted to the foundation
 
-_Node must not be in current or next committee_
+_Node must not be in the current or next committee_
 
 #### Parameters
 
@@ -480,7 +480,7 @@ function setIpAddress(NodeId nodeId, bytes ip, uint16 port) external
 Sets the IP address and port for a node
 
 _Only callable by the node owner
-Node must not be in current or next committee_
+Node must not be in the current or next committee_
 
 #### Parameters
 
@@ -499,7 +499,7 @@ function setDomainName(NodeId nodeId, string name) external
 Sets the domain name for a node
 
 _Only callable by the node owner
-Node must not be in current or next committee_
+Node must not be in the current or next committee_
 
 #### Parameters
 

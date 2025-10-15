@@ -39,9 +39,9 @@ import {G2Operations} from "./utils/fieldOperations/G2Operations.sol";
  * @title DKG
  * @author SKALE Labs
  * @notice Manages Distributed Key Generation (DKG) rounds for committee formation
- * @dev Implements the DKG protocol with broadcast and alright stages for generating
+ * @dev Implements the DKG protocol with BROADCAST and ALRIGHT stages to generate
  * shared public keys. Participants broadcast verification vectors and secret key
- * contributions, then confirm receipt of all data before the DKG is marked successful.
+ * contributions, then confirm receipt of all required data before the DKG is marked successful.
  */
 contract DKG is AccessManagedUpgradeable, IDkg {
     using G2Operations for G2Point;
@@ -72,7 +72,7 @@ contract DKG is AccessManagedUpgradeable, IDkg {
     DkgId public lastDkgId;
 
     /**
-     * @notice Emitted when a node broadcasts verification vector and key shares
+     * @notice Emitted when a node broadcasts its verification vector and key shares
      * @param dkg The DKG round ID
      * @param node The node that broadcast the data
      * @param verificationVector The verification vector
@@ -86,7 +86,7 @@ contract DKG is AccessManagedUpgradeable, IDkg {
     );
 
     /**
-     * @notice Emitted when a node confirms receipt of all DKG data
+     * @notice Emitted when a node confirms receipt of all required DKG data
      * @param dkg The DKG round ID
      * @param node The node that confirmed all data received
      */
@@ -191,7 +191,7 @@ contract DKG is AccessManagedUpgradeable, IDkg {
      */
     error RoundDoesNotExist(DkgId dkg);
 
-    /// @dev Ensures DKG is in BROADCAST stage
+    /// @dev Ensures DKG is in the BROADCAST stage
     modifier onlyBroadcastingDkg(DkgId dkg) {
         // the modifier checks that the DKG is only in BROADCAST stage
         // disable the warning because of false positive
@@ -200,7 +200,7 @@ contract DKG is AccessManagedUpgradeable, IDkg {
         _;
     }
 
-    /// @dev Ensures DKG is in ALRIGHT stage
+    /// @dev Ensures DKG is in the ALRIGHT stage
     modifier onlyAlrightDkg(DkgId dkg) {
         // the modifier checks that the DKG is only in ALRIGHT stage
         // disable the warning because of false positive
@@ -266,11 +266,11 @@ contract DKG is AccessManagedUpgradeable, IDkg {
     ) external onlyBroadcastingDkg(dkg) override {
         uint256 n = _rounds[dkg].nodes.length();
         uint256 t = _getT(n);
-        // the verificationVector length should be strictly be equal t
+        // The verificationVector length should be strictly equal to t
         // disable the warning because of false positive
         // slither-disable-next-line incorrect-equality
         require(verificationVector.length == t, IncorrectVerificationsVectorQuantity(verificationVector.length, t));
-        // the secretKeyContribution length should be strictly be equal n
+        // The secretKeyContribution length should be strictly equal to n
         // disable the warning because of false positive
         // slither-disable-next-line incorrect-equality
         require(
@@ -341,7 +341,7 @@ contract DKG is AccessManagedUpgradeable, IDkg {
     function getPublicKey(DkgId dkg) external view override returns (G2Point memory publicKey) {
         require(dkg != DkgId.wrap(0), RoundDoesNotExist(dkg));
         require(_rounds[dkg].id == dkg, RoundDoesNotExist(dkg));
-        // the should return the public key only if the DKG is successful
+        // Should return the public key only if the DKG is successful
         // disable the warning because of false positive
         // slither-disable-next-line incorrect-equality
         require(_rounds[dkg].status == Status.SUCCESS, DkgIsNotSuccessful(dkg));

@@ -47,9 +47,6 @@ jobs:
           echo ""
           echo "Changed files:"
           git status --short docs/
-          echo ""
-          echo "Diff:"
-          git diff docs/
           exit 1
         else
           echo "✅ Documentation is up to date!"

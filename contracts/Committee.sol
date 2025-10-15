@@ -47,9 +47,9 @@ import { IRandom, Random } from "./utils/Random.sol";
 /**
  * @title Committee
  * @author SKALE Labs
- * @notice Manages committee selection and rotation for FAIR network
+ * @notice Manages committee selection and rotation for the FAIR network
  * @dev Orchestrates node eligibility, committee formation, and DKG integration
- * @dev Maintains updated Node pool for random sampling for committee member selection based on stake
+ * @dev Maintains a weighted pool of eligible nodes for random, stake-weighted sampling
  */
 contract Committee is AccessManagedUpgradeable, ICommittee {
     using PoolLibrary for PoolLibrary.Pool;
@@ -58,7 +58,7 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
 
     /**
      * @dev Auxiliary structure to store committee node information
-     * @dev Contains a set of node IDs for efficient membership checks
+     * @dev Contains a set of node IDs for efficient O(1) membership checks
      */
     struct CommitteeAuxiliary {
         TypedSet.NodeIdSet nodes;
@@ -341,7 +341,7 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
     /**
      * @notice Sets the Status contract address
      * @dev Only callable by authorized addresses (restricted)
-     * @dev Also updates the pool's status reference
+     * @dev Also updates the pool's Status reference
      * @param statusAddress The address of the new Status contract
      */
     function setStatus(IStatus statusAddress) external override restricted onlyNonZeroAddress(address(statusAddress)) {
@@ -532,7 +532,7 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
     /**
      * @notice Ejects an unhealthy node from the eligible pool
      * @dev Checks the oldest node in the pool and removes it if unhealthy
-     * @dev Returns early if pool is empty. Only affects nodes that are not healthy.
+     * @dev Returns early if the pool is empty. Only affects nodes that are not healthy.
      */
     function ejectUnhealthyNode() public override {
         if (_pool.length() == 0) {
@@ -560,7 +560,7 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
 
     /**
      * @notice Creates a new committee structure with the given nodes
-     * @dev Clears committee at 'index' because they can be overridden
+     * @dev Clears any existing data at the provided index because it may be overwritten
      * @param nodes_ The array of node IDs to include in the committee
      * @param index The committee index to assign
      * @return committee The created committee storage reference
@@ -781,7 +781,7 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
 
     /**
      * @notice Converts a node's staking share to a weight value
-     * @dev Currently no transformation is applied; returns share as weight; future adjustments possible
+     * @dev Currently a 1:1 mapping; returns the share as the weight. Future adjustments are possible.
      * @param share The staking share amount
      * @return weight The calculated weight for committee selection
      */

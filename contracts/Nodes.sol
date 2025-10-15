@@ -40,7 +40,7 @@ import { AddressIsZero, NodeDoesNotExist } from "./utils/errors.sol";
  * @title Nodes
  * @author SKALE Labs
  * @notice Manages node registration, configuration, and lifecycle in the FAIR network
- * @dev Handles both active nodes (can participate in consensus) and passive nodes (indexers, historic, etc.)
+ * @dev Handles both active nodes (participate in consensus) and passive nodes (indexers, archival, etc.)
  */
 contract Nodes is AccessManagedUpgradeable, INodes {
 
@@ -92,8 +92,8 @@ contract Nodes is AccessManagedUpgradeable, INodes {
     TypedSet.NodeIdSet private _activeNodeIds;
 
     /**
-     * @notice Thrown when reference to committee contract is updated
-     * @param newCommittee The new committee contract address
+     * @notice Emitted when the Committee contract reference is updated
+     * @param newCommittee The new Committee contract address
      */
     event CommitteeUpdated(ICommittee newCommittee);
 
@@ -329,8 +329,8 @@ contract Nodes is AccessManagedUpgradeable, INodes {
     }
 
     /**
-     * @notice Deletes a node - restricted to foundation
-     * @dev Node must not be in current or next committee
+     * @notice Deletes a node — restricted to the foundation
+     * @dev Node must not be in the current or next committee
      * @param nodeId The ID of the node to delete
      */
     function deleteNodeByFoundation(NodeId nodeId) external override nodeExists(nodeId) restricted {
@@ -437,7 +437,7 @@ contract Nodes is AccessManagedUpgradeable, INodes {
     /**
      * @notice Sets the IP address and port for a node
      * @dev Only callable by the node owner
-     * @dev Node must not be in current or next committee
+     * @dev Node must not be in the current or next committee
      * @param nodeId The ID of the node
      * @param ip The new IP address (IPv4 or IPv6)
      * @param port The new port number
@@ -465,7 +465,7 @@ contract Nodes is AccessManagedUpgradeable, INodes {
     /**
      * @notice Sets the domain name for a node
      * @dev Only callable by the node owner
-     * @dev Node must not be in current or next committee
+     * @dev Node must not be in the current or next committee
      * @param nodeId The ID of the node
      * @param name The domain name to set
      */
@@ -620,9 +620,9 @@ contract Nodes is AccessManagedUpgradeable, INodes {
 
     /**
      * @notice Deletes a node and cleans up all associated data
-     * @dev Handles both active and passive nodes differently
-     * @dev For active nodes: flushes rewards, removes from committee, cleans up staking
-     * @dev For passive nodes: removes from passive node tracking, cleans up ownership requests
+     * @dev Handles active and passive nodes differently
+     * @dev For active nodes: flushes rewards, removes from committee, and cleans up staking
+     * @dev For passive nodes: removes from passive node tracking and cleans up ownership requests
      * @param id The ID of the node to delete
      */
     function _deleteNode(NodeId id) private nodeNotInCurrentOrNextCommittee(id) {

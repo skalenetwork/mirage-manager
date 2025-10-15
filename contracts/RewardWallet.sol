@@ -52,7 +52,7 @@ contract RewardWallet is AccessManagedUpgradeable, IRewardWallet {
     /// @notice The node ID that this wallet is associated with
     NodeId public ownerNode;
 
-    ///@notice Thrown when attempting an operation that requires the owner node to exist
+    /// @notice Thrown when attempting an operation that requires the owner node to exist
     error OwnerNodeDoesNotExist();
 
     /// @notice Thrown when receiving value would exceed the node's stake limit

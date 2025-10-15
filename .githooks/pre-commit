@@ -11,6 +11,8 @@ then
     exit 1;
 fi
 
+yarn docgen
+
 exec git diff --cached --name-only | yarn exec cspell --no-summary --no-progress --no-must-find-files --file-list stdin
 
 yarn fullCheck

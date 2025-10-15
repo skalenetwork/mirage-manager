@@ -41,7 +41,7 @@ contract Status is AccessManagedUpgradeable, IStatus {
 
     using TypedSet for TypedSet.NodeIdSet;
 
-    /// @notice The maximum time interval allowed between heartbeats before a node is considered unhealthy
+    /// @notice Maximum allowed time between heartbeats before a node is considered unhealthy
     Duration public heartbeatInterval;
 
     /// @notice Mapping of node IDs to their last heartbeat timestamp
