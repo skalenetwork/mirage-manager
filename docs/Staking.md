@@ -4,71 +4,71 @@
 
 Manages staking operations for FAIR network nodes
 
-_Implements a two-level fund structure with reward distribution, fee collection, and exit-queue management_
+**dev:** _Implements a two-level fund structure with reward distribution, fee collection, and exit-queue management_
 
 ### DEFAULT_FEE_RATE
+
+Default fee rate starting value (100% of precision; maximum possible fee rate)
 
 ```solidity
 uint16 DEFAULT_FEE_RATE
 ```
 
-Default fee rate starting value (100% of precision; maximum possible fee rate)
-
 ### committee
+
+Reference to the Committee contract
 
 ```solidity
 contract ICommittee committee
 ```
 
-Reference to the Committee contract
-
 ### nodes
+
+Reference to the Nodes contract
 
 ```solidity
 contract INodes nodes
 ```
 
-Reference to the Nodes contract
-
 ### rewardWalletReference
+
+Reference implementation for reward wallets
 
 ```solidity
 contract IRewardWallet rewardWalletReference
 ```
 
-Reference implementation for reward wallets
-
 ### totalDisabled
+
+Total amount of funds in disabled nodes
 
 ```solidity
 Fair totalDisabled
 ```
 
-Total amount of funds in disabled nodes
-
 ### stakeLimit
+
+Maximum stake allowed per node
 
 ```solidity
 Fair stakeLimit
 ```
 
-Maximum stake allowed per node
-
 ### selfStakeRequirement
+
+Minimum self-stake required from node owners
 
 ```solidity
 Fair selfStakeRequirement
 ```
 
-Minimum self-stake required from node owners
-
 ### AllowedReceiverAdded
+
+Emitted when an address is added to a node's allowed fee receivers list
 
 ```solidity
 event AllowedReceiverAdded(NodeId node, address receiver)
 ```
-
-Emitted when an address is added to a node's allowed fee receivers list
 
 #### Parameters
 
@@ -79,11 +79,11 @@ Emitted when an address is added to a node's allowed fee receivers list
 
 ### AllowedReceiverRemoved
 
+Emitted when an address is removed from a node's allowed receivers list
+
 ```solidity
 event AllowedReceiverRemoved(NodeId node, address receiver)
 ```
-
-Emitted when an address is removed from a node's allowed receivers list
 
 #### Parameters
 
@@ -94,11 +94,11 @@ Emitted when an address is removed from a node's allowed receivers list
 
 ### FeeClaimRequested
 
+Emitted when a fee claim is requested
+
 ```solidity
 event FeeClaimRequested(NodeId node, address from, address to, Fair amount)
 ```
-
-Emitted when a fee claim is requested
 
 #### Parameters
 
@@ -111,11 +111,11 @@ Emitted when a fee claim is requested
 
 ### NodeRewardReceived
 
+Emitted when a node receives a reward
+
 ```solidity
 event NodeRewardReceived(NodeId node, Fair amount)
 ```
-
-Emitted when a node receives a reward
 
 #### Parameters
 
@@ -126,11 +126,11 @@ Emitted when a node receives a reward
 
 ### RetrieveRequested
 
+Emitted when a stake retrieval is requested
+
 ```solidity
 event RetrieveRequested(address sender, NodeId node, Fair amount)
 ```
-
-Emitted when a stake retrieval is requested
 
 #### Parameters
 
@@ -142,11 +142,11 @@ Emitted when a stake retrieval is requested
 
 ### RewardReceived
 
+Emitted when the contract receives a reward payment
+
 ```solidity
 event RewardReceived(address sender, uint256 amount)
 ```
-
-Emitted when the contract receives a reward payment
 
 #### Parameters
 
@@ -157,11 +157,11 @@ Emitted when the contract receives a reward payment
 
 ### RewardWalletCreated
 
+Emitted when a reward wallet is created for a node
+
 ```solidity
 event RewardWalletCreated(NodeId node)
 ```
-
-Emitted when a reward wallet is created for a node
 
 #### Parameters
 
@@ -171,11 +171,11 @@ Emitted when a reward wallet is created for a node
 
 ### Staked
 
+Emitted when stake is added to a node
+
 ```solidity
 event Staked(address sender, NodeId node, Fair amount)
 ```
-
-Emitted when stake is added to a node
 
 #### Parameters
 
@@ -187,11 +187,11 @@ Emitted when stake is added to a node
 
 ### StakedToNewNode
 
+Emitted when a user stakes to a new node for the first time
+
 ```solidity
 event StakedToNewNode(address sender, NodeId node)
 ```
-
-Emitted when a user stakes to a new node for the first time
 
 #### Parameters
 
@@ -202,11 +202,11 @@ Emitted when a user stakes to a new node for the first time
 
 ### StoppedStaking
 
+Emitted when a user completely withdraws from a node
+
 ```solidity
 event StoppedStaking(address sender, NodeId node)
 ```
-
-Emitted when a user completely withdraws from a node
 
 #### Parameters
 
@@ -217,11 +217,11 @@ Emitted when a user completely withdraws from a node
 
 ### NodeDataRemoved
 
+Emitted when node data is removed from the contract
+
 ```solidity
 event NodeDataRemoved(NodeId node)
 ```
-
-Emitted when node data is removed from the contract
 
 #### Parameters
 
@@ -231,11 +231,11 @@ Emitted when node data is removed from the contract
 
 ### NodeDisabled
 
+Emitted when a node is disabled
+
 ```solidity
 event NodeDisabled(NodeId node)
 ```
-
-Emitted when a node is disabled
 
 #### Parameters
 
@@ -245,11 +245,11 @@ Emitted when a node is disabled
 
 ### NodeEnabled
 
+Emitted when a node is enabled
+
 ```solidity
 event NodeEnabled(NodeId node)
 ```
-
-Emitted when a node is enabled
 
 #### Parameters
 
@@ -259,11 +259,11 @@ Emitted when a node is enabled
 
 ### RetrievingDelayUpdated
 
+Emitted when the retrieving delay is updated
+
 ```solidity
 event RetrievingDelayUpdated(Timestamp retrievingDelay)
 ```
-
-Emitted when the retrieving delay is updated
 
 #### Parameters
 
@@ -273,11 +273,11 @@ Emitted when the retrieving delay is updated
 
 ### StakeLimitUpdated
 
+Emitted when the stake limit is updated
+
 ```solidity
 event StakeLimitUpdated(Fair newLimit)
 ```
-
-Emitted when the stake limit is updated
 
 #### Parameters
 
@@ -287,11 +287,11 @@ Emitted when the stake limit is updated
 
 ### NodeFeeRateUpdated
 
+Emitted when a node's fee rate is updated
+
 ```solidity
 event NodeFeeRateUpdated(NodeId node, uint16 oldFeeRate, uint16 newFeeRate)
 ```
-
-Emitted when a node's fee rate is updated
 
 #### Parameters
 
@@ -303,11 +303,11 @@ Emitted when a node's fee rate is updated
 
 ### RewardWalletReferenceUpdated
 
+Emitted when the reward wallet reference implementation is updated
+
 ```solidity
 event RewardWalletReferenceUpdated(contract IRewardWallet oldReference, contract IRewardWallet newReference)
 ```
-
-Emitted when the reward wallet reference implementation is updated
 
 #### Parameters
 
@@ -318,11 +318,11 @@ Emitted when the reward wallet reference implementation is updated
 
 ### SelfStakeRequirementUpdated
 
+Emitted when the self-stake requirement is updated
+
 ```solidity
 event SelfStakeRequirementUpdated(Fair amount)
 ```
-
-Emitted when the self-stake requirement is updated
 
 #### Parameters
 
@@ -332,11 +332,11 @@ Emitted when the self-stake requirement is updated
 
 ### SelfStakeProvided
 
+Emitted when a node owner provides self-stake
+
 ```solidity
 event SelfStakeProvided(NodeId nodeId, Fair amount)
 ```
-
-Emitted when a node owner provides self-stake
 
 #### Parameters
 
@@ -347,11 +347,11 @@ Emitted when a node owner provides self-stake
 
 ### FeeRateIsIncorrect
 
+Thrown when the provided fee rate exceeds the maximum allowed
+
 ```solidity
 error FeeRateIsIncorrect(uint16 feeRate)
 ```
-
-Thrown when the provided fee rate exceeds the maximum allowed
 
 #### Parameters
 
@@ -361,11 +361,11 @@ Thrown when the provided fee rate exceeds the maximum allowed
 
 ### OnlyFeeReductionIsAllowed
 
+Thrown when attempting to increase the fee rate of nodes with stake (only reductions are allowed)
+
 ```solidity
 error OnlyFeeReductionIsAllowed(uint16 currentRate, uint16 newRate)
 ```
-
-Thrown when attempting to increase the fee rate of nodes with stake (only reductions are allowed)
 
 #### Parameters
 
@@ -376,19 +376,19 @@ Thrown when attempting to increase the fee rate of nodes with stake (only reduct
 
 ### ZeroAmount
 
+Thrown when an operation requires a non-zero amount but zero was provided
+
 ```solidity
 error ZeroAmount()
 ```
 
-Thrown when an operation requires a non-zero amount but zero was provided
-
 ### ZeroStakeToNode
+
+Thrown when attempting to retrieve from a node where sender has zero stake
 
 ```solidity
 error ZeroStakeToNode(NodeId node)
 ```
-
-Thrown when attempting to retrieve from a node where sender has zero stake
 
 #### Parameters
 
@@ -398,11 +398,11 @@ Thrown when attempting to retrieve from a node where sender has zero stake
 
 ### NodeIsAlreadyDisabled
 
+Thrown when attempting to disable an already disabled node
+
 ```solidity
 error NodeIsAlreadyDisabled(NodeId node)
 ```
-
-Thrown when attempting to disable an already disabled node
 
 #### Parameters
 
@@ -412,11 +412,11 @@ Thrown when attempting to disable an already disabled node
 
 ### NodeIsNotDisabled
 
+Thrown when attempting an operation that requires an enabled node
+
 ```solidity
 error NodeIsNotDisabled(NodeId node)
 ```
-
-Thrown when attempting an operation that requires an enabled node
 
 #### Parameters
 
@@ -426,11 +426,11 @@ Thrown when attempting an operation that requires an enabled node
 
 ### NotAllowedToClaimRewards
 
+Thrown when an unauthorized address attempts to claim rewards
+
 ```solidity
 error NotAllowedToClaimRewards(address sender)
 ```
-
-Thrown when an unauthorized address attempts to claim rewards
 
 #### Parameters
 
@@ -440,11 +440,11 @@ Thrown when an unauthorized address attempts to claim rewards
 
 ### StakeLimitExceeded
 
+Thrown when staking/payRewards would exceed the per-node stake limit
+
 ```solidity
 error StakeLimitExceeded(Fair currentStake, Fair attemptedStake, Fair limit)
 ```
-
-Thrown when staking/payRewards would exceed the per-node stake limit
 
 #### Parameters
 
@@ -456,11 +456,11 @@ Thrown when staking/payRewards would exceed the per-node stake limit
 
 ### ReceiverIsAlreadyAllowed
 
+Thrown when attempting to add an already allowed receiver
+
 ```solidity
 error ReceiverIsAlreadyAllowed(address receiver)
 ```
-
-Thrown when attempting to add an already allowed receiver
 
 #### Parameters
 
@@ -470,11 +470,11 @@ Thrown when attempting to add an already allowed receiver
 
 ### ReceiverWasNotAllowed
 
+Thrown when attempting to remove a receiver that was not in the list of allowed receivers
+
 ```solidity
 error ReceiverWasNotAllowed(address receiver)
 ```
-
-Thrown when attempting to remove a receiver that was not in the list of allowed receivers
 
 #### Parameters
 
@@ -484,11 +484,11 @@ Thrown when attempting to remove a receiver that was not in the list of allowed 
 
 ### RewardWalletDoesNotExist
 
+Thrown when a Node does not have an associated reward wallet
+
 ```solidity
 error RewardWalletDoesNotExist(NodeId node)
 ```
-
-Thrown when a Node does not have an associated reward wallet
 
 #### Parameters
 
@@ -498,11 +498,11 @@ Thrown when a Node does not have an associated reward wallet
 
 ### NodeOwnerCannotRetrieveWhileNodeExists
 
+Thrown when a node owner attempts to retrieve stake while their node exists
+
 ```solidity
 error NodeOwnerCannotRetrieveWhileNodeExists(address nodeOwner, NodeId node)
 ```
-
-Thrown when a node owner attempts to retrieve stake while their node exists
 
 #### Parameters
 
@@ -513,11 +513,11 @@ Thrown when a node owner attempts to retrieve stake while their node exists
 
 ### InsufficientSelfStake
 
+Thrown when the provided self-stake is less than the required amount
+
 ```solidity
 error InsufficientSelfStake(Fair provided, Fair required)
 ```
-
-Thrown when the provided self-stake is less than the required amount
 
 #### Parameters
 
@@ -538,29 +538,29 @@ error InvalidRewardWalletAddress()
 modifier onlyExistingActiveNode(NodeId node)
 ```
 
-_Ensures that the specified node exists and is active_
+**dev:** _Ensures that the specified node exists and is active_
 
 ### receive
+
+Fallback function to receive rewards
 
 ```solidity
 receive() external payable
 ```
 
-Fallback function to receive rewards
-
-_Emits RewardReceived when funds are sent to the contract
+**dev:** _Emits RewardReceived when funds are sent to the contract
 Received funds are automatically shared among all enabled nodes
 Staking the root fund to distribute rewards proportionally based on stake_
 
 ### initialize
 
+Initializes the Staking contract
+
 ```solidity
 function initialize(address initialAuthority, contract ICommittee committee_, contract INodes nodes_, contract IRewardWallet rewardWalletReference_) external
 ```
 
-Initializes the Staking contract
-
-_This function is called only once during contract deployment following the proxy pattern_
+**dev:** _This function is called only once during contract deployment following the proxy pattern_
 
 #### Parameters
 
@@ -573,13 +573,13 @@ _This function is called only once during contract deployment following the prox
 
 ### addAllowedReceiver
 
+Adds an address to the list of allowed fee receivers for the caller's node
+
 ```solidity
 function addAllowedReceiver(address receiver) external
 ```
 
-Adds an address to the list of allowed fee receivers for the caller's node
-
-_Only callable by node owners_
+**dev:** _Only callable by node owners_
 
 #### Parameters
 
@@ -589,13 +589,13 @@ _Only callable by node owners_
 
 ### removeAllowedReceiver
 
+Removes an address from the list of allowed fee receivers for the caller's node
+
 ```solidity
 function removeAllowedReceiver(address receiver) external
 ```
 
-Removes an address from the list of allowed fee receivers for the caller's node
-
-_Only callable by node owners_
+**dev:** _Only callable by node owners_
 
 #### Parameters
 
@@ -605,13 +605,13 @@ _Only callable by node owners_
 
 ### requestAllFees
 
+Requests all earned fees for a specific node
+
 ```solidity
 function requestAllFees(NodeId node) external
 ```
 
-Requests all earned fees for a specific node
-
-_Only callable by node owners and allowed receivers_
+**dev:** _Only callable by node owners and allowed receivers_
 
 #### Parameters
 
@@ -621,13 +621,13 @@ _Only callable by node owners and allowed receivers_
 
 ### requestSendAllFees
 
+Requests to send all earned fees to a specified address
+
 ```solidity
 function requestSendAllFees(address payable to) external
 ```
 
-Requests to send all earned fees to a specified address
-
-_Only callable by node owners
+**dev:** _Only callable by node owners
 to address must be an allowed receiver if the list is not empty_
 
 #### Parameters
@@ -638,13 +638,13 @@ to address must be an allowed receiver if the list is not empty_
 
 ### setSelfStakeRequirement
 
+Sets the minimum self-stake requirement for nodes
+
 ```solidity
 function setSelfStakeRequirement(Fair amount) external
 ```
 
-Sets the minimum self-stake requirement for nodes
-
-_Only callable by authorized addresses (restricted)_
+**dev:** _Only callable by authorized addresses (restricted)_
 
 #### Parameters
 
@@ -654,13 +654,13 @@ _Only callable by authorized addresses (restricted)_
 
 ### disable
 
+Disables a node from receiving network rewards and removes it from the active pool
+
 ```solidity
 function disable(NodeId node) external
 ```
 
-Disables a node from receiving network rewards and removes it from the active pool
-
-_Only callable by the Committee contract (restricted)
+**dev:** _Only callable by the Committee contract (restricted)
 Updates committee weight to 0 if the node is active_
 
 #### Parameters
@@ -671,13 +671,13 @@ Updates committee weight to 0 if the node is active_
 
 ### enable
 
+Enables a previously disabled node, moving its stake back into the active pool
+
 ```solidity
 function enable(NodeId node) external
 ```
 
-Enables a previously disabled node, moving its stake back into the active pool
-
-_Only callable by Committee contract (restricted)
+**dev:** _Only callable by Committee contract (restricted)
 Only works on existing (not deleted) active nodes
 Updates committee weight after enabling_
 
@@ -689,13 +689,13 @@ Updates committee weight after enabling_
 
 ### nodeCreated
 
+Called when a new node is created
+
 ```solidity
 function nodeCreated(NodeId node, address nodeAddress) external payable
 ```
 
-Called when a new node is created
-
-_Only callable by Nodes contract (restricted)
+**dev:** _Only callable by Nodes contract (restricted)
 Deploys a reward wallet if one doesn't exist, sets node as disabled initially
 Validates self-stake requirement and stakes all provided initial stake_
 
@@ -708,13 +708,13 @@ Validates self-stake requirement and stakes all provided initial stake_
 
 ### nodeRemoved
 
+Called when a node is removed
+
 ```solidity
 function nodeRemoved(NodeId node) external
 ```
 
-Called when a node is removed
-
-_Only callable by Nodes contract (restricted)
+**dev:** _Only callable by Nodes contract (restricted)
 Cleans up node data and creates exit requests for node owner's stake and fees
 Node must be disabled before removal_
 
@@ -726,13 +726,13 @@ Node must be disabled before removal_
 
 ### payReward
 
+Pays a reward to a node
+
 ```solidity
 function payReward(NodeId node) external payable
 ```
 
-Pays a reward to a node
-
-_Only works on existing active nodes
+**dev:** _Only works on existing active nodes
 Enforces stake limit unless called from the node's reward wallet
 Updates committee weight if node is enabled_
 
@@ -744,13 +744,13 @@ Updates committee weight if node is enabled_
 
 ### claimRequest
 
+Claims an exit request and transfers funds to the caller
+
 ```solidity
 function claimRequest(uint256 requestId) external
 ```
 
-Claims an exit request and transfers funds to the caller
-
-_Reverts if the request is still locked or doesn't belong to the caller_
+**dev:** _Reverts if the request is still locked or doesn't belong to the caller_
 
 #### Parameters
 
@@ -760,13 +760,13 @@ _Reverts if the request is still locked or doesn't belong to the caller_
 
 ### setStakeLimit
 
+Sets the maximum stake allowed per node
+
 ```solidity
 function setStakeLimit(Fair limit) external
 ```
 
-Sets the maximum stake allowed per node
-
-_Only callable by authorized addresses (restricted)_
+**dev:** _Only callable by authorized addresses (restricted)_
 
 #### Parameters
 
@@ -776,13 +776,13 @@ _Only callable by authorized addresses (restricted)_
 
 ### setRetrievingDelay
 
+Sets the delay period for exit requests
+
 ```solidity
 function setRetrievingDelay(Timestamp delay) external
 ```
 
-Sets the delay period for exit requests
-
-_Only callable by authorized addresses (restricted)
+**dev:** _Only callable by authorized addresses (restricted)
 Even if delay is 0, the request cannot be created and claimed in the same block_
 
 #### Parameters
@@ -793,13 +793,13 @@ Even if delay is 0, the request cannot be created and claimed in the same block_
 
 ### setFeeRate
 
+Sets the fee rate for the caller's node
+
 ```solidity
 function setFeeRate(uint16 feeRate) external
 ```
 
-Sets the fee rate for the caller's node
-
-_Only callable by node owners
+**dev:** _Only callable by node owners
 Fee rate can only be reduced, not increased (except if there are no stakers to the node)
 Pulls any pending rewards before updating the rate_
 
@@ -811,13 +811,13 @@ Pulls any pending rewards before updating the rate_
 
 ### setRewardWalletReference
 
+Updates the reward wallet reference implementation
+
 ```solidity
 function setRewardWalletReference(contract IRewardWallet rewardWalletReference_) external
 ```
 
-Updates the reward wallet reference implementation
-
-_Only callable by authorized addresses (restricted)_
+**dev:** _Only callable by authorized addresses (restricted)_
 
 #### Parameters
 
@@ -827,13 +827,13 @@ _Only callable by authorized addresses (restricted)_
 
 ### requestRetrieveAll
 
+Requests to retrieve all stake from a specific node
+
 ```solidity
 function requestRetrieveAll(NodeId node) external
 ```
 
-Requests to retrieve all stake from a specific node
-
-_Creates an exit request for the caller's entire stake in the node_
+**dev:** _Creates an exit request for the caller's entire stake in the node_
 
 #### Parameters
 
@@ -843,13 +843,13 @@ _Creates an exit request for the caller's entire stake in the node_
 
 ### stake
 
+Stakes to a specific node
+
 ```solidity
 function stake(NodeId node) external payable
 ```
 
-Stakes to a specific node
-
-_Only works on existing active nodes
+**dev:** _Only works on existing active nodes
 msg.value must be greater than 0_
 
 #### Parameters
@@ -860,13 +860,13 @@ msg.value must be greater than 0_
 
 ### getNodeShare
 
+Gets the node's share of the total credits
+
 ```solidity
 function getNodeShare(NodeId node) external view returns (uint256 share)
 ```
 
-Gets the node's share of the total credits
-
-_Returns 0 if node is disabled
+**dev:** _Returns 0 if node is disabled
 Accounts for un-pulled rewards from the node's reward wallet_
 
 #### Parameters
@@ -883,13 +883,13 @@ Accounts for un-pulled rewards from the node's reward wallet_
 
 ### getRewardWallet
 
+Gets the reward wallet contract for a specific node
+
 ```solidity
 function getRewardWallet(NodeId node) external view returns (contract IRewardWallet rewardWallet)
 ```
 
-Gets the reward wallet contract for a specific node
-
-_Reverts if reward wallet doesn't exist_
+**dev:** _Reverts if reward wallet doesn't exist_
 
 #### Parameters
 
@@ -905,11 +905,11 @@ _Reverts if reward wallet doesn't exist_
 
 ### getStakedAmount
 
+Gets the total amount staked by the caller
+
 ```solidity
 function getStakedAmount() external view returns (Fair amount)
 ```
-
-Gets the total amount staked by the caller
 
 #### Return Values
 
@@ -919,11 +919,11 @@ Gets the total amount staked by the caller
 
 ### getStakedToNodeAmount
 
+Gets the amount the caller has staked to a specific node
+
 ```solidity
 function getStakedToNodeAmount(NodeId node) external view returns (Fair amount)
 ```
-
-Gets the amount the caller has staked to a specific node
 
 #### Parameters
 
@@ -939,11 +939,11 @@ Gets the amount the caller has staked to a specific node
 
 ### getStakedNodes
 
+Gets the list of nodes the caller has stake in
+
 ```solidity
 function getStakedNodes() external view returns (NodeId[] stakedNodes)
 ```
-
-Gets the list of nodes the caller has stake in
 
 #### Return Values
 
@@ -953,11 +953,11 @@ Gets the list of nodes the caller has stake in
 
 ### getNodeTotalStake
 
+Gets the total stake for a specific node
+
 ```solidity
 function getNodeTotalStake(NodeId node) external view returns (Fair amount)
 ```
-
-Gets the total stake for a specific node
 
 #### Parameters
 
@@ -973,11 +973,11 @@ Gets the total stake for a specific node
 
 ### getNodeFeeRate
 
+Gets the current fee rate for a specific node
+
 ```solidity
 function getNodeFeeRate(NodeId node) external view returns (uint16 feeRate)
 ```
-
-Gets the current fee rate for a specific node
 
 #### Parameters
 
@@ -993,11 +993,11 @@ Gets the current fee rate for a specific node
 
 ### getDelegatorsToNode
 
+Gets the list of all delegators (stakers) to a specific node
+
 ```solidity
 function getDelegatorsToNode(NodeId node) external view returns (address[] delegators)
 ```
-
-Gets the list of all delegators (stakers) to a specific node
 
 #### Parameters
 
@@ -1013,11 +1013,11 @@ Gets the list of all delegators (stakers) to a specific node
 
 ### getDelegatorsToNodeCount
 
+Gets the number of delegators to a specific node
+
 ```solidity
 function getDelegatorsToNodeCount(NodeId node) external view returns (uint256 count)
 ```
-
-Gets the number of delegators to a specific node
 
 #### Parameters
 
@@ -1033,11 +1033,11 @@ Gets the number of delegators to a specific node
 
 ### getExitRequestsCountFor
 
+Gets the number of exit requests for a specific user
+
 ```solidity
 function getExitRequestsCountFor(address user) external view returns (uint256 count)
 ```
-
-Gets the number of exit requests for a specific user
 
 #### Parameters
 
@@ -1053,11 +1053,11 @@ Gets the number of exit requests for a specific user
 
 ### getMyTotalInExitQueue
 
+Gets the caller's total amount in the exit queue
+
 ```solidity
 function getMyTotalInExitQueue() external view returns (Fair amount)
 ```
-
-Gets the caller's total amount in the exit queue
 
 #### Return Values
 
@@ -1067,11 +1067,11 @@ Gets the caller's total amount in the exit queue
 
 ### getMyExitRequestsCount
 
+Gets the number of exit requests for the caller
+
 ```solidity
 function getMyExitRequestsCount() external view returns (uint256 count)
 ```
-
-Gets the number of exit requests for the caller
 
 #### Return Values
 
@@ -1081,11 +1081,11 @@ Gets the number of exit requests for the caller
 
 ### isWithinStakeLimit
 
+Checks if a node's current stake is within the configured stake limit
+
 ```solidity
 function isWithinStakeLimit(NodeId node) external view returns (bool result)
 ```
-
-Checks if a node's current stake is within the configured stake limit
 
 #### Parameters
 
@@ -1101,11 +1101,11 @@ Checks if a node's current stake is within the configured stake limit
 
 ### getExitRequest
 
+Gets information about a specific exit request
+
 ```solidity
 function getExitRequest(uint256 requestId) external view returns (struct IStaking.ExitRequest request)
 ```
-
-Gets information about a specific exit request
 
 #### Parameters
 
@@ -1121,13 +1121,13 @@ Gets information about a specific exit request
 
 ### getUnlockedExitRequestFor
 
+Gets the first unlocked exit request found for a user starting from a specific index
+
 ```solidity
 function getUnlockedExitRequestFor(address user, uint256 fromIndex) external view returns (struct IStaking.ExitRequest request)
 ```
 
-Gets the first unlocked exit request found for a user starting from a specific index
-
-_Does limited iterations to avoid DoS and gas limit issues_
+**dev:** _Does limited iterations to avoid DoS and gas limit issues_
 
 #### Parameters
 
@@ -1144,11 +1144,11 @@ _Does limited iterations to avoid DoS and gas limit issues_
 
 ### getExitRequestAt
 
+Gets an exit request at a specific index for a user
+
 ```solidity
 function getExitRequestAt(address user, uint256 index) external view returns (struct IStaking.ExitRequest request)
 ```
-
-Gets an exit request at a specific index for a user
 
 #### Parameters
 
@@ -1165,11 +1165,11 @@ Gets an exit request at a specific index for a user
 
 ### isRequestUnlocked
 
+Checks if an exit request is unlocked and can be claimed
+
 ```solidity
 function isRequestUnlocked(uint256 requestId) external view returns (bool unlocked)
 ```
-
-Checks if an exit request is unlocked and can be claimed
 
 #### Parameters
 
@@ -1185,11 +1185,11 @@ Checks if an exit request is unlocked and can be claimed
 
 ### getRetrievingDelay
 
+Gets the current retrieving delay
+
 ```solidity
 function getRetrievingDelay() external view returns (Timestamp delay)
 ```
-
-Gets the current retrieving delay
 
 #### Return Values
 
@@ -1199,11 +1199,11 @@ Gets the current retrieving delay
 
 ### getTotalInExitQueueFor
 
+Gets the total amount in the exit queue for a specific user
+
 ```solidity
 function getTotalInExitQueueFor(address user) external view returns (Fair amount)
 ```
-
-Gets the total amount in the exit queue for a specific user
 
 #### Parameters
 
@@ -1219,13 +1219,13 @@ Gets the total amount in the exit queue for a specific user
 
 ### requestRetrieve
 
+Requests to retrieve a specific amount of stake from a node
+
 ```solidity
 function requestRetrieve(NodeId node, Fair value) public
 ```
 
-Requests to retrieve a specific amount of stake from a node
-
-_Creates an exit request and updates committee weight if the node is enabled
+**dev:** _Creates an exit request and updates committee weight if the node is enabled
 value must be greater than 0 and less than or equal to the caller's stake in the node_
 
 #### Parameters
@@ -1237,13 +1237,13 @@ value must be greater than 0 and less than or equal to the caller's stake in the
 
 ### requestFees
 
+Requests a specific amount of fees for a node
+
 ```solidity
 function requestFees(NodeId node, Fair amount) public
 ```
 
-Requests a specific amount of fees for a node
-
-_Only callable by allowed receivers or node owner
+**dev:** _Only callable by allowed receivers or node owner
 Creates an exit request for the sender_
 
 #### Parameters
@@ -1255,13 +1255,13 @@ Creates an exit request for the sender_
 
 ### requestSendFees
 
+Requests to send fees to a specific address
+
 ```solidity
 function requestSendFees(address payable to, Fair amount) public
 ```
 
-Requests to send fees to a specific address
-
-_Only callable by node owners
+**dev:** _Only callable by node owners
 If allowed receivers are configured, destination must be in the list or be the owner_
 
 #### Parameters
@@ -1273,11 +1273,11 @@ If allowed receivers are configured, destination must be in the list or be the o
 
 ### isNodeEnabled
 
+Checks if a node is currently enabled
+
 ```solidity
 function isNodeEnabled(NodeId node) public view returns (bool enabled)
 ```
-
-Checks if a node is currently enabled
 
 #### Parameters
 
@@ -1293,13 +1293,13 @@ Checks if a node is currently enabled
 
 ### getEarnedFeeAmount
 
+Gets the amount of fees earned by a node
+
 ```solidity
 function getEarnedFeeAmount(NodeId node) public view returns (Fair amount)
 ```
 
-Gets the amount of fees earned by a node
-
-_Includes non-pulled rewards from the reward wallet_
+**dev:** _Includes non-pulled rewards from the reward wallet_
 
 #### Parameters
 
@@ -1315,11 +1315,11 @@ _Includes non-pulled rewards from the reward wallet_
 
 ### getStakedAmountFor
 
+Gets the total amount staked by a specific holder across all nodes
+
 ```solidity
 function getStakedAmountFor(address holder) public view returns (Fair amount)
 ```
-
-Gets the total amount staked by a specific holder across all nodes
 
 #### Parameters
 
@@ -1335,11 +1335,11 @@ Gets the total amount staked by a specific holder across all nodes
 
 ### getStakedNodesFor
 
+Gets the list of nodes a specific holder has staked to
+
 ```solidity
 function getStakedNodesFor(address holder) public view returns (NodeId[] stakedNodes)
 ```
-
-Gets the list of nodes a specific holder has staked to
 
 #### Parameters
 
@@ -1355,13 +1355,13 @@ Gets the list of nodes a specific holder has staked to
 
 ### getStakedToNodeAmountFor
 
+Gets the amount a specific holder has staked to a specific node
+
 ```solidity
 function getStakedToNodeAmountFor(NodeId node, address holder) public view returns (Fair amount)
 ```
 
-Gets the amount a specific holder has staked to a specific node
-
-_Includes non-pulled rewards in the calculation_
+**dev:** _Includes non-pulled rewards in the calculation_
 
 #### Parameters
 
@@ -1378,11 +1378,11 @@ _Includes non-pulled rewards in the calculation_
 
 ### getTotalInExitQueue
 
+Gets the total amount currently in the exit queue across all users
+
 ```solidity
 function getTotalInExitQueue() public view returns (Fair amount)
 ```
-
-Gets the total amount currently in the exit queue across all users
 
 #### Return Values
 

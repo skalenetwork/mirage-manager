@@ -60,6 +60,7 @@ const config: HardhatUserConfig = {
   docgen: {
     outputDir: "docs",
     pages: "files",
+    templates: "./docs/templates",
     exclude: [
       "hardhat-dependency-compiler",
       "test",

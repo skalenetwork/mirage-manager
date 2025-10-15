@@ -2,7 +2,7 @@
 
 ## Random
 
-_Library for generating pseudo-random numbers using seed-based generation
+**dev:** _Library for generating pseudo-random numbers using seed-based generation
 Provides utilities for creating random number generators and generating values
 within specified ranges for weighted sampling and selection algorithms._
 
@@ -12,7 +12,7 @@ within specified ranges for weighted sampling and selection algorithms._
 function create(uint256 seed) internal pure returns (struct IRandom.RandomGenerator generator)
 ```
 
-_Creates a RandomGenerator instance from a seed value_
+**dev:** _Creates a RandomGenerator instance from a seed value_
 
 #### Parameters
 
@@ -32,7 +32,7 @@ _Creates a RandomGenerator instance from a seed value_
 function createFromEntropy(bytes entropy) internal pure returns (struct IRandom.RandomGenerator generator)
 ```
 
-_Creates a RandomGenerator instance from entropy bytes_
+**dev:** _Creates a RandomGenerator instance from entropy bytes_
 
 #### Parameters
 
@@ -52,7 +52,7 @@ _Creates a RandomGenerator instance from entropy bytes_
 function random(struct IRandom.RandomGenerator self) internal pure returns (uint256 value)
 ```
 
-_Generates a random value and updates the generator state_
+**dev:** _Generates a random value and updates the generator state_
 
 #### Parameters
 
@@ -72,7 +72,7 @@ _Generates a random value and updates the generator state_
 function random(struct IRandom.RandomGenerator self, uint256 max) internal pure returns (uint256 value)
 ```
 
-_Generates a random value in the range [0, max)_
+**dev:** _Generates a random value in the range [0, max)_
 
 #### Parameters
 
@@ -93,7 +93,7 @@ _Generates a random value in the range [0, max)_
 function random(struct IRandom.RandomGenerator self, uint256 min, uint256 max) internal pure returns (uint256 value)
 ```
 
-_Generates a random value in the range [min, max)_
+**dev:** _Generates a random value in the range [min, max)_
 
 #### Parameters
 

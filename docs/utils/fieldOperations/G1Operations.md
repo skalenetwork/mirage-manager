@@ -10,7 +10,7 @@ Provides functionality for working with G1 curve points
 function getG1Generator() internal pure returns (struct IDkg.Fp2Point generator)
 ```
 
-_Returns the G1 generator point_
+**dev:** _Returns the G1 generator point_
 
 #### Return Values
 
@@ -24,7 +24,7 @@ _Returns the G1 generator point_
 function isG1Point(uint256 x, uint256 y) internal pure returns (bool result)
 ```
 
-_Checks if the given coordinates represent a valid G1 point_
+**dev:** _Checks if the given coordinates represent a valid G1 point_
 
 #### Parameters
 
@@ -45,7 +45,7 @@ _Checks if the given coordinates represent a valid G1 point_
 function isG1(struct IDkg.Fp2Point point) internal pure returns (bool result)
 ```
 
-_Checks if the given Fp2Point is a valid G1 point_
+**dev:** _Checks if the given Fp2Point is a valid G1 point_
 
 #### Parameters
 
@@ -65,7 +65,7 @@ _Checks if the given Fp2Point is a valid G1 point_
 function checkRange(struct IDkg.Fp2Point point) internal pure returns (bool result)
 ```
 
-_Checks if a point's coordinates are within the valid range_
+**dev:** _Checks if a point's coordinates are within the valid range_
 
 #### Parameters
 
@@ -85,7 +85,7 @@ _Checks if a point's coordinates are within the valid range_
 function negate(uint256 y) internal pure returns (uint256 result)
 ```
 
-_Computes the negation of a y-coordinate in the field_
+**dev:** _Computes the negation of a y-coordinate in the field_
 
 #### Parameters
 

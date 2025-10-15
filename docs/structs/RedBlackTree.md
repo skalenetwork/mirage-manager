@@ -2,13 +2,13 @@
 
 ## RedBlackTree
 
-_Library implementing a weighted red-black tree for efficient node selection
+**dev:** _Library implementing a weighted red-black tree for efficient node selection
 Maintains tree balancing properties while tracking cumulative weights for weighted
 random sampling. Used by the eligible pool for committee selection._
 
 ### Node
 
-_Red-black tree node structure_
+**dev:** _Red-black tree node structure_
 
 ```solidity
 struct Node {
@@ -63,7 +63,7 @@ error SetWeightOfNullNode()
 function insertSmallest(mapping(NodeId => struct RedBlackTree.Node) nodes, NodeId root, NodeId newNode, uint256 weight) internal returns (NodeId newRoot)
 ```
 
-_Inserts a new node as the smallest (leftmost) element in the tree_
+**dev:** _Inserts a new node as the smallest (leftmost) element in the tree_
 
 #### Parameters
 
@@ -86,7 +86,7 @@ _Inserts a new node as the smallest (leftmost) element in the tree_
 function remove(mapping(NodeId => struct RedBlackTree.Node) nodes, NodeId root, NodeId node) internal returns (NodeId newRoot)
 ```
 
-_Removes a node from the tree and re-balances_
+**dev:** _Removes a node from the tree and re-balances_
 
 #### Parameters
 
@@ -108,7 +108,7 @@ _Removes a node from the tree and re-balances_
 function setWeight(mapping(NodeId => struct RedBlackTree.Node) nodes, NodeId node, uint256 weight) internal
 ```
 
-_Updates the weight of a node and propagates changes up the tree_
+**dev:** _Updates the weight of a node and propagates changes up the tree_
 
 #### Parameters
 
@@ -124,7 +124,7 @@ _Updates the weight of a node and propagates changes up the tree_
 function findByWeight(mapping(NodeId => struct RedBlackTree.Node) nodes, NodeId root, uint256 weight) internal view returns (NodeId node)
 ```
 
-_Finds a node by cumulative weight for weighted random sampling_
+**dev:** _Finds a node by cumulative weight for weighted random sampling_
 
 #### Parameters
 
@@ -146,7 +146,7 @@ _Finds a node by cumulative weight for weighted random sampling_
 function findLast(mapping(NodeId => struct RedBlackTree.Node) nodes, NodeId root) internal view returns (NodeId biggest)
 ```
 
-_Finds the rightmost node in the subtree_
+**dev:** _Finds the rightmost node in the subtree_
 
 #### Parameters
 
@@ -167,7 +167,7 @@ _Finds the rightmost node in the subtree_
 function getWeight(mapping(NodeId => struct RedBlackTree.Node) nodes, NodeId node) internal view returns (uint248 weight)
 ```
 
-_Gets the weight of a specific node (excluding subtree weights)_
+**dev:** _Gets the weight of a specific node (excluding subtree weights)_
 
 #### Parameters
 
@@ -188,7 +188,7 @@ _Gets the weight of a specific node (excluding subtree weights)_
 function getWeightTill(mapping(NodeId => struct RedBlackTree.Node) nodes, NodeId bound) internal view returns (uint256 weight)
 ```
 
-_Calculates cumulative weight up to and including a specific node_
+**dev:** _Calculates cumulative weight up to and including a specific node_
 
 #### Parameters
 

@@ -6,7 +6,7 @@ Manages delayed retrieval of staked tokens
 
 ### UserExitData
 
-_Stores exit request data for a specific user_
+**dev:** _Stores exit request data for a specific user_
 
 ```solidity
 struct UserExitData {
@@ -17,7 +17,7 @@ struct UserExitData {
 
 ### ExitQueue
 
-_Main exit queue storage structure
+**dev:** _Main exit queue storage structure
 Includes all exit requests, user-specific data, configuration, and data tracking values_
 
 ```solidity
@@ -32,11 +32,11 @@ struct ExitQueue {
 
 ### RequestCreated
 
+Emitted when a new exit request is created
+
 ```solidity
 event RequestCreated(address user, uint256 requestId, NodeId nodeId, Fair amount, Timestamp unlockDate)
 ```
-
-Emitted when a new exit request is created
 
 #### Parameters
 
@@ -50,11 +50,11 @@ Emitted when a new exit request is created
 
 ### RequestClaimed
 
+Emitted when an exit request is claimed
+
 ```solidity
 event RequestClaimed(address user, uint256 requestId, NodeId nodeId, Fair amount, Timestamp claimDate)
 ```
-
-Emitted when an exit request is claimed
 
 #### Parameters
 
@@ -72,7 +72,7 @@ Emitted when an exit request is claimed
 error RequestDoesNotExist(uint256 requestId)
 ```
 
-_The request with the given ID does not exist_
+**dev:** _The request with the given ID does not exist_
 
 ### RequestDoesNotExistForUser
 
@@ -80,7 +80,7 @@ _The request with the given ID does not exist_
 error RequestDoesNotExistForUser(address user, uint256 requestId)
 ```
 
-_The request does not exist for the specified user_
+**dev:** _The request does not exist for the specified user_
 
 ### RequestIsStillLocked
 
@@ -88,7 +88,7 @@ _The request does not exist for the specified user_
 error RequestIsStillLocked(Timestamp currentTime, Timestamp releaseTime)
 ```
 
-_The request is still locked and cannot be claimed yet_
+**dev:** _The request is still locked and cannot be claimed yet_
 
 ### UserDoesNotHaveRequestAt
 
@@ -96,7 +96,7 @@ _The request is still locked and cannot be claimed yet_
 error UserDoesNotHaveRequestAt(address user, uint256 index)
 ```
 
-_The user does not have a request at the specified index_
+**dev:** _The user does not have a request at the specified index_
 
 ### ZeroUnlockedRequests
 
@@ -104,7 +104,7 @@ _The user does not have a request at the specified index_
 error ZeroUnlockedRequests(address user, uint256 startIndex, uint256 endIndex)
 ```
 
-_No unlocked requests found between start and end indexes_
+**dev:** _No unlocked requests found between start and end indexes_
 
 ### createRequest
 
@@ -112,7 +112,7 @@ _No unlocked requests found between start and end indexes_
 function createRequest(struct ExitQueueLibrary.ExitQueue queue, address user, NodeId nodeId, Fair amount) internal
 ```
 
-_Creates a new exit request for a user_
+**dev:** _Creates a new exit request for a user_
 
 #### Parameters
 
@@ -129,7 +129,7 @@ _Creates a new exit request for a user_
 function claim(struct ExitQueueLibrary.ExitQueue queue, address user, uint256 id) internal returns (Fair amount)
 ```
 
-_Claims an exit request for a user_
+**dev:** _Claims an exit request for a user_
 
 #### Parameters
 
@@ -151,7 +151,7 @@ _Claims an exit request for a user_
 function isRequestUnlocked(struct ExitQueueLibrary.ExitQueue queue, uint256 id) internal view returns (bool isUnlocked)
 ```
 
-_Checks if a request is unlocked_
+**dev:** _Checks if a request is unlocked_
 
 #### Parameters
 
@@ -172,7 +172,7 @@ _Checks if a request is unlocked_
 function getNumRequestsForUser(struct ExitQueueLibrary.ExitQueue queue, address user) internal view returns (uint256 numRequests)
 ```
 
-_Returns the number of exit requests for a user_
+**dev:** _Returns the number of exit requests for a user_
 
 #### Parameters
 
@@ -193,7 +193,7 @@ _Returns the number of exit requests for a user_
 function getRequest(struct ExitQueueLibrary.ExitQueue queue, uint256 id) internal view returns (struct IStaking.ExitRequest request)
 ```
 
-_Retrieves an exit request by its ID_
+**dev:** _Retrieves an exit request by its ID_
 
 #### Parameters
 
@@ -214,7 +214,7 @@ _Retrieves an exit request by its ID_
 function getRequestAt(struct ExitQueueLibrary.ExitQueue queue, address user, uint256 index) internal view returns (struct IStaking.ExitRequest request)
 ```
 
-_Retrieves an exit request for a user at a specific index_
+**dev:** _Retrieves an exit request for a user at a specific index_
 
 #### Parameters
 
@@ -236,7 +236,7 @@ _Retrieves an exit request for a user at a specific index_
 function getUnlockedRequest(struct ExitQueueLibrary.ExitQueue queue, address user, uint256 from) internal view returns (struct IStaking.ExitRequest request)
 ```
 
-_Looks up for an unlocked request in the first MAX_ITERATIONS requests starting after 'from'_
+**dev:** _Looks up for an unlocked request in the first MAX_ITERATIONS requests starting after 'from'_
 
 #### Parameters
 
@@ -258,7 +258,7 @@ _Looks up for an unlocked request in the first MAX_ITERATIONS requests starting 
 function getTotalInQueueForUser(struct ExitQueueLibrary.ExitQueue queue, address user) internal view returns (Fair amount)
 ```
 
-_Returns the total amount in the exit queue for a user_
+**dev:** _Returns the total amount in the exit queue for a user_
 
 #### Parameters
 

@@ -10,7 +10,7 @@ Provides functionality for working with G2 curve points
 function doubleG2(struct IDkg.G2Point value) internal view returns (struct IDkg.G2Point result)
 ```
 
-_Doubles a G2 point_
+**dev:** _Doubles a G2 point_
 
 #### Parameters
 
@@ -30,7 +30,7 @@ _Doubles a G2 point_
 function addG2(struct IDkg.G2Point value1, struct IDkg.G2Point value2) internal view returns (struct IDkg.G2Point sum)
 ```
 
-_Adds two G2 points_
+**dev:** _Adds two G2 points_
 
 #### Parameters
 
@@ -51,7 +51,7 @@ _Adds two G2 points_
 function getTWISTB() internal pure returns (struct IDkg.Fp2Point point)
 ```
 
-_Returns the TWIST B constant for G2 curve operations_
+**dev:** _Returns the TWIST B constant for G2 curve operations_
 
 #### Return Values
 
@@ -65,7 +65,7 @@ _Returns the TWIST B constant for G2 curve operations_
 function getG2Generator() internal pure returns (struct IDkg.G2Point point)
 ```
 
-_Returns the G2 generator point_
+**dev:** _Returns the G2 generator point_
 
 #### Return Values
 
@@ -79,7 +79,7 @@ _Returns the G2 generator point_
 function getG2Zero() internal pure returns (struct IDkg.G2Point point)
 ```
 
-_Returns the G2 zero point (point at infinity)_
+**dev:** _Returns the G2 zero point (point at infinity)_
 
 #### Return Values
 
@@ -93,7 +93,7 @@ _Returns the G2 zero point (point at infinity)_
 function isG2Point(struct IDkg.Fp2Point x, struct IDkg.Fp2Point y) internal pure returns (bool result)
 ```
 
-_Checks if the given Fp2 coordinates represent a valid G2 point_
+**dev:** _Checks if the given Fp2 coordinates represent a valid G2 point_
 
 #### Parameters
 
@@ -114,7 +114,7 @@ _Checks if the given Fp2 coordinates represent a valid G2 point_
 function isG2(struct IDkg.G2Point value) internal pure returns (bool result)
 ```
 
-_Checks if the given G2Point is a valid G2 point_
+**dev:** _Checks if the given G2Point is a valid G2 point_
 
 #### Parameters
 
@@ -134,7 +134,7 @@ _Checks if the given G2Point is a valid G2 point_
 function isG2ZeroPoint(struct IDkg.Fp2Point x, struct IDkg.Fp2Point y) internal pure returns (bool result)
 ```
 
-_Checks if the given Fp2 coordinates represent the G2 zero point_
+**dev:** _Checks if the given Fp2 coordinates represent the G2 zero point_
 
 #### Parameters
 
@@ -155,7 +155,7 @@ _Checks if the given Fp2 coordinates represent the G2 zero point_
 function isG2Zero(struct IDkg.G2Point value) internal pure returns (bool result)
 ```
 
-_Checks if the given G2 point is the zero point_
+**dev:** _Checks if the given G2 point is the zero point_
 
 #### Parameters
 
@@ -175,7 +175,7 @@ _Checks if the given G2 point is the zero point_
 function isEqual(struct IDkg.G2Point value1, struct IDkg.G2Point value2) internal pure returns (bool result)
 ```
 
-_Checks if two G2 points are equal_
+**dev:** _Checks if two G2 points are equal_
 
 #### Parameters
 

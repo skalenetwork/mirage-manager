@@ -4,13 +4,13 @@
 
 Manages Distributed Key Generation (DKG) rounds for committee formation
 
-_Implements the DKG protocol with BROADCAST and ALRIGHT stages to generate
+**dev:** _Implements the DKG protocol with BROADCAST and ALRIGHT stages to generate
 shared public keys. Participants broadcast verification vectors and secret key
 contributions, then confirm receipt of all required data before the DKG is marked successful._
 
 ### RoundData
 
-_Internal data structure for tracking DKG round state_
+**dev:** _Internal data structure for tracking DKG round state_
 
 ```solidity
 struct RoundData {
@@ -26,35 +26,35 @@ struct RoundData {
 
 ### nodes
 
+Reference to the Nodes contract
+
 ```solidity
 contract INodes nodes
 ```
 
-Reference to the Nodes contract
-
 ### committee
+
+Reference to the Committee contract
 
 ```solidity
 contract ICommittee committee
 ```
 
-Reference to the Committee contract
-
 ### lastDkgId
+
+The ID of the most recently created DKG round
 
 ```solidity
 DkgId lastDkgId
 ```
 
-The ID of the most recently created DKG round
-
 ### BroadcastAndKeyShare
+
+Emitted when a node broadcasts its verification vector and key shares
 
 ```solidity
 event BroadcastAndKeyShare(DkgId dkg, NodeId node, struct IDkg.G2Point[] verificationVector, struct IDkg.KeyShare[] secretKeyContribution)
 ```
-
-Emitted when a node broadcasts its verification vector and key shares
 
 #### Parameters
 
@@ -67,11 +67,11 @@ Emitted when a node broadcasts its verification vector and key shares
 
 ### AllDataReceived
 
+Emitted when a node confirms receipt of all required DKG data
+
 ```solidity
 event AllDataReceived(DkgId dkg, NodeId node)
 ```
-
-Emitted when a node confirms receipt of all required DKG data
 
 #### Parameters
 
@@ -82,11 +82,11 @@ Emitted when a node confirms receipt of all required DKG data
 
 ### SuccessfulDkg
 
+Emitted when a DKG round completes successfully
+
 ```solidity
 event SuccessfulDkg(DkgId dkg)
 ```
-
-Emitted when a DKG round completes successfully
 
 #### Parameters
 
@@ -96,11 +96,11 @@ Emitted when a DKG round completes successfully
 
 ### DkgRoundCreated
 
+Emitted when a new DKG round is created
+
 ```solidity
 event DkgRoundCreated(DkgId dkgId, NodeId[] participants, uint256 startingBlockNumber)
 ```
-
-Emitted when a new DKG round is created
 
 #### Parameters
 
@@ -112,11 +112,11 @@ Emitted when a new DKG round is created
 
 ### DkgIsNotSuccessful
 
+DKG round did not complete successfully
+
 ```solidity
 error DkgIsNotSuccessful(DkgId id)
 ```
-
-DKG round did not complete successfully
 
 #### Parameters
 
@@ -126,11 +126,11 @@ DKG round did not complete successfully
 
 ### DkgIsNotInBroadcastStage
 
+Operation requires DKG to be in BROADCAST stage
+
 ```solidity
 error DkgIsNotInBroadcastStage(DkgId id)
 ```
-
-Operation requires DKG to be in BROADCAST stage
 
 #### Parameters
 
@@ -140,11 +140,11 @@ Operation requires DKG to be in BROADCAST stage
 
 ### DkgIsNotInAlrightStage
 
+Operation requires DKG to be in ALRIGHT stage
+
 ```solidity
 error DkgIsNotInAlrightStage(DkgId id)
 ```
-
-Operation requires DKG to be in ALRIGHT stage
 
 #### Parameters
 
@@ -154,11 +154,11 @@ Operation requires DKG to be in ALRIGHT stage
 
 ### IncorrectVerificationsVectorQuantity
 
+Incorrect number of verification vector elements
+
 ```solidity
 error IncorrectVerificationsVectorQuantity(uint256 actual, uint256 expected)
 ```
-
-Incorrect number of verification vector elements
 
 #### Parameters
 
@@ -169,11 +169,11 @@ Incorrect number of verification vector elements
 
 ### IncorrectSecretKeyContributionQuantity
 
+Incorrect number of secret key contribution shares
+
 ```solidity
 error IncorrectSecretKeyContributionQuantity(uint256 actual, uint256 expected)
 ```
-
-Incorrect number of secret key contribution shares
 
 #### Parameters
 
@@ -184,11 +184,11 @@ Incorrect number of secret key contribution shares
 
 ### DuplicatedNodeId
 
+A node ID appears more than once in the participant list
+
 ```solidity
 error DuplicatedNodeId(NodeId node)
 ```
-
-A node ID appears more than once in the participant list
 
 #### Parameters
 
@@ -198,11 +198,11 @@ A node ID appears more than once in the participant list
 
 ### NodeDoesNotParticipateInDkg
 
+Node is not a participant in this DKG round
+
 ```solidity
 error NodeDoesNotParticipateInDkg(NodeId node)
 ```
-
-Node is not a participant in this DKG round
 
 #### Parameters
 
@@ -212,11 +212,11 @@ Node is not a participant in this DKG round
 
 ### NodeAlreadyBroadcasted
 
+Node has already broadcast its data for this round
+
 ```solidity
 error NodeAlreadyBroadcasted(NodeId node)
 ```
-
-Node has already broadcast its data for this round
 
 #### Parameters
 
@@ -226,11 +226,11 @@ Node has already broadcast its data for this round
 
 ### IncorrectG2Point
 
+The provided G2 point is not valid
+
 ```solidity
 error IncorrectG2Point(struct IDkg.G2Point value)
 ```
-
-The provided G2 point is not valid
 
 #### Parameters
 
@@ -240,11 +240,11 @@ The provided G2 point is not valid
 
 ### NodeIsAlreadyAlright
 
+Node has already confirmed all data received
+
 ```solidity
 error NodeIsAlreadyAlright(NodeId node)
 ```
-
-Node has already confirmed all data received
 
 #### Parameters
 
@@ -254,11 +254,11 @@ Node has already confirmed all data received
 
 ### RoundDoesNotExist
 
+The specified DKG round does not exist
+
 ```solidity
 error RoundDoesNotExist(DkgId dkg)
 ```
-
-The specified DKG round does not exist
 
 #### Parameters
 
@@ -272,7 +272,7 @@ The specified DKG round does not exist
 modifier onlyBroadcastingDkg(DkgId dkg)
 ```
 
-_Ensures DKG is in the BROADCAST stage_
+**dev:** _Ensures DKG is in the BROADCAST stage_
 
 ### onlyAlrightDkg
 
@@ -280,17 +280,17 @@ _Ensures DKG is in the BROADCAST stage_
 modifier onlyAlrightDkg(DkgId dkg)
 ```
 
-_Ensures DKG is in the ALRIGHT stage_
+**dev:** _Ensures DKG is in the ALRIGHT stage_
 
 ### initialize
+
+Initializes the DKG contract
 
 ```solidity
 function initialize(address initialAuthority, contract ICommittee committeeAddress, contract INodes nodesAddress) external
 ```
 
-Initializes the DKG contract
-
-_Sets up access control and references to Committee and Nodes contracts_
+**dev:** _Sets up access control and references to Committee and Nodes contracts_
 
 #### Parameters
 
@@ -302,13 +302,13 @@ _Sets up access control and references to Committee and Nodes contracts_
 
 ### alright
 
+Confirms that a node has received all DKG data
+
 ```solidity
 function alright(DkgId dkg) external
 ```
 
-Confirms that a node has received all DKG data
-
-_Only callable during ALRIGHT stage. When threshold is reached, DKG succeeds._
+**dev:** _Only callable during ALRIGHT stage. When threshold is reached, DKG succeeds._
 
 #### Parameters
 
@@ -318,13 +318,13 @@ _Only callable during ALRIGHT stage. When threshold is reached, DKG succeeds._
 
 ### broadcast
 
+Broadcasts verification vector and secret key contributions for DKG
+
 ```solidity
 function broadcast(DkgId dkg, struct IDkg.G2Point[] verificationVector, struct IDkg.KeyShare[] secretKeyContribution) external
 ```
 
-Broadcasts verification vector and secret key contributions for DKG
-
-_Only callable during BROADCAST stage. Validates vector and contribution sizes.
+**dev:** _Only callable during BROADCAST stage. Validates vector and contribution sizes.
 When all nodes broadcast, advances to ALRIGHT stage._
 
 #### Parameters
@@ -337,13 +337,13 @@ When all nodes broadcast, advances to ALRIGHT stage._
 
 ### generate
 
+Generates a new DKG round with the specified participants
+
 ```solidity
 function generate(NodeId[] participants) external returns (DkgId dkg)
 ```
 
-Generates a new DKG round with the specified participants
-
-_Only callable by Committee contract (restricted). Creates a new round in BROADCAST stage._
+**dev:** _Only callable by Committee contract (restricted). Creates a new round in BROADCAST stage._
 
 #### Parameters
 
@@ -359,13 +359,13 @@ _Only callable by Committee contract (restricted). Creates a new round in BROADC
 
 ### isNodeBroadcasted
 
+Checks if a node has broadcast its data for a DKG round
+
 ```solidity
 function isNodeBroadcasted(DkgId dkg, NodeId node) external view returns (bool broadcasted)
 ```
 
-Checks if a node has broadcast its data for a DKG round
-
-_Returns true if the node's hashed data is stored in the round_
+**dev:** _Returns true if the node's hashed data is stored in the round_
 
 #### Parameters
 
@@ -382,13 +382,13 @@ _Returns true if the node's hashed data is stored in the round_
 
 ### getParticipants
 
+Gets the list of participants in a DKG round
+
 ```solidity
 function getParticipants(DkgId dkg) external view returns (NodeId[] participants)
 ```
 
-Gets the list of participants in a DKG round
-
-_Returns all node IDs that were registered for this DKG round_
+**dev:** _Returns all node IDs that were registered for this DKG round_
 
 #### Parameters
 
@@ -404,13 +404,13 @@ _Returns all node IDs that were registered for this DKG round_
 
 ### getPublicKey
 
+Gets the common public key generated by a successful DKG round
+
 ```solidity
 function getPublicKey(DkgId dkg) external view returns (struct IDkg.G2Point publicKey)
 ```
 
-Gets the common public key generated by a successful DKG round
-
-_Only returns the key if the DKG round completed successfully_
+**dev:** _Only returns the key if the DKG round completed successfully_
 
 #### Parameters
 
@@ -426,13 +426,13 @@ _Only returns the key if the DKG round completed successfully_
 
 ### getRound
 
+Gets comprehensive information about a DKG round
+
 ```solidity
 function getRound(DkgId dkg) external view returns (struct IDkg.Round round)
 ```
 
-Gets comprehensive information about a DKG round
-
-_Returns all round data including participant status and hashed broadcast data_
+**dev:** _Returns all round data including participant status and hashed broadcast data_
 
 #### Parameters
 

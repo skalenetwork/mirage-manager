@@ -8,11 +8,11 @@
 
 Manages fund balances, credits, and fee collection for SKALE FAIR network participants
 
-_Implements a credit system for tracking proportional ownership in funds with fee management_
+**dev:** _Implements a credit system for tracking proportional ownership in funds with fee management_
 
 ### Fund
 
-_Stores fund state including balances, credits, and fee tracking_
+**dev:** _Stores fund state including balances, credits, and fee tracking_
 
 ```solidity
 struct Fund {
@@ -26,43 +26,43 @@ struct Fund {
 
 ### CREDIT_PRECISION
 
+Precision multiplier for credit calculations
+
 ```solidity
 uint256 CREDIT_PRECISION
 ```
 
-Precision multiplier for credit calculations
-
 ### FEE_RATE_PRECISION
+
+Precision value for fee rate calculations
 
 ```solidity
 uint16 FEE_RATE_PRECISION
 ```
 
-Precision value for fee rate calculations
-
 ### NULL
+
+Null holder identifier constant
 
 ```solidity
 Holder NULL
 ```
 
-Null holder identifier constant
-
 ### ZERO_FAIR
+
+Zero FAIR token amount constant
 
 ```solidity
 Fair ZERO_FAIR
 ```
 
-Zero FAIR token amount constant
-
 ### ZERO_CREDIT
+
+Zero credit amount constant
 
 ```solidity
 Credit ZERO_CREDIT
 ```
-
-Zero credit amount constant
 
 ### NotEnoughStaked
 
@@ -70,7 +70,7 @@ Zero credit amount constant
 error NotEnoughStaked(Fair staked)
 ```
 
-_Indicates insufficient staked balance for a holder_
+**dev:** _Indicates insufficient staked balance for a holder_
 
 ### NotEnoughFee
 
@@ -78,7 +78,7 @@ _Indicates insufficient staked balance for a holder_
 error NotEnoughFee(Fair earnedFee)
 ```
 
-_Indicates insufficient earned fees for the node owner_
+**dev:** _Indicates insufficient earned fees for the node owner_
 
 ### RoundingErrorTooHigh
 
@@ -86,7 +86,7 @@ _Indicates insufficient earned fees for the node owner_
 error RoundingErrorTooHigh(Fair roundingError)
 ```
 
-_Indicates a rounding error exceeds the allowed threshold_
+**dev:** _Indicates a rounding error exceeds the allowed threshold_
 
 ### claimFee
 
@@ -94,7 +94,7 @@ _Indicates a rounding error exceeds the allowed threshold_
 function claimFee(struct FundLibrary.Fund fund, Fair fundBalance, Fair amount) internal
 ```
 
-_Claims accumulated fees from the fund - Relevant only for Node Funds_
+**dev:** _Claims accumulated fees from the fund - Relevant only for Node Funds_
 
 #### Parameters
 
@@ -110,7 +110,7 @@ _Claims accumulated fees from the fund - Relevant only for Node Funds_
 function remove(struct FundLibrary.Fund fund, Fair fundBalance, Holder holder, Fair amount) internal
 ```
 
-_Removes a specified amount from a holder's balance_
+**dev:** _Removes a specified amount from a holder's balance_
 
 #### Parameters
 
@@ -127,7 +127,7 @@ _Removes a specified amount from a holder's balance_
 function setFeeRate(struct FundLibrary.Fund fund, Fair fundBalance, uint16 feeRate) internal
 ```
 
-_Sets the fee rate for the fund_
+**dev:** _Sets the fee rate for the fund_
 
 #### Parameters
 
@@ -143,7 +143,7 @@ _Sets the fee rate for the fund_
 function supply(struct FundLibrary.Fund fund, Fair fundBalance, Holder holder, Fair amount) internal
 ```
 
-_Adds funds to a holder's balance_
+**dev:** _Adds funds to a holder's balance_
 
 #### Parameters
 
@@ -160,7 +160,7 @@ _Adds funds to a holder's balance_
 function updateTotalBalance(struct FundLibrary.Fund fund, Fair fundBalance) internal
 ```
 
-_Updates the total balance of the fund and processes any balance changes_
+**dev:** _Updates the total balance of the fund and processes any balance changes_
 
 #### Parameters
 
@@ -175,7 +175,7 @@ _Updates the total balance of the fund and processes any balance changes_
 function getBalance(struct FundLibrary.Fund fund, Fair fundBalance, Holder holder) internal view returns (Fair amount)
 ```
 
-_Retrieves the balance for a specific holder_
+**dev:** _Retrieves the balance for a specific holder_
 
 #### Parameters
 
@@ -197,7 +197,7 @@ _Retrieves the balance for a specific holder_
 function getEarnedFee(struct FundLibrary.Fund fund, Fair balance) internal view returns (Fair amount)
 ```
 
-_Calculates total earned fees including uncounted fees_
+**dev:** _Calculates total earned fees including uncounted fees_
 
 #### Parameters
 
@@ -218,7 +218,7 @@ _Calculates total earned fees including uncounted fees_
 function holderToAddress(Holder holder) internal pure returns (address holderAddress)
 ```
 
-_Converts a Holder to an address_
+**dev:** _Converts a Holder to an address_
 
 #### Parameters
 
@@ -238,7 +238,7 @@ _Converts a Holder to an address_
 function holderToNode(Holder holder) internal pure returns (NodeId node)
 ```
 
-_Converts a Holder to a NodeId_
+**dev:** _Converts a Holder to a NodeId_
 
 #### Parameters
 
@@ -258,7 +258,7 @@ _Converts a Holder to a NodeId_
 function addressToHolder(address holder) internal pure returns (Holder typedHolder)
 ```
 
-_Converts an address to a Holder_
+**dev:** _Converts an address to a Holder_
 
 #### Parameters
 
@@ -278,7 +278,7 @@ _Converts an address to a Holder_
 function nodeToHolder(NodeId holder) internal pure returns (Holder typedHolder)
 ```
 
-_Converts a NodeId to a Holder_
+**dev:** _Converts a NodeId to a Holder_
 
 #### Parameters
 

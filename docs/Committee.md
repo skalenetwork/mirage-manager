@@ -4,12 +4,12 @@
 
 Manages committee selection and rotation for the FAIR network
 
-_Orchestrates node eligibility, committee formation, and DKG integration
+**dev:** _Orchestrates node eligibility, committee formation, and DKG integration
 Maintains a weighted pool of eligible nodes for random, stake-weighted sampling_
 
 ### CommitteeAuxiliary
 
-_Auxiliary structure to store committee node information
+**dev:** _Auxiliary structure to store committee node information
 Contains a set of node IDs for efficient O(1) membership checks_
 
 ```solidity
@@ -20,99 +20,99 @@ struct CommitteeAuxiliary {
 
 ### dkg
 
+Reference to the DKG contract
+
 ```solidity
 contract IDkg dkg
 ```
 
-Reference to the DKG contract
-
 ### nodes
+
+Reference to the Nodes contract
 
 ```solidity
 contract INodes nodes
 ```
 
-Reference to the Nodes contract
-
 ### status
+
+Reference to the Status contract
 
 ```solidity
 contract IStatus status
 ```
 
-Reference to the Status contract
-
 ### staking
+
+Reference to the Staking contract
 
 ```solidity
 contract IStaking staking
 ```
 
-Reference to the Staking contract
-
 ### skaleRng
+
+Address of the SKALE RNG contract for randomness
 
 ```solidity
 address skaleRng
 ```
 
-Address of the SKALE RNG contract for randomness
-
 ### committees
+
+Mapping from committee index to committee data
 
 ```solidity
 mapping(CommitteeIndex => struct ICommittee.Committee) committees
 ```
 
-Mapping from committee index to committee data
-
 ### lastCommitteeIndex
+
+Index of the last created committee
 
 ```solidity
 CommitteeIndex lastCommitteeIndex
 ```
 
-Index of the last created committee
-
 ### committeeSize
+
+Number of nodes in a committee
 
 ```solidity
 uint256 committeeSize
 ```
 
-Number of nodes in a committee
-
 ### transitionDelay
+
+Delay before a committee becomes active after DKG completion
 
 ```solidity
 Duration transitionDelay
 ```
 
-Delay before a committee becomes active after DKG completion
-
 ### minTransitionDelay
+
+Minimum allowed transition delay
 
 ```solidity
 Duration minTransitionDelay
 ```
 
-Minimum allowed transition delay
-
 ### version
+
+Version string for the committee contract
 
 ```solidity
 string version
 ```
 
-Version string for the committee contract
-
 ### NodeBecomesEligible
+
+Emitted when a node becomes eligible for committee selection
 
 ```solidity
 event NodeBecomesEligible(NodeId node)
 ```
-
-Emitted when a node becomes eligible for committee selection
 
 #### Parameters
 
@@ -122,11 +122,11 @@ Emitted when a node becomes eligible for committee selection
 
 ### NodeLosesEligibility
 
+Emitted when a node loses eligibility for committee selection
+
 ```solidity
 event NodeLosesEligibility(NodeId node)
 ```
-
-Emitted when a node loses eligibility for committee selection
 
 #### Parameters
 
@@ -136,11 +136,11 @@ Emitted when a node loses eligibility for committee selection
 
 ### SkaleRNGEnabled
 
+Emitted when SKALE RNG is enabled
+
 ```solidity
 event SkaleRNGEnabled(address rng)
 ```
-
-Emitted when SKALE RNG is enabled
 
 #### Parameters
 
@@ -150,19 +150,19 @@ Emitted when SKALE RNG is enabled
 
 ### SkaleRNGDisabled
 
+Emitted when SKALE RNG is disabled
+
 ```solidity
 event SkaleRNGDisabled()
 ```
 
-Emitted when SKALE RNG is disabled
-
 ### TransitionDelayUpdated
+
+Emitted when the transition delay is updated
 
 ```solidity
 event TransitionDelayUpdated(Duration oldDelay, Duration newDelay)
 ```
-
-Emitted when the transition delay is updated
 
 #### Parameters
 
@@ -173,11 +173,11 @@ Emitted when the transition delay is updated
 
 ### MinTransitionDelayUpdated
 
+Emitted when the minimum transition delay is updated
+
 ```solidity
 event MinTransitionDelayUpdated(Duration oldDelay, Duration newDelay)
 ```
-
-Emitted when the minimum transition delay is updated
 
 #### Parameters
 
@@ -188,11 +188,11 @@ Emitted when the minimum transition delay is updated
 
 ### CommitteeSelected
 
+Emitted when a new committee is selected
+
 ```solidity
 event CommitteeSelected(CommitteeIndex committeeIndex, NodeId[] nodes, DkgId dkgId)
 ```
-
-Emitted when a new committee is selected
 
 #### Parameters
 
@@ -204,11 +204,11 @@ Emitted when a new committee is selected
 
 ### CommitteeSizeUpdated
 
+Emitted when the committee size is updated
+
 ```solidity
 event CommitteeSizeUpdated(uint256 oldSize, uint256 newSize)
 ```
-
-Emitted when the committee size is updated
 
 #### Parameters
 
@@ -219,11 +219,11 @@ Emitted when the committee size is updated
 
 ### DkgUpdated
 
+Emitted when the DKG contract address is updated
+
 ```solidity
 event DkgUpdated(contract IDkg oldDkg, contract IDkg newDkg)
 ```
-
-Emitted when the DKG contract address is updated
 
 #### Parameters
 
@@ -234,11 +234,11 @@ Emitted when the DKG contract address is updated
 
 ### NodesUpdated
 
+Emitted when the Nodes contract address is updated
+
 ```solidity
 event NodesUpdated(contract INodes oldNodes, contract INodes newNodes)
 ```
-
-Emitted when the Nodes contract address is updated
 
 #### Parameters
 
@@ -249,11 +249,11 @@ Emitted when the Nodes contract address is updated
 
 ### StatusUpdated
 
+Emitted when the Status contract address is updated
+
 ```solidity
 event StatusUpdated(contract IStatus oldStatus, contract IStatus newStatus)
 ```
-
-Emitted when the Status contract address is updated
 
 #### Parameters
 
@@ -264,11 +264,11 @@ Emitted when the Status contract address is updated
 
 ### StakingUpdated
 
+Emitted when the Staking contract address is updated
+
 ```solidity
 event StakingUpdated(contract IStaking oldStaking, contract IStaking newStaking)
 ```
-
-Emitted when the Staking contract address is updated
 
 #### Parameters
 
@@ -279,11 +279,11 @@ Emitted when the Staking contract address is updated
 
 ### CommitteeDkgCompleted
 
+Emitted when a committee's DKG completes successfully
+
 ```solidity
 event CommitteeDkgCompleted(CommitteeIndex committeeIndex, DkgId dkgId, Timestamp startingTimestamp)
 ```
-
-Emitted when a committee's DKG completes successfully
 
 #### Parameters
 
@@ -295,11 +295,11 @@ Emitted when a committee's DKG completes successfully
 
 ### SenderIsNotDkg
 
+Thrown when the sender is not the DKG contract
+
 ```solidity
 error SenderIsNotDkg(address sender)
 ```
-
-Thrown when the sender is not the DKG contract
 
 #### Parameters
 
@@ -309,11 +309,11 @@ Thrown when the sender is not the DKG contract
 
 ### CommitteeNotFound
 
+Thrown when referencing a committee that doesn't exist
+
 ```solidity
 error CommitteeNotFound(CommitteeIndex index)
 ```
-
-Thrown when referencing a committee that doesn't exist
 
 #### Parameters
 
@@ -323,11 +323,11 @@ Thrown when referencing a committee that doesn't exist
 
 ### InvalidSkaleRngContract
 
+Thrown when an invalid SKALE RNG contract is provided
+
 ```solidity
 error InvalidSkaleRngContract(address rng)
 ```
-
-Thrown when an invalid SKALE RNG contract is provided
 
 #### Parameters
 
@@ -337,11 +337,11 @@ Thrown when an invalid SKALE RNG contract is provided
 
 ### NodeNotActive
 
+Thrown when a node is not active
+
 ```solidity
 error NodeNotActive(NodeId node)
 ```
-
-Thrown when a node is not active
 
 #### Parameters
 
@@ -351,19 +351,19 @@ Thrown when a node is not active
 
 ### TransitionDelayTooShort
 
+Thrown when the transition delay is too short
+
 ```solidity
 error TransitionDelayTooShort()
 ```
 
-Thrown when the transition delay is too short
-
 ### CommitteeRotationInProgress
+
+Thrown when attempting to select a new committee while rotation is in progress
 
 ```solidity
 error CommitteeRotationInProgress()
 ```
-
-Thrown when attempting to select a new committee while rotation is in progress
 
 ### onlyDkg
 
@@ -371,7 +371,7 @@ Thrown when attempting to select a new committee while rotation is in progress
 modifier onlyDkg()
 ```
 
-_Ensures that the caller is the DKG contract_
+**dev:** _Ensures that the caller is the DKG contract_
 
 ### onlyNonZeroAddress
 
@@ -381,13 +381,13 @@ modifier onlyNonZeroAddress(address addr)
 
 ### initialize
 
+Initializes the Committee contract
+
 ```solidity
 function initialize(address initialAuthority, contract INodes nodesAddress, struct IDkg.G2Point commonPublicKey, NodeId[] nodeIds) external
 ```
 
-Initializes the Committee contract
-
-_This function is called only once during contract deployment following the proxy pattern_
+**dev:** _This function is called only once during contract deployment following the proxy pattern_
 
 #### Parameters
 
@@ -400,25 +400,25 @@ _This function is called only once during contract deployment following the prox
 
 ### select
 
+Selects a new committee from eligible nodes
+
 ```solidity
 function select() external
 ```
 
-Selects a new committee from eligible nodes
-
-_Only callable by authorized addresses (restricted)
+**dev:** _Only callable by authorized addresses (restricted)
 Flushes rewards before selection and initiates DKG for the new committee
 Reverts if a committee rotation is already in progress_
 
 ### setMinTransitionDelay
 
+Sets the minimum transition delay
+
 ```solidity
 function setMinTransitionDelay(Duration delay) external
 ```
 
-Sets the minimum transition delay
-
-_Only callable by authorized addresses (restricted)_
+**dev:** _Only callable by authorized addresses (restricted)_
 
 #### Parameters
 
@@ -428,13 +428,13 @@ _Only callable by authorized addresses (restricted)_
 
 ### setRNG
 
+Sets the SKALE RNG contract address
+
 ```solidity
 function setRNG(address newRNG) external
 ```
 
-Sets the SKALE RNG contract address
-
-_Only callable by authorized addresses (restricted)
+**dev:** _Only callable by authorized addresses (restricted)
 Validates that the RNG contract returns a non-zero random number_
 
 #### Parameters
@@ -445,23 +445,23 @@ Validates that the RNG contract returns a non-zero random number_
 
 ### disableRNG
 
+Disables the SKALE RNG and falls back to block.prevrandao
+
 ```solidity
 function disableRNG() external
 ```
 
-Disables the SKALE RNG and falls back to block.prevrandao
-
-_Only callable by authorized addresses (restricted)_
+**dev:** _Only callable by authorized addresses (restricted)_
 
 ### setDkg
+
+Sets the DKG contract address
 
 ```solidity
 function setDkg(contract IDkg dkgAddress) external
 ```
 
-Sets the DKG contract address
-
-_Only callable by authorized addresses (restricted)_
+**dev:** _Only callable by authorized addresses (restricted)_
 
 #### Parameters
 
@@ -471,13 +471,13 @@ _Only callable by authorized addresses (restricted)_
 
 ### setNodes
 
+Sets the Nodes contract address
+
 ```solidity
 function setNodes(contract INodes nodesAddress) external
 ```
 
-Sets the Nodes contract address
-
-_Only callable by authorized addresses (restricted)_
+**dev:** _Only callable by authorized addresses (restricted)_
 
 #### Parameters
 
@@ -487,13 +487,13 @@ _Only callable by authorized addresses (restricted)_
 
 ### setStatus
 
+Sets the Status contract address
+
 ```solidity
 function setStatus(contract IStatus statusAddress) external
 ```
 
-Sets the Status contract address
-
-_Only callable by authorized addresses (restricted)
+**dev:** _Only callable by authorized addresses (restricted)
 Also updates the pool's Status reference_
 
 #### Parameters
@@ -504,13 +504,13 @@ Also updates the pool's Status reference_
 
 ### setStaking
 
+Sets the Staking contract address
+
 ```solidity
 function setStaking(contract IStaking stakingAddress) external
 ```
 
-Sets the Staking contract address
-
-_Only callable by authorized addresses (restricted)_
+**dev:** _Only callable by authorized addresses (restricted)_
 
 #### Parameters
 
@@ -520,13 +520,13 @@ _Only callable by authorized addresses (restricted)_
 
 ### setVersion
 
+Sets the fair-manager version string
+
 ```solidity
 function setVersion(string newVersion) external
 ```
 
-Sets the fair-manager version string
-
-_Only callable by authorized addresses (restricted)_
+**dev:** _Only callable by authorized addresses (restricted)_
 
 #### Parameters
 
@@ -536,13 +536,13 @@ _Only callable by authorized addresses (restricted)_
 
 ### processSuccessfulDkg
 
+Processes a successful DKG completion
+
 ```solidity
 function processSuccessfulDkg(DkgId round) external
 ```
 
-Processes a successful DKG completion
-
-_Only callable by the DKG contract
+**dev:** _Only callable by the DKG contract
 Sets the committee's common public key and activation timestamp_
 
 #### Parameters
@@ -553,13 +553,13 @@ Sets the committee's common public key and activation timestamp_
 
 ### setCommitteeSize
 
+Sets the committee size
+
 ```solidity
 function setCommitteeSize(uint256 size) external
 ```
 
-Sets the committee size
-
-_Only callable by authorized addresses (restricted)_
+**dev:** _Only callable by authorized addresses (restricted)_
 
 #### Parameters
 
@@ -569,13 +569,13 @@ _Only callable by authorized addresses (restricted)_
 
 ### setTransitionDelay
 
+Sets the transition delay
+
 ```solidity
 function setTransitionDelay(Duration delay) external
 ```
 
-Sets the transition delay
-
-_Only callable by authorized addresses (restricted)
+**dev:** _Only callable by authorized addresses (restricted)
 Delay must be greater than minTransitionDelay_
 
 #### Parameters
@@ -586,13 +586,13 @@ Delay must be greater than minTransitionDelay_
 
 ### nodeRemoved
 
+Called when a node is removed
+
 ```solidity
 function nodeRemoved(NodeId node) external
 ```
 
-Called when a node is removed
-
-_Only callable by Nodes contract (restricted)
+**dev:** _Only callable by Nodes contract (restricted)
 Removes the node from the eligible pool_
 
 #### Parameters
@@ -603,13 +603,13 @@ Removes the node from the eligible pool_
 
 ### nodeWhitelisted
 
+Called when a node is whitelisted
+
 ```solidity
 function nodeWhitelisted(NodeId node) external
 ```
 
-Called when a node is whitelisted
-
-_Only callable by Status contract (restricted)
+**dev:** _Only callable by Status contract (restricted)
 Makes the node eligible if it has stake and is healthy_
 
 #### Parameters
@@ -620,13 +620,13 @@ Makes the node eligible if it has stake and is healthy_
 
 ### nodeRemovedFromWhitelist
 
+Called when a node is blacklisted
+
 ```solidity
 function nodeRemovedFromWhitelist(NodeId node) external
 ```
 
-Called when a node is blacklisted
-
-_Only callable by Status contract (restricted)
+**dev:** _Only callable by Status contract (restricted)
 Removes the node from the eligible pool_
 
 #### Parameters
@@ -637,13 +637,13 @@ Removes the node from the eligible pool_
 
 ### processHeartbeat
 
+Processes a heartbeat from a node
+
 ```solidity
 function processHeartbeat(NodeId node) external
 ```
 
-Processes a heartbeat from a node
-
-_Only callable by Status contract (restricted)
+**dev:** _Only callable by Status contract (restricted)
 Updates node weight in the pool or makes it eligible if conditions are met
 Ejects unhealthy nodes after processing_
 
@@ -655,13 +655,13 @@ Ejects unhealthy nodes after processing_
 
 ### updateWeight
 
+Updates a node's weight in the eligible pool
+
 ```solidity
 function updateWeight(NodeId node, uint256 share) external
 ```
 
-Updates a node's weight in the eligible pool
-
-_Only callable by Staking contract (restricted)
+**dev:** _Only callable by Staking contract (restricted)
 Adds, updates, or removes the node based on weight and whitelist status_
 
 #### Parameters
@@ -673,13 +673,13 @@ Adds, updates, or removes the node based on weight and whitelist status_
 
 ### getCommittee
 
+Gets the committee information for a specific index
+
 ```solidity
 function getCommittee(CommitteeIndex committeeIndex) external view returns (struct ICommittee.Committee committee)
 ```
 
-Gets the committee information for a specific index
-
-_Reverts if the committee doesn't exist_
+**dev:** _Reverts if the committee doesn't exist_
 
 #### Parameters
 
@@ -695,13 +695,13 @@ _Reverts if the committee doesn't exist_
 
 ### isNodeInCurrentOrNextCommittee
 
+Checks if a node is in the current or next committee
+
 ```solidity
 function isNodeInCurrentOrNextCommittee(NodeId node) external view returns (bool result)
 ```
 
-Checks if a node is in the current or next committee
-
-_Returns true if the node is found in either the current or next committee_
+**dev:** _Returns true if the node is found in either the current or next committee_
 
 #### Parameters
 
@@ -717,24 +717,24 @@ _Returns true if the node is found in either the current or next committee_
 
 ### ejectUnhealthyNode
 
+Ejects an unhealthy node from the eligible pool
+
 ```solidity
 function ejectUnhealthyNode() public
 ```
 
-Ejects an unhealthy node from the eligible pool
-
-_Checks the oldest node in the pool and removes it if unhealthy
+**dev:** _Checks the oldest node in the pool and removes it if unhealthy
 Returns early if the pool is empty. Only affects nodes that are not healthy._
 
 ### getActiveCommitteeIndex
+
+Gets the index of the currently active committee
 
 ```solidity
 function getActiveCommitteeIndex() public view returns (CommitteeIndex committeeIndex)
 ```
 
-Gets the index of the currently active committee
-
-_Iterates backwards from the last committee to find the one that has started_
+**dev:** _Iterates backwards from the last committee to find the one that has started_
 
 #### Return Values
 

@@ -4,7 +4,7 @@
 
 Manages node registration, configuration, and lifecycle in the FAIR network
 
-_Handles both active nodes (participate in consensus) and passive nodes (indexers, archival, etc.)_
+**dev:** _Handles both active nodes (participate in consensus) and passive nodes (indexers, archival, etc.)_
 
 ### NodeInfo
 
@@ -18,51 +18,51 @@ struct NodeInfo {
 
 ### ZERO_IPV4
 
+Zero IPv4 address constant used for validation
+
 ```solidity
 bytes4 ZERO_IPV4
 ```
 
-Zero IPv4 address constant used for validation
-
 ### ZERO_IPV6
+
+Zero IPv6 address constant used for validation
 
 ```solidity
 bytes16 ZERO_IPV6
 ```
 
-Zero IPv6 address constant used for validation
-
 ### nodes
+
+Mapping from node ID to Node struct
 
 ```solidity
 mapping(NodeId => struct INodes.Node) nodes
 ```
 
-Mapping from node ID to Node struct
-
 ### ownerChangeRequests
+
+Stores pending requests to change node ownership
 
 ```solidity
 mapping(NodeId => address) ownerChangeRequests
 ```
 
-Stores pending requests to change node ownership
-
 ### committeeContract
+
+Reference to the Committee contract
 
 ```solidity
 contract ICommittee committeeContract
 ```
 
-Reference to the Committee contract
-
 ### CommitteeUpdated
+
+Emitted when the Committee contract reference is updated
 
 ```solidity
 event CommitteeUpdated(contract ICommittee newCommittee)
 ```
-
-Emitted when the Committee contract reference is updated
 
 #### Parameters
 
@@ -72,11 +72,11 @@ Emitted when the Committee contract reference is updated
 
 ### NodeIsInCommittee
 
+Thrown when attempting to modify a node that is in the committee
+
 ```solidity
 error NodeIsInCommittee(NodeId nodeId)
 ```
-
-Thrown when attempting to modify a node that is in the committee
 
 #### Parameters
 
@@ -86,11 +86,11 @@ Thrown when attempting to modify a node that is in the committee
 
 ### AddressWasAlreadyAssignedToNode
 
+Thrown when an address is already assigned to a node
+
 ```solidity
 error AddressWasAlreadyAssignedToNode(address nodeAddress)
 ```
-
-Thrown when an address is already assigned to a node
 
 #### Parameters
 
@@ -100,11 +100,11 @@ Thrown when an address is already assigned to a node
 
 ### AddressIsNotAssignedToAnyNode
 
+Thrown when an address is not assigned to any node
+
 ```solidity
 error AddressIsNotAssignedToAnyNode(address nodeAddress)
 ```
-
-Thrown when an address is not assigned to any node
 
 #### Parameters
 
@@ -114,11 +114,11 @@ Thrown when an address is not assigned to any node
 
 ### PassiveNodeAlreadyExistsForAddress
 
+Thrown when a passive node already exists for an address
+
 ```solidity
 error PassiveNodeAlreadyExistsForAddress(address nodeAddress, NodeId nodeId)
 ```
-
-Thrown when a passive node already exists for an address
 
 #### Parameters
 
@@ -129,11 +129,11 @@ Thrown when a passive node already exists for an address
 
 ### AddressInUseByPassiveNodes
 
+Thrown when an address is in use by passive nodes
+
 ```solidity
 error AddressInUseByPassiveNodes(address nodeAddress)
 ```
-
-Thrown when an address is in use by passive nodes
 
 #### Parameters
 
@@ -143,11 +143,11 @@ Thrown when an address is in use by passive nodes
 
 ### InvalidPublicKey
 
+Thrown when an invalid public key is provided
+
 ```solidity
 error InvalidPublicKey(bytes32[2] publicKey)
 ```
-
-Thrown when an invalid public key is provided
 
 #### Parameters
 
@@ -157,11 +157,11 @@ Thrown when an invalid public key is provided
 
 ### InvalidPublicKeyForSender
 
+Thrown when the public key doesn't match the sender
+
 ```solidity
 error InvalidPublicKeyForSender(bytes32[2] publicKey, address expected, address sender)
 ```
-
-Thrown when the public key doesn't match the sender
 
 #### Parameters
 
@@ -173,19 +173,19 @@ Thrown when the public key doesn't match the sender
 
 ### ActiveNodesCannotChangeOwnership
 
+Thrown when attempting to change ownership of an active node
+
 ```solidity
 error ActiveNodesCannotChangeOwnership()
 ```
 
-Thrown when attempting to change ownership of an active node
-
 ### InvalidIp
+
+Thrown when an invalid IP address is provided
 
 ```solidity
 error InvalidIp(bytes ip)
 ```
-
-Thrown when an invalid IP address is provided
 
 #### Parameters
 
@@ -195,11 +195,11 @@ Thrown when an invalid IP address is provided
 
 ### ActiveNodeWasNeverRegistered
 
+Thrown when requesting public key for a node that was never registered as active
+
 ```solidity
 error ActiveNodeWasNeverRegistered(NodeId nodeId)
 ```
-
-Thrown when requesting public key for a node that was never registered as active
 
 #### Parameters
 
@@ -209,35 +209,35 @@ Thrown when requesting public key for a node that was never registered as active
 
 ### PortShouldNotBeZero
 
+Thrown when port is set to zero
+
 ```solidity
 error PortShouldNotBeZero()
 ```
 
-Thrown when port is set to zero
-
 ### SenderIsNotNodeOwner
+
+Thrown when sender is not the node owner
 
 ```solidity
 error SenderIsNotNodeOwner()
 ```
 
-Thrown when sender is not the node owner
-
 ### SenderIsNotNewNodeOwner
+
+Thrown when sender is not the new node owner in ownership transfer
 
 ```solidity
 error SenderIsNotNewNodeOwner()
 ```
 
-Thrown when sender is not the new node owner in ownership transfer
-
 ### InvalidNodeId
+
+Thrown when an invalid node ID is provided
 
 ```solidity
 error InvalidNodeId(NodeId nodeId, uint256 nodeIdCounter)
 ```
-
-Thrown when an invalid node ID is provided
 
 #### Parameters
 
@@ -252,7 +252,7 @@ Thrown when an invalid node ID is provided
 modifier nodeNotInCurrentOrNextCommittee(NodeId nodeId)
 ```
 
-_Ensures that the node is not in the current or next committee_
+**dev:** _Ensures that the node is not in the current or next committee_
 
 #### Parameters
 
@@ -266,7 +266,7 @@ _Ensures that the node is not in the current or next committee_
 modifier nodeExists(NodeId nodeId)
 ```
 
-_Ensures that the node exists (either active or passive)_
+**dev:** _Ensures that the node exists (either active or passive)_
 
 #### Parameters
 
@@ -280,7 +280,7 @@ _Ensures that the node exists (either active or passive)_
 modifier validIp(bytes ip)
 ```
 
-_Validates that the IP address is not zero (for IPv4 or IPv6)_
+**dev:** _Validates that the IP address is not zero (for IPv4 or IPv6)_
 
 #### Parameters
 
@@ -294,7 +294,7 @@ _Validates that the IP address is not zero (for IPv4 or IPv6)_
 modifier validPort(uint16 port)
 ```
 
-_Validates that a port number is not zero_
+**dev:** _Validates that a port number is not zero_
 
 #### Parameters
 
@@ -308,7 +308,7 @@ _Validates that a port number is not zero_
 modifier validPubKey(bytes32[2] publicKey)
 ```
 
-_Validates that the public key is not zero_
+**dev:** _Validates that the public key is not zero_
 
 #### Parameters
 
@@ -322,7 +322,7 @@ _Validates that the public key is not zero_
 modifier onlyNodeOwner(NodeId nodeId)
 ```
 
-_Ensures that the caller is the owner of the specified node_
+**dev:** _Ensures that the caller is the owner of the specified node_
 
 #### Parameters
 
@@ -332,13 +332,13 @@ _Ensures that the caller is the owner of the specified node_
 
 ### initialize
 
+Initializes the Nodes contract
+
 ```solidity
 function initialize(address initialAuthority, struct INodes.Node[] initialNodes, bytes32[2][] nodesPublicKeys) external
 ```
 
-Initializes the Nodes contract
-
-_This function is called only once during contract deployment following the proxy pattern_
+**dev:** _This function is called only once during contract deployment following the proxy pattern_
 
 #### Parameters
 
@@ -350,13 +350,13 @@ _This function is called only once during contract deployment following the prox
 
 ### setCommittee
 
+Sets the Committee contract address
+
 ```solidity
 function setCommittee(contract ICommittee committeeAddress) external
 ```
 
-Sets the Committee contract address
-
-_Only callable by authorized addresses (restricted)_
+**dev:** _Only callable by authorized addresses (restricted)_
 
 #### Parameters
 
@@ -366,13 +366,13 @@ _Only callable by authorized addresses (restricted)_
 
 ### registerNode
 
+Registers a new active node
+
 ```solidity
 function registerNode(bytes ip, bytes32[2] publicKey, uint16 port) external payable
 ```
 
-Registers a new active node
-
-_Validates IP, port, and public key, then creates the node as disabled (in staking) by default
+**dev:** _Validates IP, port, and public key, then creates the node as disabled (in staking) by default
 The sender must match the address derived from the public key
 Can include initial stake via msg.value (should be more than minimum required)_
 
@@ -386,13 +386,13 @@ Can include initial stake via msg.value (should be more than minimum required)_
 
 ### deleteNode
 
+Deletes a node owned by the caller
+
 ```solidity
 function deleteNode(NodeId nodeId) external
 ```
 
-Deletes a node owned by the caller
-
-_Only callable by the node owner
+**dev:** _Only callable by the node owner
 Node must not be in current or next committee_
 
 #### Parameters
@@ -403,13 +403,13 @@ Node must not be in current or next committee_
 
 ### deleteNodeByFoundation
 
+Deletes a node — restricted to the foundation
+
 ```solidity
 function deleteNodeByFoundation(NodeId nodeId) external
 ```
 
-Deletes a node — restricted to the foundation
-
-_Node must not be in the current or next committee_
+**dev:** _Node must not be in the current or next committee_
 
 #### Parameters
 
@@ -419,13 +419,13 @@ _Node must not be in the current or next committee_
 
 ### requestChangeOwner
 
+Requests to change the owner of a passive node
+
 ```solidity
 function requestChangeOwner(NodeId nodeId, address newOwner) external
 ```
 
-Requests to change the owner of a passive node
-
-_Only callable by the current node owner
+**dev:** _Only callable by the current node owner
 Only works for passive nodes (active nodes cannot change ownership)
 New owner must not already own an active node_
 
@@ -438,13 +438,13 @@ New owner must not already own an active node_
 
 ### confirmOwnerChange
 
+Confirms a pending ownership change for a passive node
+
 ```solidity
 function confirmOwnerChange(NodeId nodeId) external
 ```
 
-Confirms a pending ownership change for a passive node
-
-_Only callable by the new owner specified in the ownership change request
+**dev:** _Only callable by the new owner specified in the ownership change request
 Only works for passive nodes_
 
 #### Parameters
@@ -455,13 +455,13 @@ Only works for passive nodes_
 
 ### registerPassiveNode
 
+Registers a new passive node
+
 ```solidity
 function registerPassiveNode(bytes ip, uint16 port) external
 ```
 
-Registers a new passive node
-
-_Passive nodes don't participate in consensus
+**dev:** _Passive nodes don't participate in consensus
 Multiple passive nodes can be registered per address_
 
 #### Parameters
@@ -473,13 +473,13 @@ Multiple passive nodes can be registered per address_
 
 ### setIpAddress
 
+Sets the IP address and port for a node
+
 ```solidity
 function setIpAddress(NodeId nodeId, bytes ip, uint16 port) external
 ```
 
-Sets the IP address and port for a node
-
-_Only callable by the node owner
+**dev:** _Only callable by the node owner
 Node must not be in the current or next committee_
 
 #### Parameters
@@ -492,13 +492,13 @@ Node must not be in the current or next committee_
 
 ### setDomainName
 
+Sets the domain name for a node
+
 ```solidity
 function setDomainName(NodeId nodeId, string name) external
 ```
 
-Sets the domain name for a node
-
-_Only callable by the node owner
+**dev:** _Only callable by the node owner
 Node must not be in the current or next committee_
 
 #### Parameters
@@ -510,13 +510,13 @@ Node must not be in the current or next committee_
 
 ### getNode
 
+Gets the node information for a specific node ID
+
 ```solidity
 function getNode(NodeId nodeId) external view returns (struct INodes.Node node)
 ```
 
-Gets the node information for a specific node ID
-
-_Reverts if the node doesn't exist_
+**dev:** _Reverts if the node doesn't exist_
 
 #### Parameters
 
@@ -532,13 +532,13 @@ _Reverts if the node doesn't exist_
 
 ### getNodeId
 
+Gets the node ID for an active node address
+
 ```solidity
 function getNodeId(address nodeAddress) external view returns (NodeId nodeId)
 ```
 
-Gets the node ID for an active node address
-
-_Reverts if the address is not assigned to any active node_
+**dev:** _Reverts if the address is not assigned to any active node_
 
 #### Parameters
 
@@ -554,13 +554,13 @@ _Reverts if the address is not assigned to any active node_
 
 ### getPassiveNodeIdsForAddress
 
+Gets all passive node IDs for a specific address
+
 ```solidity
 function getPassiveNodeIdsForAddress(address nodeAddress) external view returns (NodeId[] nodeIds)
 ```
 
-Gets all passive node IDs for a specific address
-
-_Reverts if the address has no passive nodes_
+**dev:** _Reverts if the address has no passive nodes_
 
 #### Parameters
 
@@ -576,11 +576,11 @@ _Reverts if the address has no passive nodes_
 
 ### getPassiveNodeIds
 
+Gets all passive node IDs in the system
+
 ```solidity
 function getPassiveNodeIds() external view returns (NodeId[] nodeIds)
 ```
-
-Gets all passive node IDs in the system
 
 #### Return Values
 
@@ -590,13 +590,13 @@ Gets all passive node IDs in the system
 
 ### getPublicKey
 
+Gets the public key for an active node
+
 ```solidity
 function getPublicKey(NodeId nodeId) external view returns (bytes32[2] publicKey)
 ```
 
-Gets the public key for an active node
-
-_Reverts if the node was never registered as an active node_
+**dev:** _Reverts if the node was never registered as an active node_
 
 #### Parameters
 
@@ -612,11 +612,11 @@ _Reverts if the node was never registered as an active node_
 
 ### getActiveNodeIds
 
+Gets all active node IDs in the system
+
 ```solidity
 function getActiveNodeIds() external view returns (NodeId[] nodeIds)
 ```
-
-Gets all active node IDs in the system
 
 #### Return Values
 
@@ -626,11 +626,11 @@ Gets all active node IDs in the system
 
 ### activeNodeExists
 
+Checks if an active node exists
+
 ```solidity
 function activeNodeExists(NodeId nodeId) external view returns (bool result)
 ```
-
-Checks if an active node exists
 
 #### Parameters
 
@@ -646,11 +646,11 @@ Checks if an active node exists
 
 ### passiveNodeExists
 
+Checks if a passive node exists
+
 ```solidity
 function passiveNodeExists(NodeId nodeId) external view returns (bool result)
 ```
-
-Checks if a passive node exists
 
 #### Parameters
 
@@ -666,13 +666,13 @@ Checks if a passive node exists
 
 ### _createActiveNode
 
+Creates an active node with the specified parameters
+
 ```solidity
 function _createActiveNode(NodeId nodeId, address nodeAddress, bytes ip, uint16 port, string domainName, bytes32[2] publicKey) internal
 ```
 
-Creates an active node with the specified parameters
-
-_Internal function called during node registration_
+**dev:** _Internal function called during node registration_
 
 #### Parameters
 

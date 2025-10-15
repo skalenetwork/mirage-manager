@@ -6,11 +6,11 @@ Provides functionality for working with Field P2 points
 
 ### P
 
+BN254 base field prime modulus (alt_bn128). All arithmetic is modulo this value.
+
 ```solidity
 uint256 P
 ```
-
-BN254 base field prime modulus (alt_bn128). All arithmetic is modulo this value.
 
 ### inverseFp2
 
@@ -18,7 +18,7 @@ BN254 base field prime modulus (alt_bn128). All arithmetic is modulo this value.
 function inverseFp2(struct IDkg.Fp2Point value) internal view returns (struct IDkg.Fp2Point result)
 ```
 
-_Computes the inverse of an Fp2 point_
+**dev:** _Computes the inverse of an Fp2 point_
 
 #### Parameters
 
@@ -38,7 +38,7 @@ _Computes the inverse of an Fp2 point_
 function addFp2(struct IDkg.Fp2Point value1, struct IDkg.Fp2Point value2) internal pure returns (struct IDkg.Fp2Point result)
 ```
 
-_Adds two Fp2 points_
+**dev:** _Adds two Fp2 points_
 
 #### Parameters
 
@@ -59,7 +59,7 @@ _Adds two Fp2 points_
 function scalarMulFp2(struct IDkg.Fp2Point value, uint256 scalar) internal pure returns (struct IDkg.Fp2Point result)
 ```
 
-_Multiplies an Fp2 point by a scalar value_
+**dev:** _Multiplies an Fp2 point by a scalar value_
 
 #### Parameters
 
@@ -80,7 +80,7 @@ _Multiplies an Fp2 point by a scalar value_
 function minusFp2(struct IDkg.Fp2Point diminished, struct IDkg.Fp2Point subtracted) internal pure returns (struct IDkg.Fp2Point difference)
 ```
 
-_Subtracts one Fp2 point from another_
+**dev:** _Subtracts one Fp2 point from another_
 
 #### Parameters
 
@@ -101,7 +101,7 @@ _Subtracts one Fp2 point from another_
 function mulFp2(struct IDkg.Fp2Point value1, struct IDkg.Fp2Point value2) internal pure returns (struct IDkg.Fp2Point result)
 ```
 
-_Multiplies two Fp2 points_
+**dev:** _Multiplies two Fp2 points_
 
 #### Parameters
 
@@ -122,7 +122,7 @@ _Multiplies two Fp2 points_
 function squaredFp2(struct IDkg.Fp2Point value) internal pure returns (struct IDkg.Fp2Point result)
 ```
 
-_Computes the square of an Fp2 point_
+**dev:** _Computes the square of an Fp2 point_
 
 #### Parameters
 
@@ -142,7 +142,7 @@ _Computes the square of an Fp2 point_
 function isEqual(struct IDkg.Fp2Point value1, struct IDkg.Fp2Point value2) internal pure returns (bool result)
 ```
 
-_Checks if two Fp2 points are equal_
+**dev:** _Checks if two Fp2 points are equal_
 
 #### Parameters
 

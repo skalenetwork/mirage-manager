@@ -2,7 +2,7 @@
 
 ## TypedMap
 
-_Library providing type-safe wrappers around OpenZeppelin's EnumerableMap
+**dev:** _Library providing type-safe wrappers around OpenZeppelin's EnumerableMap
 Implements strongly-typed maps for NodeId, Fair, Credit, and Holder types
 to prevent type confusion and improve code safety and readability._
 

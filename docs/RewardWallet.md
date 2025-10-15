@@ -4,47 +4,47 @@
 
 Manages reward collection and forwarding for individual FAIR nodes
 
-_Receives rewards and forwards them to the Staking contract for the associated node_
+**dev:** _Receives rewards and forwards them to the Staking contract for the associated node_
 
 ### staking
+
+Reference to the Staking contract
 
 ```solidity
 contract IStaking staking
 ```
 
-Reference to the Staking contract
-
 ### nodes
+
+Reference to the Nodes contract
 
 ```solidity
 contract INodes nodes
 ```
 
-Reference to the Nodes contract
-
 ### ownerNode
+
+The node ID that this wallet is associated with
 
 ```solidity
 NodeId ownerNode
 ```
 
-The node ID that this wallet is associated with
-
 ### OwnerNodeDoesNotExist
+
+Thrown when attempting an operation that requires the owner node to exist
 
 ```solidity
 error OwnerNodeDoesNotExist()
 ```
 
-Thrown when attempting an operation that requires the owner node to exist
-
 ### ValueExceedsStakeLimit
+
+Thrown when receiving value would exceed the node's stake limit
 
 ```solidity
 error ValueExceedsStakeLimit()
 ```
-
-Thrown when receiving value would exceed the node's stake limit
 
 ### onlyIfNodeExists
 
@@ -52,7 +52,7 @@ Thrown when receiving value would exceed the node's stake limit
 modifier onlyIfNodeExists()
 ```
 
-_Ensures that the owner node exists_
+**dev:** _Ensures that the owner node exists_
 
 ### onlyWithinStakeLimit
 
@@ -60,28 +60,28 @@ _Ensures that the owner node exists_
 modifier onlyWithinStakeLimit()
 ```
 
-_Ensures that receiving value wouldn't exceed the stake limit_
+**dev:** _Ensures that receiving value wouldn't exceed the stake limit_
 
 ### receive
+
+Fallback function to receive rewards
 
 ```solidity
 receive() external payable
 ```
 
-Fallback function to receive rewards
-
-_Automatically flushes rewards to the Staking contract
+**dev:** _Automatically flushes rewards to the Staking contract
 Only accepts funds if owner node exists and within stake limit_
 
 ### initialize
+
+Initializes the RewardWallet contract
 
 ```solidity
 function initialize(address initialAuthority, contract IStaking staking_, contract INodes nodes_, NodeId ownerNode_) external
 ```
 
-Initializes the RewardWallet contract
-
-_This function is called only once during contract deployment following the proxy pattern_
+**dev:** _This function is called only once during contract deployment following the proxy pattern_
 
 #### Parameters
 
@@ -94,12 +94,12 @@ _This function is called only once during contract deployment following the prox
 
 ### flush
 
+Flushes all accumulated rewards to the Staking contract
+
 ```solidity
 function flush() public
 ```
 
-Flushes all accumulated rewards to the Staking contract
-
-_If owner node exists, rewards go to the node via staking.payReward()
+**dev:** _If owner node exists, rewards go to the node via staking.payReward()
 If owner node doesn't exist, rewards go to the Staking contract as network rewards (failsafe)_
 

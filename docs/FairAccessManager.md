@@ -4,51 +4,51 @@
 
 Manages role-based access control for the FAIR network contracts
 
-_Extends OpenZeppelin's AccessManagerUpgradeable to define specific roles
+**dev:** _Extends OpenZeppelin's AccessManagerUpgradeable to define specific roles
 for Committee, Nodes, Staking, and Status contracts. Each role controls access
 to specific contract functions._
 
 ### COMMITTEE_ROLE
 
+Role ID for Committee contract operations
+
 ```solidity
 uint64 COMMITTEE_ROLE
 ```
 
-Role ID for Committee contract operations
-
 ### NODES_ROLE
+
+Role ID for Nodes contract operations
 
 ```solidity
 uint64 NODES_ROLE
 ```
 
-Role ID for Nodes contract operations
-
 ### STAKING_ROLE
+
+Role ID for Staking contract operations
 
 ```solidity
 uint64 STAKING_ROLE
 ```
 
-Role ID for Staking contract operations
-
 ### STATUS_ROLE
+
+Role ID for Status contract operations
 
 ```solidity
 uint64 STATUS_ROLE
 ```
 
-Role ID for Status contract operations
-
 ### initialize
+
+Initializes the FairAccessManager contract
 
 ```solidity
 function initialize(address initialAdmin) public
 ```
 
-Initializes the FairAccessManager contract
-
-_Sets up the initial admin with full access control privileges_
+**dev:** _Sets up the initial admin with full access control privileges_
 
 #### Parameters
 

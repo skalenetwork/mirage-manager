@@ -2,33 +2,33 @@
 
 ## Precompiled
 
-_Library for interacting with Ethereum precompiled contracts and SKALE-specific precompiles
+**dev:** _Library for interacting with Ethereum precompiled contracts and SKALE-specific precompiles
 Provides utilities for modular exponentiation, elliptic curve operations (BN256),
 and random number generation using SKALE's on-chain RNG._
 
 ### MOD_EXP
 
+Address of the modular exponentiation precompiled contract
+
 ```solidity
 address MOD_EXP
 ```
 
-Address of the modular exponentiation precompiled contract
-
 ### EC_MUL
+
+Address of the elliptic curve multiplication precompiled contract (BN256)
 
 ```solidity
 address EC_MUL
 ```
 
-Address of the elliptic curve multiplication precompiled contract (BN256)
-
 ### EC_PAIRING
+
+Address of the elliptic curve pairing precompiled contract (BN256)
 
 ```solidity
 address EC_PAIRING
 ```
-
-Address of the elliptic curve pairing precompiled contract (BN256)
 
 ### PrecompiledCallFailed
 
@@ -36,7 +36,7 @@ Address of the elliptic curve pairing precompiled contract (BN256)
 error PrecompiledCallFailed(address precompiledContract)
 ```
 
-_Precompiled contract call failed_
+**dev:** _Precompiled contract call failed_
 
 ### bigModExp
 
@@ -44,7 +44,7 @@ _Precompiled contract call failed_
 function bigModExp(uint256 base, uint256 exponent, uint256 modulus) internal view returns (uint256 value)
 ```
 
-_Performs modular exponentiation: (base^exponent) % modulus_
+**dev:** _Performs modular exponentiation: (base^exponent) % modulus_
 
 #### Parameters
 
@@ -66,7 +66,7 @@ _Performs modular exponentiation: (base^exponent) % modulus_
 function bn256ScalarMul(uint256 x, uint256 y, uint256 k) internal view returns (uint256 xValue, uint256 yValue)
 ```
 
-_Performs elliptic curve scalar multiplication on BN256 curve_
+**dev:** _Performs elliptic curve scalar multiplication on BN256 curve_
 
 #### Parameters
 
@@ -89,7 +89,7 @@ _Performs elliptic curve scalar multiplication on BN256 curve_
 function bn256Pairing(uint256 x1, uint256 y1, uint256 a1, uint256 b1, uint256 c1, uint256 d1, uint256 x2, uint256 y2, uint256 a2, uint256 b2, uint256 c2, uint256 d2) internal view returns (bool pairing)
 ```
 
-_Performs BN256 elliptic curve pairing check
+**dev:** _Performs BN256 elliptic curve pairing check
 Verifies if e(p1[0], p2[0]) * e(p1[1], p2[1]) == 1_
 
 #### Parameters
@@ -121,7 +121,7 @@ Verifies if e(p1[0], p2[0]) * e(p1[1], p2[1]) == 1_
 function getRandomBytes32(address rngOnChain) internal view returns (bytes32 addr)
 ```
 
-_Gets a random bytes32 value from SKALE's on-chain RNG
+**dev:** _Gets a random bytes32 value from SKALE's on-chain RNG
 rngOnChain should be SKALE Random Number Generator predeployed or compatible contract_
 
 #### Parameters
@@ -142,7 +142,7 @@ rngOnChain should be SKALE Random Number Generator predeployed or compatible con
 function getRandomNumber(address rngOnChain) internal view returns (uint256 addr)
 ```
 
-_Gets a random uint256 value from SKALE's on-chain RNG_
+**dev:** _Gets a random uint256 value from SKALE's on-chain RNG_
 
 #### Parameters
 
