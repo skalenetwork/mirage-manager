@@ -326,8 +326,7 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
     /**
      * @notice Fallback function to receive rewards
      * @dev Emits RewardReceived when funds are sent to the contract
-     * @dev Received funds are automatically shared among all enabled nodes
-     * @dev Staking the root fund to distribute rewards proportionally based on stake
+     * @dev Received funds are automatically shared among all enabled nodes proportionally to stake
      */
     receive() external override payable {
         emit RewardReceived(msg.sender, msg.value);

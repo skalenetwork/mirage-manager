@@ -549,8 +549,7 @@ receive() external payable
 ```
 
 **dev:** _Emits RewardReceived when funds are sent to the contract
-Received funds are automatically shared among all enabled nodes
-Staking the root fund to distribute rewards proportionally based on stake_
+Received funds are automatically shared among all enabled nodes proportionally to stake_
 
 ### initialize
 

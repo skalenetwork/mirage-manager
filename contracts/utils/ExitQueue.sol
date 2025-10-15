@@ -239,7 +239,7 @@ library ExitQueueLibrary{
     }
 
     /**
-     * @dev Looks up for an unlocked request in the first MAX_ITERATIONS requests starting after 'from'
+     * @dev Looks for an unlocked request in the first MAX_ITERATIONS requests starting after 'from'
      * @param queue The exit queue storage
      * @param user The address of the user
      * @param from The starting index to search from

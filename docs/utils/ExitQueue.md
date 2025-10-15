@@ -236,7 +236,7 @@ function getRequestAt(struct ExitQueueLibrary.ExitQueue queue, address user, uin
 function getUnlockedRequest(struct ExitQueueLibrary.ExitQueue queue, address user, uint256 from) internal view returns (struct IStaking.ExitRequest request)
 ```
 
-**dev:** _Looks up for an unlocked request in the first MAX_ITERATIONS requests starting after 'from'_
+**dev:** _Looks for an unlocked request in the first MAX_ITERATIONS requests starting after 'from'_
 
 #### Parameters
 
