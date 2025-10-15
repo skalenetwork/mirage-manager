@@ -86,7 +86,7 @@ _Inserts a new node as the smallest (leftmost) element in the tree_
 function remove(mapping(NodeId => struct RedBlackTree.Node) nodes, NodeId root, NodeId node) internal returns (NodeId newRoot)
 ```
 
-_Removes a node from the tree and rebalances_
+_Removes a node from the tree and re-balances_
 
 #### Parameters
 

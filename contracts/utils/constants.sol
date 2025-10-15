@@ -53,7 +53,7 @@ uint256 constant DEFAULT_MIN_TRANSITION_DELAY = 10 minutes;
 
 /// @dev Default value for minimum stake amount required
 uint256 constant DEFAULT_MIN_STAKE = 1 wei;
-/// @dev Default waiting period untill unstaked tokens can be claimed
+/// @dev Default waiting period until un-staked tokens can be claimed
 uint256 constant DEFAULT_RETRIEVING_DELAY = 1 days;
 
 // Fund

@@ -1,7 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
-// cSpell:words twistb
-
 /*
     G2Operations.sol - fair-manager
     Copyright (C) 2018-Present SKALE Labs

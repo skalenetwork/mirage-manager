@@ -865,7 +865,7 @@ function getNodeShare(NodeId node) external view returns (uint256 share)
 Gets the node's share of the total credits
 
 _Returns 0 if node is disabled
-Accounts for unpulled rewards from the node's reward wallet_
+Accounts for un-pulled rewards from the node's reward wallet_
 
 #### Parameters
 

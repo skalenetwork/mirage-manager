@@ -673,7 +673,7 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
     /**
      * @notice Gets the node's share of the total credits
      * @dev Returns 0 if node is disabled
-     * @dev Accounts for unpulled rewards from the node's reward wallet
+     * @dev Accounts for un-pulled rewards from the node's reward wallet
      * @param node The node to query
      * @return share The node's share in credits
      */

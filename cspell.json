@@ -20,5 +20,8 @@
         "coverage.json",
         "package.json",
         "lib"
+    ],
+    "words": [
+        "twistb"
     ]
 }

@@ -90,7 +90,7 @@ library RedBlackTree {
     }
 
     /**
-     * @dev Removes a node from the tree and rebalances
+     * @dev Removes a node from the tree and re-balances
      * @param nodes The tree storage mapping
      * @param root The current root node
      * @param node The node ID to remove
@@ -250,7 +250,7 @@ library RedBlackTree {
     // Private
 
     /**
-     * @dev Rebalances the tree after insertion using red-black tree rules
+     * @dev Re-balances the tree after insertion using red-black tree rules
      * @param nodes The tree storage mapping
      * @param root The current root node
      * @param node The newly inserted node
