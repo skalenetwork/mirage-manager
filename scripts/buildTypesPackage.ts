@@ -2,13 +2,98 @@ import * as fs from "fs";
 import * as path from "path";
 
 const TYPECHAIN_OUTPUT_DIR = "typechain-output";
-const TYPES_PACKAGE_TEMPLATE_DIR = "types-package-template";
 const TYPES_PACKAGE_DIR = "types-package";
 const ARTIFACTS_DIR = "artifacts";
 
 interface BuildConfig {
     version: string;
 }
+
+const PACKAGE_JSON_TEMPLATE = {
+    name: "@skalenetwork/fair-manager-types",
+    version: "__VERSION__",
+    description: "TypeScript typings for SKALE Fair Manager smart contracts",
+    repository: {
+        type: "git",
+        url: "https://github.com/skalenetwork/fair-manager.git"
+    },
+    keywords: [
+        "skale",
+        "ethereum",
+        "smart-contracts",
+        "typechain",
+        "ethers",
+        "viem",
+        "typescript"
+    ],
+    author: "SKALE Labs",
+    license: "AGPL-3.0",
+    bugs: {
+        url: "https://github.com/skalenetwork/fair-manager/issues"
+    },
+    homepage: "https://github.com/skalenetwork/fair-manager#readme",
+    files: [
+        "ethers-v5/**/*",
+        "ethers-v6/**/*",
+        "viem/**/*",
+        "abi/**/*",
+        "README.md"
+    ],
+    exports: {
+        "./ethers-v5": {
+            default: "./ethers-v5/index.ts"
+        },
+        "./ethers-v6": {
+            default: "./ethers-v6/index.ts"
+        },
+        "./viem": {
+            default: "./viem/index.ts"
+        },
+        "./abi/*": "./abi/*.json"
+    },
+    peerDependencies: {
+        ethers: "^5.0.0 || ^6.0.0",
+        viem: "^2.0.0"
+    },
+    peerDependenciesMeta: {
+        ethers: {
+            optional: true
+        },
+        viem: {
+            optional: true
+        }
+    }
+};
+
+const README_CONTENT = `# @skalenetwork/fair-manager-types
+
+TypeScript type definitions for SKALE Fair Manager smart contracts.
+
+This package provides TypeChain-generated typings for three popular Ethereum libraries:
+- **ethers v5** - via \`@skalenetwork/fair-manager-types/ethers-v5\`
+- **ethers v6** - via \`@skalenetwork/fair-manager-types/ethers-v6\`
+- **viem** - via \`@skalenetwork/fair-manager-types/viem\`
+- **Raw ABIs** - via \`@skalenetwork/fair-manager-types/abi/*\`
+
+## Installation
+
+\`\`\`bash
+npm install @skalenetwork/fair-manager-types
+\`\`\`
+
+Install the peer dependency for your preferred library:
+\`\`\`bash
+npm install ethers@^6.0.0  # or ethers@^5.0.0, or viem@^2.0.0
+\`\`\`
+
+## Usage
+
+For usage examples, contract documentation, and more details, see the [Fair Manager repository](https://github.com/skalenetwork/fair-manager).
+
+## License
+
+AGPL-3.0
+`;
 
 function cleanDirectory(dir: string) {
     if (fs.existsSync(dir)) {
@@ -64,28 +149,19 @@ function getVersion(): string {
 }
 
 function copyTemplateFiles(config: BuildConfig) {
-    console.log("\nCopying template files...");
+    console.log("\nGenerating package files...");
 
-    // Copy package.json template and replace version
-    const packageJsonTemplatePath = path.join(TYPES_PACKAGE_TEMPLATE_DIR, "package.json.template");
+    // Generate package.json
+    const packageJson = { ...PACKAGE_JSON_TEMPLATE };
+    packageJson.version = config.version;
     const packageJsonPath = path.join(TYPES_PACKAGE_DIR, "package.json");
-
-    let packageJsonContent = fs.readFileSync(packageJsonTemplatePath, "utf-8");
-    packageJsonContent = packageJsonContent.replace("__VERSION__", config.version);
-    fs.writeFileSync(packageJsonPath, packageJsonContent);
+    fs.writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2) + "\n");
     console.log(`✓ Created package.json with version ${config.version}`);
 
-    // Copy README.md
-    const readmeSrc = path.join(TYPES_PACKAGE_TEMPLATE_DIR, "README.md");
-    const readmeDest = path.join(TYPES_PACKAGE_DIR, "README.md");
-    fs.copyFileSync(readmeSrc, readmeDest);
-    console.log("✓ Copied README.md");
-
-    // Copy .npmignore
-    const npmignoreSrc = path.join(TYPES_PACKAGE_TEMPLATE_DIR, ".npmignore");
-    const npmignoreDest = path.join(TYPES_PACKAGE_DIR, ".npmignore");
-    fs.copyFileSync(npmignoreSrc, npmignoreDest);
-    console.log("✓ Copied .npmignore");
+    // Generate README.md
+    const readmePath = path.join(TYPES_PACKAGE_DIR, "README.md");
+    fs.writeFileSync(readmePath, README_CONTENT);
+    console.log("✓ Created README.md");
 }
 
 function copyTypechainTypes() {
@@ -216,7 +292,6 @@ function validatePackage() {
     const requiredPaths = [
         "package.json",
         "README.md",
-        ".npmignore",
         "ethers-v5",
         "ethers-v6",
         "viem",

@@ -23,14 +23,10 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
-    # Run on: merged PRs, push to publish-types branch, or tags
-    if: |
-      github.event_name == 'push' ||
-      (github.event_name == 'pull_request' && github.event.pull_request.merged == true)
+    if: github.event_name != 'pull_request' || github.event.pull_request.merged == true || github.ref_name == 'publish-types'
 
     outputs:
       version: ${{ steps.version.outputs.version }}
-      is_test: ${{ steps.check_test.outputs.is_test }}
 
     steps:
     - uses: actions/checkout@v5
@@ -43,18 +39,6 @@ jobs:
 
     - name: Install project
       run: yarn install
-
-    - name: Check if test run
-      id: check_test
-      run: |
-        export BRANCH=${GITHUB_REF##*/}
-        if [[ "$BRANCH" == "publish-types" ]]; then
-          echo "is_test=true" >> "$GITHUB_OUTPUT"
-          echo "🧪 TEST MODE: Running on publish-types branch"
-        else
-          echo "is_test=false" >> "$GITHUB_OUTPUT"
-          echo "📦 PRODUCTION MODE: Will publish artifacts"
-        fi
 
     - name: Calculate version
       id: version
@@ -78,7 +62,6 @@ jobs:
         path: data
 
     - name: Create Release
-      if: steps.check_test.outputs.is_test != 'true'
       uses: ncipollo/release-action@v1
       with:
         commit: ${{ github.sha }}
@@ -91,9 +74,6 @@ jobs:
 
     needs:
       build
-
-    # Skip ABI commit on test runs
-    if: needs.build.outputs.is_test != 'true'
 
     env:
       VERSION: ${{ needs.build.outputs.version }}
@@ -145,7 +125,6 @@ jobs:
         run: yarn buildTypesPackage
 
       - name: Publish types package
-        if: needs.build.outputs.is_test == 'true'
         working-directory: types-package
         run: npm publish --access public
 
@@ -154,11 +133,6 @@ jobs:
 
     needs:
       build
-
-    # Skip docker on test runs
-    if: |
-      needs.build.outputs.is_test != 'true' &&
-      (github.event_name != 'pull_request' || github.event.pull_request.merged == true)
 
     steps:
     - uses: actions/checkout@v5

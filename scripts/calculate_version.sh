@@ -25,7 +25,7 @@ fi
 
 git fetch --tags > /dev/null
 
-KNOWN_BRANCHES=('stable' 'release-candidate' 'beta' 'pyblish-types')
+KNOWN_BRANCHES=('stable' 'release-candidate' 'beta' 'publish-types')
 # Everything else will be marked as 'develop'
 
 declare -A SUFFIXES=(
