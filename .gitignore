@@ -118,6 +118,10 @@ hardhat-dependency-compiler
 # TypeChain files
 /typechain
 /typechain-types
+/typechain-output
+
+# Types package (generated)
+/types-package
 
 # solidity-coverage files
 /coverage
