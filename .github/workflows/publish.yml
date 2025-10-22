@@ -147,7 +147,7 @@ jobs:
       - name: Publish types package
         if: needs.build.outputs.is_test == 'true'
         working-directory: types-package
-        run: yarn npm publish --access public
+        run: npm publish --access public
 
   docker:
     runs-on: ubuntu-latest

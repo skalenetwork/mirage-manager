@@ -75,13 +75,14 @@ And all related structs and interfaces.
 
 ## Peer Dependencies
 
-Depending on which library you're using, you'll need to install the corresponding peer dependency:
+**All peer dependencies are optional** - you only need to install what you're actually using:
 
-- For ethers v5: `npm install ethers@^5.0.0`
-- For ethers v6: `npm install ethers@^6.0.0`
-- For viem: `npm install viem@^2.0.0`
+- **Using ethers v5?** → `npm install ethers@^5.0.0`
+- **Using ethers v6?** → `npm install ethers@^6.0.0`
+- **Using viem?** → `npm install viem@^2.0.0`
+- **Just need raw ABIs?** → No peer dependencies needed!
 
-All peer dependencies are optional - you only need to install the one(s) you're using.
+You can mix and match - install multiple if you need them, or just one.
 
 ## License
 
