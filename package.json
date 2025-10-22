@@ -3,10 +3,13 @@
   "packageManager": "yarn@4.7.0",
   "devDependencies": {
     "@eslint/js": "^9.22.0",
+    "@ethersproject/abi": "^5.7.0",
+    "@ethersproject/providers": "^5.7.2",
     "@nomicfoundation/hardhat-chai-matchers": "^2.0.0",
     "@nomicfoundation/hardhat-ethers": "^3.0.0",
     "@nomicfoundation/hardhat-network-helpers": "^1.0.12",
     "@nomicfoundation/hardhat-verify": "^2.0.0",
+    "@typechain/ethers-v5": "^11.1.2",
     "@typechain/ethers-v6": "^0.5.0",
     "@typechain/hardhat": "^9.0.0",
     "@types/chai": "^4.2.0",
@@ -48,7 +51,10 @@
     "no-hooks": "git config core.hooksPath .git/hooks",
     "slither": "yarn cleanCompile && slither --hardhat-ignore-compile .",
     "test": "yarn tsc && npx hardhat test",
-    "tsc": "yarn exec tsc --noEmit"
+    "tsc": "yarn exec tsc --noEmit",
+    "generateTypes": "yarn ts-node scripts/generateTypes.ts",
+    "buildTypesPackage": "yarn ts-node scripts/buildTypesPackage.ts",
+    "buildTypes": "yarn generateTypes && yarn buildTypesPackage"
   },
   "dependencies": {
     "@openzeppelin/contracts": "^5.3.0",

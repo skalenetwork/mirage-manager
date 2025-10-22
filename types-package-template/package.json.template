@@ -1,0 +1,65 @@
+{
+  "name": "@skalenetwork/fair-manager-types",
+  "version": "__VERSION__",
+  "description": "TypeScript typings for SKALE Fair Manager smart contracts",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/skalenetwork/fair-manager.git"
+  },
+  "keywords": [
+    "skale",
+    "ethereum",
+    "smart-contracts",
+    "typechain",
+    "ethers",
+    "viem",
+    "typescript"
+  ],
+  "author": "SKALE Labs",
+  "license": "AGPL-3.0",
+  "bugs": {
+    "url": "https://github.com/skalenetwork/fair-manager/issues"
+  },
+  "homepage": "https://github.com/skalenetwork/fair-manager#readme",
+  "files": [
+    "ethers-v5/**/*",
+    "ethers-v6/**/*",
+    "viem/**/*",
+    "abi/**/*",
+    "README.md"
+  ],
+  "exports": {
+    "./ethers-v5": {
+      "types": "./ethers-v5/index.d.ts",
+      "default": "./ethers-v5/index.js"
+    },
+    "./ethers-v6": {
+      "types": "./ethers-v6/index.d.ts",
+      "default": "./ethers-v6/index.js"
+    },
+    "./viem": {
+      "types": "./viem/index.d.ts",
+      "default": "./viem/index.js"
+    },
+    "./abi/*": "./abi/*.json"
+  },
+  "typesVersions": {
+    "*": {
+      "ethers-v5": ["./ethers-v5/index.d.ts"],
+      "ethers-v6": ["./ethers-v6/index.d.ts"],
+      "viem": ["./viem/index.d.ts"]
+    }
+  },
+  "peerDependencies": {
+    "ethers": "^5.0.0 || ^6.0.0",
+    "viem": "^2.0.0"
+  },
+  "peerDependenciesMeta": {
+    "ethers": {
+      "optional": true
+    },
+    "viem": {
+      "optional": true
+    }
+  }
+}
