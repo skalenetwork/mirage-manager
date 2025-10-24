@@ -226,9 +226,12 @@ const deployDkg = async (authority: FairAccessManager, committee: Committee, nod
     ) as DKG;
 }
 
-const deployRewardWalletBeacon = async (): Promise<IBeacon> => {
+export const deployRewardWalletBeacon = async (owner: AddressLike): Promise<IBeacon> => {
     const instance = await upgrades.deployBeacon(
-        await ethers.getContractFactory("RewardWallet")
+        await ethers.getContractFactory("RewardWallet"),
+        {
+            initialOwner: await ethers.resolveAddress(owner)
+        }
     );
     await instance.waitForDeployment();
     return instance as unknown as IBeacon;
@@ -251,17 +254,20 @@ const deployStaking = async (
     nodes: Nodes,
     initialNodes: NodeStruct[]
 ): Promise<Staking> => {
+    const [owner] = await ethers.getSigners();
+    const rewardWalletBeacon = await deployRewardWalletBeacon(owner);
     const staking = await deployContract(
         "Staking",
         [
             await ethers.resolveAddress(authority),
             await ethers.resolveAddress(committee),
             await ethers.resolveAddress(nodes),
-            await ethers.resolveAddress(
-                await deployRewardWalletBeacon()
-            )
+            await ethers.resolveAddress(rewardWalletBeacon)
         ]
     ) as Staking;
+
+    // Call this because it's a reinitializer
+    await staking.updateRewardWalletBeacon(rewardWalletBeacon);
 
     // Nodes contract is deployed before Staking
     // so the Staking contract can't be notified about initially existing nodes

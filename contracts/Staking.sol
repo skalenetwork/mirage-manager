@@ -39,7 +39,6 @@ import { IRewardWallet } from "@skalenetwork/fair-manager-interfaces/IRewardWall
 import { IStaking } from "@skalenetwork/fair-manager-interfaces/IStaking.sol";
 
 // Internal project files
-import { Nodes } from "./Nodes.sol";
 import { TypedMap } from "./structs/typed/TypedMap.sol";
 import { TypedSet } from "./structs/typed/TypedSet.sol";
 import { DEFAULT_MIN_STAKE, DEFAULT_RETRIEVING_DELAY } from "./utils/constants.sol";
@@ -90,7 +89,7 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
     event RetrievingDelayUpdated(Timestamp indexed retrievingDelay);
     event StakeLimitUpdated(Fair indexed newLimit);
     event NodeFeeRateUpdated(NodeId indexed node, uint16 oldFeeRate, uint16 newFeeRate);
-    event RewardWalletReferenceUpdated(IRewardWallet indexed oldReference, IRewardWallet indexed newReference);
+    event RewardWalletBeaconUpdated(IBeacon indexed oldBeacon, IBeacon indexed newBeacon);
     event SelfStakeRequirementUpdated(Fair indexed amount);
     event SelfStakeProvided(NodeId indexed nodeId, Fair amount);
 
@@ -140,6 +139,13 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
 
     receive() external override payable {
         emit RewardReceived(msg.sender, msg.value);
+    }
+
+    function updateRewardWalletBeacon(IBeacon rewardWalletBeacon_) external reinitializer(2) restricted override{
+        require(address(rewardWalletBeacon_) != address(0), InvalidRewardWalletAddress());
+        IBeacon oldBeacon = rewardWalletBeacon;
+        rewardWalletBeacon = rewardWalletBeacon_;
+        emit RewardWalletBeaconUpdated(oldBeacon, rewardWalletBeacon_);
     }
 
     function addAllowedReceiver(address receiver) external override {
