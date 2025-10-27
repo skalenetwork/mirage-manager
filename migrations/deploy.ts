@@ -17,7 +17,7 @@ import {
     Status,
     IBeacon
 } from "../typechain-types";
-import { AddressLike, BytesLike } from "ethers";
+import { AddressLike, BigNumberish, BytesLike } from "ethers";
 import { skaleContracts } from "@skalenetwork/skale-contracts-ethers-v6";
 import {
     IKeyStorage,
@@ -25,6 +25,7 @@ import {
     ISchainsInternal,
 } from "../typechain-types/@skalenetwork/skale-manager-interfaces";
 import { configurePermissions } from "./permissions";
+import { TypedContractMethod } from "../typechain-types/common";
 
 
 export const contracts = [
@@ -82,13 +83,35 @@ async function fetchNodes() {
         throw new Error("Node IDs cannot contain 0");
     }
     const nodeList: NodeStruct[] = [];
+
+    const callWithRetry = async <T> (
+        method: TypedContractMethod<[BigNumberish], [T], "view">,
+        node: BigNumberish,
+        retries = 10,
+        maxDelayMs = 10000): Promise<T> => {
+        for (let attempt = 1; attempt <= retries; attempt++) {
+            try {
+                return await method.staticCall(node);
+            } catch (error) {
+                if (attempt === retries) {
+                    throw error;
+                }
+                const delay = Math.round(maxDelayMs * Math.random());
+                console.log(chalk.yellow(`Error during calling ${method.name}(${node})`));
+                console.log(chalk.gray(`Retrying in ${delay / 1000}s... (${attempt}/${retries})`));
+                await new Promise(res => setTimeout(res, delay));
+            }
+        }
+        throw new Error("Unknown error");
+    }
+
     for (const nodeId of nodeIds) {
         const [ip, domainName ,nodeAddress, port, publicKey] = await Promise.all([
-            nodes.getNodeIP(nodeId),
-            nodes.getNodeDomainName(nodeId),
-            nodes.getNodeAddress(nodeId),
-            nodes.getNodePort(nodeId),
-            nodes.getNodePublicKey(nodeId)
+            callWithRetry(nodes.getNodeIP, nodeId),
+            callWithRetry(nodes.getNodeDomainName, nodeId),
+            callWithRetry(nodes.getNodeAddress, nodeId),
+            callWithRetry(nodes.getNodePort, nodeId),
+            callWithRetry(nodes.getNodePublicKey, nodeId)
         ]);
         nodeList.push({
             id: nodeId,
@@ -121,7 +144,6 @@ export const deploy = async (nodeList?: NodeStruct[], commonPublicKey?: IDkg.G2P
         nodeList = await fetchNodes();
     }
     commonPublicKey = commonPublicKey || await fetchDkgCommonPublicKey();
-    console.log("Nodes data has been downloaded");
 
     deployedContracts.FairAccessManager = await deployFairAccessManager(deployer);
     deployedContracts.Nodes = await deployNodes(
