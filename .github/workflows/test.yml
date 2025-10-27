@@ -45,9 +45,8 @@ jobs:
         node-version: ${{ matrix.node-version }}
 
     - name: Test deployment
-      # TODO: temporary disable to avoid the build failure
-      # env:
-      #   INFURA_API_TOKEN: ${{ secrets.INFURA_API_TOKEN }}
+      env:
+        INFURA_API_TOKEN: ${{ secrets.INFURA_API_TOKEN }}
       run: ./scripts/test_deploy.sh
 
     - name: Test upgrade
