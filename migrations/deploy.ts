@@ -70,6 +70,7 @@ async function getSkaleManagerInstance() {
 }
 
 async function fetchNodes() {
+    console.log("Fetch nodes from SKALE Manager");
     const fairChainName = getEnvVar("CHAIN_NAME");
     const fairChainHash = ethers.solidityPackedKeccak256(
         ["string"],
@@ -126,6 +127,7 @@ async function fetchNodes() {
 }
 
 async function fetchDkgCommonPublicKey() {
+    console.log("Fetch DKG common public key from SKALE Manager");
     const fairChainName = getEnvVar("CHAIN_NAME");
     const fairChainHash = ethers.solidityPackedKeccak256(
         ["string"],
@@ -140,9 +142,7 @@ async function fetchDkgCommonPublicKey() {
 export const deploy = async (nodeList?: NodeStruct[], commonPublicKey?: IDkg.G2PointStruct): Promise<DeployedContracts> => {
     const [deployer] = await ethers.getSigners();
     const deployedContracts: DeployedContracts = {} as DeployedContracts;
-    if (!nodeList) {
-        nodeList = await fetchNodes();
-    }
+    nodeList = nodeList || await fetchNodes();
     commonPublicKey = commonPublicKey || await fetchDkgCommonPublicKey();
 
     deployedContracts.FairAccessManager = await deployFairAccessManager(deployer);
