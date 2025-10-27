@@ -17,7 +17,7 @@ import {
     Status,
     IBeacon
 } from "../typechain-types";
-import { AddressLike, BigNumberish, BytesLike } from "ethers";
+import { AddressLike, BytesLike } from "ethers";
 import { skaleContracts } from "@skalenetwork/skale-contracts-ethers-v6";
 import {
     IKeyStorage,
@@ -60,6 +60,27 @@ function getEnvVar(name: string): string {
     return value;
 }
 
+const callWithRetry = async <P, T> (
+        method: TypedContractMethod<[P], [T], "view">,
+        parameter: P,
+        retries = 10,
+        maxDelayMs = 10000): Promise<T> => {
+        for (let attempt = 1; attempt <= retries; attempt++) {
+            try {
+                return await method.staticCall(parameter);
+            } catch (error) {
+                if (attempt === retries) {
+                    throw error;
+                }
+                const delay = Math.round(maxDelayMs * Math.random());
+                console.log(chalk.yellow(`Error during calling ${method.name}(${parameter})`));
+                console.log(chalk.gray(`Retrying in ${delay / 1000}s... (${attempt}/${retries})`));
+                await new Promise(res => setTimeout(res, delay));
+            }
+        }
+        throw new Error("Unknown error");
+    }
+
 async function getSkaleManagerInstance() {
     const target = getEnvVar("TARGET");
     const mainnetEndpoint = getEnvVar("MAINNET_ENDPOINT");
@@ -84,27 +105,6 @@ async function fetchNodes() {
         throw new Error("Node IDs cannot contain 0");
     }
     const nodeList: NodeStruct[] = [];
-
-    const callWithRetry = async <T> (
-        method: TypedContractMethod<[BigNumberish], [T], "view">,
-        node: BigNumberish,
-        retries = 10,
-        maxDelayMs = 10000): Promise<T> => {
-        for (let attempt = 1; attempt <= retries; attempt++) {
-            try {
-                return await method.staticCall(node);
-            } catch (error) {
-                if (attempt === retries) {
-                    throw error;
-                }
-                const delay = Math.round(maxDelayMs * Math.random());
-                console.log(chalk.yellow(`Error during calling ${method.name}(${node})`));
-                console.log(chalk.gray(`Retrying in ${delay / 1000}s... (${attempt}/${retries})`));
-                await new Promise(res => setTimeout(res, delay));
-            }
-        }
-        throw new Error("Unknown error");
-    }
 
     for (const nodeId of nodeIds) {
         const [ip, domainName ,nodeAddress, port, publicKey] = await Promise.all([
@@ -135,7 +135,7 @@ async function fetchDkgCommonPublicKey() {
     );
     const skaleManagerInstance = await getSkaleManagerInstance();
     const dkg = await skaleManagerInstance.getContract("KeyStorage") as unknown as IKeyStorage;
-    const commonPublicKey = await dkg.getCommonPublicKey(fairChainHash);
+    const commonPublicKey = await callWithRetry(dkg.getCommonPublicKey, fairChainHash);
     return commonPublicKey;
 }
 
@@ -145,6 +145,7 @@ export const deploy = async (nodeList?: NodeStruct[], commonPublicKey?: IDkg.G2P
     nodeList = nodeList || await fetchNodes();
     commonPublicKey = commonPublicKey || await fetchDkgCommonPublicKey();
 
+    console.log("Start deployment");
     deployedContracts.FairAccessManager = await deployFairAccessManager(deployer);
     deployedContracts.Nodes = await deployNodes(
         deployedContracts.FairAccessManager,
