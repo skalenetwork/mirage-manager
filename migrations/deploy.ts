@@ -121,6 +121,7 @@ export const deploy = async (nodeList?: NodeStruct[], commonPublicKey?: IDkg.G2P
         nodeList = await fetchNodes();
     }
     commonPublicKey = commonPublicKey || await fetchDkgCommonPublicKey();
+    console.log("Nodes data has been downloaded");
 
     deployedContracts.FairAccessManager = await deployFairAccessManager(deployer);
     deployedContracts.Nodes = await deployNodes(
