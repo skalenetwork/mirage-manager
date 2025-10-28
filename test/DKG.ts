@@ -194,6 +194,31 @@ describe("DKG", () => {
                     .withArgs(randomNode.id);
             });
 
+            it("should rejected broadcast with zero point", async () => {
+                (await dkg.isNodeBroadcasted(dkgId, firstNode.id)).should.be.equal(false);
+
+                // G2 zero point: x = {a: 0, b: 0}, y = {a: 1, b: 0}
+                const zeroPointVerificationVector = [
+                    {
+                        x: {
+                            a: "0x0",
+                            b: "0x0"
+                        },
+                        y: {
+                            a: "0x1",
+                            b: "0x0"
+                        }
+                    }
+                ];
+
+                await expect(dkg.connect(firstNode.wallet).broadcast(
+                    dkgId,
+                    zeroPointVerificationVector,
+                    encryptedSecretKeyContributions[0])
+                ).to.be.revertedWithCustomError(dkg, "G2ZeroPointNotAllowed")
+                    .withArgs([[0n, 0n], [1n, 0n]]);
+            });
+
             describe("when correct broadcasts sent", () => {
 
                 const broadcastsAreSentFixture = async () => {

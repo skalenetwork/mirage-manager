@@ -91,6 +91,7 @@ contract DKG is AccessManagedUpgradeable, IDkg {
     error NodeDoesNotParticipateInDkg(NodeId node);
     error NodeAlreadyBroadcasted(NodeId node);
     error IncorrectG2Point(G2Point value);
+    error G2ZeroPointNotAllowed(G2Point value);
     error NodeIsAlreadyAlright(NodeId node);
     error RoundDoesNotExist(DkgId dkg);
 
@@ -259,6 +260,7 @@ contract DKG is AccessManagedUpgradeable, IDkg {
 
     function _contributeToPublicKey(RoundData storage round, G2Point memory value) private {
         require(value.isG2(), IncorrectG2Point(value));
+        require(!value.isG2Zero(), G2ZeroPointNotAllowed(value));
         round.publicKey = value.addG2(round.publicKey);
     }
 
