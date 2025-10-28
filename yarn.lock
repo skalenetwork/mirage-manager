@@ -2043,6 +2043,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@openzeppelin/contracts@npm:^5.4.0":
+  version: 5.4.0
+  resolution: "@openzeppelin/contracts@npm:5.4.0"
+  checksum: 10c0/7e05646dee4905fea4493f0fb2ad208abaff84b9f5ef1b9e1a5fc61d0e74d9bc30759bdf0d09a08049cfef6a290623330d83469eadc990a7bba6c2cd09a27e1d
+  languageName: node
+  linkType: hard
+
 "@openzeppelin/defender-sdk-base-client@npm:^2.1.0, @openzeppelin/defender-sdk-base-client@npm:^2.4.0":
   version: 2.4.0
   resolution: "@openzeppelin/defender-sdk-base-client@npm:2.4.0"
@@ -2494,10 +2501,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@skalenetwork/fair-manager-interfaces@npm:0.1.0-develop.95":
-  version: 0.1.0-develop.95
-  resolution: "@skalenetwork/fair-manager-interfaces@npm:0.1.0-develop.95"
-  checksum: 10c0/6abfdc6fc289b53a58f8037d8ecca7f73722b7bd0b5f45dda27fed03065cc2ad1d92cd1d72fa6834549d3890c8b16ef11f8f876f31d3424bf80dada6615db6fa
+"@skalenetwork/fair-manager-interfaces@npm:0.1.0-develop.96":
+  version: 0.1.0-develop.96
+  resolution: "@skalenetwork/fair-manager-interfaces@npm:0.1.0-develop.96"
+  dependencies:
+    "@openzeppelin/contracts": "npm:^5.4.0"
+  checksum: 10c0/f1e757972c3051cf9d362cace11e6e99ca26d23c3df0904e536e45cdc0dd04981dd7214565fd866f72f2fd716609bb7423b5163c7720c805438514817afabdb9
   languageName: node
   linkType: hard
 
@@ -2530,9 +2539,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@skalenetwork/upgrade-tools@npm:4.0.0-develop.1":
-  version: 4.0.0-develop.1
-  resolution: "@skalenetwork/upgrade-tools@npm:4.0.0-develop.1"
+"@skalenetwork/upgrade-tools@npm:4.0.0-develop.2":
+  version: 4.0.0-develop.2
+  resolution: "@skalenetwork/upgrade-tools@npm:4.0.0-develop.2"
   dependencies:
     "@nomicfoundation/hardhat-ethers": "npm:^3.0.0"
     "@nomicfoundation/hardhat-verify": "npm:2.0.14"
@@ -2547,7 +2556,7 @@ __metadata:
     ethereumjs-util: "npm:^7.1.4"
     hardhat: "npm:^2.9.9"
     semaphore-async-await: "npm:^1.5.1"
-  checksum: 10c0/8d712e72251c1de8d2d79c2d268c17f9166065894498c441b27a0629123c59060665efb412b95dce63830cd8c9d4aec5d5a9bb5817ca121d0b5f7b4aa0e2a4c5
+  checksum: 10c0/299cee8c389d5a9ee4355fdb64fb6cfd003cbe000a028067721e108d26963a9499bb41072fe0d7dfaef6e093a50559a3ace37b7c1a76c0ca33f29c1809433574
   languageName: node
   linkType: hard
 
@@ -5502,10 +5511,10 @@ __metadata:
     "@openzeppelin/contracts-upgradeable": "npm:^5.3.0"
     "@openzeppelin/hardhat-upgrades": "npm:^3.9.1"
     "@openzeppelin/upgrades-core": "npm:^1.44.1"
-    "@skalenetwork/fair-manager-interfaces": "npm:0.1.0-develop.95"
+    "@skalenetwork/fair-manager-interfaces": "npm:0.1.0-develop.96"
     "@skalenetwork/skale-contracts-ethers-v6": "npm:^2.0.0-develop.1"
     "@skalenetwork/skale-manager-interfaces": "npm:3.2.0-develop.3"
-    "@skalenetwork/upgrade-tools": "npm:4.0.0-develop.1"
+    "@skalenetwork/upgrade-tools": "npm:4.0.0-develop.2"
     "@typechain/ethers-v6": "npm:^0.5.0"
     "@typechain/hardhat": "npm:^9.0.0"
     "@types/chai": "npm:^4.2.0"

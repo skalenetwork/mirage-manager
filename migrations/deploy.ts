@@ -15,7 +15,7 @@ import {
     FairAccessManager,
     Staking,
     Status,
-    RewardWallet
+    IBeacon
 } from "../typechain-types";
 import { AddressLike, BytesLike } from "ethers";
 import { skaleContracts } from "@skalenetwork/skale-contracts-ethers-v6";
@@ -25,6 +25,7 @@ import {
     ISchainsInternal,
 } from "../typechain-types/@skalenetwork/skale-manager-interfaces";
 import { configurePermissions } from "./permissions";
+import { TypedContractMethod } from "../typechain-types/common";
 
 
 export const contracts = [
@@ -59,6 +60,27 @@ function getEnvVar(name: string): string {
     return value;
 }
 
+const callWithRetry = async <P, T> (
+        method: TypedContractMethod<[P], [T], "view">,
+        parameter: P,
+        retries = 10,
+        maxDelayMs = 10000): Promise<T> => {
+        for (let attempt = 1; attempt <= retries; attempt++) {
+            try {
+                return await method.staticCall(parameter);
+            } catch (error) {
+                if (attempt === retries) {
+                    throw error;
+                }
+                const delay = Math.round(maxDelayMs * Math.random());
+                console.log(chalk.yellow(`Error during calling ${method.name}(${parameter})`));
+                console.log(chalk.gray(`Retrying in ${delay / 1000}s... (${attempt}/${retries})`));
+                await new Promise(res => setTimeout(res, delay));
+            }
+        }
+        throw new Error("Unknown error");
+    }
+
 async function getSkaleManagerInstance() {
     const target = getEnvVar("TARGET");
     const mainnetEndpoint = getEnvVar("MAINNET_ENDPOINT");
@@ -69,6 +91,7 @@ async function getSkaleManagerInstance() {
 }
 
 async function fetchNodes() {
+    console.log("Fetch nodes from SKALE Manager");
     const fairChainName = getEnvVar("CHAIN_NAME");
     const fairChainHash = ethers.solidityPackedKeccak256(
         ["string"],
@@ -82,13 +105,14 @@ async function fetchNodes() {
         throw new Error("Node IDs cannot contain 0");
     }
     const nodeList: NodeStruct[] = [];
+
     for (const nodeId of nodeIds) {
         const [ip, domainName ,nodeAddress, port, publicKey] = await Promise.all([
-            nodes.getNodeIP(nodeId),
-            nodes.getNodeDomainName(nodeId),
-            nodes.getNodeAddress(nodeId),
-            nodes.getNodePort(nodeId),
-            nodes.getNodePublicKey(nodeId)
+            callWithRetry(nodes.getNodeIP, nodeId),
+            callWithRetry(nodes.getNodeDomainName, nodeId),
+            callWithRetry(nodes.getNodeAddress, nodeId),
+            callWithRetry(nodes.getNodePort, nodeId),
+            callWithRetry(nodes.getNodePublicKey, nodeId)
         ]);
         nodeList.push({
             id: nodeId,
@@ -103,6 +127,7 @@ async function fetchNodes() {
 }
 
 async function fetchDkgCommonPublicKey() {
+    console.log("Fetch DKG common public key from SKALE Manager");
     const fairChainName = getEnvVar("CHAIN_NAME");
     const fairChainHash = ethers.solidityPackedKeccak256(
         ["string"],
@@ -110,18 +135,17 @@ async function fetchDkgCommonPublicKey() {
     );
     const skaleManagerInstance = await getSkaleManagerInstance();
     const dkg = await skaleManagerInstance.getContract("KeyStorage") as unknown as IKeyStorage;
-    const commonPublicKey = await dkg.getCommonPublicKey(fairChainHash);
+    const commonPublicKey = await callWithRetry(dkg.getCommonPublicKey, fairChainHash);
     return commonPublicKey;
 }
 
 export const deploy = async (nodeList?: NodeStruct[], commonPublicKey?: IDkg.G2PointStruct): Promise<DeployedContracts> => {
     const [deployer] = await ethers.getSigners();
     const deployedContracts: DeployedContracts = {} as DeployedContracts;
-    if (!nodeList) {
-        nodeList = await fetchNodes();
-    }
+    nodeList = nodeList || await fetchNodes();
     commonPublicKey = commonPublicKey || await fetchDkgCommonPublicKey();
 
+    console.log("Start deployment");
     deployedContracts.FairAccessManager = await deployFairAccessManager(deployer);
     deployedContracts.Nodes = await deployNodes(
         deployedContracts.FairAccessManager,
@@ -226,11 +250,15 @@ const deployDkg = async (authority: FairAccessManager, committee: Committee, nod
     ) as DKG;
 }
 
-const deployRewardWalletReference = async (): Promise<RewardWallet> => {
-    const factory = await ethers.getContractFactory("RewardWallet");
-    const instance = await factory.deploy();
+export const deployRewardWalletBeacon = async (owner: AddressLike): Promise<IBeacon> => {
+    const instance = await upgrades.deployBeacon(
+        await ethers.getContractFactory("RewardWallet"),
+        {
+            initialOwner: await ethers.resolveAddress(owner)
+        }
+    );
     await instance.waitForDeployment();
-    return instance as RewardWallet;
+    return instance as unknown as IBeacon;
 }
 
 const deployStatus = async (authority: FairAccessManager, nodes: Nodes, committee: Committee): Promise<Status> => {
@@ -250,17 +278,20 @@ const deployStaking = async (
     nodes: Nodes,
     initialNodes: NodeStruct[]
 ): Promise<Staking> => {
+    const [owner] = await ethers.getSigners();
+    const rewardWalletBeacon = await deployRewardWalletBeacon(owner);
     const staking = await deployContract(
         "Staking",
         [
             await ethers.resolveAddress(authority),
             await ethers.resolveAddress(committee),
             await ethers.resolveAddress(nodes),
-            await ethers.resolveAddress(
-                await deployRewardWalletReference()
-            )
+            await ethers.resolveAddress(rewardWalletBeacon)
         ]
     ) as Staking;
+
+    // Call this because it's a reinitializer
+    await staking.updateRewardWalletBeacon(rewardWalletBeacon);
 
     // Nodes contract is deployed before Staking
     // so the Staking contract can't be notified about initially existing nodes
@@ -302,10 +333,13 @@ const verify = async (deployedContracts: DeployedContracts) => {
         }
     }
     try {
-        const rewardWalletAddress = await deployedContracts.Staking.rewardWalletReference();
+        const rewardWalletBeacon = await ethers.getContractAt(
+            "IBeacon",
+            await deployedContracts.Staking.rewardWalletBeacon()
+        );
         await verifyImplementation(
             "RewardWallet",
-            rewardWalletAddress
+            await rewardWalletBeacon.implementation()
         );
     } catch (error) {
         console.log(chalk.yellow(`Skipping verification for RewardWallet: ${error}`));

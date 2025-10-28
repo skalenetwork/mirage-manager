@@ -1,10 +1,10 @@
 import {Instance, skaleContracts} from "@skalenetwork/skale-contracts-ethers-v6";
-import {Submitter, Upgrader} from "@skalenetwork/upgrade-tools";
+import {AbstractTransparentProxyUpgrader, BeaconUpgrader, Submitter, Upgrader} from "@skalenetwork/upgrade-tools";
 import {Transaction} from "ethers";
 import chalk from "chalk";
-import {contracts} from "./deploy";
+import {contracts, deployRewardWalletBeacon} from "./deploy";
 import {ethers} from "hardhat";
-import { Committee } from "../typechain-types";
+import { Committee, Staking, Staking__factory } from "../typechain-types";
 
 enum ExitCodes {
     OK,
@@ -63,19 +63,61 @@ class FairManagerUpgrader extends Upgrader {
 
     setVersion = async (newVersion: string) => {
         const committee = await this.getCommittee();
+        console.log(chalk.yellowBright(`Prepare transaction to set version to ${newVersion}`));
         this.transactions.push(Transaction.from({
             data: committee.interface.encodeFunctionData("setVersion", [newVersion]),
             to: await ethers.resolveAddress(committee)
+        }));
+    }
+
+    protected async createProxyUpgrader(contractName: string) {
+        if (contractName === "RewardWallet") {
+            const staking = await this.instance.getContract("Staking") as Staking;
+            const rewardWalletBeaconAddress = await staking.rewardWalletBeacon();
+            return new BeaconUpgrader(
+                contractName,
+                rewardWalletBeaconAddress,
+                this.nonceProvider
+            );
+        }
+        return super.createProxyUpgrader(contractName);
+    }
+
+    initialize = async () => {
+        const staking = await this.instance.getContract("Staking");
+        const stakingProxyAdmin = await AbstractTransparentProxyUpgrader.getProxyAdmin(staking);
+        const rewardWalletBeacon = await deployRewardWalletBeacon(await stakingProxyAdmin.owner());
+        const newStakingInterface = Staking__factory.createInterface();
+        console.log(chalk.yellowBright(`Prepare transaction to start using RewardWallet beacon at ${
+            await ethers.resolveAddress(rewardWalletBeacon)
+        }`));
+        this.transactions.push(Transaction.from({
+            data: newStakingInterface.encodeFunctionData("updateRewardWalletBeacon", [
+                await ethers.resolveAddress(rewardWalletBeacon)
+            ]),
+            to: await ethers.resolveAddress(staking)
         }));
     }
 }
 
 const main = async () => {
     const fairManager = await getFairManagerInstance();
-    // do not upgrade RewardWallet
-    // because it requires custom upgrade procedure
-    const contractNamesToUpgrade =
-        contracts.filter(contract => !["RewardWallet"].includes(contract));
+
+    // TODO: remove this code
+    // after RewardWallet beacon is released
+    let updateRewardWallet = true;
+    try {
+        const staking = await fairManager.getContract("Staking") as Staking;
+        await staking.rewardWalletBeacon();
+    } catch {
+        updateRewardWallet = false;
+    }
+    let contractNamesToUpgrade = contracts;
+    if (!updateRewardWallet) {
+        contractNamesToUpgrade = contracts.filter(name => name !== "RewardWallet");
+    }
+    // end of TODO
+
     const upgrader = new FairManagerUpgrader({
         contractNamesToUpgrade,
         instance: fairManager,

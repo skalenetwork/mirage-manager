@@ -49,8 +49,7 @@ DEPLOY_OUTPUT_FILE="$GITHUB_WORKSPACE/data/deploy.txt"
 export TARGET="production"
 export CHAIN_NAME="$CHAIN_NAME"
 export MAINNET_ENDPOINT="$MAINNET_ENDPOINT"
-export VERSION=$DEPLOYED_VERSION
-yarn hardhat run migrations/deploy.ts --network localhost > $DEPLOY_OUTPUT_FILE
+VERSION=$DEPLOYED_VERSION yarn hardhat run migrations/deploy.ts --network localhost > $DEPLOY_OUTPUT_FILE
 # don't copy manifest file because it's stored in the temporary directory
 COMMITTEE_ADDRESS=$(cat $DEPLOY_OUTPUT_FILE | grep --max-count 1 "Committee" | awk '{print $NF}')
 
