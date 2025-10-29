@@ -1292,16 +1292,10 @@ describe("Staking", () => {
         const exitBefore = await staking.getTotalInExitQueueFor(node.wallet.address);
         const snapshot = await takeSnapshot();
 
-        // Flush happens after calculating the total amount of fees
+        // Flush happens before calculating the total amount of fees
         await staking.connect(node.wallet).requestAllFees(node.id);
-        expect(await staking.getNodeTotalStake(node.id)).to.be.eql(ethers.parseEther("1"));
-        expect(await staking.getTotalInExitQueueFor(node.wallet.address)).to.be.eql(exitBefore + 1_000_000_000n);
-
-        await staking.connect(node.wallet).requestAllFees(node.id);
-        expect(
-            await staking.getTotalInExitQueueFor(node.wallet.address)
-        ).to.be.eql(exitBefore + 1_000_000_000n + ethers.parseEther("1"));
-
+        expect(await staking.getNodeTotalStake(node.id)).to.be.eql(0n);
+        expect(await staking.getTotalInExitQueueFor(node.wallet.address)).to.be.eql(exitBefore + 1_000_000_000n + ethers.parseEther("1"));
 
         // Revert to snapshot
         await snapshot.restore();
