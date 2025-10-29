@@ -194,7 +194,7 @@ describe("DKG", () => {
                     .withArgs(randomNode.id);
             });
 
-            it("should rejected broadcast with zero point", async () => {
+            it("should reject broadcast with zero point", async () => {
                 (await dkg.isNodeBroadcasted(dkgId, firstNode.id)).should.be.equal(false);
 
                 // G2 zero point: x = {a: 0, b: 0}, y = {a: 1, b: 0}
