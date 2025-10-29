@@ -30,12 +30,12 @@ Reference to the Nodes contract
 contract INodes nodes
 ```
 
-### rewardWalletReference
+### rewardWalletBeacon
 
-Reference implementation for reward wallets
+Reference to the reward wallet beacon contract
 
 ```solidity
-contract IRewardWallet rewardWalletReference
+contract IBeacon rewardWalletBeacon
 ```
 
 ### totalDisabled
@@ -301,20 +301,20 @@ event NodeFeeRateUpdated(NodeId node, uint16 oldFeeRate, uint16 newFeeRate)
 | oldFeeRate | uint16 | The previous fee rate |
 | newFeeRate | uint16 | The new fee rate |
 
-### RewardWalletReferenceUpdated
+### RewardWalletBeaconUpdated
 
-Emitted when the reward wallet reference implementation is updated
+Emitted when the reward wallet beacon address is updated
 
 ```solidity
-event RewardWalletReferenceUpdated(contract IRewardWallet oldReference, contract IRewardWallet newReference)
+event RewardWalletBeaconUpdated(contract IBeacon oldBeacon, contract IBeacon newBeacon)
 ```
 
 #### Parameters
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-| oldReference | contract IRewardWallet | The previous reference implementation |
-| newReference | contract IRewardWallet | The new reference implementation |
+| oldBeacon | contract IBeacon | The previous beacon address |
+| newBeacon | contract IBeacon | The new beacon address |
 
 ### SelfStakeRequirementUpdated
 
@@ -556,7 +556,7 @@ Received funds are automatically shared among all enabled nodes proportionally t
 Initializes the Staking contract
 
 ```solidity
-function initialize(address initialAuthority, contract ICommittee committee_, contract INodes nodes_, contract IRewardWallet rewardWalletReference_) external
+function initialize(address initialAuthority, contract ICommittee committee_, contract INodes nodes_, contract IBeacon rewardWalletBeacon_) external
 ```
 
 **dev:** _This function is called only once during contract deployment following the proxy pattern_
@@ -568,7 +568,23 @@ function initialize(address initialAuthority, contract ICommittee committee_, co
 | initialAuthority | address | The address of the initial access control authority |
 | committee_ | contract ICommittee | The address of the Committee contract |
 | nodes_ | contract INodes | The address of the Nodes contract |
-| rewardWalletReference_ | contract IRewardWallet | The address of the reward wallet reference implementation |
+| rewardWalletBeacon_ | contract IBeacon | The address of the reward wallet beacon contract |
+
+### updateRewardWalletBeacon
+
+Updates the reward wallet beacon address
+
+```solidity
+function updateRewardWalletBeacon(contract IBeacon rewardWalletBeacon_) external
+```
+
+**dev:** _It's a reinitializer - used once only during contract deployment or upgrade from old version_
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| rewardWalletBeacon_ | contract IBeacon | The address of the reward wallet beacon contract |
 
 ### addAllowedReceiver
 
@@ -807,22 +823,6 @@ Pulls any pending rewards before updating the rate_
 | Name | Type | Description |
 | ---- | ---- | ----------- |
 | feeRate | uint16 | The new fee rate (must be <= FEE_RATE_PRECISION) |
-
-### setRewardWalletReference
-
-Updates the reward wallet reference implementation
-
-```solidity
-function setRewardWalletReference(contract IRewardWallet rewardWalletReference_) external
-```
-
-**dev:** _Only callable by authorized addresses (restricted)_
-
-#### Parameters
-
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| rewardWalletReference_ | contract IRewardWallet | The new reward wallet reference implementation |
 
 ### requestRetrieveAll
 
