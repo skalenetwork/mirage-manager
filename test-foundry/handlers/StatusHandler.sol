@@ -1,4 +1,4 @@
-// cspell:words Alives alives unshuffled
+// cspell:words Alives alives unshuffled solady
 // SPDX-License-Identifier: AGPL-3.0-only
 
 /*
