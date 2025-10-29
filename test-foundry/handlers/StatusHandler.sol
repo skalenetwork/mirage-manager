@@ -22,6 +22,8 @@
 
 pragma solidity ^0.8.24;
 
+import {FixedPointMathLib} from "solady/src/utils/FixedPointMathLib.sol";
+
 import {Test} from "forge-std/Test.sol";
 
 import {Duration, NodeId, Status} from "../../contracts/Status.sol";
@@ -32,6 +34,10 @@ contract StatusHandler is Test {
     Status public status;
     NodeId[] public fixtureNode;
     address public admin;
+
+    uint256 private constant PRECISION = 1_000_000_000_000_000_000;
+
+    error GasCalculationError(uint256 calculatedGas);
 
     constructor(address _status, address _admin) {
         status = Status(_status);
@@ -72,8 +78,9 @@ contract StatusHandler is Test {
         for (uint256 i = 0; i < alives; i++) {
             address nodeOwner = status.nodes().getNode(NodeId.wrap(nodes[i])).nodeAddress;
             assert(nodeOwner != address(0));
+            uint256 gas = _customGas();
             vm.prank(nodeOwner);
-            status.alive();
+            status.alive{gas: gas}();
         }
     }
 
@@ -89,8 +96,9 @@ contract StatusHandler is Test {
         for (uint256 i = 0; i < alives; i++) {
             address nodeOwner = status.nodes().getNode(NodeId.wrap(nodes[i])).nodeAddress;
             assert(nodeOwner != address(0));
+            uint256 gas = _customGas();
             vm.prank(nodeOwner);
-            status.alive();
+            status.alive{gas: gas}();
         }
     }
 
@@ -99,8 +107,9 @@ contract StatusHandler is Test {
         for (uint256 i = 0; i < fixtureNode.length; i++) {
             address nodeOwner = status.nodes().getNode(fixtureNode[i]).nodeAddress;
             assert(nodeOwner != address(0));
+            uint256 gas = _customGas();
             vm.prank(nodeOwner);
-            status.alive();
+            status.alive{gas: gas}();
         }
     }
 
@@ -150,5 +159,38 @@ contract StatusHandler is Test {
         }
 
         return result;
+    }
+
+
+    function _customGas() private view returns (uint256 gas) {
+        NodeId[] memory activeNodes = status.nodes().getActiveNodeIds();
+        uint256 num_nodes = 0;
+        for (uint256 i = 0; i < activeNodes.length; i++) {
+            if (status.isWhitelisted(activeNodes[i])) {
+                num_nodes++;
+            }
+        }
+        gas = (((230000 * _log10(num_nodes + 15) + 520000*PRECISION) * 12) / 10) / PRECISION;
+    }
+
+    /// @dev Returns only integer size, so it's underestimating log10.
+    function _log10(uint256 x) private pure returns (uint256) {
+        require(x > 0, "log10: input must be greater than 0");
+
+        // ln(10) * 10**18
+        uint256 LN10_SCALED = 2_302_585_092_994_045_684;
+
+        // WAD constant (10**18)
+        uint256 WAD = 10**18;
+
+        require(x <= uint256(type(int256).max) / WAD, "Log: Input too large");
+        int256 x_signed = int256(x * WAD);
+
+        int256 ln_x_signed = FixedPointMathLib.lnWad(x_signed);
+
+        uint256 ln_x = uint256(ln_x_signed);
+
+        // this will give us log10(x) * 10**18
+        return (ln_x * PRECISION) / LN10_SCALED;
     }
 }

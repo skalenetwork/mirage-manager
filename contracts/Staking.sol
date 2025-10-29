@@ -163,11 +163,14 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
     }
 
     function requestAllFees(NodeId node) external override {
+        _pullReward(node);
         requestFees(node, getEarnedFeeAmount(node));
     }
 
     function requestSendAllFees(address payable to) external override {
-        requestSendFees(to, getEarnedFeeAmount(nodes.getNodeId(msg.sender)));
+        NodeId node = nodes.getNodeId(msg.sender);
+        _pullReward(node);
+        requestSendFees(to, getEarnedFeeAmount(node));
     }
 
     function setSelfStakeRequirement(Fair amount) external override restricted {
@@ -626,6 +629,10 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
                 FundLibrary.nodeToHolder(node),
                 amount
             );
+            // Node might have changed it's balance due to credit rounding in remove()
+            _nodesFunds[node].updateTotalBalance(
+                _rootFund.getBalance(balance - amount, FundLibrary.nodeToHolder(node))
+            );
         } else {
             Fair nodeBalance = _disabledNodesBalances.get(node);
             _nodesFunds[node].claimFee(
@@ -663,6 +670,11 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
                 balance,
                 FundLibrary.nodeToHolder(node),
                 value
+            );
+
+            // Node might have changed it's balance due to credit rounding in remove()
+            _nodesFunds[node].updateTotalBalance(
+                _rootFund.getBalance(balance - value, FundLibrary.nodeToHolder(node))
             );
         } else {
             Fair nodeFundBalance = _disabledNodesBalances.get(node);
