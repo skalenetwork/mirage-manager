@@ -70,7 +70,7 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
     /// @notice Reference to the Nodes contract
     INodes public nodes;
 
-    /// @notice Refference to the reward wallet beacon contract
+    /// @notice Reference to the reward wallet beacon contract
     IBeacon public rewardWalletBeacon;
 
     /// @notice Total amount of funds in disabled nodes
@@ -338,7 +338,7 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
      * @param initialAuthority The address of the initial access control authority
      * @param committee_ The address of the Committee contract
      * @param nodes_ The address of the Nodes contract
-     * @param rewardWalletReference_ The address of the reward wallet reference implementation
+     * @param rewardWalletBeacon_ The address of the reward wallet beacon contract
      */
     function initialize(
         address initialAuthority,
@@ -364,10 +364,11 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
         emit RetrievingDelayUpdated(Timestamp.wrap(DEFAULT_RETRIEVING_DELAY));
     }
 
-    receive() external override payable {
-        emit RewardReceived(msg.sender, msg.value);
-    }
-
+    /**
+     * @notice Updates the reward wallet beacon address
+     * @dev It's a reinitializer - used once only during contract deployment or upgrade from old version
+     * @param rewardWalletBeacon_ The address of the reward wallet beacon contract
+     */
     function updateRewardWalletBeacon(IBeacon rewardWalletBeacon_) external reinitializer(2) restricted override{
         require(address(rewardWalletBeacon_) != address(0), InvalidRewardWalletAddress());
         IBeacon oldBeacon = rewardWalletBeacon;
