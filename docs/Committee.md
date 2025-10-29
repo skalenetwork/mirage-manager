@@ -106,6 +106,14 @@ Version string for the committee contract
 string version
 ```
 
+### _pool
+
+```solidity
+struct PoolLibrary.Pool _pool
+```
+
+**dev:** _Pool of nodes for committee selection_
+
 ### NodeBecomesEligible
 
 Emitted when a node becomes eligible for committee selection
