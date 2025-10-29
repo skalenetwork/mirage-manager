@@ -345,6 +345,7 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
     }
 
     function requestRetrieveAll(NodeId node) external override {
+        _pullReward(node);
         requestRetrieve(node, getStakedToNodeAmountFor(node, msg.sender));
     }
 
