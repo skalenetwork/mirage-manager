@@ -22,4 +22,4 @@ ENV NODE_OPTIONS="--max-old-space-size=2048"
 COPY . .
 # previous command has overwritten the .yarnrc.yml file
 RUN sed -i 's/nodeLinker: pnpm/nodeLinker: node-modules/' .yarnrc.yml
-RUN npx hardhat compile
+RUN yarn hardhat compile
