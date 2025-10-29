@@ -42,6 +42,7 @@ jobs:
       uses: crytic/slither-action@v0.4.1
       with:
         ignore-compile: true
+        slither-args: "--compile-force-framework hardhat"
         node-version: ${{ matrix.node-version }}
 
     - name: Test deployment

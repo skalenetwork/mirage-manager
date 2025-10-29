@@ -46,8 +46,10 @@
     "hooks": "git config core.hooksPath .githooks",
     "lint": "yarn solhint 'contracts/**/*.sol'",
     "no-hooks": "git config core.hooksPath .git/hooks",
-    "slither": "yarn cleanCompile && slither --hardhat-ignore-compile .",
+    "slither": "yarn cleanCompile && slither . --compile-force-framework hardhat --ignore-compile",
     "test": "yarn tsc && npx hardhat test",
+    "test-foundry:rbt": "forge test --mt invariant_treeIsValid -vvv",
+    "test-foundry:fair-manager": "bash ./scripts/run_fuzz_tests.sh ",
     "tsc": "yarn exec tsc --noEmit"
   },
   "dependencies": {

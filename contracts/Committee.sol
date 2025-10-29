@@ -68,7 +68,7 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
     Duration public minTransitionDelay;
     string public version;
 
-    PoolLibrary.Pool private _pool;
+    PoolLibrary.Pool internal _pool;
 
     event NodeBecomesEligible(NodeId indexed node);
     event NodeLosesEligibility(NodeId indexed node);

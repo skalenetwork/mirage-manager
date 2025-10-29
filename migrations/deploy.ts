@@ -27,7 +27,6 @@ import {
 import { configurePermissions } from "./permissions";
 import { TypedContractMethod } from "../typechain-types/common";
 
-
 export const contracts = [
     "Committee",
     "DKG",
@@ -315,6 +314,7 @@ const storeAddresses = async (deployedContracts: DeployedContracts, version: str
     const addresses = Object.fromEntries(await Promise.all(Object.entries(deployedContracts).map(
             async ([name, contract]) => [name, await ethers.resolveAddress(contract)]
     )));
+    console.log("DEPLOYER:", await ethers.resolveAddress((await ethers.getSigners())[0].address));
     for (const contract in addresses) {
         console.log(`${contract}: ${addresses[contract]}`);
     }

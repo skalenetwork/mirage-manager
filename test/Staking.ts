@@ -2,7 +2,7 @@ import chai, { assert, expect } from "chai";
 import { grantNodeRewards, grantNetworkRewards, registeredOnlyNodes, sendHeartbeat, stakedNodes, whitelistedNodes } from "./tools/fixtures";
 import { ethers } from "hardhat";
 import { zip } from "lodash";
-import { setBalance } from "@nomicfoundation/hardhat-network-helpers";
+import { setBalance, takeSnapshot } from "@nomicfoundation/hardhat-network-helpers";
 import { skipTime } from "./tools/time";
 import { Nodes, Staking } from "../typechain-types";
 import { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers";
@@ -1263,6 +1263,55 @@ describe("Staking", () => {
         await status.connect(nodesData[11].wallet).alive();
         await staking.requestRetrieveAll(12);
         await status.removeNodeFromWhitelist(12);
+    });
+
+    it("Should calculate node fees correctly with only consensus rewards", async () => {
+        const {nodesData, staking, status, nodes} = await registeredOnlyNodes();
+        const node = nodesData[22]; // not in committee
+        await status.whitelistNode(node.id);
+        await grantNetworkRewards(staking, ethers.parseEther("1"));
+        await grantNodeRewards(staking, node.id, 1_000_000_000n);
+        expect(await staking.getNodeTotalStake(node.id)).to.be.eql(1_000_000_000n);
+        expect(await staking.getEarnedFeeAmount(node.id)).to.be.eql(1_000_000_000n);
+        await status.connect(node.wallet).alive();
+
+        // first to become enabled, gets all the rewards as fees
+        expect(await staking.getNodeTotalStake(node.id)).to.be.eql(ethers.parseEther("1") + 1_000_000_000n);
+        expect(await staking.getEarnedFeeAmount(node.id)).to.be.eql(ethers.parseEther("1") + 1_000_000_000n);
+
+        await staking.connect(node.wallet).requestAllFees(node.id);
+        expect(await staking.getNodeTotalStake(node.id)).to.be.eql(0n);
+        expect(await staking.getEarnedFeeAmount(node.id)).to.be.eql(0n);
+
+        await grantNetworkRewards(staking, ethers.parseEther("1"));
+        await grantNodeRewards(staking, node.id, 1_000_000_000n);
+
+        // Rewards need to be flushed so that network rewards are taken into account
+        expect(await staking.getNodeTotalStake(node.id)).to.be.eql(1_000_000_000n);
+        expect(await staking.getEarnedFeeAmount(node.id)).to.be.eql(1_000_000_000n);
+        const exitBefore = await staking.getTotalInExitQueueFor(node.wallet.address);
+        const snapshot = await takeSnapshot();
+
+        // Flush happens after calculating the total amount of fees
+        await staking.connect(node.wallet).requestAllFees(node.id);
+        expect(await staking.getNodeTotalStake(node.id)).to.be.eql(ethers.parseEther("1"));
+        expect(await staking.getTotalInExitQueueFor(node.wallet.address)).to.be.eql(exitBefore + 1_000_000_000n);
+
+        await staking.connect(node.wallet).requestAllFees(node.id);
+        expect(
+            await staking.getTotalInExitQueueFor(node.wallet.address)
+        ).to.be.eql(exitBefore + 1_000_000_000n + ethers.parseEther("1"));
+
+
+        // Revert to snapshot
+        await snapshot.restore();
+
+        // If we delete the node, no fees get stuck because flush happens in Nodes.sol contract
+        await nodes.connect(node.wallet).deleteNode(node.id);
+        expect(
+            await staking.getTotalInExitQueueFor(node.wallet.address)
+        ).to.be.eql(exitBefore + 1_000_000_000n + ethers.parseEther("1"));
+        expect(await staking.getNodeTotalStake(node.id)).to.be.eql(0n);
     });
 
     it("Should not add user as a holder if staking very small amount", async () => {
