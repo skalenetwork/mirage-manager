@@ -54,7 +54,7 @@ jobs:
       run: yarn hardhat run scripts/generateAbi.ts
 
     - name: Store artifacts
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       with:
         name: data
         path: data
