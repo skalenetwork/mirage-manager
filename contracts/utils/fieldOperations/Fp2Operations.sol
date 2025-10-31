@@ -26,13 +26,12 @@ pragma solidity ^0.8.24;
 
 import { IDkg } from "@skalenetwork/fair-manager-interfaces/IDkg.sol";
 
+import { LARGE_PRIME } from "../constants.sol";
 import { Precompiled } from "../Precompiled.sol";
-
 
 library Fp2Operations {
 
-    uint256 constant public P =
-        21888242871839275222246405745257275088696311157297823662689037894645226208583;
+    uint256 constant public P = LARGE_PRIME;
 
     function inverseFp2(
         IDkg.Fp2Point memory value

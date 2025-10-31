@@ -32,6 +32,7 @@ import {INodes, NodeId} from "@skalenetwork/fair-manager-interfaces/INodes.sol";
 
 import {TypedMap} from "./structs/typed/TypedMap.sol";
 import {TypedSet} from "./structs/typed/TypedSet.sol";
+import { InvalidCommitteeAddress, InvalidNodesAddress } from "./utils/errors.sol";
 import {G2Operations} from "./utils/fieldOperations/G2Operations.sol";
 
 
@@ -90,6 +91,7 @@ contract DKG is AccessManagedUpgradeable, IDkg {
     error NodeDoesNotParticipateInDkg(NodeId node);
     error NodeAlreadyBroadcasted(NodeId node);
     error IncorrectG2Point(G2Point value);
+    error G2ZeroPointNotAllowed(G2Point value);
     error NodeIsAlreadyAlright(NodeId node);
     error RoundDoesNotExist(DkgId dkg);
 
@@ -118,6 +120,8 @@ contract DKG is AccessManagedUpgradeable, IDkg {
         override
         initializer
     {
+        require(address(committeeAddress) != address(0), InvalidCommitteeAddress());
+        require(address(nodesAddress) != address(0), InvalidNodesAddress());
         __AccessManaged_init(initialAuthority);
         committee = committeeAddress;
         nodes = nodesAddress;
@@ -130,7 +134,9 @@ contract DKG is AccessManagedUpgradeable, IDkg {
         require(round.nodes.contains(node), NodeDoesNotParticipateInDkg(node));
         require(round.completed.add(node), NodeIsAlreadyAlright(node));
         emit AllDataReceived(dkg, node);
-        if (round.completed.length() + 1 > n) {
+        // false-positive: No real improvement in gas from replacing non-strict inequality
+        // solhint-disable-next-line gas-strict-inequalities
+        if (round.completed.length() >= n) {
             _processSuccessfulDkg(dkg);
         }
     }
@@ -161,7 +167,9 @@ contract DKG is AccessManagedUpgradeable, IDkg {
             NodeAlreadyBroadcasted(node)
         );
 
-        if ( round.hashedData.length() + 1 > n ) {
+        // false-positive: No real improvement in gas from replacing non-strict inequality
+        // solhint-disable-next-line gas-strict-inequalities
+        if ( round.hashedData.length() >= n ) {
             round.status = Status.ALRIGHT;
         }
 
@@ -252,6 +260,7 @@ contract DKG is AccessManagedUpgradeable, IDkg {
 
     function _contributeToPublicKey(RoundData storage round, G2Point memory value) private {
         require(value.isG2(), IncorrectG2Point(value));
+        require(!value.isG2Zero(), G2ZeroPointNotAllowed(value));
         round.publicKey = value.addG2(round.publicKey);
     }
 

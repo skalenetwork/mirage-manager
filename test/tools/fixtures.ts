@@ -1,10 +1,11 @@
 // cspell:words hexlify
 
 import {
-    loadFixture
+    loadFixture,
+    setBalance
 } from "@nomicfoundation/hardhat-network-helpers";
 import { deploy, NodeStruct } from "../../migrations/deploy";
-import { HDNodeWallet, Wallet } from "ethers";
+import { BigNumberish, HDNodeWallet, Wallet } from "ethers";
 import { ethers } from "hardhat";
 import { IDkg, Nodes, Status, Staking } from "../../typechain-types";
 import { getPublicKey } from "./signatures";
@@ -24,7 +25,7 @@ export const commonPublicKey: IDkg.G2PointStruct = {
       a: 10690960156228072079001083521941886387682522891194608928128426154732026520769n,
       b: 9828205031595443956611906871964866113822094147752101207883765686014961818260n,
     },
-  };
+};
 
 // Auxiliary functions
 
@@ -34,7 +35,7 @@ export interface NodeData extends NodeStruct {
 
 const getIp = (): Uint8Array => ethers.randomBytes(4);
 
-const generateRandomNodes = async (initialNumberOfNodes?: number) => {
+export const generateRandomNodes = async (initialNumberOfNodes?: number) => {
     const [owner] = await ethers.getSigners();
     initialNumberOfNodes = initialNumberOfNodes || numberOfNodes;
     const nodesData: NodeData[] = [];
@@ -75,6 +76,29 @@ const whitelistNodes = async (status: Status, nodesData: NodeData[]) => {
 export const sendHeartbeat = async (status: Status, nodesData: NodeData[]) => {
     for (const node of nodesData) {
         await status.connect(node.wallet).alive();
+    }
+}
+
+
+export const grantNetworkRewards = async (
+    staking: Staking,
+    stakingReward: bigint,
+) => {
+    const balance = await ethers.provider.getBalance(staking);
+    await setBalance(await ethers.resolveAddress(staking), balance + stakingReward);
+}
+
+export const grantNodeRewards = async (
+    staking: Staking,
+    nodes: BigNumberish | BigNumberish[],
+    walletReward: bigint
+) => {
+    if (!Array.isArray(nodes)){
+        nodes = [nodes];
+    }
+    for (const node of nodes) {
+        const rewardWallet = await staking.getRewardWallet(node);
+        await setBalance(rewardWallet, await ethers.provider.getBalance(rewardWallet) + walletReward);
     }
 }
 

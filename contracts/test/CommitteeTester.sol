@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 /**
- *   errors.sol - fair-manager
+ *   CommitteeTester.sol - fair-manager
  *   Copyright (C) 2025-Present SKALE Labs
  *   @author Dmytro Stebaiev
  *
@@ -21,17 +21,17 @@
 
 pragma solidity ^0.8.24;
 
-import { NodeId } from "@skalenetwork/fair-manager-interfaces/INodes.sol";
+import { Committee, ICommittee, NodeId, TypedSet } from "../Committee.sol";
 
-/*
- * Central file for error messages used across the project
- */
+interface ICommitteeTester is ICommittee {
+    function isNodeInRBTree(NodeId node) external view returns (bool result);
+}
 
-error AddressIsZero();
+contract CommitteeTester is Committee, ICommitteeTester {
+    using TypedSet for TypedSet.NodeIdSet;
 
-error InvalidCommitteeAddress();
-error InvalidNodesAddress();
-error InvalidStakingAddress();
-error InvalidStatusAddress();
+    function isNodeInRBTree(NodeId node) external view override returns (bool result) {
+        return _pool.presentNodes.contains(node);
+    }
 
-error NodeDoesNotExist(NodeId nodeId);
+}

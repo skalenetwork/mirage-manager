@@ -27,6 +27,7 @@ import { NodeId } from "@skalenetwork/fair-manager-interfaces/INodes.sol";
 import { Fair } from "@skalenetwork/fair-manager-interfaces/units.sol";
 
 import { TypedMap } from "../structs/typed/TypedMap.sol";
+import { ALLOWED_ERROR, FEE_RATE_PRECISION_VALUE } from "./constants.sol";
 
 type Credit is uint256;
 type Holder is uint256;
@@ -51,12 +52,11 @@ library FundLibrary {
     }
 
     uint256 public constant CREDIT_PRECISION = 1 << 80;
+    uint16 public constant FEE_RATE_PRECISION = FEE_RATE_PRECISION_VALUE;
 
     Holder public constant NULL = Holder.wrap(0);
     Fair public constant ZERO_FAIR = Fair.wrap(0);
     Credit public constant ZERO_CREDIT = Credit.wrap(0);
-
-    Fair private constant ALLOWED_ERROR = Fair.wrap(1e9);
 
     error NotEnoughStaked(Fair staked);
     error NotEnoughFee(Fair earnedFee);
@@ -88,13 +88,20 @@ library FundLibrary {
     {
         _processBalanceChange(fund, fundBalance);
         Fair holderBalance = getBalance(fund, fundBalance, holder);
-        Credit credits;
+
         if (holderBalance == amount) {
-            credits = fund.credits.get(holder);
-        } else {
-            credits = _toCreditsRoundedUp(fund, fundBalance, amount);
+            // Ensures no dust credits are left behind
+            // Even if amount is zero
+            _removeAll(fund, fundBalance, holder);
+        } else if (amount > ZERO_FAIR) {
+            Credit credits = _toCreditsRoundedUp(fund, fundBalance, amount);
+            _remove(fund, fundBalance, holder, credits);
         }
-        _remove(fund, fundBalance, holder, credits);
+        else {
+            // amount is 0 and holder has balance
+            // should not do anything
+            return;
+        }
         Fair balanceAfter = getBalance(fund, fund.lastBalance, holder);
         _checkAllowedError(holderBalance, balanceAfter, amount);
     }
@@ -135,7 +142,18 @@ library FundLibrary {
         fund.lastBalance = fundBalance + amount;
         Fair balanceAfter = getBalance(fund, fund.lastBalance, holder);
         _checkAllowedError(holderBalance, balanceAfter, amount + delayedReward);
+
+        // Credits that result in zero balance are removed
+        if (ZERO_CREDIT < credits && balanceAfter == ZERO_FAIR) {
+            assert(fund.credits.remove(holder));
+            fund.totalCredits = fund.totalCredits - credits;
+        }
     }
+
+    function updateTotalBalance(Fund storage fund, Fair fundBalance) internal {
+        _processBalanceChange(fund, fundBalance);
+    }
+
 
     function getBalance(
         Fund storage fund,
@@ -150,7 +168,7 @@ library FundLibrary {
             return ZERO_FAIR;
         }
         (bool exists, Credit holderCredits) = fund.credits.tryGet(holder);
-        // If exists credits is 0, otherwise it is not.
+        // If the holder does not exist, there should be no credits.
         assert(exists != (holderCredits == ZERO_CREDIT));
         return _toFairRoundedDown(fund, fundBalance, holderCredits);
     }
@@ -190,10 +208,30 @@ library FundLibrary {
     )
         private
     {
-        if (fundBalance > fund.lastBalance) {
-            fund.earnedFee = fund.earnedFee + _getUncountedFee(fund, fundBalance);
+        if (!(fundBalance == fund.lastBalance)) {
+            if (fundBalance > fund.lastBalance) {
+                fund.earnedFee = fund.earnedFee + _getUncountedFee(fund, fundBalance);
+            }
+            if (fund.earnedFee > fundBalance) {
+                fund.earnedFee = fundBalance;
+            }
             fund.lastBalance = fundBalance;
         }
+    }
+
+    function _removeAll(
+        Fund storage fund,
+        Fair fundBalance,
+        Holder holder
+    )
+        private
+        returns (Fair removed)
+    {
+        (bool exists, Credit holderCredits) = fund.credits.tryGet(holder);
+        if (!exists) {
+            return ZERO_FAIR;
+        }
+        removed = _remove(fund, fundBalance, holder, holderCredits);
     }
 
     function _remove(
@@ -205,7 +243,6 @@ library FundLibrary {
         private
         returns (Fair removed)
     {
-        _processBalanceChange(fund, fundBalance);
         (bool exists, Credit holderCredits) = fund.credits.tryGet(holder);
         if (holderCredits < amount) {
             revert NotEnoughStaked(_toFairRoundedDown(fund, fundBalance, holderCredits));
@@ -250,7 +287,7 @@ library FundLibrary {
                 fee = balanceChange;
             } else {
                 fee = Fair.wrap(
-                    Fair.unwrap(balanceChange) * fund.feeRate / 1000
+                    Fair.unwrap(balanceChange) * fund.feeRate / FEE_RATE_PRECISION
                 );
             }
             return fee;
@@ -349,7 +386,7 @@ library FundLibrary {
 
         Fair err = max - min;
 
-        if (err > ALLOWED_ERROR) {
+        if (Fair.unwrap(err) > ALLOWED_ERROR) {
             // If the error is too high, we revert with a custom error
             // This is to prevent any potential exploits or issues with rounding errors
             // that could lead to funds lost.

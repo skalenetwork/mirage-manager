@@ -27,10 +27,10 @@ jobs:
       version: ${{ steps.version.outputs.version }}
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
 
     - name: Set up Node
-      uses: actions/setup-node@v4
+      uses: actions/setup-node@v6
       with:
         node-version: ${{ env.NODE_VERSION }}
         cache: 'yarn'
@@ -54,7 +54,7 @@ jobs:
       run: yarn hardhat run scripts/generateAbi.ts
 
     - name: Store artifacts
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       with:
         name: data
         path: data
@@ -77,12 +77,12 @@ jobs:
       VERSION: ${{ needs.build.outputs.version }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           ref: abi
 
       - name: Load artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v6
         with:
           name: data
 
@@ -99,7 +99,7 @@ jobs:
     if: github.event_name != 'pull_request' || github.event.pull_request.merged == true
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
 
     - name: Build and publish container
       env:

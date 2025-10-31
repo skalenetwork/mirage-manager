@@ -32,9 +32,9 @@ import {
 } from "@skalenetwork/fair-manager-interfaces/INodes.sol";
 import { IStaking } from "@skalenetwork/fair-manager-interfaces/IStaking.sol";
 import { IStatus } from "@skalenetwork/fair-manager-interfaces/IStatus.sol";
-
 import { TypedMap } from "./structs/typed/TypedMap.sol";
 import { TypedSet } from "./structs/typed/TypedSet.sol";
+import { AddressIsZero, NodeDoesNotExist } from "./utils/errors.sol";
 
 
 contract Nodes is AccessManagedUpgradeable, INodes {
@@ -80,17 +80,17 @@ contract Nodes is AccessManagedUpgradeable, INodes {
     // Set to track active node IDs
     TypedSet.NodeIdSet private _activeNodeIds;
 
+    event CommitteeUpdated(ICommittee newCommittee);
+
     error NodeIsInCommittee(NodeId nodeId);
     error AddressWasAlreadyAssignedToNode(address nodeAddress);
     error AddressIsNotAssignedToAnyNode(address nodeAddress);
     error PassiveNodeAlreadyExistsForAddress(address nodeAddress, NodeId nodeId);
     error AddressInUseByPassiveNodes(address nodeAddress);
-    error InvalidPortNumber(uint16 port);
     error InvalidPublicKey(bytes32[2] publicKey);
     error InvalidPublicKeyForSender(bytes32[2] publicKey, address expected, address sender);
     error ActiveNodesCannotChangeOwnership();
     error InvalidIp(bytes ip);
-    error NodeDoesNotExist(NodeId nodeId);
     error ActiveNodeWasNeverRegistered(NodeId nodeId);
     error PortShouldNotBeZero();
     error SenderIsNotNodeOwner();
@@ -154,7 +154,9 @@ contract Nodes is AccessManagedUpgradeable, INodes {
     }
 
     function setCommittee(ICommittee committeeAddress) external override restricted {
+        require(address(committeeAddress) != address(0), AddressIsZero());
         committeeContract = committeeAddress;
+        emit CommitteeUpdated(committeeAddress);
     }
 
     function registerNode(

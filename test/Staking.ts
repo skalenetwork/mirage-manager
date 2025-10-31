@@ -1,8 +1,10 @@
+// cspell:words alives
+
 import chai, { assert, expect } from "chai";
-import { registeredOnlyNodes, sendHeartbeat, stakedNodes, whitelistedNodes } from "./tools/fixtures";
+import { grantNodeRewards, grantNetworkRewards, registeredOnlyNodes, sendHeartbeat, stakedNodes, whitelistedNodes } from "./tools/fixtures";
 import { ethers } from "hardhat";
 import { zip } from "lodash";
-import { setBalance } from "@nomicfoundation/hardhat-network-helpers";
+import { setBalance, takeSnapshot } from "@nomicfoundation/hardhat-network-helpers";
 import { skipTime } from "./tools/time";
 import { Nodes, Staking } from "../typechain-types";
 import { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers";
@@ -1234,6 +1236,151 @@ describe("Staking", () => {
         await setBalance(await ethers.resolveAddress(staking), ethers.parseEther("2"));
         await status.connect(node.wallet).alive();
     });
+    it("should not cause alive() to PANIC", async() => {
+        const {nodesData, staking, status} = await registeredOnlyNodes();
+        const [node,] = nodesData;
+        const stakingReward = ethers.parseEther("1");
+        const [user1,] = await ethers.getSigners();
+        const walletReward = 10n**14n;
+
+        await staking.connect(node.wallet).setFeeRate(0);
+        await staking.connect(user1).stake(node.id, {value: ethers.parseEther("1")});
+        await status.connect(node.wallet).alive();
+        await status.whitelistNode(node.id);
+        expect(await staking.isNodeEnabled(node.id)).to.be.eql(true);
+        await staking.connect(user1).requestRetrieveAll(node.id);
+        // Should it be true? It is with current implementation
+        expect(await staking.isNodeEnabled(node.id)).to.be.eql(true);
+        await grantNetworkRewards(staking, stakingReward);
+        await grantNodeRewards(staking, node.id, walletReward);
+
+        await status.connect(node.wallet).alive();
+    });
+
+
+    it("Should disable/blacklist node with 0 stake", async () => {
+        const {nodesData, staking, status} = await registeredOnlyNodes();
+        await status.whitelistNode(12);
+        await staking.stake(12, {value: 200});
+        await status.connect(nodesData[11].wallet).alive();
+        await staking.requestRetrieveAll(12);
+        await status.removeNodeFromWhitelist(12);
+    });
+
+    it("Should calculate node fees correctly with only consensus rewards", async () => {
+        const {nodesData, staking, status, nodes} = await registeredOnlyNodes();
+        const node = nodesData[22]; // not in committee
+        await status.whitelistNode(node.id);
+        await grantNetworkRewards(staking, ethers.parseEther("1"));
+        await grantNodeRewards(staking, node.id, 1_000_000_000n);
+        expect(await staking.getNodeTotalStake(node.id)).to.be.eql(1_000_000_000n);
+        expect(await staking.getEarnedFeeAmount(node.id)).to.be.eql(1_000_000_000n);
+        await status.connect(node.wallet).alive();
+
+        // first to become enabled, gets all the rewards as fees
+        expect(await staking.getNodeTotalStake(node.id)).to.be.eql(ethers.parseEther("1") + 1_000_000_000n);
+        expect(await staking.getEarnedFeeAmount(node.id)).to.be.eql(ethers.parseEther("1") + 1_000_000_000n);
+
+        await staking.connect(node.wallet).requestAllFees(node.id);
+        expect(await staking.getNodeTotalStake(node.id)).to.be.eql(0n);
+        expect(await staking.getEarnedFeeAmount(node.id)).to.be.eql(0n);
+
+        await grantNetworkRewards(staking, ethers.parseEther("1"));
+        await grantNodeRewards(staking, node.id, 1_000_000_000n);
+
+        // Rewards need to be flushed so that network rewards are taken into account
+        expect(await staking.getNodeTotalStake(node.id)).to.be.eql(1_000_000_000n);
+        expect(await staking.getEarnedFeeAmount(node.id)).to.be.eql(1_000_000_000n);
+        const exitBefore = await staking.getTotalInExitQueueFor(node.wallet.address);
+        const snapshot = await takeSnapshot();
+
+        // Flush happens after calculating the total amount of fees
+        await staking.connect(node.wallet).requestAllFees(node.id);
+        expect(await staking.getNodeTotalStake(node.id)).to.be.eql(ethers.parseEther("1"));
+        expect(await staking.getTotalInExitQueueFor(node.wallet.address)).to.be.eql(exitBefore + 1_000_000_000n);
+
+        await staking.connect(node.wallet).requestAllFees(node.id);
+        expect(
+            await staking.getTotalInExitQueueFor(node.wallet.address)
+        ).to.be.eql(exitBefore + 1_000_000_000n + ethers.parseEther("1"));
+
+
+        // Revert to snapshot
+        await snapshot.restore();
+
+        // If we delete the node, no fees get stuck because flush happens in Nodes.sol contract
+        await nodes.connect(node.wallet).deleteNode(node.id);
+        expect(
+            await staking.getTotalInExitQueueFor(node.wallet.address)
+        ).to.be.eql(exitBefore + 1_000_000_000n + ethers.parseEther("1"));
+        expect(await staking.getNodeTotalStake(node.id)).to.be.eql(0n);
+    });
+
+    it("Should not add user as a holder if staking very small amount", async () => {
+        const {nodesData, staking, status} = await registeredOnlyNodes();
+        await status.whitelistNode(1);
+        await staking.stake(1, {value: 1});
+        await status.connect(nodesData[0].wallet).alive();
+        const [deployer, user1, user2] = await ethers.getSigners();
+        await staking.connect(user1).stake(1, {value: 2});
+        await staking.connect(nodesData[0].wallet).setFeeRate(0);
+        await setBalance(await staking.getRewardWallet(1), HUGE_AMOUNT_OF_FAIR);
+
+        expect(await staking.getNodeTotalStake(1)).to.be.eql(HUGE_AMOUNT_OF_FAIR + 1n + 2n);
+        expect(await staking.getStakedToNodeAmountFor(1, deployer)).to.be.eql(HUGE_AMOUNT_OF_FAIR / 3n + 1n);
+        expect(await staking.getStakedToNodeAmountFor(1, user1)).to.be.eql(HUGE_AMOUNT_OF_FAIR * 2n / 3n + 2n);
+        expect(await staking.getDelegatorsToNodeCount(1)).to.be.eql(2n);
+        await staking.connect(user2).stake(1, {value: 1});
+
+        // tx accepted, user has no stake, but amount was received by the node
+        expect(await staking.getStakedToNodeAmountFor(1, user2)).to.be.eql(0n);
+        expect(await staking.getNodeTotalStake(1)).to.be.eql(HUGE_AMOUNT_OF_FAIR + 1n + 2n + 1n);
+        expect(await staking.getDelegatorsToNodeCount(1)).to.be.eql(2n);
+    });
+
+    it("Should update earned fees accordingly", async () => {
+        const {nodesData, staking, status} = await registeredOnlyNodes();
+        const [node,] = nodesData;
+        const stakingReward = ethers.parseEther("1");
+        const walletReward = 10n**14n;
+        await grantNetworkRewards(staking, stakingReward * 2n);
+        await grantNodeRewards(staking, [node.id, 21n], walletReward);
+
+        await status.whitelistNode(21n);
+
+        await staking.connect(node.wallet).setFeeRate(24);
+        expect(await staking.getEarnedFeeAmount(node.id)).to.be.equal(walletReward);
+        expect(await staking.getEarnedFeeAmount(21n)).to.be.equal(walletReward);
+        await skipTime(await status.heartbeatInterval() + 1n);
+
+        for (const n of nodesData) {
+            await status.connect(n.wallet).alive();
+        }
+
+        expect(await ethers.provider.getBalance(staking)).to.be.gt(await staking.totalDisabled() + await staking.getTotalInExitQueue());
+        expect(await staking.isNodeEnabled(21n)).to.be.equal(true);
+        // Node was the first to be whitelisted and enabled and thus collected all rewards
+        expect(await staking.getNodeTotalStake(21n)).to.be.equal(stakingReward*2n + walletReward);
+        expect(await staking.getNodeTotalStake(node.id)).to.be.equal(walletReward);
+
+        expect(await staking.getNodeShare(node.id)).to.be.eql(0n);
+        // All nodes sent alive. Node is not whitelisted so it should not be enabled
+        expect(await staking.isNodeEnabled(node.id)).to.be.equal(false);
+        await grantNetworkRewards(staking, stakingReward);
+        await grantNodeRewards(staking, 18n, walletReward);
+
+        expect(await staking.getNodeTotalStake(node.id)).to.be.eql(walletReward);
+        expect(await staking.getEarnedFeeAmount(node.id)).to.be.eql(walletReward);
+        await status.whitelistNode(node.id);
+
+        // Node becomes enabled, and "loses" 1 wei due to rounding
+        // We expect the earned fee to have been updated accordingly
+        expect(await staking.getNodeTotalStake(node.id)).to.be.eql(walletReward - 1n);
+        expect(await staking.getEarnedFeeAmount(node.id)).to.be.eql(walletReward - 1n);
+
+        // Should not panic
+        await staking.stake(node.id, {value: 232731540842n});
+    });
 
     it("should correctly process delayed rewards when fee rate is 0", async () => {
         const {nodesData: [node], staking} = await registeredOnlyNodes();
@@ -1336,6 +1483,65 @@ describe("Staking", () => {
             {value: zeroSelfStake}
         )).to.be.revertedWithCustomError(staking, "InsufficientSelfStake")
          .withArgs(zeroSelfStake, selfStakeRequirement);
+    });
+
+    it("disable should remove all credits from root fund when remaining credits are dust", async () => {
+        const {nodesData, staking, status, committee} = await registeredOnlyNodes();
+        const nodesData1 = nodesData.slice(0, 22);
+        const forceEjectNodes = async (num: number) => {
+            await skipTime(await status.heartbeatInterval() + 1n);
+            for (let i = 0; i < num; i++) {
+                await committee.ejectUnhealthyNode();
+            }
+        };
+
+        const alivesAfterAllUnhealthy = async () => {
+            await skipTime(await status.heartbeatInterval() * 2n);
+            for (const n of nodesData1) {
+                await status.connect(n.wallet).alive();
+            }
+        };
+
+
+        const paySomeConsensusRewards = async (nodeIndex: number) => {
+            const node = nodesData1[nodeIndex % nodesData1.length];
+            await grantNetworkRewards(staking, ethers.parseEther("1"));
+            await grantNodeRewards(staking, node.id, 10n**14n);
+            console.log(`Paid some rewards to node ${node.id}`);
+        };
+
+        await status.whitelistNode(15n);
+        await status.whitelistNode(16n);
+        await paySomeConsensusRewards(15); // node 16
+        await status.whitelistNode(1n);
+        await paySomeConsensusRewards(14); // node 15
+
+        await alivesAfterAllUnhealthy();
+        await forceEjectNodes(3);
+        await staking.stake(1n, {value: 460303n + 10n**13n})
+
+        // order might matter here - do not change
+        await sendHeartbeat(status, [nodesData1[15], nodesData1[0], nodesData1[14]]);
+        const [owner] = await ethers.getSigners();
+        await forceEjectNodes(1);
+
+        await owner.sendTransaction({ to: staking, value: 198n});
+        await alivesAfterAllUnhealthy();
+
+        const nodeStake = await staking.getNodeTotalStake(1);
+        expect(await staking.getStakedToNodeAmountFor(1, owner.address)).to.be.eql(nodeStake - 1n);
+        expect(await staking.getEarnedFeeAmount(1)).to.be.eql(1n);
+
+        await staking.requestRetrieveAll(1);
+
+        // Retrieve all leaves 1 wei of fees
+        // however remaining credits are not enough to make 1 wei of stake
+
+        expect(await staking.getNodeTotalStake(1)).to.be.eql(0n);
+        expect(await staking.getEarnedFeeAmount(1)).to.be.eql(1n);
+
+        // dust credits should be removed because it was worthless
+        await forceEjectNodes(1);
     });
 
     describe("when node is registered with self stake", () => {

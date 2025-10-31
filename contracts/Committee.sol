@@ -36,6 +36,8 @@ import { IStaking } from "@skalenetwork/fair-manager-interfaces/IStaking.sol";
 import { Duration, IStatus } from "@skalenetwork/fair-manager-interfaces/IStatus.sol";
 
 import { TypedSet } from "./structs/typed/TypedSet.sol";
+import { DEFAULT_COMMITTEE_SIZE, DEFAULT_MIN_TRANSITION_DELAY, DEFAULT_TRANSITION_DELAY} from "./utils/constants.sol";
+import { AddressIsZero, InvalidNodesAddress } from "./utils/errors.sol";
 import { G2Operations } from "./utils/fieldOperations/G2Operations.sol";
 import { FundLibrary } from "./utils/Fund.sol";
 import { PoolLibrary } from "./utils/Pool.sol";
@@ -66,7 +68,7 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
     Duration public minTransitionDelay;
     string public version;
 
-    PoolLibrary.Pool private _pool;
+    PoolLibrary.Pool internal _pool;
 
     event NodeBecomesEligible(NodeId indexed node);
     event NodeLosesEligibility(NodeId indexed node);
@@ -102,6 +104,11 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
         _;
     }
 
+    modifier onlyNonZeroAddress(address addr) {
+        require(addr != address(0), AddressIsZero());
+        _;
+    }
+
     function initialize(
         address initialAuthority,
         INodes nodesAddress,
@@ -112,12 +119,13 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
         initializer
         override
     {
+        require(address(nodesAddress) != address(0), InvalidNodesAddress());
         __AccessManaged_init(initialAuthority);
-        committeeSize = 22;
-        transitionDelay = Duration.wrap(1 days);
+        committeeSize = DEFAULT_COMMITTEE_SIZE;
+        transitionDelay = Duration.wrap(DEFAULT_TRANSITION_DELAY);
         nodes = nodesAddress;
         skaleRng = address(0);
-        minTransitionDelay = Duration.wrap(10 minutes);
+        minTransitionDelay = Duration.wrap(DEFAULT_MIN_TRANSITION_DELAY);
         _initializeCommittee(commonPublicKey, nodeIds);
     }
 
@@ -139,8 +147,7 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
         minTransitionDelay = delay;
     }
 
-    function setRNG(address newRNG) external override restricted {
-        require(newRNG != address(0), InvalidSkaleRngContract(newRNG));
+    function setRNG(address newRNG) external override restricted onlyNonZeroAddress(newRNG) {
         skaleRng = newRNG;
         require(_safeGetRandom() > 0, InvalidSkaleRngContract(newRNG));
         emit SkaleRNGEnabled(newRNG);
@@ -151,23 +158,30 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
         emit SkaleRNGDisabled();
     }
 
-    function setDkg(IDkg dkgAddress) external override restricted {
+    function setDkg(IDkg dkgAddress) external override restricted onlyNonZeroAddress(address(dkgAddress)) {
         emit DkgUpdated(dkg, dkgAddress);
         dkg = dkgAddress;
     }
 
-    function setNodes(INodes nodesAddress) external override restricted {
+    function setNodes(INodes nodesAddress) external override restricted onlyNonZeroAddress(address(nodesAddress)) {
         emit NodesUpdated(nodes, nodesAddress);
         nodes = nodesAddress;
     }
 
-    function setStatus(IStatus statusAddress) external override restricted {
+    function setStatus(IStatus statusAddress) external override restricted onlyNonZeroAddress(address(statusAddress)) {
         emit StatusUpdated(status, statusAddress);
         status = statusAddress;
         _pool.status = statusAddress;
     }
 
-    function setStaking(IStaking stakingAddress) external override restricted {
+    function setStaking(
+        IStaking stakingAddress
+    )
+        external
+        override
+        restricted
+        onlyNonZeroAddress(address(stakingAddress))
+    {
         emit StakingUpdated(staking, stakingAddress);
         staking = stakingAddress;
     }
@@ -193,7 +207,9 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
 
     function setTransitionDelay(Duration delay) external override restricted {
         require(
-            Duration.unwrap(delay) + 1 > Duration.unwrap(minTransitionDelay),
+            // false-positive: No real improvement in gas from replacing non-strict inequality
+            // solhint-disable-next-line gas-strict-inequalities
+            Duration.unwrap(delay) >= Duration.unwrap(minTransitionDelay),
             TransitionDelayTooShort()
         );
         emit TransitionDelayUpdated(transitionDelay, delay);
@@ -210,7 +226,7 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
         }
     }
 
-    function nodeBlacklisted(NodeId node) external override restricted {
+    function nodeRemovedFromWhitelist(NodeId node) external override restricted {
         _setIneligible(node);
     }
 
@@ -250,9 +266,10 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
     }
 
     function isNodeInCurrentOrNextCommittee(NodeId node) external view override returns (bool result) {
+        uint256 upperBound = 1 + CommitteeIndex.unwrap(lastCommitteeIndex);
         for (
             uint256 i = CommitteeIndex.unwrap(getActiveCommitteeIndex());
-            i < 1 + CommitteeIndex.unwrap(lastCommitteeIndex);
+            i < upperBound;
             ++i
         ) {
             CommitteeIndex committeeIndex = CommitteeIndex.wrap(i);
@@ -399,7 +416,9 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
     }
 
     function _committeeExists(CommitteeIndex index) private view returns (bool exists) {
-        return !(CommitteeIndex.unwrap(lastCommitteeIndex) < CommitteeIndex.unwrap(index));
+        // false-positive: No real improvement in gas from replacing non-strict inequality
+        // solhint-disable-next-line gas-strict-inequalities
+        return CommitteeIndex.unwrap(lastCommitteeIndex) >= CommitteeIndex.unwrap(index);
     }
 
     function _safeGetRandom() private view returns (uint256 randomNumber) {

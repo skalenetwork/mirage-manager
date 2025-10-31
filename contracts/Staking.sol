@@ -21,34 +21,30 @@
 
 pragma solidity ^0.8.24;
 
+// OpenZeppelin imports
 import {
     AccessManagedUpgradeable
 } from "@openzeppelin/contracts-upgradeable/access/manager/AccessManagedUpgradeable.sol";
-import {
-    ReentrancyGuardUpgradeable
-} from "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
-import {ERC1967Utils} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Utils.sol";
-import {ProxyAdmin} from "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol";
-import {
-    TransparentUpgradeableProxy
-} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
-import {
-    Address
-} from "@openzeppelin/contracts/utils/Address.sol";
+import { ReentrancyGuardUpgradeable } from "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
+import { BeaconProxy } from "@openzeppelin/contracts/proxy/beacon/BeaconProxy.sol";
+import { IBeacon } from "@openzeppelin/contracts/proxy/beacon/IBeacon.sol";
+import { Address } from "@openzeppelin/contracts/utils/Address.sol";
+import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
+import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
-import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
-import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+// External interfaces
+import { ICommittee } from "@skalenetwork/fair-manager-interfaces/ICommittee.sol";
+import { INodes, NodeId } from "@skalenetwork/fair-manager-interfaces/INodes.sol";
+import { IRewardWallet } from "@skalenetwork/fair-manager-interfaces/IRewardWallet.sol";
+import { IStaking } from "@skalenetwork/fair-manager-interfaces/IStaking.sol";
 
-import {ICommittee} from "@skalenetwork/fair-manager-interfaces/ICommittee.sol";
-import {INodes, NodeId} from "@skalenetwork/fair-manager-interfaces/INodes.sol";
-import {IRewardWallet} from "@skalenetwork/fair-manager-interfaces/IRewardWallet.sol";
-import {IStaking} from "@skalenetwork/fair-manager-interfaces/IStaking.sol";
-
-import {Nodes} from "./Nodes.sol";
-import {TypedMap} from "./structs/typed/TypedMap.sol";
-import {TypedSet} from "./structs/typed/TypedSet.sol";
-import {ExitQueueLibrary, Timestamp} from "./utils/ExitQueue.sol";
-import {Credit, FundLibrary, Fair, Holder} from "./utils/Fund.sol";
+// Internal project files
+import { TypedMap } from "./structs/typed/TypedMap.sol";
+import { TypedSet } from "./structs/typed/TypedSet.sol";
+import { DEFAULT_MIN_STAKE, DEFAULT_RETRIEVING_DELAY } from "./utils/constants.sol";
+import { InvalidCommitteeAddress, InvalidNodesAddress, NodeDoesNotExist } from "./utils/errors.sol";
+import { ExitQueueLibrary, Timestamp } from "./utils/ExitQueue.sol";
+import { Credit, FundLibrary, Fair, Holder } from "./utils/Fund.sol";
 
 contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaking {
     using Address for address payable;
@@ -59,11 +55,12 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
     using TypedMap for TypedMap.NodeIdToFairMap;
     using ExitQueueLibrary for ExitQueueLibrary.ExitQueue;
 
-    uint16 public constant DEFAULT_FEE_RATE = 1000;
+    // Starts equal to precision (max possible fee rate)
+    uint16 public constant DEFAULT_FEE_RATE = FundLibrary.FEE_RATE_PRECISION;
 
     ICommittee public committee;
     INodes public nodes;
-    IRewardWallet public rewardWalletReference;
+    IBeacon public rewardWalletBeacon;
     Fair public totalDisabled;
     Fair public stakeLimit;
     Fair public selfStakeRequirement;
@@ -92,7 +89,7 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
     event RetrievingDelayUpdated(Timestamp indexed retrievingDelay);
     event StakeLimitUpdated(Fair indexed newLimit);
     event NodeFeeRateUpdated(NodeId indexed node, uint16 oldFeeRate, uint16 newFeeRate);
-    event RewardWalletReferenceUpdated(IRewardWallet indexed oldReference, IRewardWallet indexed newReference);
+    event RewardWalletBeaconUpdated(IBeacon indexed oldBeacon, IBeacon indexed newBeacon);
     event SelfStakeRequirementUpdated(Fair indexed amount);
     event SelfStakeProvided(NodeId indexed nodeId, Fair amount);
 
@@ -109,9 +106,10 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
     error RewardWalletDoesNotExist(NodeId node);
     error NodeOwnerCannotRetrieveWhileNodeExists(address nodeOwner, NodeId node);
     error InsufficientSelfStake(Fair provided, Fair required);
+    error InvalidRewardWalletAddress();
 
     modifier onlyExistingActiveNode(NodeId node) {
-        require(nodes.activeNodeExists(node), Nodes.NodeDoesNotExist(node));
+        require(nodes.activeNodeExists(node), NodeDoesNotExist(node));
         _;
     }
 
@@ -119,25 +117,35 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
         address initialAuthority,
         ICommittee committee_,
         INodes nodes_,
-        IRewardWallet rewardWalletReference_
+        IBeacon rewardWalletBeacon_
     )
         public
         initializer
         override
     {
+        require(address(committee_) != address(0), InvalidCommitteeAddress());
+        require(address(nodes_) != address(0), InvalidNodesAddress());
+        require(address(rewardWalletBeacon_) != address(0), InvalidRewardWalletAddress());
         __AccessManaged_init(initialAuthority);
         __ReentrancyGuard_init();
         committee = committee_;
         nodes = nodes_;
-        rewardWalletReference = rewardWalletReference_;
+        rewardWalletBeacon = rewardWalletBeacon_;
         // Default on initialize
-        _exitQueue.retrievingDelay = Timestamp.wrap(1 days);
-        selfStakeRequirement = Fair.wrap(1);
-        emit RetrievingDelayUpdated(Timestamp.wrap(1 days));
+        _exitQueue.retrievingDelay = Timestamp.wrap(DEFAULT_RETRIEVING_DELAY);
+        selfStakeRequirement = Fair.wrap(DEFAULT_MIN_STAKE);
+        emit RetrievingDelayUpdated(Timestamp.wrap(DEFAULT_RETRIEVING_DELAY));
     }
 
     receive() external override payable {
         emit RewardReceived(msg.sender, msg.value);
+    }
+
+    function updateRewardWalletBeacon(IBeacon rewardWalletBeacon_) external reinitializer(2) restricted override{
+        require(address(rewardWalletBeacon_) != address(0), InvalidRewardWalletAddress());
+        IBeacon oldBeacon = rewardWalletBeacon;
+        rewardWalletBeacon = rewardWalletBeacon_;
+        emit RewardWalletBeaconUpdated(oldBeacon, rewardWalletBeacon_);
     }
 
     function addAllowedReceiver(address receiver) external override {
@@ -168,7 +176,6 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
     }
 
     function disable(NodeId node) external override restricted {
-        _pullReward(node);
         Fair balance = _getTotalBalance();
         Fair nodeFundBalance = _rootFund.getBalance(balance, FundLibrary.nodeToHolder(node));
         _rootFund.remove(
@@ -207,6 +214,16 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
         );
         assert(_disabledNodesBalances.remove(node));
         totalDisabled = totalDisabled - value;
+
+        // Node might have changed it's balance due to rounding in supply()
+        // Force update on nodeFund
+        Fair finalBalance = _rootFund.getBalance(_getTotalBalance(), FundLibrary.nodeToHolder(node));
+        if(!(finalBalance == value)){
+            _nodesFunds[node].updateTotalBalance(
+                _rootFund.getBalance(_getTotalBalance(), FundLibrary.nodeToHolder(node))
+            );
+        }
+
         emit NodeEnabled(node);
     }
 
@@ -310,7 +327,8 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
     }
 
     function setFeeRate(uint16 feeRate) external override {
-        require(!(feeRate > 1000), FeeRateIsIncorrect(feeRate));
+        // Constant + 1 optimized by the compiler - not computed at runtime
+        require(feeRate < FundLibrary.FEE_RATE_PRECISION + 1, FeeRateIsIncorrect(feeRate));
         NodeId node = nodes.getNodeId(msg.sender);
         uint16 currentFeeRate = _nodesFunds[node].feeRate;
         require(
@@ -321,11 +339,6 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
 
         emit NodeFeeRateUpdated(node, currentFeeRate, feeRate);
         _updateNodeFeeRate(node, feeRate);
-    }
-
-    function setRewardWalletReference(IRewardWallet rewardWalletReference_) external override restricted {
-        emit RewardWalletReferenceUpdated(rewardWalletReference, rewardWalletReference_);
-        rewardWalletReference = rewardWalletReference_;
     }
 
     function requestRetrieveAll(NodeId node) external override {
@@ -341,7 +354,6 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
             return 0;
         }
         Fair totalBalance = _getTotalBalance();
-        assert((totalBalance == FundLibrary.ZERO_FAIR) == (_rootFund.totalCredits == FundLibrary.ZERO_CREDIT));
         uint256 unPulledCredits = 0;
         uint256 rewardWalletBalance = address(_rewardWallets[node]).balance;
         if (rewardWalletBalance > 0) {
@@ -675,11 +687,9 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
     }
 
     function _deployRewardWallet(NodeId node) private {
-        ProxyAdmin proxyAdmin = ProxyAdmin(ERC1967Utils.getAdmin());
         emit RewardWalletCreated(node);
-        _rewardWallets[node] = IRewardWallet(payable(new TransparentUpgradeableProxy(
-            address(rewardWalletReference),
-            proxyAdmin.owner(),
+        _rewardWallets[node] = IRewardWallet(payable(new BeaconProxy(
+            address(rewardWalletBeacon),
             abi.encodeWithSelector(
                 IRewardWallet.initialize.selector,
                 authority(),

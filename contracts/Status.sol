@@ -29,6 +29,8 @@ import { INodes, NodeId } from "@skalenetwork/fair-manager-interfaces/INodes.sol
 import { Duration, IStatus } from "@skalenetwork/fair-manager-interfaces/IStatus.sol";
 
 import { TypedSet } from "./structs/typed/TypedSet.sol";
+import { DEFAULT_HEARTBEAT_INTERVAL } from "./utils/constants.sol";
+import { NodeDoesNotExist } from "./utils/errors.sol";
 
 
 contract Status is AccessManagedUpgradeable, IStatus {
@@ -50,7 +52,6 @@ contract Status is AccessManagedUpgradeable, IStatus {
 
     error NodeAlreadyWhitelisted(NodeId nodeId);
     error NodeNotWhitelisted(NodeId nodeId);
-    error NodeDoesNotExist(NodeId nodeId);
 
     function initialize(
         address initialAuthority,
@@ -64,7 +65,7 @@ contract Status is AccessManagedUpgradeable, IStatus {
         __AccessManaged_init(initialAuthority);
         nodes = nodesAddress;
         committee = committeeAddress;
-        heartbeatInterval = Duration.wrap(5 minutes);
+        heartbeatInterval = Duration.wrap(DEFAULT_HEARTBEAT_INTERVAL);
     }
 
     function alive() external override {
@@ -78,6 +79,7 @@ contract Status is AccessManagedUpgradeable, IStatus {
             committee.processHeartbeat(nodeId);
         }
     }
+
     function setHeartbeatInterval(Duration interval) external override restricted {
         Duration oldInterval = heartbeatInterval;
         heartbeatInterval = interval;
@@ -103,7 +105,7 @@ contract Status is AccessManagedUpgradeable, IStatus {
         bool isActive = nodes.activeNodeExists(nodeId);
         emit NodeRemovedFromWhitelist(nodeId);
         if (isActive) {
-            committee.nodeBlacklisted(nodeId);
+            committee.nodeRemovedFromWhitelist(nodeId);
         }
     }
 
