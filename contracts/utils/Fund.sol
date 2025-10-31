@@ -87,19 +87,23 @@ library FundLibrary {
         internal
     {
         _processBalanceChange(fund, fundBalance);
-        if (amount > ZERO_FAIR) {
-            Fair holderBalance = getBalance(fund, fundBalance, holder);
-            Credit credits;
+        Fair holderBalance = getBalance(fund, fundBalance, holder);
 
-            if (holderBalance == amount) {
-                credits = fund.credits.get(holder);
-            } else {
-                credits = _toCreditsRoundedUp(fund, fundBalance, amount);
-            }
+        if (holderBalance == amount) {
+            // Ensures no dust credits are left behind
+            // Even if amount is zero
+            _removeAll(fund, fundBalance, holder);
+        } else if (amount > ZERO_FAIR) {
+            Credit credits = _toCreditsRoundedUp(fund, fundBalance, amount);
             _remove(fund, fundBalance, holder, credits);
-            Fair balanceAfter = getBalance(fund, fund.lastBalance, holder);
-            _checkAllowedError(holderBalance, balanceAfter, amount);
         }
+        else {
+            // amount is 0 and holder has balance
+            // should not do anything
+            return;
+        }
+        Fair balanceAfter = getBalance(fund, fund.lastBalance, holder);
+        _checkAllowedError(holderBalance, balanceAfter, amount);
     }
 
     function setFeeRate(
@@ -213,6 +217,21 @@ library FundLibrary {
             }
             fund.lastBalance = fundBalance;
         }
+    }
+
+    function _removeAll(
+        Fund storage fund,
+        Fair fundBalance,
+        Holder holder
+    )
+        private
+        returns (Fair removed)
+    {
+        (bool exists, Credit holderCredits) = fund.credits.tryGet(holder);
+        if (!exists) {
+            return ZERO_FAIR;
+        }
+        removed = _remove(fund, fundBalance, holder, holderCredits);
     }
 
     function _remove(

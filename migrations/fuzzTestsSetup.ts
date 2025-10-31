@@ -8,12 +8,16 @@ import { deploy } from "./deploy";
 */
 const main = async () => {
 
+    // Any high number works. We fix timestamp for reproducible test runs
+    const fixedTimestamp = 2678886401;
+    await ethers.provider.send("evm_setNextBlockTimestamp", [fixedTimestamp]);
+
     console.log("Deploy contracts");
     const deployedContracts = await deploy(await generateRandomNodes(22), commonPublicKey);
     console.log("Done");
 
     const addresses = Object.fromEntries(await Promise.all(Object.entries(deployedContracts).map(
-            async ([name, contract]) => [name, await ethers.resolveAddress(contract)]
+        async ([name, contract]) => [name, await ethers.resolveAddress(contract)]
     )));
     console.log("DEPLOYER:", await ethers.resolveAddress((await ethers.getSigners())[0].address));
     for (const contract in addresses) {

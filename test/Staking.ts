@@ -1,3 +1,5 @@
+// cspell:words alives
+
 import chai, { assert, expect } from "chai";
 import { grantNodeRewards, grantNetworkRewards, registeredOnlyNodes, sendHeartbeat, stakedNodes, whitelistedNodes } from "./tools/fixtures";
 import { ethers } from "hardhat";
@@ -1481,6 +1483,65 @@ describe("Staking", () => {
             {value: zeroSelfStake}
         )).to.be.revertedWithCustomError(staking, "InsufficientSelfStake")
          .withArgs(zeroSelfStake, selfStakeRequirement);
+    });
+
+    it("disable should remove all credits from root fund when remaining credits are dust", async () => {
+        const {nodesData, staking, status, committee} = await registeredOnlyNodes();
+        const nodesData1 = nodesData.slice(0, 22);
+        const forceEjectNodes = async (num: number) => {
+            await skipTime(await status.heartbeatInterval() + 1n);
+            for (let i = 0; i < num; i++) {
+                await committee.ejectUnhealthyNode();
+            }
+        };
+
+        const alivesAfterAllUnhealthy = async () => {
+            await skipTime(await status.heartbeatInterval() * 2n);
+            for (const n of nodesData1) {
+                await status.connect(n.wallet).alive();
+            }
+        };
+
+
+        const paySomeConsensusRewards = async (nodeIndex: number) => {
+            const node = nodesData1[nodeIndex % nodesData1.length];
+            await grantNetworkRewards(staking, ethers.parseEther("1"));
+            await grantNodeRewards(staking, node.id, 10n**14n);
+            console.log(`Paid some rewards to node ${node.id}`);
+        };
+
+        await status.whitelistNode(15n);
+        await status.whitelistNode(16n);
+        await paySomeConsensusRewards(15); // node 16
+        await status.whitelistNode(1n);
+        await paySomeConsensusRewards(14); // node 15
+
+        await alivesAfterAllUnhealthy();
+        await forceEjectNodes(3);
+        await staking.stake(1n, {value: 460303n + 10n**13n})
+
+        // order might matter here - do not change
+        await sendHeartbeat(status, [nodesData1[15], nodesData1[0], nodesData1[14]]);
+        const [owner] = await ethers.getSigners();
+        await forceEjectNodes(1);
+
+        await owner.sendTransaction({ to: staking, value: 198n});
+        await alivesAfterAllUnhealthy();
+
+        const nodeStake = await staking.getNodeTotalStake(1);
+        expect(await staking.getStakedToNodeAmountFor(1, owner.address)).to.be.eql(nodeStake - 1n);
+        expect(await staking.getEarnedFeeAmount(1)).to.be.eql(1n);
+
+        await staking.requestRetrieveAll(1);
+
+        // Retrieve all leaves 1 wei of fees
+        // however remaining credits are not enough to make 1 wei of stake
+
+        expect(await staking.getNodeTotalStake(1)).to.be.eql(0n);
+        expect(await staking.getEarnedFeeAmount(1)).to.be.eql(1n);
+
+        // dust credits should be removed because it was worthless
+        await forceEjectNodes(1);
     });
 
     describe("when node is registered with self stake", () => {
