@@ -220,9 +220,8 @@ contract Status is AccessManagedUpgradeable, IStatus {
     }
 
     /**
-     * @notice Checks if a node is healthy based on its last heartbeat
+     * @notice Checks if a node is healthy
      * @dev A node is considered healthy if the time since its last heartbeat is less than the heartbeat interval
-     * @dev Fair chain guarantees that block.timestamp are strictly increasing
      * @param nodeId The ID of the node to check
      * @return healthy True if the node is healthy, false otherwise
      */

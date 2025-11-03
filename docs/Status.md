@@ -269,14 +269,13 @@ function isWhitelisted(NodeId nodeId) public view returns (bool whitelisted)
 
 ### isHealthy
 
-Checks if a node is healthy based on its last heartbeat
+Checks if a node is healthy
 
 ```solidity
 function isHealthy(NodeId nodeId) public view returns (bool healthy)
 ```
 
-**dev:** _A node is considered healthy if the time since its last heartbeat is less than the heartbeat interval
-Fair chain guarantees that block.timestamp are strictly increasing_
+**dev:** _A node is considered healthy if the time since its last heartbeat is less than the heartbeat interval_
 
 #### Parameters
 
