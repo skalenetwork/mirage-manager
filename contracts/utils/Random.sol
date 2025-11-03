@@ -3,7 +3,7 @@
 /*
     Random.sol - fair-manager
     Copyright (C) 2025-Present SKALE Labs
-    @author Dmytro Stebaiev
+
 
     fair-manager is free software: you can redistribute it and/or modify
     it under the terms of the GNU Affero General Public License as published
@@ -25,9 +25,10 @@ import { IRandom } from "@skalenetwork/fair-manager-interfaces/IRandom.sol";
 
 /**
  * @title Random Library
- * @author SKALE Labs
+ * @author Dmytro Stebaiev
+ * @author Eduardo Vasques
  * @notice Library for generating pseudo-random numbers using seed-based generation
- * Provides utilities for creating random number generators and generating values
+ * @dev Provides utilities for creating random number generators and generating values
  * within specified ranges for weighted sampling and selection algorithms.
  */
 library Random {

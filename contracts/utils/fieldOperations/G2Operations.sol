@@ -4,7 +4,7 @@
     G2Operations.sol - fair-manager
     Copyright (C) 2018-Present SKALE Labs
 
-    @author Dmytro Stebaiev
+
 
     fair-manager is free software: you can redistribute it and/or modify
     it under the terms of the GNU Affero General Public License as published
@@ -28,7 +28,8 @@ import { Fp2Operations } from "./Fp2Operations.sol";
 
 /**
  * @title G2 Operations
- * @author SKALE Labs
+ * @author Dmytro Stebaiev
+ * @author Eduardo Vasques
  * @notice Provides functionality for working with G2 curve points
  */
 library G2Operations {

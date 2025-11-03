@@ -3,7 +3,7 @@
 /*
     Precompiled.sol - fair-manager
     Copyright (C) 2018-Present SKALE Labs
-    @author Dmytro Stebaiev
+
 
     fair-manager is free software: you can redistribute it and/or modify
     it under the terms of the GNU Affero General Public License as published
@@ -23,7 +23,8 @@ pragma solidity ^0.8.24;
 
 /**
  * @title Precompiled Library
- * @author SKALE Labs
+ * @author Dmytro Stebaiev
+ * @author Eduardo Vasques
  * @notice Library for interacting with Ethereum precompiled contracts and SKALE-specific precompiles
  * @dev Provides utilities for modular exponentiation, elliptic curve operations (BN256),
  * and random number generation using SKALE's on-chain RNG.

@@ -3,7 +3,7 @@
 /*
     ExitQueue.sol - fair-manager
     Copyright (C) 2025-Present SKALE Labs
-    @author Dmytro Stebaiev
+
 
     fair-manager is free software: you can redistribute it and/or modify
     it under the terms of the GNU Affero General Public License as published
@@ -33,7 +33,8 @@ import { FundLibrary } from "./Fund.sol";
 
 /**
  * @title Exit Queue Library
- * @author SKALE Labs
+ * @author Eduardo Vasques
+ * @author Dmytro Stebaiev
  * @notice Manages delayed retrieval of staked tokens
  */
 library ExitQueueLibrary{
@@ -45,8 +46,10 @@ library ExitQueueLibrary{
         Fair totalLeaving;
     }
 
-    /// @notice Main exit queue storage structure
-    /// @dev Includes all exit requests, user-specific data, configuration, and data tracking values
+    /**
+     * @notice Main exit queue storage structure
+     * @dev Includes all exit requests, user-specific data, configuration, and data tracking values
+     */
     struct ExitQueue {
         mapping(uint256 requestId => IStaking.ExitRequest request) exitRequests;
         mapping(address user => UserExitData exitData) userExitData;

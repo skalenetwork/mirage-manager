@@ -3,7 +3,7 @@
 /**
  *   CommitteeTester.sol - fair-manager
  *   Copyright (C) 2025-Present SKALE Labs
- *   @author Dmytro Stebaiev
+ *
  *
  *   fair-manager is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU Affero General Public License as published
@@ -25,7 +25,7 @@ import { Committee, ICommittee, NodeId, TypedSet } from "../Committee.sol";
 
 /**
  * @title ICommitteeTester
- * @author SKALE Labs
+ * @author Eduardo Vasques
  * @notice Interface for the CommitteeTester contract
  * @dev Extends ICommittee to add testing-specific functions
  */
@@ -40,7 +40,7 @@ interface ICommitteeTester is ICommittee {
 
 /**
  * @title CommitteeTester
- * @author SKALE Labs
+ * @author Eduardo Vasques
  * @notice Test harness for the Committee contract
  * @dev Exposes internal state for testing purposes
  */

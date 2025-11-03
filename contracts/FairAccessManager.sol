@@ -3,7 +3,7 @@
 /*
     FairAccessManager.sol - fair-manager
     Copyright (C) 2025-Present SKALE Labs
-    @author Dmytro Stebaiev
+
 
     fair-manager is free software: you can redistribute it and/or modify
     it under the terms of the GNU Affero General Public License as published
@@ -27,7 +27,9 @@ import {
 
 /**
  * @title FairAccessManager
- * @author SKALE Labs
+ * @author Dmytro Stebaiev
+ * @author Eduardo Vasques
+ *
  * @notice Manages role-based access control for the FAIR network contracts
  * @dev Extends OpenZeppelin's AccessManagerUpgradeable to define specific roles
  * for Committee, Nodes, Staking, and Status contracts. Each role controls access

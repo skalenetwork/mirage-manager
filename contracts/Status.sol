@@ -3,7 +3,7 @@
 /**
  *   Status.sol - fair-manager
  *   Copyright (C) 2025-Present SKALE Labs
- *   @author Dmytro Stebaiev
+ *
  *
  *   fair-manager is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU Affero General Public License as published
@@ -34,7 +34,9 @@ import { NodeDoesNotExist } from "./utils/errors.sol";
 
 /**
  * @title Status
- * @author SKALE Labs
+ * @author Dmytro Stebaiev
+ * @author Eduardo Vasques
+ *
  * @notice Manages node health monitoring and whitelisting in the FAIR network
  */
 contract Status is AccessManagedUpgradeable, IStatus {

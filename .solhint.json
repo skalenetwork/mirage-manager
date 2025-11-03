@@ -1,5 +1,5 @@
 {
-  "extends": "solhint:recommended",
+  "extends": "solhint:all",
   "rules": {
     "foundry-test-functions": "off",
     "not-rely-on-time": "off",

@@ -3,7 +3,6 @@
 /**
  *   Committee.sol - fair-manager
  *   Copyright (C) 2025-Present SKALE Labs
- *   @author Dmytro Stebaiev
  *
  *   fair-manager is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU Affero General Public License as published
@@ -46,10 +45,13 @@ import { IRandom, Random } from "./utils/Random.sol";
 
 /**
  * @title Committee
- * @author SKALE Labs
+ * @author Dmytro Stebaiev
+ * @author Eduardo Vasques
+ *
  * @notice Manages committee selection and rotation for the FAIR network
  * @dev Orchestrates node eligibility, committee formation, and DKG integration
- * @dev Maintains a weighted pool of eligible nodes for random, stake-weighted sampling
+ * @dev Maintains a weighted pool of eligible nodes (ordered by last alive() call timestamp)
+ * for random, stake-weighted sampling
  */
 contract Committee is AccessManagedUpgradeable, ICommittee {
     using PoolLibrary for PoolLibrary.Pool;
@@ -97,7 +99,7 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
     /// @notice Minimum allowed transition delay
     Duration public minTransitionDelay;
 
-    /// @notice Version string for the committee contract
+    /// @notice Version string of deployed fair-manager instance
     string public version;
 
     /// @dev Pool of nodes for committee selection
@@ -272,7 +274,8 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
      * @notice Selects a new committee from eligible nodes
      * @dev Only callable by authorized addresses (restricted)
      * @dev Flushes rewards before selection and initiates DKG for the new committee
-     * @dev Reverts if a committee rotation is already in progress
+     * @dev Reverts only if a the successor committee is already elected and DKG completed
+     * @dev If DKG of successor committee is not completed, the new committee is overwritten
      */
     function select() external override restricted {
         require(
@@ -393,7 +396,8 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
     }
 
     /**
-     * @notice Sets the committee size
+     * @notice Sets the next committee size
+     * @dev Only affects future committee selections (already selected committees with complete DKG are unaffected)
      * @dev Only callable by authorized addresses (restricted)
      * @param size The new committee size
      */
@@ -442,10 +446,10 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
     }
 
     /**
-     * @notice Called when a node is blacklisted
+     * @notice Called when a node is removed from the whitelist
      * @dev Only callable by Status contract (restricted)
      * @dev Removes the node from the eligible pool
-     * @param node The ID of the blacklisted node
+     * @param node The ID of the node removed from the whitelist
      */
     function nodeRemovedFromWhitelist(NodeId node) external override restricted {
         _setIneligible(node);
@@ -455,7 +459,7 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
      * @notice Processes a heartbeat from a node
      * @dev Only callable by Status contract (restricted)
      * @dev Updates node weight in the pool or makes it eligible if conditions are met
-     * @dev Ejects unhealthy nodes after processing
+     * @dev Ejects 1 unhealthy node after processing (if any)
      * @param node The ID of the node sending the heartbeat
      */
     function processHeartbeat(NodeId node) external override restricted {
@@ -546,7 +550,6 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
 
     /**
      * @notice Gets the index of the currently active committee
-     * @dev Iterates backwards from the last committee to find the one that has started
      * @return committeeIndex The index of the active committee
      */
     function getActiveCommitteeIndex() public view override returns (CommitteeIndex committeeIndex) {

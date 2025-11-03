@@ -3,7 +3,7 @@
 /*
     FieldOperationsTester.sol - fair-manager
     Copyright (C) 2025-Present SKALE Labs
-    @author Dmytro Stebaiev
+
 
     fair-manager is free software: you can redistribute it and/or modify
     it under the terms of the GNU Affero General Public License as published
@@ -28,7 +28,7 @@ import { G2Operations } from "../../utils/fieldOperations/G2Operations.sol";
 
 /**
  * @title IFieldOperationsTester
- * @author SKALE Labs
+ * @author Dmytro Stebaiev
  * @notice Interface for the FieldOperationsTester contract
  * @dev Provides testing functions for elliptic curve operations on G2
  */
@@ -47,7 +47,7 @@ interface IFiedOperationsTester {
 
 /**
  * @title FieldOperationsTester
- * @author SKALE Labs
+ * @author Dmytro Stebaiev
  * @notice Test harness for field and elliptic curve operations
  * @dev Exposes field operations for testing cryptographic primitives used in DKG
  */

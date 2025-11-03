@@ -3,7 +3,7 @@
 /**
  *   NodeIdEnumSet.sol - fair-manager
  *   Copyright (C) 2025-Present SKALE Labs
- *   @author Dmytro Stebaiev
+ *
  *
  *   fair-manager is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU Affero General Public License as published
@@ -28,7 +28,8 @@ import { TypedSet } from "./TypedSet.sol";
 
 /**
  * @title TypedMap Library
- * @author SKALE Labs
+ * @author Dmytro Stebaiev
+ * @author Eduardo Vasques
  * @notice Library providing type-safe wrappers around OpenZeppelin's EnumerableMap
  * @dev Implements strongly-typed maps for NodeId, Fair, Credit, and Holder types
  * to prevent type confusion and improve code safety and readability.

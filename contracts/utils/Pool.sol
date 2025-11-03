@@ -3,7 +3,7 @@
 /*
     Pool.sol - fair-manager
     Copyright (C) 2025-Present SKALE Labs
-    @author Dmytro Stebaiev
+
 
     fair-manager is free software: you can redistribute it and/or modify
     it under the terms of the GNU Affero General Public License as published
@@ -29,7 +29,8 @@ import { IRandom, Random } from "./Random.sol";
 
 /**
  * @title Pool Library
- * @author SKALE Labs
+ * @author Dmytro Stebaiev
+ * @author Eduardo Vasques
  * @notice Library for managing a pool of nodes for committee selection
  * @dev Implements a two-tier pool structure: present nodes (in red-black tree) and incoming nodes (waiting heartbeat).
  * Uses weighted random sampling to select committee members fairly based on staking amounts.

@@ -3,7 +3,7 @@
 /**
  *   Nodes.sol - fair-manager
  *   Copyright (C) 2025-Present SKALE Labs
- *   @author Dmytro Stebaiev
+ *
  *
  *   fair-manager is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU Affero General Public License as published
@@ -38,7 +38,9 @@ import { AddressIsZero, NodeDoesNotExist } from "./utils/errors.sol";
 
 /**
  * @title Nodes
- * @author SKALE Labs
+ * @author Dmytro Stebaiev
+ * @author Eduardo Vasques
+ *
  * @notice Manages node registration, configuration, and lifecycle in the FAIR network
  * @dev Handles both active nodes (participate in consensus) and passive nodes (indexers, archival, etc.)
  */
@@ -198,7 +200,7 @@ contract Nodes is AccessManagedUpgradeable, INodes {
     }
 
     /**
-     * @dev Validates that the IP address is not zero (for IPv4 or IPv6)
+     * @dev Checks if a provided IP address is valid IPv4 or IPv6
      * @param ip The IP address to validate
      */
     modifier validIp(bytes calldata ip) {
@@ -275,7 +277,7 @@ contract Nodes is AccessManagedUpgradeable, INodes {
      * @notice Registers a new active node
      * @dev Validates IP, port, and public key, then creates the node as disabled (in staking) by default
      * @dev The sender must match the address derived from the public key
-     * @dev Can include initial stake via msg.value (should be more than minimum required)
+     * @dev Can include initial stake via msg.value (should be not less than minimum required)
      * @param ip The IP address of the node (IPv4 or IPv6)
      * @param publicKey The node's public key
      * @param port The port number the node listens on

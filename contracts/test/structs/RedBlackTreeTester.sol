@@ -3,7 +3,7 @@
 /*
     RedBlackTreeTester.sol - fair-manager
     Copyright (C) 2025-Present SKALE Labs
-    @author Dmytro Stebaiev
+
 
     fair-manager is free software: you can redistribute it and/or modify
     it under the terms of the GNU Affero General Public License as published
@@ -27,7 +27,8 @@ import {RedBlackTree} from "../../structs/RedBlackTree.sol";
 
 /**
  * @title IRedBlackTreeTester
- * @author SKALE Labs
+ * @author Dmytro Stebaiev
+ * @author Eduardo Vasques
  * @notice Interface for the RedBlackTreeTester contract
  * @dev Provides testing functions for Red-Black Tree operations
  */
@@ -77,7 +78,8 @@ interface IRedBlackTreeTester {
 
 /**
  * @title RedBlackTreeTester
- * @author SKALE Labs
+ * @author Dmytro Stebaiev
+ * @author Eduardo Vasques
  * @notice Test harness for Red-Black Tree operations
  * @dev Provides testing and validation functions for the RedBlackTree Library
  */

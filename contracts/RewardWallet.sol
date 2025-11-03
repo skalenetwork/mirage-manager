@@ -3,7 +3,7 @@
 /**
  *   RewardWallet.sol - fair-manager
  *   Copyright (C) 2025-Present SKALE Labs
- *   @author Dmytro Stebaiev
+ *
  *
  *   fair-manager is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU Affero General Public License as published
@@ -36,7 +36,8 @@ import { InvalidNodesAddress, InvalidStakingAddress } from "./utils/errors.sol";
 
 /**
  * @title RewardWallet
- * @author SKALE Labs
+ * @author Dmytro Stebaiev
+ * @author Eduardo Vasques
  * @notice Manages reward collection and forwarding for individual FAIR nodes
  * @dev Receives rewards and forwards them to the Staking contract for the associated node
  */

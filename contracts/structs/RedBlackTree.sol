@@ -3,7 +3,7 @@
 /*
     RedBlackTree.sol - fair-manager
     Copyright (C) 2025-Present SKALE Labs
-    @author Dmytro Stebaiev
+
 
     fair-manager is free software: you can redistribute it and/or modify
     it under the terms of the GNU Affero General Public License as published
@@ -26,7 +26,7 @@ import { NodeId } from "@skalenetwork/fair-manager-interfaces/INodes.sol";
 
 /**
  * @title Red-Black Tree Library
- * @author SKALE Labs
+ * @author Dmytro Stebaiev
  * @notice Library implementing a weighted red-black tree for efficient node selection
  * @dev Maintains tree balancing properties while tracking cumulative weights for weighted
  * random sampling. Used by the pool to maintain eligible nodes for committee selection.

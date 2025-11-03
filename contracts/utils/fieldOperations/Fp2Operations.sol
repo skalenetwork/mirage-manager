@@ -6,7 +6,6 @@
     Fp2Operations.sol - fair-manager
     Copyright (C) 2018-Present SKALE Labs
 
-    @author Dmytro Stebaiev
 
     fair-manager is free software: you can redistribute it and/or modify
     it under the terms of the GNU Affero General Public License as published
@@ -31,7 +30,8 @@ import { Precompiled } from "../Precompiled.sol";
 
 /**
  * @title Fp2 (Quadratic Extension Field) Operations
- * @author SKALE Labs
+ * @author Dmytro Stebaiev
+ * @author Eduardo Vasques
  * @notice Provides functionality for working with Field P2 points
  */
 library Fp2Operations {

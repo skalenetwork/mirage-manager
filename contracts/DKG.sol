@@ -3,7 +3,7 @@
 /**
  *   DKG.sol - fair-manager
  *   Copyright (C) 2025-Present SKALE Labs
- *   @author Dmytro Stebaiev
+ *
  *
  *   fair-manager is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU Affero General Public License as published
@@ -37,7 +37,9 @@ import {G2Operations} from "./utils/fieldOperations/G2Operations.sol";
 
 /**
  * @title DKG
- * @author SKALE Labs
+ * @author Dmytro Stebaiev
+ * @author Eduardo Vasques
+ *
  * @notice Manages Distributed Key Generation (DKG) rounds for committee formation
  * @dev Implements the DKG protocol with BROADCAST and ALRIGHT stages to generate
  * shared public keys. Participants broadcast verification vectors and secret key
@@ -234,7 +236,7 @@ contract DKG is AccessManagedUpgradeable, IDkg {
 
     /**
      * @notice Confirms that a node has received all DKG data
-     * @dev Only callable during ALRIGHT stage. When threshold is reached, DKG succeeds.
+     * @dev Only callable during ALRIGHT stage. When all nodes submit valid Alright, DKG succeeds.
      * @param dkg The DKG round ID
      */
     function alright(DkgId dkg) external override onlyAlrightDkg(dkg) {
@@ -254,7 +256,7 @@ contract DKG is AccessManagedUpgradeable, IDkg {
     /**
      * @notice Broadcasts verification vector and secret key contributions for DKG
      * @dev Only callable during BROADCAST stage. Validates vector and contribution sizes.
-     * When all nodes broadcast, advances to ALRIGHT stage.
+     * @dev When all nodes broadcast, advances to ALRIGHT stage.
      * @param dkg The DKG round ID
      * @param verificationVector The verification vector (length t) for the secret polynomial
      * @param secretKeyContribution The encrypted secret key shares (length n) for other nodes

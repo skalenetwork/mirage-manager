@@ -5,7 +5,7 @@
 /*
     Fund.sol - fair-manager
     Copyright (C) 2025-Present SKALE Labs
-    @author Dmytro Stebaiev
+
 
     fair-manager is free software: you can redistribute it and/or modify
     it under the terms of the GNU Affero General Public License as published
@@ -46,7 +46,8 @@ using {
 
 /**
  * @title Fund Library
- * @author SKALE Labs
+ * @author Dmytro Stebaiev
+ * @author Eduardo Vasques
  * @notice Manages fund balances, credits, and fee collection for SKALE FAIR network participants
  * @dev Implements a credit system for tracking proportional ownership in funds with fee management
  */

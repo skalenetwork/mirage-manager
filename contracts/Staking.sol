@@ -3,7 +3,7 @@
 /**
  *   Staking.sol - fair-manager
  *   Copyright (C) 2025-Present SKALE Labs
- *   @author Dmytro Stebaiev
+ *
  *
  *   fair-manager is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU Affero General Public License as published
@@ -48,7 +48,9 @@ import { Credit, FundLibrary, Fair, Holder } from "./utils/Fund.sol";
 
 /**
  * @title Staking
- * @author SKALE Labs
+ * @author Dmytro Stebaiev
+ * @author Eduardo Vasques
+ *
  * @notice Manages staking operations for FAIR network nodes
  * @dev Implements a two-level fund structure with reward distribution, fee collection, and exit-queue management
  */

@@ -3,7 +3,7 @@
 /*
     MockRNG.sol - fair-manager
     Copyright (C) 2025-Present SKALE Labs
-    @author Dmytro Stebaiev
+
 
     fair-manager is free software: you can redistribute it and/or modify
     it under the terms of the GNU Affero General Public License as published
@@ -23,7 +23,8 @@ pragma solidity ^0.8.24;
 
 /**
  * @title IMockRNG
- * @author SKALE Labs
+ * @author Dmytro Stebaiev
+ * @author Eduardo Vasques
  * @notice Interface for the mock random number generator contract
  * @dev Used for testing purposes to simulate a predeployed RNG contract
  */
@@ -44,7 +45,8 @@ interface IMockRNG {
 
 /**
  * @title MockRNG
- * @author SKALE Labs
+ * @author Dmytro Stebaiev
+ * @author Eduardo Vasques
  * @notice Mock implementation of a random number generator for testing
  * @dev Simulates a predeployed RNG contract by returning timestamp-based values
  */
@@ -56,7 +58,7 @@ contract MockRNG is IMockRNG{
     // because it will be called even when no ether is sent
     // and the contract can't mock up the behavior of a predeployed contract
     // because receive function can't return any value.
-    // solhint-disable-next-line payable-fallback
+    // solhint-disable payable-fallback
     /**
      * @notice Fallback function that returns mock random data based on block timestamp
      * @dev Returns the current block timestamp encoded as bytes
@@ -67,6 +69,7 @@ contract MockRNG is IMockRNG{
     fallback(bytes calldata) external override returns (bytes memory result) {
         return abi.encode(block.timestamp);
     }
+    // solhint-enable payable-fallback
 
     /**
      * @notice Burns all ETH held by the contract by sending it to the zero address
