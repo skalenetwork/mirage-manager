@@ -2,13 +2,17 @@
 
 ## RedBlackTree
 
-**dev:** _Library implementing a weighted red-black tree for efficient node selection
+Data structure (Red Black Tree) library for efficient weighted node management
+
+**dev:** _Implements a weighted red-black tree for efficient node selection
 Maintains tree balancing properties while tracking cumulative weights for weighted
-random sampling. Used by the eligible pool for committee selection._
+random sampling.
+The tree uses an implicit key for sorting - node's last heartbeat timestamp.
+Used by the pool to maintain eligible nodes for committee selection._
 
 ### Node
 
-**dev:** _Red-black tree node structure_
+Red-black tree node structure
 
 ```solidity
 struct Node {
@@ -23,6 +27,8 @@ struct Node {
 
 ### NULL
 
+Sentinel value representing a null node
+
 ```solidity
 NodeId NULL
 ```
@@ -33,11 +39,15 @@ NodeId NULL
 error ChildIsMissing(NodeId node, NodeId child)
 ```
 
+**dev:** _Error indicating a child node is missing when expected_
+
 ### InsertNullNode
 
 ```solidity
 error InsertNullNode()
 ```
+
+**dev:** _Error indicating an attempt to insert a null node_
 
 ### NotFound
 
@@ -45,11 +55,15 @@ error InsertNullNode()
 error NotFound()
 ```
 
+**dev:** _Error indicating a node was not found in the tree_
+
 ### RemoveNullNode
 
 ```solidity
 error RemoveNullNode()
 ```
+
+**dev:** _Error indicating an attempt to remove a null node_
 
 ### SetWeightOfNullNode
 
@@ -57,13 +71,15 @@ error RemoveNullNode()
 error SetWeightOfNullNode()
 ```
 
+**dev:** _Error indicating an attempt to set weight of a null node_
+
 ### insertSmallest
+
+Inserts a new node as the smallest (leftmost) element in the tree
 
 ```solidity
 function insertSmallest(mapping(NodeId => struct RedBlackTree.Node) nodes, NodeId root, NodeId newNode, uint256 weight) internal returns (NodeId newRoot)
 ```
-
-**dev:** _Inserts a new node as the smallest (leftmost) element in the tree_
 
 #### Parameters
 
@@ -82,11 +98,11 @@ function insertSmallest(mapping(NodeId => struct RedBlackTree.Node) nodes, NodeI
 
 ### remove
 
+Removes a node from the tree and re-balances
+
 ```solidity
 function remove(mapping(NodeId => struct RedBlackTree.Node) nodes, NodeId root, NodeId node) internal returns (NodeId newRoot)
 ```
-
-**dev:** _Removes a node from the tree and re-balances_
 
 #### Parameters
 
@@ -104,11 +120,11 @@ function remove(mapping(NodeId => struct RedBlackTree.Node) nodes, NodeId root, 
 
 ### setWeight
 
+Updates the weight of a node and propagates changes up the tree
+
 ```solidity
 function setWeight(mapping(NodeId => struct RedBlackTree.Node) nodes, NodeId node, uint256 weight) internal
 ```
-
-**dev:** _Updates the weight of a node and propagates changes up the tree_
 
 #### Parameters
 
@@ -120,11 +136,11 @@ function setWeight(mapping(NodeId => struct RedBlackTree.Node) nodes, NodeId nod
 
 ### findByWeight
 
+Finds a node by cumulative weight for weighted random sampling
+
 ```solidity
 function findByWeight(mapping(NodeId => struct RedBlackTree.Node) nodes, NodeId root, uint256 weight) internal view returns (NodeId node)
 ```
-
-**dev:** _Finds a node by cumulative weight for weighted random sampling_
 
 #### Parameters
 
@@ -142,11 +158,11 @@ function findByWeight(mapping(NodeId => struct RedBlackTree.Node) nodes, NodeId 
 
 ### findLast
 
+Finds the rightmost node in the subtree
+
 ```solidity
 function findLast(mapping(NodeId => struct RedBlackTree.Node) nodes, NodeId root) internal view returns (NodeId biggest)
 ```
-
-**dev:** _Finds the rightmost node in the subtree_
 
 #### Parameters
 
@@ -163,11 +179,11 @@ function findLast(mapping(NodeId => struct RedBlackTree.Node) nodes, NodeId root
 
 ### getWeight
 
+Gets the weight of a specific node (excluding subtree weights)
+
 ```solidity
 function getWeight(mapping(NodeId => struct RedBlackTree.Node) nodes, NodeId node) internal view returns (uint248 weight)
 ```
-
-**dev:** _Gets the weight of a specific node (excluding subtree weights)_
 
 #### Parameters
 
@@ -184,11 +200,11 @@ function getWeight(mapping(NodeId => struct RedBlackTree.Node) nodes, NodeId nod
 
 ### getWeightTill
 
+Calculates cumulative weight up to and including a specific node
+
 ```solidity
 function getWeightTill(mapping(NodeId => struct RedBlackTree.Node) nodes, NodeId bound) internal view returns (uint256 weight)
 ```
-
-**dev:** _Calculates cumulative weight up to and including a specific node_
 
 #### Parameters
 

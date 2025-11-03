@@ -1,7 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
-// cSpell:words twistb
-
 /*
     Fp2Operations.sol - fair-manager
     Copyright (C) 2018-Present SKALE Labs
@@ -29,10 +27,10 @@ import { LARGE_PRIME } from "../constants.sol";
 import { Precompiled } from "../Precompiled.sol";
 
 /**
- * @title Fp2 (Quadratic Extension Field) Operations
+ * @title Fp2 (Quadratic Extension of base field Fp) Operations
  * @author Dmytro Stebaiev
  * @author Eduardo Vasques
- * @notice Provides functionality for working with Field P2 points
+ * @notice Provides functionality for working with  Quadratic Extension of Fp points
  */
 library Fp2Operations {
 

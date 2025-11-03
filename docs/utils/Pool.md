@@ -9,7 +9,7 @@ Uses weighted random sampling to select committee members fairly based on stakin
 
 ### Pool
 
-**dev:** _Pool data structure with weighted tree and incoming nodes_
+Pool data structure with weighted tree and incoming nodes
 
 ```solidity
 struct Pool {
@@ -38,12 +38,13 @@ error TooFewCandidates(uint256 needed, uint256 available)
 
 ### add
 
+Adds a node to the incoming pool (waiting heartbeat)
+
 ```solidity
 function add(struct PoolLibrary.Pool pool, NodeId id) internal
 ```
 
-**dev:** _Adds a node to the incoming pool (waiting heartbeat)
-Should not be called if the node is already present in the tree_
+**dev:** _Should not be called if the node is already present in the tree_
 
 #### Parameters
 
@@ -54,12 +55,13 @@ Should not be called if the node is already present in the tree_
 
 ### moveToFront
 
+Moves a node to the front (leftmost position) of the weighted tree
+
 ```solidity
 function moveToFront(struct PoolLibrary.Pool pool, NodeId node, uint256 weight) internal
 ```
 
-**dev:** _Moves a node to the front (leftmost position) of the weighted tree
-Removes the node if present, then inserts it with given weight_
+**dev:** _Removes the node if present, then inserts it with given weight_
 
 #### Parameters
 
@@ -71,12 +73,13 @@ Removes the node if present, then inserts it with given weight_
 
 ### remove
 
+Removes a node from the pool (either present or incoming)
+
 ```solidity
 function remove(struct PoolLibrary.Pool pool, NodeId node) internal returns (bool removed)
 ```
 
-**dev:** _Removes a node from the pool (either present or incoming)
-Removes from the weighted tree if present, otherwise from incoming set_
+**dev:** _Removes from the weighted tree if present, otherwise from incoming set_
 
 #### Parameters
 
@@ -93,12 +96,14 @@ Removes from the weighted tree if present, otherwise from incoming set_
 
 ### sample
 
+Performs weighted random sampling of nodes from the pool to form a committee
+
 ```solidity
 function sample(struct PoolLibrary.Pool pool, uint256 size, struct IRandom.RandomGenerator generator) internal returns (NodeId[] nodesSample)
 ```
 
-**dev:** _Performs weighted random sampling to select nodes from the pool
-Only samples from healthy nodes. Selected nodes are moved to incoming set (require heartbeat for next selection).
+**dev:** _Only samples from healthy nodes.
+Selected nodes are moved to incoming set (require heartbeat for next selection).
 Uses cumulative weight-based selection for fairness._
 
 #### Parameters
@@ -117,12 +122,13 @@ Uses cumulative weight-based selection for fairness._
 
 ### setWeight
 
+Updates the weight of a node in the pool
+
 ```solidity
 function setWeight(struct PoolLibrary.Pool pool, NodeId node, uint256 weight) internal
 ```
 
-**dev:** _Updates the weight of a node in the pool
-Only updates weight if the node is in the present node's pool, otherwise irrelevant_
+**dev:** _Only updates weight if the node is in the present node's pool, otherwise irrelevant_
 
 #### Parameters
 
@@ -134,12 +140,13 @@ Only updates weight if the node is in the present node's pool, otherwise irrelev
 
 ### getOldestIsh
 
+Gets an approximate oldest node from the pool
+
 ```solidity
 function getOldestIsh(struct PoolLibrary.Pool pool) internal view returns (NodeId oldest)
 ```
 
-**dev:** _Gets an approximate oldest node from the pool
-Returns first incoming node if any, otherwise the rightmost (oldest) node in tree_
+**dev:** _Returns first incoming node if any, otherwise the rightmost (oldest) node in tree_
 
 #### Parameters
 
@@ -155,12 +162,13 @@ Returns first incoming node if any, otherwise the rightmost (oldest) node in tre
 
 ### contains
 
+Checks if a node is in the pool
+
 ```solidity
 function contains(struct PoolLibrary.Pool pool, NodeId node) internal view returns (bool present)
 ```
 
-**dev:** _Checks if a node is in the pool
-Searches both the active tree and incoming set_
+**dev:** _Searches both the active tree and incoming set_
 
 #### Parameters
 
@@ -177,12 +185,13 @@ Searches both the active tree and incoming set_
 
 ### length
 
+Returns the total number of nodes in the pool
+
 ```solidity
 function length(struct PoolLibrary.Pool pool) internal view returns (uint256 poolSize)
 ```
 
-**dev:** _Returns the total number of nodes in the pool
-Sums present nodes and incoming nodes_
+**dev:** _Sums present nodes and incoming nodes_
 
 #### Parameters
 

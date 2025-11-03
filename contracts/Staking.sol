@@ -432,9 +432,11 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
     }
 
     /**
-     * @notice Disables a node from receiving network rewards and removes it from the active pool
+     * @notice Disables a node from receiving network stability rewards
+     * @dev While disabled, nodes are not eligible for committee selection (removed from root fund)
+     * @dev Disabled nodes can still earn block-rewards if they are part of the current committee
      * @dev Only callable by the Committee contract (restricted)
-     * @dev Updates committee weight to 0 if the node is active
+     * @dev Ensures it's weight in committee is set to 0
      * @param node The node to disable
      */
     function disable(NodeId node) external override restricted {
@@ -458,10 +460,10 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
     }
 
     /**
-     * @notice Enables a previously disabled node, moving its stake back into the active pool
+     * @notice Enables a node to receive network stability rewards
      * @dev Only callable by Committee contract (restricted)
      * @dev Only works on existing (not deleted) active nodes
-     * @dev Updates committee weight after enabling
+     * @dev Updates node's weight in Committee contract after enabling
      * @param node The node to enable
      */
     function enable(
@@ -499,7 +501,7 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
     /**
      * @notice Called when a new node is created
      * @dev Only callable by Nodes contract (restricted)
-     * @dev Deploys a reward wallet if one doesn't exist, sets node as disabled initially
+     * @dev Deploys a reward wallet for the new node and sets node as disabled initially
      * @dev Validates self-stake requirement and stakes all provided initial stake
      * @param node The ID of the newly created node
      * @param nodeAddress The address of the node owner
@@ -1190,8 +1192,8 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
     }
 
     /**
-     * @notice Deploys a new reward wallet for a node using a transparent proxy
-     * @dev Creates a new TransparentUpgradeableProxy with the reward wallet implementation
+     * @notice Deploys a new reward wallet for a node
+     * @dev Creates a new BeaconProxy pointing to rewardWalletBeacon Beacon contract
      * @param node The node for which to deploy the reward wallet
      */
     function _deployRewardWallet(NodeId node) private {

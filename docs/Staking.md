@@ -669,14 +669,16 @@ function setSelfStakeRequirement(Fair amount) external
 
 ### disable
 
-Disables a node from receiving network rewards and removes it from the active pool
+Disables a node from receiving network stability rewards
 
 ```solidity
 function disable(NodeId node) external
 ```
 
-**dev:** _Only callable by the Committee contract (restricted)
-Updates committee weight to 0 if the node is active_
+**dev:** _While disabled, nodes are not eligible for committee selection (removed from root fund)
+Disabled nodes can still earn block-rewards if they are part of the current committee
+Only callable by the Committee contract (restricted)
+Ensures it's weight in committee is set to 0_
 
 #### Parameters
 
@@ -686,7 +688,7 @@ Updates committee weight to 0 if the node is active_
 
 ### enable
 
-Enables a previously disabled node, moving its stake back into the active pool
+Enables a node to receive network stability rewards
 
 ```solidity
 function enable(NodeId node) external
@@ -694,7 +696,7 @@ function enable(NodeId node) external
 
 **dev:** _Only callable by Committee contract (restricted)
 Only works on existing (not deleted) active nodes
-Updates committee weight after enabling_
+Updates node's weight in Committee contract after enabling_
 
 #### Parameters
 
@@ -711,7 +713,7 @@ function nodeCreated(NodeId node, address nodeAddress) external payable
 ```
 
 **dev:** _Only callable by Nodes contract (restricted)
-Deploys a reward wallet if one doesn't exist, sets node as disabled initially
+Deploys a reward wallet for the new node and sets node as disabled initially
 Validates self-stake requirement and stakes all provided initial stake_
 
 #### Parameters

@@ -6,7 +6,7 @@ Manages delayed retrieval of staked tokens
 
 ### UserExitData
 
-**dev:** _Stores exit request data for a specific user_
+Stores exit request data for a specific user
 
 ```solidity
 struct UserExitData {
@@ -17,8 +17,9 @@ struct UserExitData {
 
 ### ExitQueue
 
-**dev:** _Main exit queue storage structure
-Includes all exit requests, user-specific data, configuration, and data tracking values_
+Main exit queue storage structure
+
+**dev:** _Includes all exit requests, user-specific data, configuration, and data tracking values_
 
 ```solidity
 struct ExitQueue {
@@ -108,11 +109,11 @@ error ZeroUnlockedRequests(address user, uint256 startIndex, uint256 endIndex)
 
 ### createRequest
 
+Creates a new exit request for a user
+
 ```solidity
 function createRequest(struct ExitQueueLibrary.ExitQueue queue, address user, NodeId nodeId, Fair amount) internal
 ```
-
-**dev:** _Creates a new exit request for a user_
 
 #### Parameters
 
@@ -125,11 +126,11 @@ function createRequest(struct ExitQueueLibrary.ExitQueue queue, address user, No
 
 ### claim
 
+Claims an exit request for a user
+
 ```solidity
 function claim(struct ExitQueueLibrary.ExitQueue queue, address user, uint256 id) internal returns (Fair amount)
 ```
-
-**dev:** _Claims an exit request for a user_
 
 #### Parameters
 
@@ -147,11 +148,11 @@ function claim(struct ExitQueueLibrary.ExitQueue queue, address user, uint256 id
 
 ### isRequestUnlocked
 
+Checks if a request is unlocked
+
 ```solidity
 function isRequestUnlocked(struct ExitQueueLibrary.ExitQueue queue, uint256 id) internal view returns (bool isUnlocked)
 ```
-
-**dev:** _Checks if a request is unlocked_
 
 #### Parameters
 
@@ -168,11 +169,11 @@ function isRequestUnlocked(struct ExitQueueLibrary.ExitQueue queue, uint256 id) 
 
 ### getNumRequestsForUser
 
+Returns the number of exit requests for a user
+
 ```solidity
 function getNumRequestsForUser(struct ExitQueueLibrary.ExitQueue queue, address user) internal view returns (uint256 numRequests)
 ```
-
-**dev:** _Returns the number of exit requests for a user_
 
 #### Parameters
 
@@ -189,11 +190,11 @@ function getNumRequestsForUser(struct ExitQueueLibrary.ExitQueue queue, address 
 
 ### getRequest
 
+Retrieves an exit request by its ID
+
 ```solidity
 function getRequest(struct ExitQueueLibrary.ExitQueue queue, uint256 id) internal view returns (struct IStaking.ExitRequest request)
 ```
-
-**dev:** _Retrieves an exit request by its ID_
 
 #### Parameters
 
@@ -210,11 +211,11 @@ function getRequest(struct ExitQueueLibrary.ExitQueue queue, uint256 id) interna
 
 ### getRequestAt
 
+Retrieves an exit request for a user at a specific index
+
 ```solidity
 function getRequestAt(struct ExitQueueLibrary.ExitQueue queue, address user, uint256 index) internal view returns (struct IStaking.ExitRequest request)
 ```
-
-**dev:** _Retrieves an exit request for a user at a specific index_
 
 #### Parameters
 
@@ -232,11 +233,11 @@ function getRequestAt(struct ExitQueueLibrary.ExitQueue queue, address user, uin
 
 ### getUnlockedRequest
 
+Looks for an unlocked request in the first MAX_ITERATIONS requests starting after 'from'
+
 ```solidity
 function getUnlockedRequest(struct ExitQueueLibrary.ExitQueue queue, address user, uint256 from) internal view returns (struct IStaking.ExitRequest request)
 ```
-
-**dev:** _Looks for an unlocked request in the first MAX_ITERATIONS requests starting after 'from'_
 
 #### Parameters
 
@@ -254,11 +255,11 @@ function getUnlockedRequest(struct ExitQueueLibrary.ExitQueue queue, address use
 
 ### getTotalInQueueForUser
 
+Returns the total amount in the exit queue for a user
+
 ```solidity
 function getTotalInQueueForUser(struct ExitQueueLibrary.ExitQueue queue, address user) internal view returns (Fair amount)
 ```
-
-**dev:** _Returns the total amount in the exit queue for a user_
 
 #### Parameters
 

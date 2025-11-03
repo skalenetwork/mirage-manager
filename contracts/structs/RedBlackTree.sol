@@ -27,9 +27,12 @@ import { NodeId } from "@skalenetwork/fair-manager-interfaces/INodes.sol";
 /**
  * @title Red-Black Tree Library
  * @author Dmytro Stebaiev
- * @notice Library implementing a weighted red-black tree for efficient node selection
+ * @notice Data structure (Red Black Tree) library for efficient weighted node management
+ * @dev Implements a weighted red-black tree for efficient node selection
  * @dev Maintains tree balancing properties while tracking cumulative weights for weighted
- * random sampling. Used by the pool to maintain eligible nodes for committee selection.
+ * random sampling.
+ * @dev The tree uses an implicit key for sorting - node's last heartbeat timestamp.
+ * @dev Used by the pool to maintain eligible nodes for committee selection.
  */
 library RedBlackTree {
     using SafeCast for uint256;

@@ -2,7 +2,7 @@
 
 ## Fp2Operations
 
-Provides functionality for working with Field P2 points
+Provides functionality for working with  Quadratic Extension of Fp points
 
 ### P
 
@@ -14,11 +14,11 @@ uint256 P
 
 ### inverseFp2
 
+Computes the inverse of an Fp2 point
+
 ```solidity
 function inverseFp2(struct IDkg.Fp2Point value) internal view returns (struct IDkg.Fp2Point result)
 ```
-
-**dev:** _Computes the inverse of an Fp2 point_
 
 #### Parameters
 
@@ -34,11 +34,11 @@ function inverseFp2(struct IDkg.Fp2Point value) internal view returns (struct ID
 
 ### addFp2
 
+Adds two Fp2 points
+
 ```solidity
 function addFp2(struct IDkg.Fp2Point value1, struct IDkg.Fp2Point value2) internal pure returns (struct IDkg.Fp2Point result)
 ```
-
-**dev:** _Adds two Fp2 points_
 
 #### Parameters
 
@@ -55,11 +55,11 @@ function addFp2(struct IDkg.Fp2Point value1, struct IDkg.Fp2Point value2) intern
 
 ### scalarMulFp2
 
+Multiplies an Fp2 point by a scalar value
+
 ```solidity
 function scalarMulFp2(struct IDkg.Fp2Point value, uint256 scalar) internal pure returns (struct IDkg.Fp2Point result)
 ```
-
-**dev:** _Multiplies an Fp2 point by a scalar value_
 
 #### Parameters
 
@@ -76,11 +76,11 @@ function scalarMulFp2(struct IDkg.Fp2Point value, uint256 scalar) internal pure 
 
 ### minusFp2
 
+Subtracts one Fp2 point from another
+
 ```solidity
 function minusFp2(struct IDkg.Fp2Point diminished, struct IDkg.Fp2Point subtracted) internal pure returns (struct IDkg.Fp2Point difference)
 ```
-
-**dev:** _Subtracts one Fp2 point from another_
 
 #### Parameters
 
@@ -97,11 +97,11 @@ function minusFp2(struct IDkg.Fp2Point diminished, struct IDkg.Fp2Point subtract
 
 ### mulFp2
 
+Multiplies two Fp2 points
+
 ```solidity
 function mulFp2(struct IDkg.Fp2Point value1, struct IDkg.Fp2Point value2) internal pure returns (struct IDkg.Fp2Point result)
 ```
-
-**dev:** _Multiplies two Fp2 points_
 
 #### Parameters
 
@@ -118,11 +118,11 @@ function mulFp2(struct IDkg.Fp2Point value1, struct IDkg.Fp2Point value2) intern
 
 ### squaredFp2
 
+Computes the square of an Fp2 point
+
 ```solidity
 function squaredFp2(struct IDkg.Fp2Point value) internal pure returns (struct IDkg.Fp2Point result)
 ```
-
-**dev:** _Computes the square of an Fp2 point_
 
 #### Parameters
 
@@ -138,11 +138,11 @@ function squaredFp2(struct IDkg.Fp2Point value) internal pure returns (struct ID
 
 ### isEqual
 
+Checks if two Fp2 points are equal
+
 ```solidity
 function isEqual(struct IDkg.Fp2Point value1, struct IDkg.Fp2Point value2) internal pure returns (bool result)
 ```
-
-**dev:** _Checks if two Fp2 points are equal_
 
 #### Parameters
 

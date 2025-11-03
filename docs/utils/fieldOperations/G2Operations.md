@@ -2,15 +2,15 @@
 
 ## G2Operations
 
-Provides functionality for working with G2 curve points
+Provides functionality for working with the elliptic-curve subgroup over Fp2
 
 ### doubleG2
+
+Doubles a G2 point
 
 ```solidity
 function doubleG2(struct IDkg.G2Point value) internal view returns (struct IDkg.G2Point result)
 ```
-
-**dev:** _Doubles a G2 point_
 
 #### Parameters
 
@@ -26,11 +26,11 @@ function doubleG2(struct IDkg.G2Point value) internal view returns (struct IDkg.
 
 ### addG2
 
+Adds two G2 points
+
 ```solidity
 function addG2(struct IDkg.G2Point value1, struct IDkg.G2Point value2) internal view returns (struct IDkg.G2Point sum)
 ```
-
-**dev:** _Adds two G2 points_
 
 #### Parameters
 
@@ -47,11 +47,11 @@ function addG2(struct IDkg.G2Point value1, struct IDkg.G2Point value2) internal 
 
 ### getTWISTB
 
+Returns the TWIST B constant for G2 curve operations
+
 ```solidity
 function getTWISTB() internal pure returns (struct IDkg.Fp2Point point)
 ```
-
-**dev:** _Returns the TWIST B constant for G2 curve operations_
 
 #### Return Values
 
@@ -61,11 +61,11 @@ function getTWISTB() internal pure returns (struct IDkg.Fp2Point point)
 
 ### getG2Generator
 
+Returns the G2 generator point
+
 ```solidity
 function getG2Generator() internal pure returns (struct IDkg.G2Point point)
 ```
-
-**dev:** _Returns the G2 generator point_
 
 #### Return Values
 
@@ -75,11 +75,11 @@ function getG2Generator() internal pure returns (struct IDkg.G2Point point)
 
 ### getG2Zero
 
+Returns the G2 zero point (point at infinity)
+
 ```solidity
 function getG2Zero() internal pure returns (struct IDkg.G2Point point)
 ```
-
-**dev:** _Returns the G2 zero point (point at infinity)_
 
 #### Return Values
 
@@ -89,11 +89,11 @@ function getG2Zero() internal pure returns (struct IDkg.G2Point point)
 
 ### isG2Point
 
+Checks if the given Fp2 coordinates represent a valid G2 point
+
 ```solidity
 function isG2Point(struct IDkg.Fp2Point x, struct IDkg.Fp2Point y) internal pure returns (bool result)
 ```
-
-**dev:** _Checks if the given Fp2 coordinates represent a valid G2 point_
 
 #### Parameters
 
@@ -110,11 +110,11 @@ function isG2Point(struct IDkg.Fp2Point x, struct IDkg.Fp2Point y) internal pure
 
 ### isG2
 
+Checks if the given G2Point is a valid G2 point
+
 ```solidity
 function isG2(struct IDkg.G2Point value) internal pure returns (bool result)
 ```
-
-**dev:** _Checks if the given G2Point is a valid G2 point_
 
 #### Parameters
 
@@ -130,11 +130,11 @@ function isG2(struct IDkg.G2Point value) internal pure returns (bool result)
 
 ### isG2ZeroPoint
 
+Checks if the given Fp2 coordinates represent the G2 zero point
+
 ```solidity
 function isG2ZeroPoint(struct IDkg.Fp2Point x, struct IDkg.Fp2Point y) internal pure returns (bool result)
 ```
-
-**dev:** _Checks if the given Fp2 coordinates represent the G2 zero point_
 
 #### Parameters
 
@@ -151,11 +151,11 @@ function isG2ZeroPoint(struct IDkg.Fp2Point x, struct IDkg.Fp2Point y) internal 
 
 ### isG2Zero
 
+Checks if the given G2 point is the zero point
+
 ```solidity
 function isG2Zero(struct IDkg.G2Point value) internal pure returns (bool result)
 ```
-
-**dev:** _Checks if the given G2 point is the zero point_
 
 #### Parameters
 
@@ -171,11 +171,11 @@ function isG2Zero(struct IDkg.G2Point value) internal pure returns (bool result)
 
 ### isEqual
 
+Checks if two G2 points are equal
+
 ```solidity
 function isEqual(struct IDkg.G2Point value1, struct IDkg.G2Point value2) internal pure returns (bool result)
 ```
-
-**dev:** _Checks if two G2 points are equal_
 
 #### Parameters
 

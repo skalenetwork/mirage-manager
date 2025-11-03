@@ -2,8 +2,9 @@
 
 ## Precompiled
 
-**dev:** _Library for interacting with Ethereum precompiled contracts and SKALE-specific precompiles
-Provides utilities for modular exponentiation, elliptic curve operations (BN256),
+Library for interacting with Ethereum precompiled contracts and SKALE-specific precompiles
+
+**dev:** _Provides utilities for modular exponentiation, elliptic curve operations (BN256),
 and random number generation using SKALE's on-chain RNG._
 
 ### MOD_EXP
@@ -40,11 +41,11 @@ error PrecompiledCallFailed(address precompiledContract)
 
 ### bigModExp
 
+Performs modular exponentiation: (base^exponent) % modulus
+
 ```solidity
 function bigModExp(uint256 base, uint256 exponent, uint256 modulus) internal view returns (uint256 value)
 ```
-
-**dev:** _Performs modular exponentiation: (base^exponent) % modulus_
 
 #### Parameters
 
@@ -62,11 +63,11 @@ function bigModExp(uint256 base, uint256 exponent, uint256 modulus) internal vie
 
 ### bn256ScalarMul
 
+Performs elliptic curve scalar multiplication on BN256 curve
+
 ```solidity
 function bn256ScalarMul(uint256 x, uint256 y, uint256 k) internal view returns (uint256 xValue, uint256 yValue)
 ```
-
-**dev:** _Performs elliptic curve scalar multiplication on BN256 curve_
 
 #### Parameters
 
@@ -85,12 +86,13 @@ function bn256ScalarMul(uint256 x, uint256 y, uint256 k) internal view returns (
 
 ### bn256Pairing
 
+Performs BN256 elliptic curve pairing check
+
 ```solidity
 function bn256Pairing(uint256 x1, uint256 y1, uint256 a1, uint256 b1, uint256 c1, uint256 d1, uint256 x2, uint256 y2, uint256 a2, uint256 b2, uint256 c2, uint256 d2) internal view returns (bool pairing)
 ```
 
-**dev:** _Performs BN256 elliptic curve pairing check
-Verifies if e(p1[0], p2[0]) * e(p1[1], p2[1]) == 1_
+**dev:** _Verifies if e(p1[0], p2[0]) * e(p1[1], p2[1]) == 1_
 
 #### Parameters
 
@@ -117,12 +119,13 @@ Verifies if e(p1[0], p2[0]) * e(p1[1], p2[1]) == 1_
 
 ### getRandomBytes32
 
+Gets a random bytes32 value from SKALE's on-chain RNG
+
 ```solidity
 function getRandomBytes32(address rngOnChain) internal view returns (bytes32 addr)
 ```
 
-**dev:** _Gets a random bytes32 value from SKALE's on-chain RNG
-rngOnChain should be SKALE Random Number Generator predeployed or compatible contract_
+**dev:** _rngOnChain should be SKALE Random Number Generator predeployed or compatible contract_
 
 #### Parameters
 
@@ -138,11 +141,11 @@ rngOnChain should be SKALE Random Number Generator predeployed or compatible con
 
 ### getRandomNumber
 
+Gets a random uint256 value from SKALE's on-chain RNG
+
 ```solidity
 function getRandomNumber(address rngOnChain) internal view returns (uint256 addr)
 ```
-
-**dev:** _Gets a random uint256 value from SKALE's on-chain RNG_
 
 #### Parameters
 

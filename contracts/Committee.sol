@@ -243,34 +243,6 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
     }
 
     /**
-     * @notice Initializes the Committee contract
-     * @dev This function is called only once during contract deployment following the proxy pattern
-     * @param initialAuthority The address of the initial access control authority
-     * @param nodesAddress The address of the Nodes contract
-     * @param commonPublicKey The common public key for the initial committee
-     * @param nodeIds The array of node IDs for the initial committee
-     */
-    function initialize(
-        address initialAuthority,
-        INodes nodesAddress,
-        IDkg.G2Point calldata commonPublicKey,
-        NodeId[] calldata nodeIds
-    )
-        external
-        initializer
-        override
-    {
-        require(address(nodesAddress) != address(0), InvalidNodesAddress());
-        __AccessManaged_init(initialAuthority);
-        committeeSize = DEFAULT_COMMITTEE_SIZE;
-        transitionDelay = Duration.wrap(DEFAULT_TRANSITION_DELAY);
-        nodes = nodesAddress;
-        skaleRng = address(0);
-        minTransitionDelay = Duration.wrap(DEFAULT_MIN_TRANSITION_DELAY);
-        _initializeCommittee(commonPublicKey, nodeIds);
-    }
-
-    /**
      * @notice Selects a new committee from eligible nodes
      * @dev Only callable by authorized addresses (restricted)
      * @dev Flushes rewards before selection and initiates DKG for the new committee
@@ -532,6 +504,34 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
     }
 
     // Public
+
+    /**
+     * @notice Initializes the Committee contract
+     * @dev This function is called only once during contract deployment following the proxy pattern
+     * @param initialAuthority The address of the initial access control authority
+     * @param nodesAddress The address of the Nodes contract
+     * @param commonPublicKey The common public key for the initial committee
+     * @param nodeIds The array of node IDs for the initial committee
+     */
+    function initialize(
+        address initialAuthority,
+        INodes nodesAddress,
+        IDkg.G2Point calldata commonPublicKey,
+        NodeId[] calldata nodeIds
+    )
+        public
+        initializer
+        override
+    {
+        require(address(nodesAddress) != address(0), InvalidNodesAddress());
+        __AccessManaged_init(initialAuthority);
+        committeeSize = DEFAULT_COMMITTEE_SIZE;
+        transitionDelay = Duration.wrap(DEFAULT_TRANSITION_DELAY);
+        nodes = nodesAddress;
+        skaleRng = address(0);
+        minTransitionDelay = Duration.wrap(DEFAULT_MIN_TRANSITION_DELAY);
+        _initializeCommittee(commonPublicKey, nodeIds);
+    }
 
     /**
      * @notice Ejects an unhealthy node from the eligible pool

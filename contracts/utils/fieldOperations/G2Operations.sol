@@ -27,10 +27,10 @@ import { IDkg } from "@skalenetwork/fair-manager-interfaces/IDkg.sol";
 import { Fp2Operations } from "./Fp2Operations.sol";
 
 /**
- * @title G2 Operations
+ * @title G2 (elliptic-curve subgroup over Fp2) Operations
  * @author Dmytro Stebaiev
  * @author Eduardo Vasques
- * @notice Provides functionality for working with G2 curve points
+ * @notice Provides functionality for working with the elliptic-curve subgroup over Fp2
  */
 library G2Operations {
     using Fp2Operations for IDkg.Fp2Point;

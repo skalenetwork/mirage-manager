@@ -1,7 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
-// cSpell:words twistb
-
 /*
     G1Operations.sol - fair-manager
     Copyright (C) 2018-Present SKALE Labs
@@ -29,9 +27,9 @@ import { IDkg } from "@skalenetwork/fair-manager-interfaces/IDkg.sol";
 import { Fp2Operations } from "./Fp2Operations.sol";
 
 /**
- * @title G1 Operations
+ * @title G1 (elliptic-curve subgroup over Fp) Operations
  * @author Dmytro Stebaiev
- * @notice Provides functionality for working with G1 curve points
+ * @notice Provides functionality for working with the elliptic-curve subgroup over Fp
  */
 library G1Operations {
     using Fp2Operations for IDkg.Fp2Point;

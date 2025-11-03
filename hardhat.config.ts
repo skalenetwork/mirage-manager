@@ -63,9 +63,7 @@ const config: HardhatUserConfig = {
     templates: "./docs/templates",
     exclude: [
       "hardhat-dependency-compiler",
-      "test",
-      "utils/constants.sol",
-      "utils/errors.sol"
+      "test"
     ]
   }
 };

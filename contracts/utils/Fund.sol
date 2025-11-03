@@ -1,5 +1,3 @@
-// cspell:words natspec
-
 // SPDX-License-Identifier: AGPL-3.0-only
 
 /*
@@ -48,7 +46,7 @@ using {
  * @title Fund Library
  * @author Dmytro Stebaiev
  * @author Eduardo Vasques
- * @notice Manages fund balances, credits, and fee collection for SKALE FAIR network participants
+ * @notice Facilitates reward distribution and management operations in the FAIR network
  * @dev Implements a credit system for tracking proportional ownership in funds with fee management
  */
 library FundLibrary {
@@ -88,7 +86,7 @@ library FundLibrary {
     error RoundingErrorTooHigh(Fair roundingError);
 
     /**
-     * @notice Claims accumulated fees from the fund - Relevant only for Node Funds
+     * @notice Claims accumulated fees from the fund
      * @param fund Storage reference to the fund
      * @param fundBalance Current balance of the fund
      * @param amount Amount of fees to claim
@@ -548,23 +546,42 @@ library FundLibrary {
 
 // Credit
 
-// Simple operation wrappers for Credit type. Self-explanatory
-/* solhint-disable use-natspec */
-
+/**
+ * @notice Adds two credit amounts
+ * @param a The first credit amount
+ * @param b The second credit amount
+ * @return sum The sum of the two credit amounts
+ */
 function _creditAdd(Credit a, Credit b) pure returns (Credit sum) {
     return Credit.wrap(Credit.unwrap(a) + Credit.unwrap(b));
 }
 
+/**
+ * @notice Checks if two credit amounts are equal
+ * @param a The first credit amount
+ * @param b The second credit amount
+ * @return equal True if the credit amounts are equal, false otherwise
+ */
 function _creditEqual(Credit a, Credit b) pure returns (bool equal) {
     return Credit.unwrap(a) == Credit.unwrap(b);
 }
 
+/**
+ * @notice Checks if one credit amount is less than another
+ * @param a The first credit amount
+ * @param b The second credit amount
+ * @return less True if a is less than b, false otherwise
+ */
 function _creditLess(Credit a, Credit b) pure returns (bool less) {
     return Credit.unwrap(a) < Credit.unwrap(b);
 }
 
+/**
+ * @notice Subtracts two credit amounts
+ * @param a The first credit amount
+ * @param b The second credit amount
+ * @return diff The result of subtracting b from a
+ */
 function _creditSubtract(Credit a, Credit b) pure returns (Credit diff) {
     return Credit.wrap(Credit.unwrap(a) - Credit.unwrap(b));
 }
-
-/* solhint-enable use-natspec */

@@ -280,7 +280,7 @@ modifier nodeExists(NodeId nodeId)
 modifier validIp(bytes ip)
 ```
 
-**dev:** _Validates that the IP address is not zero (for IPv4 or IPv6)_
+**dev:** _Checks if a provided IP address is valid IPv4 or IPv6_
 
 #### Parameters
 
@@ -374,7 +374,7 @@ function registerNode(bytes ip, bytes32[2] publicKey, uint16 port) external paya
 
 **dev:** _Validates IP, port, and public key, then creates the node as disabled (in staking) by default
 The sender must match the address derived from the public key
-Can include initial stake via msg.value (should be more than minimum required)_
+Can include initial stake via msg.value (should be not less than minimum required)_
 
 #### Parameters
 

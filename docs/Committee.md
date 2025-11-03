@@ -5,7 +5,8 @@
 Manages committee selection and rotation for the FAIR network
 
 **dev:** _Orchestrates node eligibility, committee formation, and DKG integration
-Maintains a weighted pool of eligible nodes for random, stake-weighted sampling_
+Maintains a weighted pool of eligible nodes (ordered by last alive() call timestamp)
+for random, stake-weighted sampling_
 
 ### CommitteeAuxiliary
 
@@ -100,7 +101,7 @@ Duration minTransitionDelay
 
 ### version
 
-Version string for the committee contract
+Version string of deployed fair-manager instance
 
 ```solidity
 string version
@@ -387,25 +388,6 @@ modifier onlyDkg()
 modifier onlyNonZeroAddress(address addr)
 ```
 
-### initialize
-
-Initializes the Committee contract
-
-```solidity
-function initialize(address initialAuthority, contract INodes nodesAddress, struct IDkg.G2Point commonPublicKey, NodeId[] nodeIds) external
-```
-
-**dev:** _This function is called only once during contract deployment following the proxy pattern_
-
-#### Parameters
-
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| initialAuthority | address | The address of the initial access control authority |
-| nodesAddress | contract INodes | The address of the Nodes contract |
-| commonPublicKey | struct IDkg.G2Point | The common public key for the initial committee |
-| nodeIds | NodeId[] | The array of node IDs for the initial committee |
-
 ### select
 
 Selects a new committee from eligible nodes
@@ -416,7 +398,8 @@ function select() external
 
 **dev:** _Only callable by authorized addresses (restricted)
 Flushes rewards before selection and initiates DKG for the new committee
-Reverts if a committee rotation is already in progress_
+Reverts only if a the successor committee is already elected and DKG completed
+If DKG of successor committee is not completed, the new committee is overwritten_
 
 ### setMinTransitionDelay
 
@@ -561,13 +544,14 @@ Sets the committee's common public key and activation timestamp_
 
 ### setCommitteeSize
 
-Sets the committee size
+Sets the next committee size
 
 ```solidity
 function setCommitteeSize(uint256 size) external
 ```
 
-**dev:** _Only callable by authorized addresses (restricted)_
+**dev:** _Only affects future committee selections (already selected committees with complete DKG are unaffected)
+Only callable by authorized addresses (restricted)_
 
 #### Parameters
 
@@ -628,7 +612,7 @@ Makes the node eligible if it has stake and is healthy_
 
 ### nodeRemovedFromWhitelist
 
-Called when a node is blacklisted
+Called when a node is removed from the whitelist
 
 ```solidity
 function nodeRemovedFromWhitelist(NodeId node) external
@@ -641,7 +625,7 @@ Removes the node from the eligible pool_
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-| node | NodeId | The ID of the blacklisted node |
+| node | NodeId | The ID of the node removed from the whitelist |
 
 ### processHeartbeat
 
@@ -653,7 +637,7 @@ function processHeartbeat(NodeId node) external
 
 **dev:** _Only callable by Status contract (restricted)
 Updates node weight in the pool or makes it eligible if conditions are met
-Ejects unhealthy nodes after processing_
+Ejects 1 unhealthy node after processing (if any)_
 
 #### Parameters
 
@@ -723,6 +707,25 @@ function isNodeInCurrentOrNextCommittee(NodeId node) external view returns (bool
 | ---- | ---- | ----------- |
 | result | bool | True if the node is in current or next committee, false otherwise |
 
+### initialize
+
+Initializes the Committee contract
+
+```solidity
+function initialize(address initialAuthority, contract INodes nodesAddress, struct IDkg.G2Point commonPublicKey, NodeId[] nodeIds) public
+```
+
+**dev:** _This function is called only once during contract deployment following the proxy pattern_
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| initialAuthority | address | The address of the initial access control authority |
+| nodesAddress | contract INodes | The address of the Nodes contract |
+| commonPublicKey | struct IDkg.G2Point | The common public key for the initial committee |
+| nodeIds | NodeId[] | The array of node IDs for the initial committee |
+
 ### ejectUnhealthyNode
 
 Ejects an unhealthy node from the eligible pool
@@ -741,8 +744,6 @@ Gets the index of the currently active committee
 ```solidity
 function getActiveCommitteeIndex() public view returns (CommitteeIndex committeeIndex)
 ```
-
-**dev:** _Iterates backwards from the last committee to find the one that has started_
 
 #### Return Values
 

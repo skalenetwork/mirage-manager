@@ -238,6 +238,20 @@ error IncorrectG2Point(struct IDkg.G2Point value)
 | ---- | ---- | ----------- |
 | value | struct IDkg.G2Point | The invalid G2 point |
 
+### G2ZeroPointNotAllowed
+
+G2 zero point is not allowed
+
+```solidity
+error G2ZeroPointNotAllowed(struct IDkg.G2Point value)
+```
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| value | struct IDkg.G2Point | The G2 point provided |
+
 ### NodeIsAlreadyAlright
 
 Node has already confirmed all data received
@@ -308,7 +322,7 @@ Confirms that a node has received all DKG data
 function alright(DkgId dkg) external
 ```
 
-**dev:** _Only callable during ALRIGHT stage. When threshold is reached, DKG succeeds._
+**dev:** _Only callable during ALRIGHT stage. When all nodes submit valid Alright, DKG succeeds._
 
 #### Parameters
 

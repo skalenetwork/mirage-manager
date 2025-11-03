@@ -189,7 +189,7 @@ library PoolLibrary {
     // private
 
     /**
-     * @notice Finds the oldest node in the tree
+     * @notice Finds the oldest healthy node in the tree
      * @param pool The pool storage
      * @return lastHealthy The last healthy node, or NULL if none found
      */

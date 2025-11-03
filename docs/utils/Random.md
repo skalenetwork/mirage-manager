@@ -2,17 +2,18 @@
 
 ## Random
 
-**dev:** _Library for generating pseudo-random numbers using seed-based generation
-Provides utilities for creating random number generators and generating values
+Library for generating pseudo-random numbers using seed-based generation
+
+**dev:** _Provides utilities for creating random number generators and generating values
 within specified ranges for weighted sampling and selection algorithms._
 
 ### create
 
+Creates a RandomGenerator instance from a seed value
+
 ```solidity
 function create(uint256 seed) internal pure returns (struct IRandom.RandomGenerator generator)
 ```
-
-**dev:** _Creates a RandomGenerator instance from a seed value_
 
 #### Parameters
 
@@ -28,11 +29,11 @@ function create(uint256 seed) internal pure returns (struct IRandom.RandomGenera
 
 ### createFromEntropy
 
+Creates a RandomGenerator instance from entropy bytes
+
 ```solidity
 function createFromEntropy(bytes entropy) internal pure returns (struct IRandom.RandomGenerator generator)
 ```
-
-**dev:** _Creates a RandomGenerator instance from entropy bytes_
 
 #### Parameters
 
@@ -48,11 +49,11 @@ function createFromEntropy(bytes entropy) internal pure returns (struct IRandom.
 
 ### random
 
+Generates a random value and updates the generator state
+
 ```solidity
 function random(struct IRandom.RandomGenerator self) internal pure returns (uint256 value)
 ```
-
-**dev:** _Generates a random value and updates the generator state_
 
 #### Parameters
 
@@ -68,11 +69,11 @@ function random(struct IRandom.RandomGenerator self) internal pure returns (uint
 
 ### random
 
+Generates a random value in the range [0, max)
+
 ```solidity
 function random(struct IRandom.RandomGenerator self, uint256 max) internal pure returns (uint256 value)
 ```
-
-**dev:** _Generates a random value in the range [0, max)_
 
 #### Parameters
 
@@ -89,11 +90,11 @@ function random(struct IRandom.RandomGenerator self, uint256 max) internal pure 
 
 ### random
 
+Generates a random value in the range [min, max)
+
 ```solidity
 function random(struct IRandom.RandomGenerator self, uint256 min, uint256 max) internal pure returns (uint256 value)
 ```
-
-**dev:** _Generates a random value in the range [min, max)_
 
 #### Parameters
 

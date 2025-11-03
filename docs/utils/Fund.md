@@ -6,13 +6,13 @@
 
 ## FundLibrary
 
-Manages fund balances, credits, and fee collection for SKALE FAIR network participants
+Facilitates reward distribution and management operations in the FAIR network
 
 **dev:** _Implements a credit system for tracking proportional ownership in funds with fee management_
 
 ### Fund
 
-**dev:** _Stores fund state including balances, credits, and fee tracking_
+Struct representing fund state including balances, credits, and fee tracking
 
 ```solidity
 struct Fund {
@@ -90,11 +90,11 @@ error RoundingErrorTooHigh(Fair roundingError)
 
 ### claimFee
 
+Claims accumulated fees from the fund
+
 ```solidity
 function claimFee(struct FundLibrary.Fund fund, Fair fundBalance, Fair amount) internal
 ```
-
-**dev:** _Claims accumulated fees from the fund - Relevant only for Node Funds_
 
 #### Parameters
 
@@ -106,11 +106,11 @@ function claimFee(struct FundLibrary.Fund fund, Fair fundBalance, Fair amount) i
 
 ### remove
 
+Removes a specified amount from a holder's balance
+
 ```solidity
 function remove(struct FundLibrary.Fund fund, Fair fundBalance, Holder holder, Fair amount) internal
 ```
-
-**dev:** _Removes a specified amount from a holder's balance_
 
 #### Parameters
 
@@ -123,11 +123,11 @@ function remove(struct FundLibrary.Fund fund, Fair fundBalance, Holder holder, F
 
 ### setFeeRate
 
+Sets the fee rate for the fund
+
 ```solidity
 function setFeeRate(struct FundLibrary.Fund fund, Fair fundBalance, uint16 feeRate) internal
 ```
-
-**dev:** _Sets the fee rate for the fund_
 
 #### Parameters
 
@@ -139,11 +139,11 @@ function setFeeRate(struct FundLibrary.Fund fund, Fair fundBalance, uint16 feeRa
 
 ### supply
 
+Adds funds to a holder's balance
+
 ```solidity
 function supply(struct FundLibrary.Fund fund, Fair fundBalance, Holder holder, Fair amount) internal
 ```
-
-**dev:** _Adds funds to a holder's balance_
 
 #### Parameters
 
@@ -156,11 +156,11 @@ function supply(struct FundLibrary.Fund fund, Fair fundBalance, Holder holder, F
 
 ### updateTotalBalance
 
+Updates the total balance of the fund and processes any balance changes
+
 ```solidity
 function updateTotalBalance(struct FundLibrary.Fund fund, Fair fundBalance) internal
 ```
-
-**dev:** _Updates the total balance of the fund and processes any balance changes_
 
 #### Parameters
 
@@ -171,11 +171,11 @@ function updateTotalBalance(struct FundLibrary.Fund fund, Fair fundBalance) inte
 
 ### getBalance
 
+Retrieves the balance for a specific holder
+
 ```solidity
 function getBalance(struct FundLibrary.Fund fund, Fair fundBalance, Holder holder) internal view returns (Fair amount)
 ```
-
-**dev:** _Retrieves the balance for a specific holder_
 
 #### Parameters
 
@@ -193,11 +193,11 @@ function getBalance(struct FundLibrary.Fund fund, Fair fundBalance, Holder holde
 
 ### getEarnedFee
 
+Calculates total earned fees including uncounted fees
+
 ```solidity
 function getEarnedFee(struct FundLibrary.Fund fund, Fair balance) internal view returns (Fair amount)
 ```
-
-**dev:** _Calculates total earned fees including uncounted fees_
 
 #### Parameters
 
@@ -214,11 +214,11 @@ function getEarnedFee(struct FundLibrary.Fund fund, Fair balance) internal view 
 
 ### holderToAddress
 
+Converts a Holder to an address
+
 ```solidity
 function holderToAddress(Holder holder) internal pure returns (address holderAddress)
 ```
-
-**dev:** _Converts a Holder to an address_
 
 #### Parameters
 
@@ -234,11 +234,11 @@ function holderToAddress(Holder holder) internal pure returns (address holderAdd
 
 ### holderToNode
 
+Converts a Holder to a NodeId
+
 ```solidity
 function holderToNode(Holder holder) internal pure returns (NodeId node)
 ```
-
-**dev:** _Converts a Holder to a NodeId_
 
 #### Parameters
 
@@ -254,11 +254,11 @@ function holderToNode(Holder holder) internal pure returns (NodeId node)
 
 ### addressToHolder
 
+Converts an address to a Holder
+
 ```solidity
 function addressToHolder(address holder) internal pure returns (Holder typedHolder)
 ```
-
-**dev:** _Converts an address to a Holder_
 
 #### Parameters
 
@@ -274,11 +274,11 @@ function addressToHolder(address holder) internal pure returns (Holder typedHold
 
 ### nodeToHolder
 
+Converts a NodeId to a Holder
+
 ```solidity
 function nodeToHolder(NodeId holder) internal pure returns (Holder typedHolder)
 ```
-
-**dev:** _Converts a NodeId to a Holder_
 
 #### Parameters
 
@@ -294,25 +294,85 @@ function nodeToHolder(NodeId holder) internal pure returns (Holder typedHolder)
 
 ## _creditAdd
 
+Adds two credit amounts
+
 ```solidity
 function _creditAdd(Credit a, Credit b) internal pure returns (Credit sum)
 ```
 
+### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| a | Credit | The first credit amount |
+| b | Credit | The second credit amount |
+
+### Return Values
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| sum | Credit | The sum of the two credit amounts |
+
 ## _creditEqual
+
+Checks if two credit amounts are equal
 
 ```solidity
 function _creditEqual(Credit a, Credit b) internal pure returns (bool equal)
 ```
 
+### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| a | Credit | The first credit amount |
+| b | Credit | The second credit amount |
+
+### Return Values
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| equal | bool | True if the credit amounts are equal, false otherwise |
+
 ## _creditLess
+
+Checks if one credit amount is less than another
 
 ```solidity
 function _creditLess(Credit a, Credit b) internal pure returns (bool less)
 ```
 
+### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| a | Credit | The first credit amount |
+| b | Credit | The second credit amount |
+
+### Return Values
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| less | bool | True if a is less than b, false otherwise |
+
 ## _creditSubtract
+
+Subtracts two credit amounts
 
 ```solidity
 function _creditSubtract(Credit a, Credit b) internal pure returns (Credit diff)
 ```
+
+### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| a | Credit | The first credit amount |
+| b | Credit | The second credit amount |
+
+### Return Values
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| diff | Credit | The result of subtracting b from a |
 
