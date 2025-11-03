@@ -39,7 +39,7 @@ library PoolLibrary {
     using RedBlackTree for mapping(NodeId => RedBlackTree.Node);
     using TypedSet for TypedSet.NodeIdSet;
 
-    /// @dev Pool data structure with weighted tree and incoming nodes
+    /// @notice Pool data structure with weighted tree and incoming nodes
     struct Pool {
         mapping (NodeId id => RedBlackTree.Node node) tree;
         NodeId root;
@@ -59,8 +59,8 @@ library PoolLibrary {
     );
 
     /**
-     * @dev Adds a node to the incoming pool (waiting heartbeat)
-     * Should not be called if the node is already present in the tree
+     * @notice Adds a node to the incoming pool (waiting heartbeat)
+     * @dev Should not be called if the node is already present in the tree
      * @param pool The pool storage
      * @param id The node ID to add
      */
@@ -69,8 +69,8 @@ library PoolLibrary {
     }
 
     /**
-     * @dev Moves a node to the front (leftmost position) of the weighted tree
-     * Removes the node if present, then inserts it with given weight
+     * @notice Moves a node to the front (leftmost position) of the weighted tree
+     * @dev Removes the node if present, then inserts it with given weight
      * @param pool The pool storage
      * @param node The node ID to move
      * @param weight The weight value for the node
@@ -82,8 +82,8 @@ library PoolLibrary {
     }
 
     /**
-     * @dev Removes a node from the pool (either present or incoming)
-     * Removes from the weighted tree if present, otherwise from incoming set
+     * @notice Removes a node from the pool (either present or incoming)
+     * @dev Removes from the weighted tree if present, otherwise from incoming set
      * @param pool The pool storage
      * @param node The node ID to remove
      * @return removed True if the node was removed
@@ -98,9 +98,10 @@ library PoolLibrary {
     }
 
     /**
-     * @dev Performs weighted random sampling to select nodes from the pool
-     * Only samples from healthy nodes. Selected nodes are moved to incoming set (require heartbeat for next selection).
-     * Uses cumulative weight-based selection for fairness.
+     * @notice Performs weighted random sampling of nodes from the pool to form a committee
+     * @dev Only samples from healthy nodes.
+     * @dev Selected nodes are moved to incoming set (require heartbeat for next selection).
+     * @dev Uses cumulative weight-based selection for fairness.
      * @param pool The pool storage
      * @param size The number of nodes to sample
      * @param generator The random number generator instance
@@ -131,8 +132,8 @@ library PoolLibrary {
     }
 
     /**
-     * @dev Updates the weight of a node in the pool
-     * Only updates weight if the node is in the present node's pool, otherwise irrelevant
+     * @notice Updates the weight of a node in the pool
+     * @dev Only updates weight if the node is in the present node's pool, otherwise irrelevant
      * @param pool The pool storage
      * @param node The node ID to update
      * @param weight The new weight value
@@ -148,8 +149,8 @@ library PoolLibrary {
     }
 
     /**
-     * @dev Gets an approximate oldest node from the pool
-     * Returns first incoming node if any, otherwise the rightmost (oldest) node in tree
+     * @notice Gets an approximate oldest node from the pool
+     * @dev Returns first incoming node if any, otherwise the rightmost (oldest) node in tree
      * @param pool The pool storage
      * @return oldest The oldest-ish node ID, or NULL if pool is empty
      */
@@ -164,8 +165,8 @@ library PoolLibrary {
     }
 
     /**
-     * @dev Checks if a node is in the pool
-     * Searches both the active tree and incoming set
+     * @notice Checks if a node is in the pool
+     * @dev Searches both the active tree and incoming set
      * @param pool The pool storage
      * @param node The node ID to check
      * @return present True if the node is in the pool
@@ -175,8 +176,8 @@ library PoolLibrary {
     }
 
     /**
-     * @dev Returns the total number of nodes in the pool
-     * Sums present nodes and incoming nodes
+     * @notice Returns the total number of nodes in the pool
+     * @dev Sums present nodes and incoming nodes
      * @param pool The pool storage
      * @return poolSize The total number of nodes
      */
@@ -187,7 +188,7 @@ library PoolLibrary {
     // private
 
     /**
-     * @dev Finds the oldest node in the tree
+     * @notice Finds the oldest node in the tree
      * @param pool The pool storage
      * @return lastHealthy The last healthy node, or NULL if none found
      */

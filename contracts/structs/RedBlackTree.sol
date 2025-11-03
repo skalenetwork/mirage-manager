@@ -25,16 +25,16 @@ import { SafeCast } from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import { NodeId } from "@skalenetwork/fair-manager-interfaces/INodes.sol";
 
 /**
- * @title Red-Black Tree
+ * @title Red-Black Tree Library
  * @author SKALE Labs
- * @dev Library implementing a weighted red-black tree for efficient node selection
- * Maintains tree balancing properties while tracking cumulative weights for weighted
- * random sampling. Used by the eligible pool for committee selection.
+ * @notice Library implementing a weighted red-black tree for efficient node selection
+ * @dev Maintains tree balancing properties while tracking cumulative weights for weighted
+ * random sampling. Used by the pool to maintain eligible nodes for committee selection.
  */
 library RedBlackTree {
     using SafeCast for uint256;
 
-    /// @dev Red-black tree node structure
+    /// @notice Red-black tree node structure
     struct Node {
         NodeId id;
         NodeId parent;
@@ -44,16 +44,26 @@ library RedBlackTree {
         bool red;
     }
 
+    /// @notice Sentinel value representing a null node
     NodeId constant public NULL = NodeId.wrap(0);
 
+    /// @dev Error indicating a child node is missing when expected
     error ChildIsMissing(NodeId node, NodeId child);
+
+    /// @dev Error indicating an attempt to insert a null node
     error InsertNullNode();
+
+    /// @dev Error indicating a node was not found in the tree
     error NotFound();
+
+    /// @dev Error indicating an attempt to remove a null node
     error RemoveNullNode();
+
+    /// @dev Error indicating an attempt to set weight of a null node
     error SetWeightOfNullNode();
 
     /**
-     * @dev Inserts a new node as the smallest (leftmost) element in the tree
+     * @notice Inserts a new node as the smallest (leftmost) element in the tree
      * @param nodes The tree storage mapping
      * @param root The current root node
      * @param newNode The node ID to insert
@@ -90,7 +100,7 @@ library RedBlackTree {
     }
 
     /**
-     * @dev Removes a node from the tree and re-balances
+     * @notice Removes a node from the tree and re-balances
      * @param nodes The tree storage mapping
      * @param root The current root node
      * @param node The node ID to remove
@@ -132,7 +142,7 @@ library RedBlackTree {
     }
 
     /**
-     * @dev Updates the weight of a node and propagates changes up the tree
+     * @notice Updates the weight of a node and propagates changes up the tree
      * @param nodes The tree storage mapping
      * @param node The node ID to update
      * @param weight The new weight value
@@ -153,7 +163,7 @@ library RedBlackTree {
     }
 
     /**
-     * @dev Finds a node by cumulative weight for weighted random sampling
+     * @notice Finds a node by cumulative weight for weighted random sampling
      * @param nodes The tree storage mapping
      * @param root The root node
      * @param weight The target cumulative weight
@@ -188,7 +198,7 @@ library RedBlackTree {
     }
 
     /**
-     * @dev Finds the rightmost node in the subtree
+     * @notice Finds the rightmost node in the subtree
      * @param nodes The tree storage mapping
      * @param root The root of the subtree to search
      * @return biggest The rightmost node ID
@@ -203,7 +213,7 @@ library RedBlackTree {
     }
 
     /**
-     * @dev Gets the weight of a specific node (excluding subtree weights)
+     * @notice Gets the weight of a specific node (excluding subtree weights)
      * @param nodes The tree storage mapping
      * @param node The node ID to query
      * @return weight The node's individual weight
@@ -224,7 +234,7 @@ library RedBlackTree {
     }
 
     /**
-     * @dev Calculates cumulative weight up to and including a specific node
+     * @notice Calculates cumulative weight up to and including a specific node
      * @param nodes The tree storage mapping
      * @param bound The node to calculate weight till
      * @return weight The cumulative weight from the leftmost node to bound
@@ -250,7 +260,7 @@ library RedBlackTree {
     // Private
 
     /**
-     * @dev Re-balances the tree after insertion using red-black tree rules
+     * @notice Re-balances the tree after insertion using red-black tree rules
      * @param nodes The tree storage mapping
      * @param root The current root node
      * @param node The newly inserted node
@@ -292,7 +302,7 @@ library RedBlackTree {
     }
 
     /**
-     * @dev Creates a new red node with the specified properties
+     * @notice Creates a new red node with the specified properties
      * @param nodes The tree storage mapping
      * @param id The node ID
      * @param parent The parent node ID
@@ -310,7 +320,7 @@ library RedBlackTree {
     }
 
     /**
-     * @dev Removes a black leaf node and fixes black height violations
+     * @notice Removes a black leaf node and fixes black height violations
      * @param nodes The tree storage mapping
      * @param root The current root node
      * @param node The black leaf to remove
@@ -351,7 +361,7 @@ library RedBlackTree {
     }
 
     /**
-     * @dev Removes a red leaf node (no rebalancing needed)
+     * @notice Removes a red leaf node (no rebalancing needed)
      * @param nodes The tree storage mapping
      * @param root The current root node
      * @param node The red leaf to remove
@@ -374,7 +384,7 @@ library RedBlackTree {
     }
 
     /**
-     * @dev Fixes black height violation for right child case
+     * @notice Fixes black height violation for right child case
      * @param nodes The tree storage mapping
      * @param root The current root node
      * @param parent The parent of the removed black node
@@ -398,7 +408,7 @@ library RedBlackTree {
     }
 
     /**
-     * @dev Fixes black height violation for left child case
+     * @notice Fixes black height violation for left child case
      * @param nodes The tree storage mapping
      * @param root The current root node
      * @param parent The parent of the removed black node
@@ -422,7 +432,7 @@ library RedBlackTree {
     }
 
     /**
-     * @dev Fixes black height when right node is removed, parent is red
+     * @notice Fixes black height when right node is removed, parent is red
      * @param nodes The tree storage mapping
      * @param root The current root node
      * @param parent The red parent node
@@ -472,7 +482,7 @@ library RedBlackTree {
     }
 
     /**
-     * @dev Fixes black height when left node is removed, parent is red
+     * @notice Fixes black height when left node is removed, parent is red
      * @param nodes The tree storage mapping
      * @param root The current root node
      * @param parent The red parent node
@@ -522,7 +532,7 @@ library RedBlackTree {
     }
 
     /**
-     * @dev Fixes black height when right node is removed, parent is black
+     * @notice Fixes black height when right node is removed, parent is black
      * @param nodes The tree storage mapping
      * @param root The current root node
      * @param parent The black parent node
@@ -546,7 +556,7 @@ library RedBlackTree {
     }
 
     /**
-     * @dev Fixes black height when left node is removed, parent is black
+     * @notice Fixes black height when left node is removed, parent is black
      * @param nodes The tree storage mapping
      * @param root The current root node
      * @param parent The black parent node
@@ -570,7 +580,7 @@ library RedBlackTree {
     }
 
     /**
-     * @dev Fixes black height for right node with black parent and red sibling
+     * @notice Fixes black height for right node with black parent and red sibling
      * @param nodes The tree storage mapping
      * @param root The current root node
      * @param parent The black parent node
@@ -615,7 +625,7 @@ library RedBlackTree {
     }
 
     /**
-     * @dev Fixes black height for left node with black parent and red sibling
+     * @notice Fixes black height for left node with black parent and red sibling
      * @param nodes The tree storage mapping
      * @param root The current root node
      * @param parent The black parent node
@@ -657,7 +667,7 @@ library RedBlackTree {
     }
 
     /**
-     * @dev Fixes black height for right node with black parent and black sibling
+     * @notice Fixes black height for right node with black parent and black sibling
      * @param nodes The tree storage mapping
      * @param root The current root node
      * @param parent The black parent node
@@ -704,7 +714,7 @@ library RedBlackTree {
     }
 
     /**
-     * @dev Fixes black height for left node with black parent and black sibling
+     * @notice Fixes black height for left node with black parent and black sibling
      * @param nodes The tree storage mapping
      * @param root The current root node
      * @param parent The black parent node
@@ -751,7 +761,7 @@ library RedBlackTree {
     }
 
     /**
-     * @dev Performs a left rotation
+     * @notice Performs a left rotation
      * @param nodes The tree storage mapping
      * @param parent The parent node to rotate
      * @param node The node being promoted
@@ -771,7 +781,7 @@ library RedBlackTree {
     }
 
     /**
-     * @dev Performs a left-right double rotation
+     * @notice Performs a left-right double rotation
      * @param nodes The tree storage mapping
      * @param grandfather The grandfather node
      * @param parent The parent node
@@ -804,7 +814,7 @@ library RedBlackTree {
     }
 
     /**
-     * @dev Performs a right rotation
+     * @notice Performs a right rotation
      * @param nodes The tree storage mapping
      * @param parent The parent node to rotate
      * @param node The node being promoted
@@ -824,7 +834,7 @@ library RedBlackTree {
     }
 
     /**
-     * @dev Performs a right-left double rotation
+     * @notice Performs a right-left double rotation
      * @param nodes The tree storage mapping
      * @param grandfather The grandfather node
      * @param parent The parent node
@@ -857,7 +867,7 @@ library RedBlackTree {
     }
 
     /**
-     * @dev Sets a node to black color
+     * @notice Sets a node to black color
      * @param nodes The tree storage mapping
      * @param node The node to color black
      */
@@ -868,7 +878,7 @@ library RedBlackTree {
     }
 
     /**
-     * @dev Sets a node to red color
+     * @notice Sets a node to red color
      * @param nodes The tree storage mapping
      * @param node The node to color red
      */
@@ -878,7 +888,7 @@ library RedBlackTree {
     }
 
     /**
-     * @dev Swaps two nodes in the tree preserving structure and weights
+     * @notice Swaps two nodes in the tree preserving structure and weights
      * @dev node has to be a descendant of base
      * @param nodes The tree storage mapping
      * @param base The base node (ancestor)
@@ -911,7 +921,7 @@ library RedBlackTree {
     }
 
     /**
-     * @dev Updates a node's child reference
+     * @notice Updates a node's child reference
      * @param nodes The tree storage mapping
      * @param node The parent node
      * @param oldChild The old child to replace
@@ -941,7 +951,7 @@ library RedBlackTree {
     }
 
     /**
-     * @dev Recalculates and updates a node's total weight from its subtrees
+     * @notice Recalculates and updates a node's total weight from its subtrees
      * @param nodes The tree storage mapping
      * @param node The node to update
      * @param weight The node's individual weight
@@ -953,7 +963,7 @@ library RedBlackTree {
     }
 
     /**
-     * @dev Gets the total weight of a node including its subtrees
+     * @notice Gets the total weight of a node including its subtrees
      * @param nodes The tree storage mapping
      * @param node The node to query
      * @return totalWeight The cumulative weight of node and all descendants
@@ -973,7 +983,7 @@ library RedBlackTree {
     }
 
     /**
-     * @dev Gets the grandfather (parent's parent) of a node
+     * @notice Gets the grandfather (parent's parent) of a node
      * @param nodes The tree storage mapping
      * @param node The node to query
      * @return grandfather The grandfather node ID
@@ -990,7 +1000,7 @@ library RedBlackTree {
     }
 
     /**
-     * @dev Checks if a node has at least one red child
+     * @notice Checks if a node has at least one red child
      * @param nodes The tree storage mapping
      * @param node The node to check
      * @return has True if node has a red child
@@ -1003,7 +1013,7 @@ library RedBlackTree {
     }
 
     /**
-     * @dev Checks if a node is black (NULL nodes are considered black)
+     * @notice Checks if a node is black (NULL nodes are considered black)
      * @param nodes The tree storage mapping
      * @param node The node to check
      * @return black True if the node is black
@@ -1013,7 +1023,7 @@ library RedBlackTree {
     }
 
     /**
-     * @dev Checks if a node is red (NULL nodes are considered black)
+     * @notice Checks if a node is red (NULL nodes are considered black)
      * @param nodes The tree storage mapping
      * @param node The node to check
      * @return red True if the node is red
@@ -1026,7 +1036,7 @@ library RedBlackTree {
     }
 
     /**
-     * @dev Gets the parent of a node
+     * @notice Gets the parent of a node
      * @param nodes The tree storage mapping
      * @param node The node to query
      * @return parent The parent node ID
@@ -1039,7 +1049,7 @@ library RedBlackTree {
     }
 
     /**
-     * @dev Gets the uncle (parent's sibling) of a node
+     * @notice Gets the uncle (parent's sibling) of a node
      * @param nodes The tree storage mapping
      * @param node The node to query
      * @return uncle The uncle node ID

@@ -20,10 +20,34 @@
 */
 
 pragma solidity ^0.8.24;
+
+/**
+ * @title IMockRNG
+ * @author SKALE Labs
+ * @notice Interface for the mock random number generator contract
+ * @dev Used for testing purposes to simulate a predeployed RNG contract
+ */
 interface IMockRNG {
-    fallback(bytes calldata) external returns (bytes memory result);
+    /**
+     * @notice Fallback function that returns mock random data
+     * @param input The calldata sent to the contract
+     * @return result The encoded mock random data
+     */
+    fallback(bytes calldata input) external returns (bytes memory result);
+
+    /**
+     * @notice Burns all ETH held by the contract by sending it to the zero address
+     * @dev Required to satisfy slither security warnings
+     */
     function burnEth() external;
 }
+
+/**
+ * @title MockRNG
+ * @author SKALE Labs
+ * @notice Mock implementation of a random number generator for testing
+ * @dev Simulates a predeployed RNG contract by returning timestamp-based values
+ */
 contract MockRNG is IMockRNG{
 
     // If make fallback function payable
@@ -33,11 +57,21 @@ contract MockRNG is IMockRNG{
     // and the contract can't mock up the behavior of a predeployed contract
     // because receive function can't return any value.
     // solhint-disable-next-line payable-fallback
+    /**
+     * @notice Fallback function that returns mock random data based on block timestamp
+     * @dev Returns the current block timestamp encoded as bytes
+     * @dev Not marked as payable to avoid requiring a receive function, which would interfere with wanted behavior
+     * @param input The calldata sent to the contract - ignored
+     * @return result The encoded block timestamp as mock random data
+     */
     fallback(bytes calldata) external override returns (bytes memory result) {
         return abi.encode(block.timestamp);
     }
 
-    // required for slither warning
+    /**
+     * @notice Burns all ETH held by the contract by sending it to the zero address
+     * @dev Required to satisfy slither security warnings - This contract is used for tests only.
+     */
     function burnEth() external override {
         payable(address(0)).transfer(address(this).balance);
     }

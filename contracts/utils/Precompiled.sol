@@ -24,8 +24,8 @@ pragma solidity ^0.8.24;
 /**
  * @title Precompiled Library
  * @author SKALE Labs
- * @dev Library for interacting with Ethereum precompiled contracts and SKALE-specific precompiles
- * Provides utilities for modular exponentiation, elliptic curve operations (BN256),
+ * @notice Library for interacting with Ethereum precompiled contracts and SKALE-specific precompiles
+ * @dev Provides utilities for modular exponentiation, elliptic curve operations (BN256),
  * and random number generation using SKALE's on-chain RNG.
  */
 library Precompiled {
@@ -43,7 +43,7 @@ library Precompiled {
     error PrecompiledCallFailed(address precompiledContract);
 
     /**
-     * @dev Performs modular exponentiation: (base^exponent) % modulus
+     * @notice Performs modular exponentiation: (base^exponent) % modulus
      * @param base The base value
      * @param exponent The exponent value
      * @param modulus The modulus value
@@ -74,7 +74,7 @@ library Precompiled {
     }
 
     /**
-     * @dev Performs elliptic curve scalar multiplication on BN256 curve
+     * @notice Performs elliptic curve scalar multiplication on BN256 curve
      * @param x The x-coordinate of the point
      * @param y The y-coordinate of the point
      * @param k The scalar multiplier
@@ -95,7 +95,7 @@ library Precompiled {
     }
 
     /**
-     * @dev Performs BN256 elliptic curve pairing check
+     * @notice Performs BN256 elliptic curve pairing check
      * @dev Verifies if e(p1[0], p2[0]) * e(p1[1], p2[1]) == 1
      * @param x1 G1 point 1 x-coordinate
      * @param y1 G1 point 1 y-coordinate
@@ -138,7 +138,7 @@ library Precompiled {
     }
 
     /**
-     * @dev Gets a random bytes32 value from SKALE's on-chain RNG
+     * @notice Gets a random bytes32 value from SKALE's on-chain RNG
      * @dev rngOnChain should be SKALE Random Number Generator predeployed or compatible contract
      * @param rngOnChain The address of the SKALE Random Number Generator predeployed contract
      * @return addr The random bytes32 value
@@ -148,7 +148,7 @@ library Precompiled {
     }
 
     /**
-     * @dev Gets a random uint256 value from SKALE's on-chain RNG
+     * @notice Gets a random uint256 value from SKALE's on-chain RNG
      * @param rngOnChain The address of the SKALE Random Number Generator predeployed contract
      * @return addr The random uint256 value
      */
@@ -159,7 +159,7 @@ library Precompiled {
     // Private
 
     /**
-     * @dev Calls a precompiled contract with the given input
+     * @notice Calls a precompiled contract with the given input
      * @param precompiledContract The address of the precompiled contract
      * @param input The input data to pass to the precompiled contract
      * @return output The output data from the precompiled contract

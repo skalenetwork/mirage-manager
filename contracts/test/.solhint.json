@@ -1,6 +1,0 @@
-{
-    "extends": "solhint:recommended",
-    "rules": {
-        "use-natspec": ["off"]
-    }
-}

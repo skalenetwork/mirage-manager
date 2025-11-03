@@ -53,7 +53,7 @@ using {
 library FundLibrary {
     using TypedMap for TypedMap.HolderToCreditMap;
 
-    /// @dev Stores fund state including balances, credits, and fee tracking
+    /// @notice Struct representing fund state including balances, credits, and fee tracking
     struct Fund {
         Fair lastBalance;
         Credit totalCredits;
@@ -87,7 +87,7 @@ library FundLibrary {
     error RoundingErrorTooHigh(Fair roundingError);
 
     /**
-     * @dev Claims accumulated fees from the fund - Relevant only for Node Funds
+     * @notice Claims accumulated fees from the fund - Relevant only for Node Funds
      * @param fund Storage reference to the fund
      * @param fundBalance Current balance of the fund
      * @param amount Amount of fees to claim
@@ -109,7 +109,7 @@ library FundLibrary {
     }
 
     /**
-     * @dev Removes a specified amount from a holder's balance
+     * @notice Removes a specified amount from a holder's balance
      * @param fund Storage reference to the fund
      * @param fundBalance Current balance of the fund
      * @param holder The holder to remove funds from
@@ -144,7 +144,7 @@ library FundLibrary {
     }
 
     /**
-     * @dev Sets the fee rate for the fund
+     * @notice Sets the fee rate for the fund
      * @param fund Storage reference to the fund
      * @param fundBalance Current balance of the fund
      * @param feeRate New fee rate to set
@@ -161,7 +161,7 @@ library FundLibrary {
     }
 
     /**
-     * @dev Adds funds to a holder's balance
+     * @notice Adds funds to a holder's balance
      * @param fund Storage reference to the fund
      * @param fundBalance Current balance of the fund
      * @param holder The holder to add funds to
@@ -201,7 +201,7 @@ library FundLibrary {
     }
 
     /**
-     * @dev Updates the total balance of the fund and processes any balance changes
+     * @notice Updates the total balance of the fund and processes any balance changes
      * @param fund Storage reference to the fund
      * @param fundBalance Current balance of the fund
      */
@@ -211,7 +211,7 @@ library FundLibrary {
 
 
     /**
-     * @dev Retrieves the balance for a specific holder
+     * @notice Retrieves the balance for a specific holder
      * @param fund Storage reference to the fund
      * @param fundBalance Current balance of the fund
      * @param holder The holder to query
@@ -236,7 +236,7 @@ library FundLibrary {
     }
 
     /**
-     * @dev Calculates total earned fees including uncounted fees
+     * @notice Calculates total earned fees including uncounted fees
      * @param fund Storage reference to the fund
      * @param balance Current balance to calculate against
      * @return amount Total earned fees
@@ -253,7 +253,7 @@ library FundLibrary {
     }
 
     /**
-     * @dev Converts a Holder to an address
+     * @notice Converts a Holder to an address
      * @param holder The holder identifier to convert
      * @return holderAddress The converted address
      */
@@ -262,7 +262,7 @@ library FundLibrary {
     }
 
     /**
-     * @dev Converts a Holder to a NodeId
+     * @notice Converts a Holder to a NodeId
      * @param holder The holder identifier to convert
      * @return node The converted NodeId
      */
@@ -271,7 +271,7 @@ library FundLibrary {
     }
 
     /**
-     * @dev Converts an address to a Holder
+     * @notice Converts an address to a Holder
      * @param holder The address to convert
      * @return typedHolder The converted Holder identifier
      */
@@ -280,7 +280,7 @@ library FundLibrary {
     }
 
     /**
-     * @dev Converts a NodeId to a Holder
+     * @notice Converts a NodeId to a Holder
      * @param holder The NodeId to convert
      * @return typedHolder The converted Holder identifier
      */
@@ -291,7 +291,7 @@ library FundLibrary {
     // private
 
     /**
-     * @dev Processes balance changes and updates accrued fees
+     * @notice Processes balance changes and updates accrued fees
      * @param fund Storage reference to the fund
      * @param fundBalance Current balance of the fund
      */
@@ -313,7 +313,7 @@ library FundLibrary {
     }
 
     /**
-     * @dev Private function to remove ALL credits from a holder
+     * @notice Private function to remove ALL credits from a holder
      * @dev Calls _remove with the holder's total owned credits (if any)
      * @param fund Storage reference to the fund
      * @param fundBalance Current balance of the fund
@@ -336,7 +336,7 @@ library FundLibrary {
     }
 
     /**
-     * @dev Private function to remove credits from a holder
+     * @notice Private function to remove credits from a holder
      * @param fund Storage reference to the fund
      * @param fundBalance Current balance of the fund
      * @param holder The holder to remove credits from
@@ -371,7 +371,7 @@ library FundLibrary {
     }
 
     /**
-     * @dev Calculates the total balance that belongs to holders (total fund balance excluding fees)
+     * @notice Calculates the total balance that belongs to holders (total fund balance excluding fees)
      * @param fund Storage reference to the fund
      * @param fundBalance Current balance of the fund
      * @return amount The holders' available balance
@@ -388,7 +388,7 @@ library FundLibrary {
     }
 
     /**
-     * @dev Calculates uncounted fees based on balance changes
+     * @notice Calculates uncounted fees based on balance changes
      * @param fund Storage reference to the fund
      * @param balance Current balance to calculate against
      * @return fee The uncounted fee amount
@@ -417,7 +417,7 @@ library FundLibrary {
     }
 
     /**
-     * @dev Converts FAIR amount to credits rounded down
+     * @notice Converts FAIR amount to credits rounded down
      * @param fund Storage reference to the fund
      * @param fundBalance Current balance of the fund
      * @param amount Amount of FAIR to convert
@@ -450,7 +450,7 @@ library FundLibrary {
     }
 
     /**
-     * @dev Converts FAIR amount to credits rounded up
+     * @notice Converts FAIR amount to credits rounded up
      * @param fund Storage reference to the fund
      * @param fundBalance Current balance of the fund
      * @param amount Amount of FAIR to convert
@@ -483,7 +483,7 @@ library FundLibrary {
     }
 
     /**
-     * @dev Converts credits to FAIR amount rounded down
+     * @notice Converts credits to FAIR amount rounded down
      * @param fund Storage reference to the fund
      * @param fundBalance Current balance of the fund
      * @param amount Amount of credits to convert
@@ -512,7 +512,7 @@ library FundLibrary {
     }
 
     /**
-     * @dev Validates that rounding errors are within acceptable limits
+     * @notice Validates that rounding errors are within acceptable limits
      * @param balanceBefore Balance before the operation
      * @param balanceAfter Balance after the operation
      * @param amount The amount involved in the operation

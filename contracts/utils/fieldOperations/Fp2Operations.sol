@@ -40,7 +40,7 @@ library Fp2Operations {
     uint256 constant public P = LARGE_PRIME;
 
     /**
-     * @dev Computes the inverse of an Fp2 point
+     * @notice Computes the inverse of an Fp2 point
      * @param value The Fp2 point to invert
      * @return result The inverse of the input point
      */
@@ -66,7 +66,7 @@ library Fp2Operations {
     }
 
     /**
-     * @dev Adds two Fp2 points
+     * @notice Adds two Fp2 points
      * @param value1 The first Fp2 point
      * @param value2 The second Fp2 point
      * @return result The sum of the two points
@@ -83,7 +83,7 @@ library Fp2Operations {
     }
 
     /**
-     * @dev Multiplies an Fp2 point by a scalar value
+     * @notice Multiplies an Fp2 point by a scalar value
      * @param value The Fp2 point to multiply
      * @param scalar The scalar value to multiply by
      * @return result The product of the point and scalar
@@ -97,7 +97,7 @@ library Fp2Operations {
     }
 
     /**
-     * @dev Subtracts one Fp2 point from another
+     * @notice Subtracts one Fp2 point from another
      * @param diminished The point to subtract from (minuend)
      * @param subtracted The point to subtract (subtrahend)
      * @return difference The difference between the two points
@@ -124,7 +124,7 @@ library Fp2Operations {
     }
 
     /**
-     * @dev Multiplies two Fp2 points
+     * @notice Multiplies two Fp2 points
      * @param value1 The first Fp2 point
      * @param value2 The second Fp2 point
      * @return result The product of the two points
@@ -155,7 +155,7 @@ library Fp2Operations {
     }
 
     /**
-     * @dev Computes the square of an Fp2 point
+     * @notice Computes the square of an Fp2 point
      * @param value The Fp2 point to square
      * @return result The squared point
      */
@@ -177,7 +177,7 @@ library Fp2Operations {
     }
 
     /**
-     * @dev Checks if two Fp2 points are equal
+     * @notice Checks if two Fp2 points are equal
      * @param value1 The first Fp2 point
      * @param value2 The second Fp2 point
      * @return result True if the points are equal, false otherwise

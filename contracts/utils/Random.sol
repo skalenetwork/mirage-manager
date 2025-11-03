@@ -26,14 +26,14 @@ import { IRandom } from "@skalenetwork/fair-manager-interfaces/IRandom.sol";
 /**
  * @title Random Library
  * @author SKALE Labs
- * @dev Library for generating pseudo-random numbers using seed-based generation
+ * @notice Library for generating pseudo-random numbers using seed-based generation
  * Provides utilities for creating random number generators and generating values
  * within specified ranges for weighted sampling and selection algorithms.
  */
 library Random {
 
     /**
-     * @dev Creates a RandomGenerator instance from a seed value
+     * @notice Creates a RandomGenerator instance from a seed value
      * @param seed The initial seed value for random generation
      * @return generator The initialized RandomGenerator
      */
@@ -42,7 +42,7 @@ library Random {
     }
 
     /**
-     * @dev Creates a RandomGenerator instance from entropy bytes
+     * @notice Creates a RandomGenerator instance from entropy bytes
      * @param entropy The entropy bytes to hash into a seed
      * @return generator The initialized RandomGenerator
      */
@@ -57,7 +57,7 @@ library Random {
     }
 
     /**
-     * @dev Generates a random value and updates the generator state
+     * @notice Generates a random value and updates the generator state
      * @param self The RandomGenerator instance (modified in place)
      * @return value The generated random uint256 value
      */
@@ -67,7 +67,7 @@ library Random {
     }
 
     /**
-     * @dev Generates a random value in the range [0, max)
+     * @notice Generates a random value in the range [0, max)
      * @param self The RandomGenerator instance (modified in place)
      * @param max The exclusive upper bound (must be greater than 0)
      * @return value The generated random value in range [0, max)
@@ -90,7 +90,7 @@ library Random {
     }
 
     /**
-     * @dev Generates a random value in the range [min, max)
+     * @notice Generates a random value in the range [min, max)
      * @param self The RandomGenerator instance (modified in place)
      * @param min The inclusive lower bound
      * @param max The exclusive upper bound (must be greater than min)

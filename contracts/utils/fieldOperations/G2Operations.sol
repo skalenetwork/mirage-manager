@@ -35,7 +35,7 @@ library G2Operations {
     using Fp2Operations for IDkg.Fp2Point;
 
     /**
-     * @dev Doubles a G2 point
+     * @notice Doubles a G2 point
      * @param value The G2 point to double
      * @return result The doubled G2 point
      */
@@ -58,7 +58,7 @@ library G2Operations {
     }
 
     /**
-     * @dev Adds two G2 points
+     * @notice Adds two G2 points
      * @param value1 The first G2 point
      * @param value2 The second G2 point
      * @return sum The sum of the two G2 points
@@ -103,7 +103,7 @@ library G2Operations {
     }
 
     /**
-     * @dev Returns the TWIST B constant for G2 curve operations
+     * @notice Returns the TWIST B constant for G2 curve operations
      * @return point The TWIST B constant as an Fp2 point
      */
     function getTWISTB() internal pure returns (IDkg.Fp2Point memory point) {
@@ -116,7 +116,7 @@ library G2Operations {
     }
 
     /**
-     * @dev Returns the G2 generator point
+     * @notice Returns the G2 generator point
      * @return point The G2 generator point
      */
     function getG2Generator() internal pure returns (IDkg.G2Point memory point) {
@@ -135,7 +135,7 @@ library G2Operations {
     }
 
     /**
-     * @dev Returns the G2 zero point (point at infinity)
+     * @notice Returns the G2 zero point (point at infinity)
      * @return point The G2 zero point
      */
     function getG2Zero() internal pure returns (IDkg.G2Point memory point) {
@@ -154,7 +154,7 @@ library G2Operations {
     }
 
     /**
-     * @dev Checks if the given Fp2 coordinates represent a valid G2 point
+     * @notice Checks if the given Fp2 coordinates represent a valid G2 point
      * @param x The x-coordinate as an Fp2 point
      * @param y The y-coordinate as an Fp2 point
      * @return result True if the coordinates form a valid G2 point, false otherwise
@@ -182,7 +182,7 @@ library G2Operations {
     }
 
     /**
-     * @dev Checks if the given G2Point is a valid G2 point
+     * @notice Checks if the given G2Point is a valid G2 point
      * @param value The G2 point to check
      * @return result True if the point is on the G2 curve, false otherwise
      */
@@ -191,7 +191,7 @@ library G2Operations {
     }
 
     /**
-     * @dev Checks if the given Fp2 coordinates represent the G2 zero point
+     * @notice Checks if the given Fp2 coordinates represent the G2 zero point
      * @param x The x-coordinate as an Fp2 point
      * @param y The y-coordinate as an Fp2 point
      * @return result True if the coordinates form the G2 zero point, false otherwise
@@ -208,7 +208,7 @@ library G2Operations {
     }
 
     /**
-     * @dev Checks if the given G2 point is the zero point
+     * @notice Checks if the given G2 point is the zero point
      * @param value The G2 point to check
      * @return result True if the point is the G2 zero point, false otherwise
      */
@@ -218,7 +218,7 @@ library G2Operations {
     }
 
     /**
-     * @dev Checks if two G2 points are equal
+     * @notice Checks if two G2 points are equal
      * @param value1 The first G2 point
      * @param value2 The second G2 point
      * @return result True if the points are strictly equal, false otherwise

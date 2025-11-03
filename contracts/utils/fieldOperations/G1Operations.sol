@@ -37,7 +37,7 @@ library G1Operations {
     using Fp2Operations for IDkg.Fp2Point;
 
     /**
-     * @dev Returns the G1 generator point
+     * @notice Returns the G1 generator point
      * @return generator The G1 generator point
      */
     function getG1Generator() internal pure returns (IDkg.Fp2Point memory generator) {
@@ -50,7 +50,7 @@ library G1Operations {
     }
 
     /**
-     * @dev Checks if the given coordinates represent a valid G1 point
+     * @notice Checks if the given coordinates represent a valid G1 point
      * @param x The x-coordinate of the point
      * @param y The y-coordinate of the point
      * @return result True if the point is on the G1 curve, false otherwise
@@ -66,7 +66,7 @@ library G1Operations {
     }
 
     /**
-     * @dev Checks if the given Fp2Point is a valid G1 point
+     * @notice Checks if the given Fp2Point is a valid G1 point
      * @param point The Fp2 point to check
      * @return result True if the point is on the G1 curve, false otherwise
      */
@@ -75,7 +75,7 @@ library G1Operations {
     }
 
     /**
-     * @dev Checks if a point's coordinates are within the valid range
+     * @notice Checks if a point's coordinates are within the valid range
      * @param point The Fp2 point to check
      * @return result True if both coordinates are less than the prime P, false otherwise
      */
@@ -84,7 +84,7 @@ library G1Operations {
     }
 
     /**
-     * @dev Computes the negation of a y-coordinate in the field
+     * @notice Computes the negation of a y-coordinate in the field
      * @param y The y-coordinate to negate
      * @return result The negated y-coordinate
      */

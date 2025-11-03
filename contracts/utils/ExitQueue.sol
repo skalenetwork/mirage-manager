@@ -39,13 +39,13 @@ import { FundLibrary } from "./Fund.sol";
 library ExitQueueLibrary{
     using EnumerableSet for EnumerableSet.UintSet;
 
-    /// @dev Stores exit request data for a specific user
+    /// @notice Stores exit request data for a specific user
     struct UserExitData {
         EnumerableSet.UintSet requestIds;
         Fair totalLeaving;
     }
 
-    /// @dev Main exit queue storage structure
+    /// @notice Main exit queue storage structure
     /// @dev Includes all exit requests, user-specific data, configuration, and data tracking values
     struct ExitQueue {
         mapping(uint256 requestId => IStaking.ExitRequest request) exitRequests;
@@ -106,7 +106,7 @@ library ExitQueueLibrary{
     // internal
 
     /**
-     * @dev Creates a new exit request for a user
+     * @notice Creates a new exit request for a user
      * @param queue The exit queue storage
      * @param user The address of the user
      * @param nodeId The node identifier
@@ -148,7 +148,7 @@ library ExitQueueLibrary{
     }
 
     /**
-     * @dev Claims an exit request for a user
+     * @notice Claims an exit request for a user
      * @param queue The exit queue storage
      * @param user The address of the user claiming the request
      * @param id The unique identifier of the request
@@ -180,7 +180,7 @@ library ExitQueueLibrary{
     }
 
     /**
-     * @dev Checks if a request is unlocked
+     * @notice Checks if a request is unlocked
      * @param queue The exit queue storage
      * @param id The unique identifier of the request
      * @return isUnlocked True if the request is unlocked
@@ -190,7 +190,7 @@ library ExitQueueLibrary{
     }
 
     /**
-     * @dev Returns the number of exit requests for a user
+     * @notice Returns the number of exit requests for a user
      * @param queue The exit queue storage
      * @param user The address of the user
      * @return numRequests The number of requests
@@ -200,7 +200,7 @@ library ExitQueueLibrary{
     }
 
     /**
-     * @dev Retrieves an exit request by its ID
+     * @notice Retrieves an exit request by its ID
      * @param queue The exit queue storage
      * @param id The unique identifier of the request
      * @return request The exit request
@@ -218,7 +218,7 @@ library ExitQueueLibrary{
     }
 
     /**
-     * @dev Retrieves an exit request for a user at a specific index
+     * @notice Retrieves an exit request for a user at a specific index
      * @param queue The exit queue storage
      * @param user The address of the user
      * @param index The index of the request in the user's request list
@@ -239,7 +239,7 @@ library ExitQueueLibrary{
     }
 
     /**
-     * @dev Looks for an unlocked request in the first MAX_ITERATIONS requests starting after 'from'
+     * @notice Looks for an unlocked request in the first MAX_ITERATIONS requests starting after 'from'
      * @param queue The exit queue storage
      * @param user The address of the user
      * @param from The starting index to search from
@@ -269,7 +269,7 @@ library ExitQueueLibrary{
     }
 
     /**
-     * @dev Returns the total amount in the exit queue for a user
+     * @notice Returns the total amount in the exit queue for a user
      * @param queue The exit queue storage
      * @param user The address of the user
      * @return amount The total amount in the queue
@@ -281,7 +281,7 @@ library ExitQueueLibrary{
     // private
 
     /**
-     * @dev Checks if a request is unlocked based on its unlock date
+     * @notice Checks if a request is unlocked based on its unlock date
      * @param request The exit request to check
      * @return isUnlocked True if the request is unlocked
      */
