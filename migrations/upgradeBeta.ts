@@ -1,10 +1,10 @@
 import {Instance, skaleContracts} from "@skalenetwork/skale-contracts-ethers-v6";
-import {AbstractTransparentProxyUpgrader, BeaconUpgrader, Submitter, Upgrader} from "@skalenetwork/upgrade-tools";
+import {BeaconUpgrader, Submitter, Upgrader} from "@skalenetwork/upgrade-tools";
 import {Transaction} from "ethers";
 import chalk from "chalk";
-import {contracts, deployRewardWalletBeacon} from "./deploy";
+import {contracts} from "./deploy";
 import {ethers} from "hardhat";
-import { Committee, Staking, Staking__factory } from "../typechain-types";
+import { Committee, Staking } from "../typechain-types";
 
 enum ExitCodes {
     OK,
@@ -82,46 +82,15 @@ class FairManagerUpgrader extends Upgrader {
         }
         return super.createProxyUpgrader(contractName);
     }
-
-    initialize = async () => {
-        const staking = await this.instance.getContract("Staking");
-        const stakingProxyAdmin = await AbstractTransparentProxyUpgrader.getProxyAdmin(staking);
-        const rewardWalletBeacon = await deployRewardWalletBeacon(await stakingProxyAdmin.owner());
-        const newStakingInterface = Staking__factory.createInterface();
-        console.log(chalk.yellowBright(`Prepare transaction to start using RewardWallet beacon at ${
-            await ethers.resolveAddress(rewardWalletBeacon)
-        }`));
-        this.transactions.push(Transaction.from({
-            data: newStakingInterface.encodeFunctionData("updateRewardWalletBeacon", [
-                await ethers.resolveAddress(rewardWalletBeacon)
-            ]),
-            to: await ethers.resolveAddress(staking)
-        }));
-    }
 }
 
 const main = async () => {
     const fairManager = await getFairManagerInstance();
 
-    // TODO: remove this code
-    // after RewardWallet beacon is released
-    let updateRewardWallet = true;
-    try {
-        const staking = await fairManager.getContract("Staking") as Staking;
-        await staking.rewardWalletBeacon();
-    } catch {
-        updateRewardWallet = false;
-    }
-    let contractNamesToUpgrade = contracts;
-    if (!updateRewardWallet) {
-        contractNamesToUpgrade = contracts.filter(name => name !== "RewardWallet");
-    }
-    // end of TODO
-
     const upgrader = new FairManagerUpgrader({
-        contractNamesToUpgrade,
+        contractNamesToUpgrade: contracts,
         instance: fairManager,
-        targetVersion: "0.0.1-beta.3"
+        targetVersion: "0.0.1-beta.4"
     });
     await upgrader.upgrade();
 }
