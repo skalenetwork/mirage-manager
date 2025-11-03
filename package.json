@@ -60,7 +60,7 @@
     "@skalenetwork/fair-manager-interfaces": "0.1.0-develop.96",
     "@skalenetwork/skale-contracts-ethers-v6": "^2.0.0-develop.1",
     "@skalenetwork/skale-manager-interfaces": "3.2.0-develop.3",
-    "@skalenetwork/upgrade-tools": "4.0.0-develop.2",
+    "@skalenetwork/upgrade-tools": "4.0.0-beacon.4",
     "chalk": "^4",
     "dotenv": "^16.5.0",
     "hardhat-dependency-compiler": "^1.2.1"

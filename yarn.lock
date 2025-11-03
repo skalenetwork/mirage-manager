@@ -2550,9 +2550,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@skalenetwork/upgrade-tools@npm:4.0.0-develop.2":
-  version: 4.0.0-develop.2
-  resolution: "@skalenetwork/upgrade-tools@npm:4.0.0-develop.2"
+"@skalenetwork/upgrade-tools@npm:4.0.0-beacon.4":
+  version: 4.0.0-beacon.4
+  resolution: "@skalenetwork/upgrade-tools@npm:4.0.0-beacon.4"
   dependencies:
     "@nomicfoundation/hardhat-ethers": "npm:^3.0.0"
     "@nomicfoundation/hardhat-verify": "npm:2.0.14"
@@ -2567,7 +2567,7 @@ __metadata:
     ethereumjs-util: "npm:^7.1.4"
     hardhat: "npm:^2.9.9"
     semaphore-async-await: "npm:^1.5.1"
-  checksum: 10c0/299cee8c389d5a9ee4355fdb64fb6cfd003cbe000a028067721e108d26963a9499bb41072fe0d7dfaef6e093a50559a3ace37b7c1a76c0ca33f29c1809433574
+  checksum: 10c0/30cfccadd1802c6739095a0ab77c9455c028135b7298bbd4ccd4fc9298db40b0b30d38cebdff3d26bca57698a1d5d2f6192980f1b144138da0dca63ab562a259
   languageName: node
   linkType: hard
 
@@ -5557,7 +5557,7 @@ __metadata:
     "@skalenetwork/fair-manager-interfaces": "npm:0.1.0-develop.96"
     "@skalenetwork/skale-contracts-ethers-v6": "npm:^2.0.0-develop.1"
     "@skalenetwork/skale-manager-interfaces": "npm:3.2.0-develop.3"
-    "@skalenetwork/upgrade-tools": "npm:4.0.0-develop.2"
+    "@skalenetwork/upgrade-tools": "npm:4.0.0-beacon.4"
     "@typechain/ethers-v6": "npm:^0.5.0"
     "@typechain/hardhat": "npm:^9.0.0"
     "@types/chai": "npm:^4.2.0"
