@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-
+// cspell:words: IRBT
 /*
     RBTHandler.sol - fair-manager
     Copyright (C) 2025-Present SKALE Labs
