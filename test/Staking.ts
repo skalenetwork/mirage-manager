@@ -1507,7 +1507,6 @@ describe("Staking", () => {
             const node = nodesData1[nodeIndex % nodesData1.length];
             await grantNetworkRewards(staking, ethers.parseEther("1"));
             await grantNodeRewards(staking, node.id, 10n**14n);
-            console.log(`Paid some rewards to node ${node.id}`);
         };
 
         await status.whitelistNode(15n);
@@ -1538,7 +1537,9 @@ describe("Staking", () => {
         // however remaining credits are not enough to make 1 wei of stake
 
         expect(await staking.getNodeTotalStake(1)).to.be.eql(0n);
-        expect(await staking.getEarnedFeeAmount(1)).to.be.eql(1n);
+        // fund.earnedFee is actually 1, but the view function caps it to node's stake
+        expect(await staking.getEarnedFeeAmount(1)).to.be.eql(0n);
+        expect(await staking.getNodeShare(1)).to.be.gt(0n); // it has some dust credits left
 
         // dust credits should be removed because it was worthless
         await forceEjectNodes(1);
