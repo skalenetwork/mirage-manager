@@ -17,7 +17,7 @@ fi
 export NVM_DIR=~/.nvm;
 source $NVM_DIR/nvm.sh;
 
-echo "0.0.1-beta.3" > "$GITHUB_WORKSPACE/DEPLOYED"
+echo "0.0.1-beta.4" > "$GITHUB_WORKSPACE/DEPLOYED"
 DEPLOYED_TAG=$(cat $GITHUB_WORKSPACE/DEPLOYED)
 DEPLOYED_VERSION=$(echo $DEPLOYED_TAG | xargs ) # trim
 DEPLOYED_DIR=$GITHUB_WORKSPACE/deployed-fair-manager/
