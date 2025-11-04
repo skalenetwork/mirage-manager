@@ -102,6 +102,7 @@ contract StatusHandler is Test, IStatusHandler {
      * @notice Constructor
      * @param _status The Status contract address
      * @param _admin The admin address
+     * @dev Scans for first 256 active nodes to populate fixtureNode array
      */
     constructor(address _status, address _admin) {
         status = Status(_status);

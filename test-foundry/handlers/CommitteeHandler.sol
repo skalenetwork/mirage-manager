@@ -101,6 +101,8 @@ contract CommitteeHandler is Test, ICommitteeHandler {
      * @notice Constructor
      * @param _committee The address of the CommitteeTester contract
      * @param admin The address of the project admin user
+     * @dev Sets committee size to 5 for testing purposes
+     * @dev Scans for first 256 active nodes to populate fixtureNode array
      */
     constructor (address _committee, address admin) {
         committee = CommitteeTester(_committee);
@@ -114,7 +116,7 @@ contract CommitteeHandler is Test, ICommitteeHandler {
         }
         _admin = admin;
         vm.prank(_admin);
-        committee.setCommitteeSize(5); // set as 5 for testing
+        committee.setCommitteeSize(5);
     }
 
     /// @inheritdoc ICommitteeHandler
@@ -125,8 +127,7 @@ contract CommitteeHandler is Test, ICommitteeHandler {
         if (timestamp == type(uint256).max) {
             selectionTimestamp = 0;
         }
-        // expect revert if called to early
-        // expect revert if not enough eligible staked nodes
+
         uint256 eligibleNodes = 0;
         uint256 numFixtureNodes = fixtureNode.length;
         for (uint256 i = 0; i < numFixtureNodes; ++i) {
@@ -141,10 +142,13 @@ contract CommitteeHandler is Test, ICommitteeHandler {
             }
         }
 
+        // expect revert if called to early
+        // expect revert if not enough eligible staked nodes
+
         // non-strict inequality optimized by the compiler - no improvement compared to strict in this case
         // solhint-disable-next-line gas-strict-inequalities
         if (type(uint256).max != timestamp && timestamp >= block.timestamp){
-            // partialRevert only matches the selector
+            // partialRevert only matches the error selector
             vm.expectPartialRevert(Committee.CommitteeRotationInProgress.selector);
         }
         else if (eligibleNodes < committee.committeeSize()) {

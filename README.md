@@ -36,12 +36,12 @@ Then run `yarn hardhat run migrations/deploy.ts --network custom`
 
 You can run unit & integration tests locally without any extra setup. Simply run: `yarn test`
 
-To run fuzz tests, make sure you install foundry localy, and then run:
+To run fuzz tests, make sure you install foundry locally, and then run:
 
 - For Red-Black Tree Fuzz Tests: `yarn test-foundry:rbt`;
-- For Fair Manager Fuzz Tests: `test-foundry:fair-manager`;
+- For Fair Manager Fuzz Tests: `yarn test-foundry:fair-manager`;
 
-To increase test cases in fuzz tests, change [foundry.toml](./foundry.toml) file and increase depth or number of runs.
+To increase or decrease tested cases in fuzz tests, change [foundry.toml](./foundry.toml) file and increase depth or number of runs (Increasing depth over 150 should be less relevant than increasing runs).
 
 To clean cache generated from past runs, use `forge clean`. Foundry caches information gained during past test runs.
 

@@ -111,6 +111,7 @@ interface IStakingHandler {
  * @title Staking Handler
  * @author Eduardo Vasques
  * @notice Handler contract for testing the Staking contract
+ * @dev Scans for first 256 active nodes to populate fixtureNode array
  */
 contract StakingHandler is Test, IStakingHandler {
     using EnumerableSet for EnumerableSet.AddressSet;
