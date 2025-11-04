@@ -60,7 +60,7 @@ interface IDefaultSetup {
  * @author Eduardo Vasques
  * @notice Contract with default setup for Fair Manager tests
  */
-contract DefaultSetup is Test {
+contract DefaultSetup is Test, IDefaultSetup {
 
     /// @inheritdoc IDefaultSetup
     StatusHandler public status;

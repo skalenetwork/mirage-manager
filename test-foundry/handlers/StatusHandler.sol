@@ -54,7 +54,7 @@ interface IStatusHandler {
      * @notice Warps time to eject all unhealthy nodes, then sends heartbeats from a sample
      * @param numAlives Number of random nodes to send heartbeats after ejection
      */
-    function alivesSomeWithAllEjected(uint256 numAlives) external;
+    function alivesSomeWithAllEjected(uint8 numAlives) external;
 
     /**
      * @notice Warps time to make all nodes unhealthy, then sends heartbeats from all
