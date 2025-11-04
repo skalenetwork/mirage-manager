@@ -14,6 +14,7 @@
     "imports-order": "error",
     "immutable-vars-naming": "error",
     "func-named-parameters": "error",
+    "func-visibility": ["error", { "ignoreConstructors": true }],
     "gas-indexed-events": "error",
     "gas-named-return-values": "error",
     "max-line-length": "error",

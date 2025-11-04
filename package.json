@@ -45,7 +45,7 @@
     "eslint": "yarn exec eslint .",
     "fullCheck": "yarn compile && yarn lint && yarn tsc && yarn eslint",
     "hooks": "git config core.hooksPath .githooks",
-    "lint": "yarn solhint 'contracts/**/*.sol'",
+    "lint": "yarn solhint 'contracts/**/*.sol' && yarn solhint 'test-foundry/**/*.sol'",
     "no-hooks": "git config core.hooksPath .git/hooks",
     "slither": "yarn cleanCompile && slither . --compile-force-framework hardhat --ignore-compile",
     "test": "yarn tsc && npx hardhat test",
