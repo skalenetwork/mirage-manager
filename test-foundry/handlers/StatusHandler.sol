@@ -1,5 +1,6 @@
-// cspell:words Alives alives unshuffled
 // SPDX-License-Identifier: AGPL-3.0-only
+
+// cspell:words alives unshuffled solady
 
 /*
     StatusHandler.sol - fair-manager
@@ -22,9 +23,13 @@
 
 pragma solidity ^0.8.24;
 
+import {FixedPointMathLib} from "solady/src/utils/FixedPointMathLib.sol";
+
 import {Duration, NodeId, Status} from "../../contracts/Status.sol";
 
 import {Test} from "../../lib/forge-std/src/Test.sol";
+
+
 
 /**
  * @title IStatusHandler
@@ -86,6 +91,10 @@ interface IStatusHandler {
  * @notice Handler contract for testing the Status contract
  */
 contract StatusHandler is Test, IStatusHandler {
+
+    /// @notice Precision constant for gas estimation calculations
+    uint256 public constant PRECISION = 1_000_000_000_000_000_000;
+
     /// @inheritdoc IStatusHandler
     Status public status;
 
@@ -97,6 +106,8 @@ contract StatusHandler is Test, IStatusHandler {
 
     error InvalidSamplingRequest();
     error StatusAddressNotSet();
+    error LogInputZero();
+    error LogInputTooLarge();
 
     /**
      * @notice Constructor
@@ -146,8 +157,9 @@ contract StatusHandler is Test, IStatusHandler {
         for (uint256 i = 0; i < alives; ++i) {
             address nodeOwner = status.nodes().getNode(NodeId.wrap(nodes[i])).nodeAddress;
             assert(nodeOwner != address(0));
+            uint256 gas = _customGas();
             vm.prank(nodeOwner);
-            status.alive();
+            status.alive{gas: gas}();
         }
     }
 
@@ -166,8 +178,9 @@ contract StatusHandler is Test, IStatusHandler {
         for (uint256 i = 0; i < alives; ++i) {
             address nodeOwner = status.nodes().getNode(NodeId.wrap(nodes[i])).nodeAddress;
             assert(nodeOwner != address(0));
+            uint256 gas = _customGas();
             vm.prank(nodeOwner);
-            status.alive();
+            status.alive{gas: gas}();
         }
     }
 
@@ -178,8 +191,9 @@ contract StatusHandler is Test, IStatusHandler {
         for (uint256 i = 0; i < numNodes; ++i) {
             address nodeOwner = status.nodes().getNode(fixtureNode[i]).nodeAddress;
             assert(nodeOwner != address(0));
+            uint256 gas = _customGas();
             vm.prank(nodeOwner);
-            status.alive();
+            status.alive{gas: gas}();
         }
     }
 
@@ -236,5 +250,55 @@ contract StatusHandler is Test, IStatusHandler {
         }
 
         return result;
+    }
+
+    /**
+     * @notice Estimates the gas cost for alive function based on the number of whitelisted nodes
+     * @return gas The estimated gas cost
+     * @dev Internal formula used by off-chain components to estimate gas costs
+     * @dev Used in invariant tests to ensure formula is up to date
+     */
+    function _customGas() private view returns (uint256 gas) {
+        NodeId[] memory activeNodes = status.nodes().getActiveNodeIds();
+        uint256 numActive = activeNodes.length;
+        uint256 numNodes = 0;
+        for (uint256 i = 0; i < numActive; ++i) {
+            if (status.isWhitelisted(activeNodes[i])) {
+                ++numNodes;
+            }
+        }
+
+        /// @dev Formula of off-chain components uses 720000 instead of 520000.
+        /// @dev We test with 520000 to detect increases in cost early
+        gas = (230000 * _log10(numNodes + 15) + 520000 * PRECISION);
+        gas = gas * 12 / 10;
+        gas = gas / PRECISION;
+    }
+
+    /**
+     * @notice Computes the base-10 logarithm of a given number
+     * @param x input for log10 function
+     * @return result the result of log10('x')
+     */
+    function _log10(uint256 x) private pure returns (uint256 result) {
+        require(x > 0, LogInputZero());
+
+        // ln(10) * 10**18
+        uint256 ln10Scaled = 2_302_585_092_994_045_684;
+
+        // WAD constant (10**18)
+        uint256 scaleWAD = 10**18;
+
+        // No real improvements possible here
+        // solhint-disable-next-line gas-strict-inequalities
+        require(x <= uint256(type(int256).max) / scaleWAD, LogInputTooLarge());
+        int256 xSigned = int256(x * scaleWAD);
+
+        int256 lnXSigned = FixedPointMathLib.lnWad(xSigned);
+
+        uint256 lnX = uint256(lnXSigned);
+
+        // this will give us log10(x) * PRECISION
+        return (lnX * PRECISION) / ln10Scaled;
     }
 }

@@ -142,16 +142,16 @@ contract CommitteeHandler is Test, ICommitteeHandler {
             }
         }
 
-        // expect revert if called to early
-        // expect revert if not enough eligible staked nodes
 
         // non-strict inequality optimized by the compiler - no improvement compared to strict in this case
         // solhint-disable-next-line gas-strict-inequalities
         if (type(uint256).max != timestamp && timestamp >= block.timestamp){
+            // expect revert if called to early
             // partialRevert only matches the error selector
             vm.expectPartialRevert(Committee.CommitteeRotationInProgress.selector);
         }
         else if (eligibleNodes < committee.committeeSize()) {
+            // expect revert if not enough eligible staked nodes
             vm.expectPartialRevert(PoolLibrary.TooFewCandidates.selector);
         }
         vm.prank(_admin);
@@ -183,7 +183,7 @@ contract CommitteeHandler is Test, ICommitteeHandler {
     }
 
     /// @inheritdoc ICommitteeHandler
-    function skipTime(uint8 time) public override {
+    function skipTime(uint16 time) public override {
         vm.warp(block.timestamp + uint256(time));
     }
 }
