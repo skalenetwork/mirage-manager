@@ -60,7 +60,7 @@ interface ICommitteeHandler {
      * @notice Skips forward in time by a specified amount
      * @param time The number of seconds to skip forward
      */
-    function skipTime(uint8 time) external;
+    function skipTime(uint16 time) external;
 
     /**
      * @notice Gets the CommitteeTester contract instance
