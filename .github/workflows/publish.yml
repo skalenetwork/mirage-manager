@@ -93,6 +93,46 @@ jobs:
           message: "Add ABI for version ${{ env.VERSION }}"
           add: "*-abi.json"
 
+  comment-release:
+    runs-on: ubuntu-latest
+
+    needs:
+      build
+
+    env:
+      VERSION: ${{ needs.build.outputs.version }}
+
+    steps:
+      - name: Get linked issues
+        id: get-issues
+        uses: mondeja/pr-linked-issues-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+
+      - name: Comment on linked issues
+        if: steps.get-issues.outputs.issues != ''
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const version = process.env.VERSION;
+            const tagUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}/releases/tag/${version}`;
+            const commentBody = `Release created: [${version}](${tagUrl})`;
+
+            const issues = '${{ steps.get-issues.outputs.issues }}';
+            const issueNumbers = JSON.parse(issues);
+
+            // Comment on each linked issue
+            for (const issueNumber of issueNumbers) {
+              console.log(`Commenting on issue #${issueNumber}`);
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issueNumber,
+                body: commentBody
+              });
+            }
+
   docker:
     runs-on: ubuntu-latest
 
