@@ -3,7 +3,8 @@
 /*
     Precompiled.sol - fair-manager
     Copyright (C) 2018-Present SKALE Labs
-
+    @author Dmytro Stebaiev
+    @author Eduardo Vasques
 
     fair-manager is free software: you can redistribute it and/or modify
     it under the terms of the GNU Affero General Public License as published

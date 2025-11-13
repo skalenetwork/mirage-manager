@@ -5,7 +5,7 @@
 /*
     FairManagerFuzzDefaultSetup.t.sol - fair-manager
     Copyright (C) 2025-Present SKALE Labs
-
+    @author Eduardo Vasques
 
     fair-manager is free software: you can redistribute it and/or modify
     it under the terms of the GNU Affero General Public License as published
