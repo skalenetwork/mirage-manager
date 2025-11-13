@@ -38,6 +38,20 @@ jobs:
     - name: Lint
       run: yarn fullCheck
 
+    - name: Check documentation is up to date
+      run: |
+        yarn docgen
+        if [ -n "$(git status --porcelain docs/)" ]; then
+          echo "❌ Documentation is out of date!"
+          echo "Please run 'yarn docgen' locally and commit the changes."
+          echo ""
+          echo "Changed files:"
+          git status --short docs/
+          exit 1
+        else
+          echo "✅ Documentation is up to date!"
+        fi
+
     - name: Slither
       uses: crytic/slither-action@v0.4.1
       with:

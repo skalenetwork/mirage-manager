@@ -4,6 +4,7 @@
  *   RewardWallet.sol - fair-manager
  *   Copyright (C) 2025-Present SKALE Labs
  *   @author Dmytro Stebaiev
+ *   @author Eduardo Vasques
  *
  *   fair-manager is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU Affero General Public License as published
@@ -34,21 +35,38 @@ import {IStaking} from "@skalenetwork/fair-manager-interfaces/IStaking.sol";
 
 import { InvalidNodesAddress, InvalidStakingAddress } from "./utils/errors.sol";
 
+/**
+ * @title RewardWallet
+ * @author Dmytro Stebaiev
+ * @author Eduardo Vasques
+ * @notice Manages reward collection and forwarding for individual FAIR nodes
+ * @dev Receives rewards and forwards them to the Staking contract for the associated node
+ */
 contract RewardWallet is AccessManagedUpgradeable, IRewardWallet {
     using Address for address payable;
 
+    /// @notice Reference to the Staking contract
     IStaking public staking;
+
+    /// @notice Reference to the Nodes contract
     INodes public nodes;
+
+    /// @notice The node ID that this wallet is associated with
     NodeId public ownerNode;
 
+    /// @notice Thrown when attempting an operation that requires the owner node to exist
     error OwnerNodeDoesNotExist();
+
+    /// @notice Thrown when receiving value would exceed the node's stake limit
     error ValueExceedsStakeLimit();
 
+    /// @dev Ensures that the owner node exists
     modifier onlyIfNodeExists() {
         require(_nodeExists(ownerNode), OwnerNodeDoesNotExist());
         _;
     }
 
+    /// @dev Ensures that receiving value wouldn't exceed the stake limit
     modifier onlyWithinStakeLimit(){
         require(
             staking.isWithinStakeLimit(ownerNode),
@@ -57,6 +75,23 @@ contract RewardWallet is AccessManagedUpgradeable, IRewardWallet {
         _;
     }
 
+    /**
+     * @notice Fallback function to receive rewards
+     * @dev Automatically flushes rewards to the Staking contract
+     * @dev Only accepts funds if owner node exists and within stake limit
+     */
+    receive() external payable override onlyIfNodeExists onlyWithinStakeLimit {
+        flush();
+    }
+
+    /**
+     * @notice Initializes the RewardWallet contract
+     * @dev This function is called only once during contract deployment following the proxy pattern
+     * @param initialAuthority The address of the initial access control authority
+     * @param staking_ The address of the Staking contract
+     * @param nodes_ The address of the Nodes contract
+     * @param ownerNode_ The node ID that this reward wallet is associated with
+     */
     function initialize(
         address initialAuthority,
         IStaking staking_,
@@ -75,12 +110,13 @@ contract RewardWallet is AccessManagedUpgradeable, IRewardWallet {
         nodes = nodes_;
     }
 
-    receive() external payable override onlyIfNodeExists onlyWithinStakeLimit {
-        flush();
-    }
-
     // Public
 
+    /**
+     * @notice Flushes all accumulated rewards to the Staking contract
+     * @dev If owner node exists, rewards go to the node via staking.payReward()
+     * @dev If owner node doesn't exist, rewards go to the Staking contract as network rewards (failsafe)
+     */
     function flush() public override {
         if (address(this).balance > 0) {
             if (_nodeExists(ownerNode)) {
@@ -99,6 +135,12 @@ contract RewardWallet is AccessManagedUpgradeable, IRewardWallet {
     }
 
     // Private
+
+    /**
+     * @notice Checks if an active node exists in the Nodes contract
+     * @param nodeId The node ID to check
+     * @return exists True if the node exists and is active, false otherwise
+     */
     function _nodeExists(NodeId nodeId) private view returns (bool exists) {
         return nodes.activeNodeExists(nodeId);
     }

@@ -1,12 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
-// cSpell:words twistb
-
 /*
     Fp2Operations.sol - fair-manager
     Copyright (C) 2018-Present SKALE Labs
-
     @author Dmytro Stebaiev
+    @author Eduardo Vasques
 
     fair-manager is free software: you can redistribute it and/or modify
     it under the terms of the GNU Affero General Public License as published
@@ -29,10 +27,22 @@ import { IDkg } from "@skalenetwork/fair-manager-interfaces/IDkg.sol";
 import { LARGE_PRIME } from "../constants.sol";
 import { Precompiled } from "../Precompiled.sol";
 
+/**
+ * @title Fp2 (Quadratic Extension of base field Fp) Operations
+ * @author Dmytro Stebaiev
+ * @author Eduardo Vasques
+ * @notice Provides functionality for working with  Quadratic Extension of Fp points
+ */
 library Fp2Operations {
 
+    /// @notice BN254 base field prime modulus (alt_bn128). All arithmetic is modulo this value.
     uint256 constant public P = LARGE_PRIME;
 
+    /**
+     * @notice Computes the inverse of an Fp2 point
+     * @param value The Fp2 point to invert
+     * @return result The inverse of the input point
+     */
     function inverseFp2(
         IDkg.Fp2Point memory value
     )
@@ -54,6 +64,12 @@ library Fp2Operations {
         result.b = (p - mulmod(value.b, t3, p)) % p;
     }
 
+    /**
+     * @notice Adds two Fp2 points
+     * @param value1 The first Fp2 point
+     * @param value2 The second Fp2 point
+     * @return result The sum of the two points
+     */
     function addFp2(IDkg.Fp2Point memory value1, IDkg.Fp2Point memory value2)
         internal
         pure
@@ -65,6 +81,12 @@ library Fp2Operations {
         });
     }
 
+    /**
+     * @notice Multiplies an Fp2 point by a scalar value
+     * @param value The Fp2 point to multiply
+     * @param scalar The scalar value to multiply by
+     * @return result The product of the point and scalar
+     */
     function scalarMulFp2(IDkg.Fp2Point memory value, uint256 scalar)
         internal
         pure
@@ -73,6 +95,12 @@ library Fp2Operations {
         return IDkg.Fp2Point({ a: mulmod(scalar, value.a, P), b: mulmod(scalar, value.b, P) });
     }
 
+    /**
+     * @notice Subtracts one Fp2 point from another
+     * @param diminished The point to subtract from (minuend)
+     * @param subtracted The point to subtract (subtrahend)
+     * @return difference The difference between the two points
+     */
     function minusFp2(
         IDkg.Fp2Point memory diminished,
         IDkg.Fp2Point memory subtracted
@@ -94,6 +122,12 @@ library Fp2Operations {
         }
     }
 
+    /**
+     * @notice Multiplies two Fp2 points
+     * @param value1 The first Fp2 point
+     * @param value2 The second Fp2 point
+     * @return result The product of the two points
+     */
     function mulFp2(
         IDkg.Fp2Point memory value1,
         IDkg.Fp2Point memory value2
@@ -119,6 +153,11 @@ library Fp2Operations {
             p);
     }
 
+    /**
+     * @notice Computes the square of an Fp2 point
+     * @param value The Fp2 point to square
+     * @return result The squared point
+     */
     function squaredFp2(
         IDkg.Fp2Point memory value
     )
@@ -136,6 +175,12 @@ library Fp2Operations {
         return IDkg.Fp2Point({ a: multiplication, b: addmod(ab, ab, p) });
     }
 
+    /**
+     * @notice Checks if two Fp2 points are equal
+     * @param value1 The first Fp2 point
+     * @param value2 The second Fp2 point
+     * @return result True if the points are equal, false otherwise
+     */
     function isEqual(
         IDkg.Fp2Point memory value1,
         IDkg.Fp2Point memory value2

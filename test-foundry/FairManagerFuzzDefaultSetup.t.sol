@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
+// cspell:words: mixedcase
+
 /*
     FairManagerFuzzDefaultSetup.t.sol - fair-manager
     Copyright (C) 2025-Present SKALE Labs
-    @author Dmytro Stebaiev
+    @author Eduardo Vasques
 
     fair-manager is free software: you can redistribute it and/or modify
     it under the terms of the GNU Affero General Public License as published
@@ -21,33 +23,69 @@
 
 pragma solidity ^0.8.24;
 
-import {Test} from "forge-std/Test.sol";
-import {StdInvariant} from "forge-std/StdInvariant.sol";
+import {StdInvariant} from "../lib/forge-std/src/StdInvariant.sol";
+
 import {DefaultSetup} from "./DefaultSetup.sol";
 import {Fair, NodeId} from "./handlers/StakingHandler.sol";
 
-contract FairManagerFuzzDefaultSetup is StdInvariant, DefaultSetup {
+/**
+ * @title IFairManagerFuzzDefaultSetup
+ * @author Eduardo Vasques
+ * @notice Interface for the Fair Manager fuzz testing contract
+ */
+interface IFairManagerFuzzDefaultSetup {
 
-    function setUp() public override{
+    // solhint-disable func-name-mixedcase
+    /// @notice Core invariant check for the Fair Manager system
+    function invariant_coreInvariants() external view;
+    // solhint-enable func-name-mixedcase
+
+    /// @notice Checks that all not whitelisted nodes are disabled in staking
+    function checkNotWhitelistedAreDisabled() external view;
+
+    /// @notice Validates staking contract balance consistency
+    function checkStakingBalances() external view;
+}
+
+/**
+ * @title Fair Manager Fuzz Default Setup
+ * @author SKALE Labs
+ * @notice Fuzz test contract with core invariants for the Fair Manager system
+ */
+contract FairManagerFuzzDefaultSetup is StdInvariant, DefaultSetup, IFairManagerFuzzDefaultSetup {
+
+    error NodeShouldBeDisabled(NodeId node);
+    error NotEnoughTokensInStaking(Fair calculated, Fair stakingBalance);
+    error TotalDisabledHigherThanStakingBalance(Fair totalDisabled, Fair stakingBalance);
+    error TotalDisabledDifferentFromSumOfDisabledStake(Fair totalDisabled, Fair sumOfDisabledStake);
+
+    /// @notice Sets up the test environment
+    function setUp() public override {
         super.setUp();
     }
 
-    function invariant_coreInvariants() public view {
+    // solhint-disable func-name-mixedcase
+    /// @inheritdoc IFairManagerFuzzDefaultSetup
+    function invariant_coreInvariants() public view override {
+        checkNotWhitelistedAreDisabled();
         checkStakingBalances();
-        checkBlacklistedAreDisabled();
     }
+    // solhint-enable func-name-mixedcase
 
-    function checkBlacklistedAreDisabled() public view {
+
+    /// @inheritdoc IFairManagerFuzzDefaultSetup
+    function checkNotWhitelistedAreDisabled() public view override {
         uint256 numNodes = staking.getNumNodes();
         for (uint256 i = 0; i < numNodes; ++i) {
             NodeId node = staking.fixtureNode(i);
             if (!status.status().isWhitelisted(node)){
-                require(!staking.staking().isNodeEnabled(node), "Node should be disabled");
+                require(!staking.staking().isNodeEnabled(node), NodeShouldBeDisabled(node));
             }
         }
     }
 
-    function checkStakingBalances() public view {
+    /// @inheritdoc IFairManagerFuzzDefaultSetup
+    function checkStakingBalances() public view override {
         uint256 numNodes = staking.getNumNodes();
         Fair totalStake;
         Fair walletsBalance;
@@ -69,18 +107,25 @@ contract FairManagerFuzzDefaultSetup is StdInvariant, DefaultSetup {
         }
         // TODO: FIX #247 - uncomment require
         //require(!(totalFees > totalStake), "Fees are higher than stake");
+        uint256 stakingBalance = address(staking.staking()).balance;
+        Fair minimumRequiredBalance = totalStake - walletsBalance + totalInExitQueue;
+
+        // No real improvement seen when using strict inequalities for this particular case
+        // solhint-disable gas-strict-inequalities
+        require(
+            Fair.unwrap(minimumRequiredBalance) <= stakingBalance,
+            NotEnoughTokensInStaking(minimumRequiredBalance, Fair.wrap(stakingBalance))
+        );
 
         require(
-            Fair.unwrap(totalStake - walletsBalance + totalInExitQueue) <= address(staking.staking()).balance,
-            "Not enough balance in staking"
+            Fair.unwrap(disabledStake) <= stakingBalance,
+            TotalDisabledHigherThanStakingBalance(disabledStake, Fair.wrap(stakingBalance))
         );
-        require(
-            Fair.unwrap(disabledStake) <= address(staking.staking()).balance,
-            "Total Disabled is more than total balance"
-        );
+        // solhint-enable gas-strict-inequalities
+
         require(
             disabledStake == staking.staking().totalDisabled(),
-            "Total Disabled does not match sum of stake of disabled nodes"
+            TotalDisabledDifferentFromSumOfDisabledStake(disabledStake, staking.staking().totalDisabled())
         );
     }
 }

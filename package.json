@@ -30,8 +30,9 @@
     "lodash": "^4.17.21",
     "pm2": "^6.0.11",
     "seedrandom": "^3.0.5",
-    "solhint": "^5.0.5",
+    "solhint": "^6.0.1",
     "solidity-coverage": "^0.8.16",
+    "solidity-docgen": "^0.6.0-beta.36",
     "ts-node": ">=8.0.0",
     "typechain": "^8.3.0",
     "typescript": ">=5.8.3",
@@ -44,13 +45,14 @@
     "eslint": "yarn exec eslint .",
     "fullCheck": "yarn compile && yarn lint && yarn tsc && yarn eslint",
     "hooks": "git config core.hooksPath .githooks",
-    "lint": "yarn solhint 'contracts/**/*.sol'",
+    "lint": "yarn solhint 'contracts/**/*.sol' && yarn solhint 'test-foundry/**/*.sol'",
     "no-hooks": "git config core.hooksPath .git/hooks",
     "slither": "yarn cleanCompile && slither . --compile-force-framework hardhat --ignore-compile",
     "test": "yarn tsc && npx hardhat test",
     "test-foundry:rbt": "forge test --mt invariant_treeIsValid -vvv",
     "test-foundry:fair-manager": "bash ./scripts/run_fuzz_tests.sh ",
-    "tsc": "yarn exec tsc --noEmit"
+    "tsc": "yarn exec tsc --noEmit",
+    "docgen": "yarn hardhat docgen"
   },
   "dependencies": {
     "@openzeppelin/contracts": "^5.3.0",

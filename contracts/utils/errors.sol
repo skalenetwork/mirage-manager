@@ -4,6 +4,7 @@
  *   errors.sol - fair-manager
  *   Copyright (C) 2025-Present SKALE Labs
  *   @author Dmytro Stebaiev
+ *   @author Eduardo Vasques
  *
  *   fair-manager is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU Affero General Public License as published
@@ -27,11 +28,17 @@ import { NodeId } from "@skalenetwork/fair-manager-interfaces/INodes.sol";
  * Central file for error messages used across the project
  */
 
+/// @dev Address parameter is zero when it should not be
 error AddressIsZero();
 
+/// @dev The provided committee address is invalid
 error InvalidCommitteeAddress();
+/// @dev The provided nodes address is invalid
 error InvalidNodesAddress();
+/// @dev The provided staking address is invalid
 error InvalidStakingAddress();
+/// @dev The provided status address is invalid
 error InvalidStatusAddress();
 
+/// @dev The specified node does not exist
 error NodeDoesNotExist(NodeId nodeId);

@@ -4,7 +4,7 @@ A smart contract system that orchestrates and operates the FAIR chain. For more 
 
 ## Install & Compile
 
-1. Clone the repository
+1. Clone the repository with all submodules
 2. Run `yarn install && yarn compile`
 
 ## Deployment
@@ -34,7 +34,16 @@ Then run `yarn hardhat run migrations/deploy.ts --network custom`
 
 ## Test
 
-You can run tests locally without any extra setup. Simply run: `yarn test`
+You can run unit & integration tests locally without any extra setup. Simply run: `yarn test`
+
+To run fuzz tests, make sure you install foundry locally, and then run:
+
+- For Red-Black Tree Fuzz Tests: `yarn test-foundry:rbt`;
+- For Fair Manager Fuzz Tests: `yarn test-foundry:fair-manager`;
+
+To increase or decrease tested cases in fuzz tests, change [foundry.toml](./foundry.toml) file and increase depth or number of runs (Increasing depth over 150 should be less relevant than increasing runs).
+
+To clean cache generated from past runs, use `forge clean`. Foundry caches information gained during past test runs.
 
 ## Verification
 

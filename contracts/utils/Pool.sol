@@ -4,6 +4,7 @@
     Pool.sol - fair-manager
     Copyright (C) 2025-Present SKALE Labs
     @author Dmytro Stebaiev
+    @author Eduardo Vasques
 
     fair-manager is free software: you can redistribute it and/or modify
     it under the terms of the GNU Affero General Public License as published
@@ -27,12 +28,20 @@ import { RedBlackTree } from "../structs/RedBlackTree.sol";
 import { TypedSet } from "../structs/typed/TypedSet.sol";
 import { IRandom, Random } from "./Random.sol";
 
-
+/**
+ * @title Pool Library
+ * @author Dmytro Stebaiev
+ * @author Eduardo Vasques
+ * @notice Library for managing a pool of nodes for committee selection
+ * @dev Implements a two-tier pool structure: present nodes (in red-black tree) and incoming nodes (waiting heartbeat).
+ * Uses weighted random sampling to select committee members fairly based on staking amounts.
+ */
 library PoolLibrary {
     using Random for IRandom.RandomGenerator;
     using RedBlackTree for mapping(NodeId => RedBlackTree.Node);
     using TypedSet for TypedSet.NodeIdSet;
 
+    /// @notice Pool data structure with weighted tree and incoming nodes
     struct Pool {
         mapping (NodeId id => RedBlackTree.Node node) tree;
         NodeId root;
@@ -41,21 +50,46 @@ library PoolLibrary {
         IStatus status;
     }
 
+    /**
+     * @dev Not enough healthy node candidates available for selection
+     * @param needed The number of nodes needed
+     * @param available The number of nodes available
+     */
     error TooFewCandidates(
         uint256 needed,
         uint256 available
     );
 
+    /**
+     * @notice Adds a node to the incoming pool (waiting heartbeat)
+     * @dev Should not be called if the node is already present in the tree
+     * @param pool The pool storage
+     * @param id The node ID to add
+     */
     function add(Pool storage pool, NodeId id) internal {
         assert(pool.incomingNodes.add(id));
     }
 
+    /**
+     * @notice Moves a node to the front (leftmost position) of the weighted tree
+     * @dev Removes the node if present, then inserts it with given weight
+     * @param pool The pool storage
+     * @param node The node ID to move
+     * @param weight The weight value for the node
+     */
     function moveToFront(Pool storage pool, NodeId node, uint256 weight) internal {
         remove(pool, node);
         assert(pool.presentNodes.add(node));
         pool.root = pool.tree.insertSmallest(pool.root, node, weight);
     }
 
+    /**
+     * @notice Removes a node from the pool (either present or incoming)
+     * @dev Removes from the weighted tree if present, otherwise from incoming set
+     * @param pool The pool storage
+     * @param node The node ID to remove
+     * @return removed True if the node was removed
+     */
     function remove(Pool storage pool, NodeId node) internal returns (bool removed) {
         if (pool.presentNodes.remove(node)) {
             pool.root = pool.tree.remove(pool.root, node);
@@ -65,6 +99,16 @@ library PoolLibrary {
         }
     }
 
+    /**
+     * @notice Performs weighted random sampling of nodes from the pool to form a committee
+     * @dev Only samples from healthy nodes.
+     * @dev Selected nodes are moved to incoming set (require heartbeat for next selection).
+     * @dev Uses cumulative weight-based selection for fairness.
+     * @param pool The pool storage
+     * @param size The number of nodes to sample
+     * @param generator The random number generator instance
+     * @return nodesSample Array of selected node IDs
+     */
     function sample(
         Pool storage pool,
         uint256 size,
@@ -89,6 +133,13 @@ library PoolLibrary {
         }
     }
 
+    /**
+     * @notice Updates the weight of a node in the pool
+     * @dev Only updates weight if the node is in the present node's pool, otherwise irrelevant
+     * @param pool The pool storage
+     * @param node The node ID to update
+     * @param weight The new weight value
+     */
     function setWeight(
         Pool storage pool,
         NodeId node,
@@ -99,6 +150,12 @@ library PoolLibrary {
         }
     }
 
+    /**
+     * @notice Gets an approximate oldest node from the pool
+     * @dev Returns first incoming node if any, otherwise the rightmost (oldest) node in tree
+     * @param pool The pool storage
+     * @return oldest The oldest-ish node ID, or NULL if pool is empty
+     */
     function getOldestIsh(Pool storage pool) internal view returns (NodeId oldest) {
         if (pool.incomingNodes.length() > 0) {
             return pool.incomingNodes.at(0);
@@ -109,16 +166,34 @@ library PoolLibrary {
         return pool.tree.findLast(pool.root);
     }
 
+    /**
+     * @notice Checks if a node is in the pool
+     * @dev Searches both the active tree and incoming set
+     * @param pool The pool storage
+     * @param node The node ID to check
+     * @return present True if the node is in the pool
+     */
     function contains(Pool storage pool, NodeId node) internal view returns (bool present) {
         return pool.presentNodes.contains(node) || pool.incomingNodes.contains(node);
     }
 
+    /**
+     * @notice Returns the total number of nodes in the pool
+     * @dev Sums present nodes and incoming nodes
+     * @param pool The pool storage
+     * @return poolSize The total number of nodes
+     */
     function length(Pool storage pool) internal view returns (uint256 poolSize) {
         return pool.presentNodes.length() + pool.incomingNodes.length();
     }
 
     // private
 
+    /**
+     * @notice Finds the oldest healthy node in the tree
+     * @param pool The pool storage
+     * @return lastHealthy The last healthy node, or NULL if none found
+     */
     function _findLastHealthyNode(Pool storage pool) private view returns (NodeId lastHealthy) {
         lastHealthy = RedBlackTree.NULL;
         NodeId node = pool.root;

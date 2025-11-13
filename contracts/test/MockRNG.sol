@@ -4,6 +4,7 @@
     MockRNG.sol - fair-manager
     Copyright (C) 2025-Present SKALE Labs
     @author Dmytro Stebaiev
+    @author Eduardo Vasques
 
     fair-manager is free software: you can redistribute it and/or modify
     it under the terms of the GNU Affero General Public License as published
@@ -20,10 +21,36 @@
 */
 
 pragma solidity ^0.8.24;
+
+/**
+ * @title IMockRNG
+ * @author Dmytro Stebaiev
+ * @author Eduardo Vasques
+ * @notice Interface for the mock random number generator contract
+ * @dev Used for testing purposes to simulate a predeployed RNG contract
+ */
 interface IMockRNG {
-    fallback(bytes calldata) external returns (bytes memory result);
+    /**
+     * @notice Fallback function that returns mock random data
+     * @param input The calldata sent to the contract
+     * @return result The encoded mock random data
+     */
+    fallback(bytes calldata input) external returns (bytes memory result);
+
+    /**
+     * @notice Burns all ETH held by the contract by sending it to the zero address
+     * @dev Required to satisfy slither security warnings
+     */
     function burnEth() external;
 }
+
+/**
+ * @title MockRNG
+ * @author Dmytro Stebaiev
+ * @author Eduardo Vasques
+ * @notice Mock implementation of a random number generator for testing
+ * @dev Simulates a predeployed RNG contract by returning timestamp-based values
+ */
 contract MockRNG is IMockRNG{
 
     // If make fallback function payable
@@ -32,12 +59,27 @@ contract MockRNG is IMockRNG{
     // because it will be called even when no ether is sent
     // and the contract can't mock up the behavior of a predeployed contract
     // because receive function can't return any value.
-    // solhint-disable-next-line payable-fallback
+    // solhint-disable payable-fallback
+
+    // Solhint requires natspec for function parameters (even unnamed), but it is unnamed to avoid compiler warnings.
+    // We disable solhint use-natspec rule, but NatSpec best-practices are followed except for unused input parameter.
+    // solhint-disable use-natspec
+
+    /**
+     * @notice Fallback function that returns mock random data based on block timestamp
+     * @dev Returns the current block timestamp encoded as bytes
+     * @dev Not marked as payable to avoid requiring a receive function, which would interfere with wanted behavior
+     * @return result The encoded block timestamp as mock random data
+     */
     fallback(bytes calldata) external override returns (bytes memory result) {
         return abi.encode(block.timestamp);
     }
+    // solhint-enable payable-fallback, use-natspec
 
-    // required for slither warning
+    /**
+     * @notice Burns all ETH held by the contract by sending it to the zero address
+     * @dev Required to satisfy slither security warnings - This contract is used for tests only.
+     */
     function burnEth() external override {
         payable(address(0)).transfer(address(this).balance);
     }

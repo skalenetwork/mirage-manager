@@ -14,10 +14,25 @@ FAIR-manager smart contracts are a pivotal component in the orchestration and go
   - [Committee.sol](#committeesol)
 - [Permission & Control](#permission--control)
 - [Custom Libraries & Data Structures](#custom-libraries--data-structures)
+  - [ExitQueue.sol](#exitqueuesol)
   - [RedBlackTree.sol](#redblacktreesol)
   - [TypedSet.sol](#typedsetsol)
   - [TypedMap.sol](#typedmapsol)
   - [Pool.sol](#poolsol)
+
+## API Documentation
+
+For detailed API documentation of all contracts, functions, events, and errors, see the [auto-generated documentation](./docs/):
+
+- [Committee.sol API](./docs/Committee.md)
+- [DKG.sol API](./docs/DKG.md)
+- [FairAccessManager.sol API](./docs/FairAccessManager.md)
+- [Nodes.sol API](./docs/Nodes.md)
+- [RewardWallet.sol API](./docs/RewardWallet.md)
+- [Staking.sol API](./docs/Staking.md)
+- [Status.sol API](./docs/Status.md)
+
+> **Note**: The API documentation is automatically generated from NatSpec comments and validated by CI/CD. See [docs/README.md](./docs/README.md) for more information.
 
 ## Architecture and Components
 
@@ -57,23 +72,16 @@ struct Node {
 - Node addresses must correspond to the node's public key (address is computable using the public key).
 - Node ports must not be 0.
 
+#### API Reference
 
-#### Nodes Main Functions
+For complete function signatures, parameters, and return values, see [Nodes.sol API Documentation](./docs/Nodes.md).
 
-- `registerNode(address owner, bytes publicKey, ...)`: Registers a new Active Node. **Requires self-stake payment if `selfStakeRequirement` is set.**
-- `registerPassiveNode(address owner, bytes publicKey, ...)`: Registers a new Passive Node.
-- `deleteNode(NodeId id)`: Deletes both Active and Passive Nodes.
-- `deleteNodeByFoundation(NodeId id)`: Allows DEFAULT_ADMIN to delete both Active and Passive Nodes.
-- `setIpAddress(NodeId nodeId, ...)`: Changes the IP address of a Node.
-- `setDomainName(NodeId nodeId, ...)`: Changes the domain name of a Node.
-- `requestChangeOwner(NodeId nodeId, ...)`: Registers a request to change ownership of a Passive Node.
-- `confirmOwnerChange(NodeId nodeId)`: Confirms a request to change ownership of a Passive Node.
-- `getNode(NodeId nodeId)`: Retrieves a Node.
-- `getNodeId(address nodeAddress)`: Gets the NodeId (if registered and not deleted) for an owner address.
-- `getActiveNodeIds()`: Returns a list of IDs of all Active Nodes.
-- `getPassiveNodeIds()`: Returns a list of IDs of all Passive Nodes.
-- `getPassiveNodeIdsForAddress(address nodeAddress)`: Returns a list of all Passive Node IDs owned by an address.
-- `activeNodeExists(NodeId nodeId)`: Returns a boolean stating if a NodeId corresponds to an Active Node.
+**Key functions include**:
+- Node registration (Active and Passive)
+- Node deletion
+- Ownership management (for Passive nodes)
+- Node metadata updates (IP, domain name)
+- Node queries and lookups
 
 #### Permissions
 
@@ -99,16 +107,15 @@ For the first version of FAIR, a whitelist of nodes is maintained. Status stores
 An active node is considered **healthy** if the last `alive()` transaction was sent less than `Duration public heartbeatInterval` ago.
 An active node is considered **eligible** for Committee if it is **healthy**, whitelisted and staked.
 
-#### Status Main Functions
+#### API Reference
 
-- `alive()`: Allows Active Node owners to prove liveliness.
-- `setHeartbeatInterval(Duration interval)`: Allows DEFAULT_ADMIN to set the maximum interval nodes are considered healthy after the last alive transaction.
-- `whitelistNode(NodeId nodeId)`: Allows DEFAULT_ADMIN to whitelist a node.
-- `nodeRemoved(NodeId node)`: Allows NODES_ROLE to notify of a Node deletion.
-- `removeNodeFromWhitelist(NodeId nodeId)`: Allows DEFAULT_ADMIN to remove a node from the whitelist (active or passive).
-- `isHealthy(NodeId nodeId)`: Checks if a active node is **healthy**.
-- `getWhitelistedNodes()`: Returns the list of all whitelisted nodes.
-- `isWhitelisted(NodeId nodeId)`: Returns a boolean stating if a node is whitelisted.
+For complete function signatures, parameters, and return values, see [Status.sol API Documentation](./docs/Status.md).
+
+**Key functions include**:
+- Heartbeat submission (`alive()`)
+- Node whitelisting management
+- Health status checking
+- Heartbeat interval configuration
 
 #### Status Integration Points
 
@@ -127,15 +134,15 @@ The `DKG` contract implements the Distributed Key Generation protocol for the FA
 - Tracks completion and success of DKG rounds, emitting events for off-chain monitoring.
 - Provides access to the generated public key and round data for `Committee.sol` contract.
 
-#### DKG Main Functions
+#### API Reference
 
-- `generate(NodeId[] participants)`: Starts a new DKG round with the given participants.
-- `broadcast(DkgId dkg, G2Point[] verificationVector, KeyShare[] secretKeyContribution)`: Allows a node to broadcast its key share and verification vector during the BROADCAST stage.
-- `alright(DkgId dkg)`: Marks a node as having completed all required data submission in the ALRIGHT stage.
-- `getParticipants(DkgId dkg)`: Returns the list of nodes participating in a DKG round.
-- `getPublicKey(DkgId dkg)`: Returns the generated public key for a successful DKG round.
-- `getRound(DkgId dkg)`: Returns all round data for a given DKG round.
-- `isNodeBroadcasted(DkgId dkg, NodeId node)`: Checks if a node has broadcasted its data in a round.
+For complete function signatures, parameters, and return values, see [DKG.sol API Documentation](./docs/DKG.md).
+
+**Key functions include**:
+- DKG round initialization
+- Key share broadcasting
+- Completion verification
+- DKG round info retrieval
 
 #### DKG Integration Points
 
@@ -196,53 +203,16 @@ As described, Active Nodes can be healthy or unhealthy, depending on whether the
 
 Unstaking and withdrawing fees posts requests to an exit queue. Users must wait for the delay, before their request is available for withdrawal.
 
-#### Staking Main Functions
+#### API Reference
 
-- `stake(NodeId node)`: Stake FAIR to a node (any user, only existing active nodes, payable).
-- `requestRetrieve(NodeId node, Fair value)`: Request to unstake FAIR from a node. **Node owners cannot retrieve while their node exists.**
-- `requestRetrieveAll(NodeId node)`: Request to unstake All FAIR from a node. **Node owners cannot retrieve while their node exists.**
-- `claimRequest(uint256 requestId)`: Claim the exit request with the given requestId (if unlocked).
-- `disable(NodeId node)`, `enable(NodeId node)`: Disable/enable a node (committee role).
-- `nodeCreated(NodeId node)`: Called by `Nodes.sol` when a new node is created. **Handles self-stake forwarding.**
-- `nodeRemoved(NodeId node)`: Called by `Nodes.sol` when a node is deleted. **Automatically creates exit requests for node owner's stake and fees.**
-- `payReward(NodeId node)`: Pays rewards to directly to a Node and it's delegators.
-- `addAllowedReceiver(address receiver)`: Add an allowed fee receiver for a node (node owner).
-- `removeAllowedReceiver(address receiver)`: Remove an allowed fee receiver for a node (node owner).
-- `requestFees(NodeId node, Fair amount)`: Request to claim specific amount of fees for a node.
-- `requestAllFees(NodeId node)`: Request to claim all fees for a node.
-- `requestSendFees(address payable to, Fair amount)`: Request to send specific amount fees to an address(node owner).
-- `requestSendAllFees(address payable to)`: Request to send all fees to an address (node owner).
-- `setFeeRate(uint16 feeRate)`: Set node fee rate (only decrease, node owner).
-- `setStakeLimit(Fair limit)`: Set max stake limit to each node.
-- `setRetrievingDelay(Timestamp delay)`: Set delay for unlocking requests in the exit queue.
-- `setRewardWalletReference(IRewardWallet rewardWalletReference_)`: Set reference implementation for reward wallets.
-- `setSelfStakeRequirement(Fair amount)`: Sets the minimum self-stake requirement for Active Node registration.
+For complete function signatures, parameters, and return values, see [Staking.sol API Documentation](./docs/Staking.md).
 
-Read functions:
-- `getDelegatorsToNode(NodeId node)`: Get delegator addresses for a node.
-- `getDelegatorsToNodeCount(NodeId node)`: Get delegator count for a node.
-- `getEarnedFeeAmount(NodeId node)`: Get earned fee amount for a node.
-- `getExitRequest(uint256 requestId)`: Get exit request data by requestId.
-- `getExitRequestAt(address user, uint256 index)`: Get exit request for a user at a specific index.
-- `getExitRequestsCountFor(address user)`: Get number of exit requests for a user.
-- `getMyExitRequestsCount()`: Get number of exit requests for sender.
-- `getMyTotalInExitQueue()`: Get total amount in exit queue for sender.
-- `getNodeFeeRate(NodeId node)`: Get node fee rate.
-- `getNodeShare(NodeId node)`: Get credits share for a node in root fund.
-- `getNodeTotalStake(NodeId node)`: Get total FAIR staked to a node.
-- `getRetrievingDelay()`: Get retrieving delay for exit requests.
-- `getRewardWallet(NodeId node)`: Get reward wallet address for a node.
-- `getStakedAmount()`: Get total staked FAIR for sender.
-- `getStakedAmountFor(address holder)`: Get total staked FAIR for a user.
-- `getStakedNodes()`: Get list of node IDs staked to by sender.
-- `getStakedNodesFor(address holder)`: Get list of node IDs staked to by a user.
-- `getStakedToNodeAmount(NodeId node)`: Get amount staked to a node by sender.
-- `getStakedToNodeAmountFor(NodeId node, address holder)`: Get amount staked to a node by a user.
-- `getTotalInExitQueueFor(address user)`: Get total amount in exit queue for a user.
-- `getTotalInExitQueue()`: Get total amount in exit queue (all users).
-- `getUnlockedExitRequestFor(address user, uint255 fromIndex)`: Get first found unlocked exit request for a user - starts searching from `fromIndex`, and finish search in the end or after MAX_ITERATIONS requests.
-- `isNodeEnabled(NodeId node)`: Returns if node is enabled.
-- `isRequestUnlocked(uint256 requestId)`: Returns if a request is unlocked and ready to claim.
+**Key operations include**:
+- Staking and unstaking operations
+- Exit queue management
+- Fee claiming/sending and distribution
+- Node enabling/disabling
+- Reward distribution
 
 #### Stake Limits
 
@@ -297,18 +267,17 @@ struct Committee {
 }
 ```
 
-#### Main Functions
+#### API Reference
 
-- `ejectUnhealthyNode()`: Selects one of (or the) nodes with the oldest heartbeats and removes it if it is **unhealthy** according to `Status.sol`.
-- `select()`: Selects a set of eligible nodes and creates a Committee and DKG round.
-- `setCommitteeSize(uint256 size)`: Sets the number of nodes to include in Committees.
-- `setRNG(address newRNG)`: Sets the address of the Random Number Generator contract. Details in [RNG](https://docs.skale.space/building-applications/random-number-generation/).
-- `disableRNG()`: Sets the address of the Random Number Generator contract to address(0), effectively disabling the use of RNG and using `block.prevrandao` as the source of randomness for committee creation.
-- `setMinTransitionDelay`: Sets minimum value of the transition delay that can be set between committee rotations
-- `setTransitionDelay(Duration delay)`: Sets the variable transitionDelay. Committee startingTimestamp equals block.timestamp + transitionDelay. This is useful for off-chain components; the delay allows nodes to process and prepare for the new Committee after its creation.
-- `setVersion(string calldata newVersion)`: Sets the version of FAIR-manager.
-- `isNodeInCurrentOrNextCommittee(NodeId node)`: Returns a boolean indicating if a node is in the current or the next committee.
-- `getCommittee(CommitteeIndex committeeIndex)`: Returns a Committee corresponding to a given index, if it exists.
+For complete function signatures, parameters, and return values, see [Committee.sol API Documentation](./docs/Committee.md).
+
+**Key operations include**:
+- Committee selection and formation
+- Node pool management
+- Unhealthy node ejection
+- Committee size and delay configuration
+- Random number generator management
+- Version management
 
 #### Committee Permissions
 
@@ -342,107 +311,68 @@ All main smart contracts (`Nodes.sol`, `Status.sol`, `Staking.sol`, `Committee.s
 
 Although accounts with DEFAULT_ADMIN_ROLE are not automatically granted access to other roles, it is important to note that they have indirect access to all restricted functions. This is because DEFAULT_ADMIN_ROLE holders can add or remove accounts from any other role and manage function selector permissions, effectively giving them ultimate control over contract access management.
 
+For details on role constants and initialization, see [FairAccessManager.sol API Documentation](./docs/FairAccessManager.md).
+
 ## Custom Libraries & Data Structures
+
 ### [`ExitQueue.sol`](./contracts/utils/ExitQueue.sol)
 
 The `ExitQueueLibrary` manages delayed withdrawals for staking and rewards. It is used by `Staking.sol` to enforce withdrawal delays and track exit requests per user.
 
-#### Key Data Structures
+#### Key Concepts
 
-- **ExitQueue**: Stores all exit requests, user exit data, the total amount in the exit queue, a delay before funds can be claimed, and a counter for request IDs.
-- **UserExitData**: Tracks a user's exit request IDs and the total amount pending withdrawal.
-- **ExitRequest**: Contains the request ID, user address, node ID, amount, and unlock date for a withdrawal.
+- **Exit Requests**: Structured records of withdrawal requests with unlock timestamps
+- **User Tracking**: Per-user tracking of pending exit requests and total amounts in queue
+- **Delayed Retrieval**: Configurable delay before funds can be claimed
+- **Queue Management**: Efficient creation, claiming, and querying of exit requests
 
-#### Main Functions
+The library ensures fair and predictable exit mechanics for stakers and node owners. It could be reused by other contracts requiring delayed retrieval functionality.
 
-- `createRequest(queue, user, nodeId, amount)`: Creates a new exit request for a user and node, setting the unlock date based on the configured delay.
-- `claim(queue, user, requestId)`: Claims a specific unlocked exit request for a user and removes it from the queue.
-- `isRequestUnlocked(queue, requestId)`: Returns whether a specific request is unlocked and ready to be claimed.
-- `getNumRequestsForUser(queue, user)`: Returns the number of pending exit requests for a user.
-- `getRequest(queue, requestId)`: Returns the details of a specific exit request.
-- `getRequestAt(queue, user, index)`: Returns the exit request at a specific index for a user.
-- `getUnlockedRequest(queue, user, uint256 fromIndex)`: Returns the first unlocked exit request for a user starting at 'fromIndex' and up to MAX_ITERATIONS iterations.
-- `getTotalInQueueForUser(queue, user)`: Returns the total amount pending withdrawal for a user.
-
-#### Configuration
-
-- `retrievingDelay`: Delay (in seconds) before a request can be claimed.
-
-#### Usage
-
-- Used by `Staking.sol` for both stake and fee exit queues, enforcing delays and limits on withdrawals and fee claims.
-- Ensures fair and predictable exit mechanics for stakers and node owners.
-- Can be reused by other contracts that require the same type of delayed retrieval
+For implementation details, see the source code at [`contracts/utils/ExitQueue.sol`](./contracts/utils/ExitQueue.sol).
 
 ### [`RedBlackTree.sol`](./contracts/structs/RedBlackTree.sol)
 
-The `RedBlackTree` library implements a self-adjusting binary search tree for efficient management and weighted selection of nodes, using last alive() call timestamp as implicit keys. It is designed for use in scenarios where fast access, insertion, removal, and weighted random selection are required, such as node pools in committee selection.
+The `RedBlackTree` library implements a self-balancing binary search tree for efficient management and weighted selection of nodes, using last `alive()` call timestamp as implicit keys. It provides O(log n) complexity for insertion, removal, and search operations.
 
-The Key of the Nodes in the Red-Black Tree is not explicitly represented, but indirectly represents the liveliness of Nodes.
+#### Key Features
 
-#### Key Data Structures
+- Self-balancing red-black tree structure
+- Weight tracking for subtrees (enables weighted random selection)
+- Liveliness-based ordering (implicit keys based on heartbeat timestamps)
+- Efficient cumulative weight queries
 
-- **Node**: Stores the node's `NodeId`, parent, left and right children, color and the total weight of the subtree rooted at this node.
+Used in FAIR-manager for managing node pools and committee selection where node weights (stake) and liveliness are critical factors.
 
-#### RedBlackTree Main Functions
-
-- `insertSmallest`: Inserts a new node as a smallest key.
-- `remove`: Removes a node from the tree, maintaining the red-black tree properties.
-- `setWeight`: Updates the weight of a node.
-- `findByWeight`: Finds the node corresponding to a given cumulative weight (useful for weighted random selection).
-- `findLast`: Finds the rightmost node in the tree.
-- `getWeight`: Gets weight of the node
-- `getWeightTill`: Gets sum of weights of nodes from the leftmost one to included specified one.
-
-#### Usage
-
-- Efficiently supports insertion, removal, and search of nodes in O(log n) time.
-- Used in FAIR-manager for managing node pools and committee selection where node weights (e.g., stake) and their liveliness are relevant.
+For implementation details, see [`contracts/structs/RedBlackTree.sol`](./contracts/structs/RedBlackTree.sol).
 
 ### [`TypedSet.sol`](./contracts/structs/typed/TypedSet.sol)
 
-The `TypedSet` library provides type-safe wrappers around OpenZeppelin's `EnumerableSet` for use with custom types such as `NodeId` and `Holder`. It enables efficient set operations (add, remove, contains, length, values, at) for these types, ensuring type safety and reducing boilerplate in contract code.
+The `TypedSet` library provides type-safe wrappers around OpenZeppelin's `EnumerableSet` for use with custom types such as `NodeId`. It enables efficient set operations while ensuring type safety and reducing boilerplate.
 
-- **NodeIdSet**: A enumerable set of `NodeId` values.
+**Available types**: `NodeIdSet`
 
-These sets are used throughout the FAIR-manager contracts to manage collections of nodes and holders in a type-safe manner.
+For implementation details, see [`contracts/structs/typed/TypedSet.sol`](./contracts/structs/typed/TypedSet.sol).
 
 ### [`TypedMap.sol`](./contracts/structs/typed/TypedMap.sol)
 
-The `TypedMap` library provides type-safe wrappers around OpenZeppelin's `EnumerableMap` or standard `map` for mapping between native and domain-specific data of FAIR Manager.
+The `TypedMap` library provides type-safe wrappers around OpenZeppelin's `EnumerableMap` and standard mappings for domain-specific data types in FAIR Manager.
 
-- **AddressToNodeIdMap**: Maps addresses to `NodeId` values.
-- **AddressToNodeIdSetMap**: Maps addresses to TypedSets of `NodeId` values.
-- **NodeIdToFairMap**: Maps `NodeId` values to `Fair` values.
-- **HolderToCreditMap**: Maps `Holder` values to `Credit` values
+**Available types**: `AddressToNodeIdMap`, `AddressToNodeIdSetMap`, `NodeIdToFairMap`, `HolderToCreditMap`
+
+For implementation details, see [`contracts/structs/typed/TypedMap.sol`](./contracts/structs/typed/TypedMap.sol).
 
 ### [`Pool.sol`](./contracts/utils/Pool.sol)
 
-The `PoolLibrary` provides a robust abstraction for managing a dynamic pool of nodes, supporting efficient weighted random sampling, insertion, removal, and liveliness tracking. It is a core utility for committee selection and node management in FAIR-manager, leveraging the `RedBlackTree` and `TypedSet` libraries for performance and flexibility.
+The `PoolLibrary` provides a robust abstraction for managing a dynamic pool of nodes, supporting efficient weighted random sampling, insertion, removal, and liveliness tracking. It is a core utility for committee selection and node management in FAIR-manager.
 
-#### Pool Key Data Structures
+#### Key Concepts
 
-- **Pool**: Contains a red-black tree (`tree`) for weighted node management, a root node, two sets for present and incoming nodes, and a reference to the `IStatus` contract for liveliness checks.
-- **presentNodes**: Set of nodes currently eligible for sampling.
-- **incomingNodes**: Set of nodes pending eligibility or recently added.
+- **Present Nodes**: Currently eligible nodes for sampling
+- **Incoming Nodes**: Nodes pending eligibility or recently added
+- **Weighted Sampling**: Random selection weighted by node stake
+- **Health Tracking**: Integration with `Status.sol` for liveliness checks
+- **Red-Black Tree**: Efficient weighted selection using the `RedBlackTree` library
 
-#### Pool Main Functions
+The Pool enables fair and secure committee selection by supporting weighted random sampling, dynamic pool updates, and automatic health checking. Used by `Committee.sol` for node eligibility and rotation management.
 
-- `add`: Adds a node to the pool's incoming set.
-- `moveToFront`: Moves a node to the front (root) of the pool, updating its weight and eligibility.
-- `remove`: Removes a node from the pool, updating both the red-black tree and node sets.
-- `sample`: Selects a random sample of nodes, weighted by their stake, ensuring only healthy and staked nodes are chosen. Uses the red-black tree for efficient weighted selection.
-- `setWeight`: Updates the weight of a node in the pool, affecting its selection probability.
-- `getOldestIsh`: Returns the *oldest-ish* node (by red-black tree order), useful for ejection or rotation logic. Last nodes are more likely to be unhealthy.
-- `contains`: Checks if a node is present in either the present or incoming sets.
-- `length`: Returns the total number of nodes in the pool.
-
-#### Internal Logic
-
-- `_findLastHealthyNode`: Finds the rightmost healthy node in the red-black tree.
-
-#### Pool Usage
-
-- Enables efficient, fair, and secure committee selection by supporting weighted random sampling and dynamic pool updates.
-- Integrates with `Status.sol` to ensure only healthy nodes are considered for selection.
-- Used by `Committee.sol` to manage node eligibility and rotation.
+For implementation details, see [`contracts/utils/Pool.sol`](./contracts/utils/Pool.sol).

@@ -3,7 +3,7 @@
 /*
     StakingHandler.sol - fair-manager
     Copyright (C) 2025-Present SKALE Labs
-    @author Dmytro Stebaiev
+    @author Eduardo Vasques
 
     fair-manager is free software: you can redistribute it and/or modify
     it under the terms of the GNU Affero General Public License as published
@@ -21,35 +21,137 @@
 
 pragma solidity ^0.8.24;
 
-import {Test} from "forge-std/Test.sol";
-
-import {Fair, NodeId, Staking, Timestamp} from "../../contracts/Staking.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
-contract StakingHandler is Test {
+import {Fair, NodeId, Staking, Timestamp} from "../../contracts/Staking.sol";
+import {Test} from "../../lib/forge-std/src/Test.sol";
+
+/**
+ * @title IStakingHandler
+ * @author Eduardo Vasques
+ * @notice Interface for the Staking contract testing handler
+ */
+interface IStakingHandler {
+    /**
+     * @notice Sets the fee rate for a node
+     * @param feeRate The new fee rate (must be less than current rate)
+     * @param nodeIndex Index into the fixture node array (modulo array length)
+     */
+    function setFeeRate(uint8 feeRate, uint8 nodeIndex) external;
+
+    /**
+     * @notice Stakes funds to a node on behalf of a user
+     * @param user The address of the user staking
+     * @param nodeIndex Index into the fixture node array (modulo array length)
+     * @param amountToStake The amount to stake (in wei)
+     */
+    function stakeFor(address user, uint8 nodeIndex, uint48 amountToStake) external;
+
+    /**
+     * @notice Requests to retrieve all stake from a node for a user
+     * @param userIndex Index into the stakers array for the node
+     * @param nodeIndex Index into the fixture node array (modulo array length)
+     */
+    function requestRetrieveAll(uint8 userIndex, uint8 nodeIndex) external;
+
+    /**
+     * @notice Requests to retrieve a specific amount of stake from a node for a user
+     * @param userIndex Index into the stakers array for the node
+     * @param nodeIndex Index into the fixture node array (modulo array length)
+     * @param amountToRetrieve The amount to retrieve (must be less than user's stake)
+     */
+    function requestRetrieve(uint8 userIndex, uint8 nodeIndex, uint32 amountToRetrieve) external;
+
+    /**
+     * @notice Donates funds to the staking contract to be distributed as rewards
+     * @param donationAmount The amount to donate (in wei)
+     */
+    function donate(uint32 donationAmount) external;
+
+    /**
+     * @notice Claims a retrieval request for a user after the delay period
+     * @param userIndex Index into the users set (modulo set length)
+     */
+    function retrieve(uint8 userIndex) external;
+
+    /**
+     * @notice Claims all earned fees for a node owner
+     * @param nodeIndex Index into the fixture node array (modulo array length)
+     */
+    function claimAllFee(uint8 nodeIndex) external;
+
+    /**
+     * @notice Claims a specific amount of earned fees for a node owner
+     * @param nodeIndex Index into the fixture node array (modulo array length)
+     * @param amount The amount of fees to claim (must be <= earned fees)
+     */
+    function claimFee(uint8 nodeIndex, uint32 amount) external;
+
+    /**
+     * @notice Gets the number of nodes in the fixture
+     * @return len The number of fixture nodes
+     */
+    function getNumNodes() external view returns (uint256 len);
+
+    /**
+     * @notice Gets the Staking contract instance
+     * @return staking The Staking contract being tested
+     */
+    function staking() external view returns (Staking staking);
+
+    /**
+     * @notice Gets a fixture node by index
+     * @param index The index of the node in the fixture array
+     * @return nodeId The NodeId at the specified index
+     */
+    function fixtureNode(uint256 index) external view returns (NodeId nodeId);
+}
+
+/**
+ * @title Staking Handler
+ * @author Eduardo Vasques
+ * @notice Handler contract for testing the Staking contract
+ * @dev Scans for first 256 active nodes to populate fixtureNode array
+ */
+contract StakingHandler is Test, IStakingHandler {
     using EnumerableSet for EnumerableSet.AddressSet;
 
+    /// @notice The address used to donate funds to the staking contract
+    address public constant DONATOR_ADDRESS = 0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B;
+
+    /// @inheritdoc IStakingHandler
     Staking public staking;
 
-    EnumerableSet.AddressSet private users;
+    /// @inheritdoc IStakingHandler
     NodeId[] public fixtureNode;
 
-    address public constant DONATOR_ADDRESS = 0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B;
+    /// @dev Set of users with pending requests in the exit queue
+    EnumerableSet.AddressSet private _usersLeaving;
+
+    error StakingAddressNotSet();
+    error FailedToDonateToStaking();
+
+    /**
+     * @notice Constructor
+     * @param _staking The address of the Staking contract
+     * @param admin The address of the project admin user
+     */
     constructor(address _staking, address admin) {
         staking = Staking(payable(_staking));
-        require(address(staking) != address(0), "STAKING not set");
+        require(address(staking) != address(0), StakingAddressNotSet());
 
-        for (uint256 i = 1; i < 257; i++) {
+        for (uint256 i = 1; i < 257; ++i) {
             NodeId node = NodeId.wrap(i);
             if (staking.nodes().activeNodeExists(node)) {
                 fixtureNode.push(node);
             }
         }
         vm.prank(admin);
-        staking.setRetrievingDelay(Timestamp.wrap(1)); // set to 1 second
+        staking.setRetrievingDelay(Timestamp.wrap(1)); // set to 1 second for easier testing
     }
 
-    function setFeeRate(uint8 feeRate, uint8 nodeIndex) public {
+    /// @inheritdoc IStakingHandler
+    function setFeeRate(uint8 feeRate, uint8 nodeIndex) public override {
         NodeId node = fixtureNode[nodeIndex % fixtureNode.length];
         assert(staking.nodes().activeNodeExists(node));
         vm.assume(feeRate < staking.getNodeFeeRate(node));
@@ -59,7 +161,8 @@ contract StakingHandler is Test {
         assert(staking.getNodeFeeRate(node) == feeRate);
     }
 
-    function stakeFor(address user, uint8 nodeIndex, uint48 amountToStake) public {
+    /// @inheritdoc IStakingHandler
+    function stakeFor(address user, uint8 nodeIndex, uint48 amountToStake) public override {
 
         // user should not be a precompile address (0x1 - 0xFFFF) or a contract
         vm.assume(user.code.length == 0);
@@ -76,7 +179,8 @@ contract StakingHandler is Test {
         staking.stake{value: uint256(amountToStake) + 1e13}(node);
     }
 
-    function requestRetrieveAll(uint8 userIndex, uint8 nodeIndex) public {
+    /// @inheritdoc IStakingHandler
+    function requestRetrieveAll(uint8 userIndex, uint8 nodeIndex) public override {
         NodeId node = fixtureNode[nodeIndex % fixtureNode.length];
         assert(staking.nodes().activeNodeExists(node));
         Fair totalStake = staking.getNodeTotalStake(node);
@@ -96,10 +200,11 @@ contract StakingHandler is Test {
         vm.prank(staker);
         staking.requestRetrieveAll(node);
 
-        users.add(staker);
+        _usersLeaving.add(staker);
     }
 
-    function requestRetrieve(uint8 userIndex, uint8 nodeIndex, uint32 amountToRetrieve) public {
+    /// @inheritdoc IStakingHandler
+    function requestRetrieve(uint8 userIndex, uint8 nodeIndex, uint32 amountToRetrieve) public override {
         vm.assume(amountToRetrieve > 0);
         // Pick a node
         NodeId node = fixtureNode[nodeIndex % fixtureNode.length];
@@ -123,33 +228,36 @@ contract StakingHandler is Test {
         vm.prank(staker);
         staking.requestRetrieve(node, Fair.wrap(uint256(amountToRetrieve)));
 
-        users.add(staker);
+        _usersLeaving.add(staker);
     }
 
-    function donate(uint32 donationAmount) public {
+    /// @inheritdoc IStakingHandler
+    function donate(uint32 donationAmount) public override {
         vm.assume(donationAmount > 1e2);
         uint256 amount = uint256(donationAmount);
         vm.deal(DONATOR_ADDRESS, amount);
 
         vm.prank(DONATOR_ADDRESS);
         (bool success,) = address(staking).call{value: amount}("");
-        require(success, "Donation call failed");
-        assert(success);
+        require(success, FailedToDonateToStaking());
     }
 
-    function retrieve(uint8 userIndex) public {
+    /// @inheritdoc IStakingHandler
+    function retrieve(uint8 userIndex) public override {
+        // Retrieving delay is set to 1 second in constructor, we skip 2
         vm.warp(block.timestamp + 2);
-        vm.assume(users.length() > 0);
-        address user = users.at(userIndex % users.length());
+        vm.assume(_usersLeaving.length() > 0);
+        address user = _usersLeaving.at(userIndex % _usersLeaving.length());
         uint256 requestId = staking.getUnlockedExitRequestFor(user, 0).requestId;
         vm.prank(user);
         staking.claimRequest(requestId);
         if (Fair.unwrap(staking.getTotalInExitQueueFor(user)) == 0) {
-            users.remove(user);
+            _usersLeaving.remove(user);
         }
     }
 
-    function claimAllFee(uint8 nodeIndex) public {
+    /// @inheritdoc IStakingHandler
+    function claimAllFee(uint8 nodeIndex) public override {
         NodeId node = fixtureNode[nodeIndex % fixtureNode.length];
         assert(staking.nodes().activeNodeExists(node));
         Fair fees = staking.getEarnedFeeAmount(node);
@@ -162,23 +270,28 @@ contract StakingHandler is Test {
         vm.prank(nodeOwner);
         staking.requestAllFees(node);
 
-        users.add(nodeOwner);
+        _usersLeaving.add(nodeOwner);
     }
 
-    function claimFee(uint8 nodeIndex, uint32 amount) public {
+    /// @inheritdoc IStakingHandler
+    function claimFee(uint8 nodeIndex, uint32 amount) public override {
         NodeId node = fixtureNode[nodeIndex % fixtureNode.length];
         assert(staking.nodes().activeNodeExists(node));
         Fair fees = staking.getEarnedFeeAmount(node);
         vm.assume(fees > Fair.wrap(0));
+
+        // No real improvement from transforming to strict - optimized by the compiler
+        // solhint-disable-next-line gas-strict-inequalities
         vm.assume(Fair.unwrap(fees) >= uint256(amount) && amount != 0);
         address nodeOwner = staking.nodes().getNode(node).nodeAddress;
         vm.prank(nodeOwner);
         staking.requestFees(node, Fair.wrap(uint256(amount)));
 
-        users.add(nodeOwner);
+        _usersLeaving.add(nodeOwner);
     }
 
-    function getNumNodes() external view returns (uint256 len) {
+    /// @inheritdoc IStakingHandler
+    function getNumNodes() public view override returns (uint256 len) {
         return fixtureNode.length;
     }
 }
