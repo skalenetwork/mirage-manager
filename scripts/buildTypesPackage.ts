@@ -128,16 +128,6 @@ function getVersion(): string {
         return process.env.VERSION;
     }
 
-    // Try to get version from main package.json
-    // Currently irrelevant, so commented out
-    /*const packageJsonPath = path.join(process.cwd(), "package.json");
-    if (fs.existsSync(packageJsonPath)) {
-        const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf-8"));
-        if (packageJson.version) {
-            return packageJson.version;
-        }
-    }*/
-
     // Default fallback
     return "0.0.1-mock";
 }
