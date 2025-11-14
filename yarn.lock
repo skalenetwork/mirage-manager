@@ -5633,6 +5633,7 @@ __metadata:
     lodash: "npm:^4.17.21"
     pm2: "npm:^6.0.11"
     seedrandom: "npm:^3.0.5"
+    solady: "npm:0.1.26"
     solhint: "npm:^6.0.1"
     solidity-coverage: "npm:^0.8.16"
     solidity-docgen: "npm:^0.6.0-beta.36"
@@ -8814,6 +8815,13 @@ __metadata:
     ip-address: "npm:^9.0.5"
     smart-buffer: "npm:^4.2.0"
   checksum: 10c0/00c3271e233ccf1fb83a3dd2060b94cc37817e0f797a93c560b9a7a86c4a0ec2961fb31263bdd24a3c28945e24868b5f063cd98744171d9e942c513454b50ae5
+  languageName: node
+  linkType: hard
+
+"solady@npm:0.1.26":
+  version: 0.1.26
+  resolution: "solady@npm:0.1.26"
+  checksum: 10c0/b265a0600353f9076bcc184762007ec9b86254931132034152bf1882ead52413970dd535af667e8863c91e2ef996fc670892d8d9ded23c58ca0142eea8ae57a9
   languageName: node
   linkType: hard
 
