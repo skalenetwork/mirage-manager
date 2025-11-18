@@ -82,7 +82,6 @@ interface ICommitteeHandler {
  * @notice Handler contract for testing the Committee contract
  */
 contract CommitteeHandler is Test, ICommitteeHandler {
-
     /// @inheritdoc ICommitteeHandler
     CommitteeTester public committee;
 
@@ -104,7 +103,7 @@ contract CommitteeHandler is Test, ICommitteeHandler {
      * @dev Sets committee size to 5 for testing purposes
      * @dev Scans for first 256 active nodes to populate fixtureNode array
      */
-    constructor (address _committee, address admin) {
+    constructor(address _committee, address admin) {
         committee = CommitteeTester(_committee);
         require(address(committee) != address(0), CommitteeAddressNotSet());
         // scans for first 256 Nodes
@@ -132,25 +131,21 @@ contract CommitteeHandler is Test, ICommitteeHandler {
         uint256 numFixtureNodes = fixtureNode.length;
         for (uint256 i = 0; i < numFixtureNodes; ++i) {
             NodeId node = fixtureNode[i];
-            if(
-                committee.staking().getNodeShare(node) > 0 &&
-                committee.status().isWhitelisted(node) &&
-                committee.status().isHealthy(node) &&
-                committee.isNodeInRBTree(node)
-            ){
+            if (
+                committee.staking().getNodeShare(node) > 0 && committee.status().isWhitelisted(node)
+                    && committee.status().isHealthy(node) && committee.isNodeInRBTree(node)
+            ) {
                 ++eligibleNodes;
             }
         }
 
-
         // non-strict inequality optimized by the compiler - no improvement compared to strict in this case
         // solhint-disable-next-line gas-strict-inequalities
-        if (type(uint256).max != timestamp && timestamp >= block.timestamp){
+        if (type(uint256).max != timestamp && timestamp >= block.timestamp) {
             // expect revert if called to early
             // partialRevert only matches the error selector
             vm.expectPartialRevert(Committee.CommitteeRotationInProgress.selector);
-        }
-        else if (eligibleNodes < committee.committeeSize()) {
+        } else if (eligibleNodes < committee.committeeSize()) {
             // expect revert if not enough eligible staked nodes
             vm.expectPartialRevert(PoolLibrary.TooFewCandidates.selector);
         }

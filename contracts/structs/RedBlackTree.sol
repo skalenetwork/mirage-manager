@@ -21,8 +21,8 @@
 
 pragma solidity ^0.8.24;
 
-import { SafeCast } from "@openzeppelin/contracts/utils/math/SafeCast.sol";
-import { NodeId } from "@skalenetwork/fair-manager-interfaces/INodes.sol";
+import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
+import {NodeId} from "@skalenetwork/fair-manager-interfaces/INodes.sol";
 
 /**
  * @title Red-Black Tree Library
@@ -48,7 +48,7 @@ library RedBlackTree {
     }
 
     /// @notice Sentinel value representing a null node
-    NodeId constant public NULL = NodeId.wrap(0);
+    NodeId public constant NULL = NodeId.wrap(0);
 
     /// @dev Error indicating a child node is missing when expected
     error ChildIsMissing(NodeId node, NodeId child);
@@ -73,12 +73,7 @@ library RedBlackTree {
      * @param weight The weight value for the new node
      * @return newRoot The root after insertion and rebalancing
      */
-    function insertSmallest(
-        mapping(NodeId => Node) storage nodes,
-        NodeId root,
-        NodeId newNode,
-        uint256 weight
-    )
+    function insertSmallest(mapping(NodeId => Node) storage nodes, NodeId root, NodeId newNode, uint256 weight)
         internal
         returns (NodeId newRoot)
     {
@@ -91,7 +86,7 @@ library RedBlackTree {
         }
 
         NodeId node;
-        for(node = root; nodes[node].left != NULL; node = nodes[node].left) {
+        for (node = root; nodes[node].left != NULL; node = nodes[node].left) {
             nodes[node].totalWeight += weight_;
         }
 
@@ -150,16 +145,10 @@ library RedBlackTree {
      * @param node The node ID to update
      * @param weight The new weight value
      */
-    function setWeight(
-        mapping(NodeId => Node) storage nodes,
-        NodeId node,
-        uint256 weight
-    )
-        internal
-    {
+    function setWeight(mapping(NodeId => Node) storage nodes, NodeId node, uint256 weight) internal {
         require(node != NULL, SetWeightOfNullNode());
         uint248 oldWeight = getWeight(nodes, node);
-        while(node != NULL) {
+        while (node != NULL) {
             nodes[node].totalWeight = nodes[node].totalWeight - oldWeight + weight.toUint248();
             node = nodes[node].parent;
         }
@@ -172,11 +161,7 @@ library RedBlackTree {
      * @param weight The target cumulative weight
      * @return node The node ID at the specified weight position
      */
-    function findByWeight(
-        mapping(NodeId => Node) storage nodes,
-        NodeId root,
-        uint256 weight
-    )
+    function findByWeight(mapping(NodeId => Node) storage nodes, NodeId root, uint256 weight)
         internal
         view
         returns (NodeId node)
@@ -250,7 +235,7 @@ library RedBlackTree {
 
         NodeId node = bound;
         NodeId parent = nodes[bound].parent;
-        while(parent != NULL) {
+        while (parent != NULL) {
             if (nodes[parent].right == node) {
                 weight += nodes[parent].totalWeight - nodes[node].totalWeight;
             }
@@ -269,11 +254,7 @@ library RedBlackTree {
      * @param node The newly inserted node
      * @return newRoot The root after rebalancing
      */
-    function _balance(
-        mapping(NodeId => Node) storage nodes,
-        NodeId root,
-        NodeId node
-    )
+    function _balance(mapping(NodeId => Node) storage nodes, NodeId root, NodeId node)
         private
         returns (NodeId newRoot)
     {
@@ -312,14 +293,7 @@ library RedBlackTree {
      * @param weight The node's weight
      */
     function _createNode(mapping(NodeId => Node) storage nodes, NodeId id, NodeId parent, uint248 weight) private {
-        nodes[id] = Node({
-            id: id,
-            parent: parent,
-            left: NULL,
-            right: NULL,
-            totalWeight: weight,
-            red: true
-        });
+        nodes[id] = Node({id: id, parent: parent, left: NULL, right: NULL, totalWeight: weight, red: true});
     }
 
     /**
@@ -329,11 +303,7 @@ library RedBlackTree {
      * @param node The black leaf to remove
      * @return newRoot The root after removal and rebalancing
      */
-    function _removeBlackLeaf(
-        mapping(NodeId => Node) storage nodes,
-        NodeId root,
-        NodeId node
-    )
+    function _removeBlackLeaf(mapping(NodeId => Node) storage nodes, NodeId root, NodeId node)
         private
         returns (NodeId newRoot)
     {
@@ -370,11 +340,7 @@ library RedBlackTree {
      * @param node The red leaf to remove
      * @return newRoot The root after removal
      */
-    function _removeRedLeaf(
-        mapping(NodeId => Node) storage nodes,
-        NodeId root,
-        NodeId node
-    )
+    function _removeRedLeaf(mapping(NodeId => Node) storage nodes, NodeId root, NodeId node)
         private
         returns (NodeId newRoot)
     {
@@ -394,11 +360,7 @@ library RedBlackTree {
      * @return newRoot The root after fixing
      * @return success True if black height is fully restored
      */
-    function _fixBlackHeightRightNode(
-        mapping(NodeId => Node) storage nodes,
-        NodeId root,
-        NodeId parent
-    )
+    function _fixBlackHeightRightNode(mapping(NodeId => Node) storage nodes, NodeId root, NodeId parent)
         private
         returns (NodeId newRoot, bool success)
     {
@@ -418,11 +380,7 @@ library RedBlackTree {
      * @return newRoot The root after fixing
      * @return success True if black height is fully restored
      */
-    function _fixBlackHeightLeftNode(
-        mapping(NodeId => Node) storage nodes,
-        NodeId root,
-        NodeId parent
-    )
+    function _fixBlackHeightLeftNode(mapping(NodeId => Node) storage nodes, NodeId root, NodeId parent)
         private
         returns (NodeId newRoot, bool success)
     {
@@ -606,7 +564,7 @@ library RedBlackTree {
             _rotateLeftRight(nodes, parent, sibling, right);
             newRoot = right;
 
-            if(_isRed(nodes, rightLeft)) {
+            if (_isRed(nodes, rightLeft)) {
                 _setBlack(nodes, rightLeft);
             } else {
                 _fixBlackHeightRightNodeRedParent(nodes, root, sibling, nodes[sibling].left);
@@ -619,7 +577,6 @@ library RedBlackTree {
 
             _setBlack(nodes, sibling);
             _setRed(nodes, nodes[parent].left);
-
         }
 
         if (parent != root) {
@@ -651,7 +608,7 @@ library RedBlackTree {
             _rotateRightLeft(nodes, parent, sibling, left);
             newRoot = left;
 
-            if(_isRed(nodes, leftRight)) {
+            if (_isRed(nodes, leftRight)) {
                 _setBlack(nodes, leftRight);
             } else {
                 _fixBlackHeightLeftNodeRedParent(nodes, root, sibling, nodes[sibling].right);
@@ -790,12 +747,7 @@ library RedBlackTree {
      * @param parent The parent node
      * @param node The node being promoted
      */
-    function _rotateLeftRight(
-        mapping(NodeId => Node) storage nodes,
-        NodeId grandfather,
-        NodeId parent,
-        NodeId node
-    )
+    function _rotateLeftRight(mapping(NodeId => Node) storage nodes, NodeId grandfather, NodeId parent, NodeId node)
         private
     {
         NodeId beta = nodes[node].left;
@@ -843,12 +795,7 @@ library RedBlackTree {
      * @param parent The parent node
      * @param node The node being promoted
      */
-    function _rotateRightLeft(
-        mapping(NodeId => Node) storage nodes,
-        NodeId grandfather,
-        NodeId parent,
-        NodeId node
-    )
+    function _rotateRightLeft(mapping(NodeId => Node) storage nodes, NodeId grandfather, NodeId parent, NodeId node)
         private
     {
         NodeId beta = nodes[node].left;
@@ -903,7 +850,7 @@ library RedBlackTree {
 
         (nodes[node].totalWeight, nodes[base].totalWeight) =
             (nodes[base].totalWeight, nodes[node].totalWeight - nodeWeight + baseWeight);
-        for(NodeId current = nodes[node].parent; current != base; current = nodes[current].parent) {
+        for (NodeId current = nodes[node].parent; current != base; current = nodes[current].parent) {
             nodes[current].totalWeight = nodes[current].totalWeight - nodeWeight + baseWeight;
         }
 
@@ -930,12 +877,7 @@ library RedBlackTree {
      * @param oldChild The old child to replace
      * @param newChild The new child to set
      */
-    function _updateChild(
-        mapping(NodeId => Node) storage nodes,
-        NodeId node,
-        NodeId oldChild,
-        NodeId newChild
-    )
+    function _updateChild(mapping(NodeId => Node) storage nodes, NodeId node, NodeId oldChild, NodeId newChild)
         private
     {
         if (node != NULL) {
@@ -971,10 +913,7 @@ library RedBlackTree {
      * @param node The node to query
      * @return totalWeight The cumulative weight of node and all descendants
      */
-    function _getTotalWeight(
-        mapping(NodeId => Node) storage nodes,
-        NodeId node
-    )
+    function _getTotalWeight(mapping(NodeId => Node) storage nodes, NodeId node)
         private
         view
         returns (uint248 totalWeight)
@@ -991,10 +930,7 @@ library RedBlackTree {
      * @param node The node to query
      * @return grandfather The grandfather node ID
      */
-    function _grandfather(
-        mapping(NodeId => Node) storage nodes,
-        NodeId node
-    )
+    function _grandfather(mapping(NodeId => Node) storage nodes, NodeId node)
         private
         view
         returns (NodeId grandfather)

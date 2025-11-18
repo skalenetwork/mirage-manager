@@ -54,7 +54,7 @@ contract FairAccessManager is AccessManagerUpgradeable {
      * @dev Sets up the initial admin with full access control privileges
      * @param initialAdmin The address that will be granted admin role
      */
-    function initialize(address initialAdmin) public initializer override {
+    function initialize(address initialAdmin) public override initializer {
         __AccessManager_init(initialAdmin);
     }
 }

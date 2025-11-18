@@ -79,7 +79,6 @@ interface IRBTHandler {
  * @notice Handler contract for the Red-Black Tree Test contract
  */
 contract RBTHandler is Test, IRBTHandler {
-
     /// @notice The Red-Black Tree tester contract instance
     RedBlackTreeTester public rbt;
 
@@ -100,7 +99,7 @@ contract RBTHandler is Test, IRBTHandler {
      */
     constructor(RedBlackTreeTester _rbt) {
         rbt = _rbt;
-        for(uint256 i = 1; i < 151; ++i){
+        for (uint256 i = 1; i < 151; ++i) {
             fixtureNode.push(NodeId.wrap(i));
         }
     }

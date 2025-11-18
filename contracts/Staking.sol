@@ -26,26 +26,26 @@ pragma solidity ^0.8.24;
 import {
     AccessManagedUpgradeable
 } from "@openzeppelin/contracts-upgradeable/access/manager/AccessManagedUpgradeable.sol";
-import { ReentrancyGuardUpgradeable } from "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
-import { BeaconProxy } from "@openzeppelin/contracts/proxy/beacon/BeaconProxy.sol";
-import { IBeacon } from "@openzeppelin/contracts/proxy/beacon/IBeacon.sol";
-import { Address } from "@openzeppelin/contracts/utils/Address.sol";
-import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
-import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
+import {BeaconProxy} from "@openzeppelin/contracts/proxy/beacon/BeaconProxy.sol";
+import {IBeacon} from "@openzeppelin/contracts/proxy/beacon/IBeacon.sol";
+import {Address} from "@openzeppelin/contracts/utils/Address.sol";
+import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
+import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
 // External interfaces
-import { ICommittee } from "@skalenetwork/fair-manager-interfaces/ICommittee.sol";
-import { INodes, NodeId } from "@skalenetwork/fair-manager-interfaces/INodes.sol";
-import { IRewardWallet } from "@skalenetwork/fair-manager-interfaces/IRewardWallet.sol";
-import { IStaking } from "@skalenetwork/fair-manager-interfaces/IStaking.sol";
+import {ICommittee} from "@skalenetwork/fair-manager-interfaces/ICommittee.sol";
+import {INodes, NodeId} from "@skalenetwork/fair-manager-interfaces/INodes.sol";
+import {IRewardWallet} from "@skalenetwork/fair-manager-interfaces/IRewardWallet.sol";
+import {IStaking} from "@skalenetwork/fair-manager-interfaces/IStaking.sol";
 
 // Internal project files
-import { TypedMap } from "./structs/typed/TypedMap.sol";
-import { TypedSet } from "./structs/typed/TypedSet.sol";
-import { DEFAULT_MIN_STAKE, DEFAULT_RETRIEVING_DELAY } from "./utils/constants.sol";
-import { InvalidCommitteeAddress, InvalidNodesAddress, NodeDoesNotExist } from "./utils/errors.sol";
-import { ExitQueueLibrary, Timestamp } from "./utils/ExitQueue.sol";
-import { Credit, FundLibrary, Fair, Holder } from "./utils/Fund.sol";
+import {TypedMap} from "./structs/typed/TypedMap.sol";
+import {TypedSet} from "./structs/typed/TypedSet.sol";
+import {DEFAULT_MIN_STAKE, DEFAULT_RETRIEVING_DELAY} from "./utils/constants.sol";
+import {InvalidCommitteeAddress, InvalidNodesAddress, NodeDoesNotExist} from "./utils/errors.sol";
+import {ExitQueueLibrary, Timestamp} from "./utils/ExitQueue.sol";
+import {Credit, FundLibrary, Fair, Holder} from "./utils/Fund.sol";
 
 /**
  * @title Staking
@@ -92,16 +92,16 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
     ExitQueueLibrary.ExitQueue private _exitQueue;
 
     /// @dev Mapping of node IDs to their individual funds
-    mapping (NodeId node => FundLibrary.Fund nodeFund) private _nodesFunds;
+    mapping(NodeId node => FundLibrary.Fund nodeFund) private _nodesFunds;
 
     /// @dev Mapping of node IDs to their reward wallet contracts
-    mapping (NodeId node => IRewardWallet rewardWallet) private _rewardWallets;
+    mapping(NodeId node => IRewardWallet rewardWallet) private _rewardWallets;
 
     /// @dev Mapping of node IDs to sets of addresses allowed to claim fees on behalf of the node
-    mapping (NodeId node => EnumerableSet.AddressSet allowedReceivers) private _nodesAllowedReceivers;
+    mapping(NodeId node => EnumerableSet.AddressSet allowedReceivers) private _nodesAllowedReceivers;
 
     /// @dev Mapping of holder addresses to the set of nodes they have staked to
-    mapping (address holder => TypedSet.NodeIdSet nodeIds) private _stakedNodes;
+    mapping(address holder => TypedSet.NodeIdSet nodeIds) private _stakedNodes;
 
     /// @dev Mapping of disabled node IDs to their current balances
     TypedMap.NodeIdToFairMap private _disabledNodesBalances;
@@ -331,7 +331,7 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
      * @dev Emits RewardReceived when funds are sent to the contract
      * @dev Received funds are automatically shared among all enabled nodes proportionally to stake
      */
-    receive() external override payable {
+    receive() external payable override {
         emit RewardReceived(msg.sender, msg.value);
     }
 
@@ -343,15 +343,10 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
      * @param nodes_ The address of the Nodes contract
      * @param rewardWalletBeacon_ The address of the reward wallet beacon contract
      */
-    function initialize(
-        address initialAuthority,
-        ICommittee committee_,
-        INodes nodes_,
-        IBeacon rewardWalletBeacon_
-    )
+    function initialize(address initialAuthority, ICommittee committee_, INodes nodes_, IBeacon rewardWalletBeacon_)
         external
-        initializer
         override
+        initializer
     {
         require(address(committee_) != address(0), InvalidCommitteeAddress());
         require(address(nodes_) != address(0), InvalidNodesAddress());
@@ -372,7 +367,7 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
      * @dev It's a reinitializer - used once only during contract deployment or upgrade from old version
      * @param rewardWalletBeacon_ The address of the reward wallet beacon contract
      */
-    function updateRewardWalletBeacon(IBeacon rewardWalletBeacon_) external reinitializer(2) restricted override{
+    function updateRewardWalletBeacon(IBeacon rewardWalletBeacon_) external override reinitializer(2) restricted {
         require(address(rewardWalletBeacon_) != address(0), InvalidRewardWalletAddress());
         IBeacon oldBeacon = rewardWalletBeacon;
         rewardWalletBeacon = rewardWalletBeacon_;
@@ -443,11 +438,7 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
     function disable(NodeId node) external override restricted {
         Fair balance = _getTotalBalance();
         Fair nodeFundBalance = _rootFund.getBalance(balance, FundLibrary.nodeToHolder(node));
-        _rootFund.remove(
-            balance,
-            FundLibrary.nodeToHolder(node),
-            nodeFundBalance
-        );
+        _rootFund.remove(balance, FundLibrary.nodeToHolder(node), nodeFundBalance);
         totalDisabled = totalDisabled + nodeFundBalance;
         require(_disabledNodesBalances.set(node, nodeFundBalance), NodeIsAlreadyDisabled(node));
         emit NodeDisabled(node);
@@ -467,33 +458,21 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
      * @dev Updates node's weight in Committee contract after enabling
      * @param node The node to enable
      */
-    function enable(
-        NodeId node
-    )
-        external
-        override
-        restricted
-        onlyExistingActiveNode(node)
-    {
+    function enable(NodeId node) external override restricted onlyExistingActiveNode(node) {
         _pullReward(node);
         (bool wasDisabled, Fair value) = _disabledNodesBalances.tryGet(node);
         require(wasDisabled, NodeIsNotDisabled(node));
         Fair balance = _getTotalBalance();
-        _rootFund.supply(
-            balance,
-            FundLibrary.nodeToHolder(node),
-            value
-        );
+        _rootFund.supply(balance, FundLibrary.nodeToHolder(node), value);
         assert(_disabledNodesBalances.remove(node));
         totalDisabled = totalDisabled - value;
 
         // Node might have changed its balance due to rounding in supply()
         // Force update on nodeFund
         Fair finalBalance = _rootFund.getBalance(_getTotalBalance(), FundLibrary.nodeToHolder(node));
-        if(!(finalBalance == value)){
-            _nodesFunds[node].updateTotalBalance(
-                _rootFund.getBalance(_getTotalBalance(), FundLibrary.nodeToHolder(node))
-            );
+        if (!(finalBalance == value)) {
+            _nodesFunds[node]
+            .updateTotalBalance(_rootFund.getBalance(_getTotalBalance(), FundLibrary.nodeToHolder(node)));
         }
 
         emit NodeEnabled(node);
@@ -508,7 +487,7 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
      * @param nodeAddress The address of the node owner
      */
     function nodeCreated(NodeId node, address nodeAddress) external payable override restricted {
-        if(_rewardWallets[node] == IRewardWallet(payable(0))) {
+        if (_rewardWallets[node] == IRewardWallet(payable(0))) {
             _deployRewardWallet(node);
         }
 
@@ -552,7 +531,6 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
         if (fees > FundLibrary.ZERO_FAIR) {
             _requestSendFees(node, fees, payable(nodeOwner));
             amountToRetrieve = amountToRetrieve + fees;
-
         }
         _exitQueue.createRequest(nodeOwner, node, amountToRetrieve);
     }
@@ -564,14 +542,7 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
      * @dev Updates committee weight if node is enabled
      * @param node The node receiving the reward
      */
-    function payReward(
-        NodeId node
-    )
-        external
-        payable
-        override
-        onlyExistingActiveNode(node)
-    {
+    function payReward(NodeId node) external payable override onlyExistingActiveNode(node) {
         require(msg.value > 0, ZeroAmount());
         bool nodeIsEnabled = !_disabledNodesBalances.contains(node);
         Fair amount = Fair.wrap(msg.value);
@@ -585,16 +556,9 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
         );
 
         if (nodeIsEnabled) {
-            _rootFund.supply(
-                balance,
-                FundLibrary.nodeToHolder(node),
-                amount
-            );
+            _rootFund.supply(balance, FundLibrary.nodeToHolder(node), amount);
         } else {
-            assert(!_disabledNodesBalances.set(
-                node,
-                _disabledNodesBalances.get(node) + amount)
-            );
+            assert(!_disabledNodesBalances.set(node, _disabledNodesBalances.get(node) + amount));
             totalDisabled = totalDisabled + amount;
         }
         emit NodeRewardReceived(node, amount);
@@ -603,7 +567,6 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
             committee.updateWeight(node, Credit.unwrap(_rootFund.credits.get(FundLibrary.nodeToHolder(node))));
         }
     }
-
 
     /**
      * @notice Claims an exit request and transfers funds to the caller
@@ -822,14 +785,7 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
      * @param requestId The ID of the exit request
      * @return request The exit request details
      */
-    function getExitRequest(
-        uint256 requestId
-    )
-        external
-        view
-        override
-        returns (ExitRequest memory request)
-    {
+    function getExitRequest(uint256 requestId) external view override returns (ExitRequest memory request) {
         request = _exitQueue.getRequest(requestId);
     }
 
@@ -840,10 +796,7 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
      * @param fromIndex The index to start searching from
      * @return request The unlocked exit request
      */
-    function getUnlockedExitRequestFor(
-        address user,
-        uint256 fromIndex
-    )
+    function getUnlockedExitRequestFor(address user, uint256 fromIndex)
         external
         view
         override
@@ -858,15 +811,7 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
      * @param index The index of the exit request
      * @return request The exit request at the specified index
      */
-    function getExitRequestAt(
-        address user,
-        uint256 index
-    )
-        external
-        view
-        override
-        returns (ExitRequest memory request)
-    {
+    function getExitRequestAt(address user, uint256 index) external view override returns (ExitRequest memory request) {
         request = _exitQueue.getRequestAt(user, index);
     }
 
@@ -892,7 +837,7 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
      * @param user The user to query
      * @return amount The total amount in exit queue
      */
-    function getTotalInExitQueueFor(address user) external view override returns (Fair amount){
+    function getTotalInExitQueueFor(address user) external view override returns (Fair amount) {
         return _exitQueue.getTotalInQueueForUser(user);
     }
 
@@ -922,19 +867,11 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
      * @param node The node from which to request fees
      * @param amount The amount of fees to request
      */
-    function requestFees(
-        NodeId node,
-        Fair amount
-    )
-        public
-        override
-        onlyExistingActiveNode(node)
-    {
+    function requestFees(NodeId node, Fair amount) public override onlyExistingActiveNode(node) {
         require(amount > FundLibrary.ZERO_FAIR, ZeroAmount());
         bool senderIsOwner = msg.sender == nodes.getNode(node).nodeAddress;
         require(
-            _nodesAllowedReceivers[node].contains(msg.sender) || senderIsOwner,
-            NotAllowedToClaimRewards(msg.sender)
+            _nodesAllowedReceivers[node].contains(msg.sender) || senderIsOwner, NotAllowedToClaimRewards(msg.sender)
         );
         _requestSendFees(node, amount, payable(msg.sender));
         _exitQueue.createRequest(payable(msg.sender), node, amount);
@@ -954,10 +891,7 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
         // Node has opted in to allowed receivers, so the destination address must be in the list
         // Or be the owner
         if (_hasAllowedReceiver(node)) {
-            require(
-                _nodesAllowedReceivers[node].contains(to) || to == msg.sender,
-                NotAllowedToClaimRewards(to)
-            );
+            require(_nodesAllowedReceivers[node].contains(to) || to == msg.sender, NotAllowedToClaimRewards(to));
         }
         _requestSendFees(node, amount, to);
         _exitQueue.createRequest(to, node, amount);
@@ -983,9 +917,8 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
         if (!isNodeEnabled(node)) {
             return _nodesFunds[node].getEarnedFee(_disabledNodesBalances.get(node) + nonPulledReward);
         }
-        return _nodesFunds[node].getEarnedFee(
-            _rootFund.getBalance(_getTotalBalance(), FundLibrary.nodeToHolder(node)) + nonPulledReward
-        );
+        return _nodesFunds[node]
+        .getEarnedFee(_rootFund.getBalance(_getTotalBalance(), FundLibrary.nodeToHolder(node)) + nonPulledReward);
     }
 
     /**
@@ -1025,10 +958,7 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
         } else {
             nodeBalance = _rootFund.getBalance(_getTotalBalance(), FundLibrary.nodeToHolder(node)) + nonPulledReward;
         }
-        return _nodesFunds[node].getBalance(
-            nodeBalance,
-            FundLibrary.addressToHolder(holder)
-        );
+        return _nodesFunds[node].getBalance(nodeBalance, FundLibrary.addressToHolder(holder));
     }
 
     /**
@@ -1058,27 +988,20 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
         _validateStakeLimit(node, amount);
 
         if (nodeIsEnabled) {
-            _nodesFunds[node].supply(
+            _nodesFunds[node]
+            .supply(
                 _rootFund.getBalance(balance, FundLibrary.nodeToHolder(node)),
                 FundLibrary.addressToHolder(staker),
                 amount
             );
-            _rootFund.supply(
-                balance,
-                FundLibrary.nodeToHolder(node),
-                amount
-            );
+            _rootFund.supply(balance, FundLibrary.nodeToHolder(node), amount);
         } else {
             Fair nodeFundBalance = _disabledNodesBalances.get(node);
-            _nodesFunds[node].supply(
-                nodeFundBalance,
-                FundLibrary.addressToHolder(staker),
-                amount
-            );
+            _nodesFunds[node].supply(nodeFundBalance, FundLibrary.addressToHolder(staker), amount);
             assert(!_disabledNodesBalances.set(node, nodeFundBalance + amount));
             totalDisabled = totalDisabled + amount;
         }
-        if(_stakedNodes[staker].add(node)) {
+        if (_stakedNodes[staker].add(node)) {
             emit StakedToNewNode(staker, node);
         }
 
@@ -1095,34 +1018,18 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
      * @param amount The amount of fees to claim
      * @param to The address to receive the fees
      */
-    function _requestSendFees(
-        NodeId node,
-        Fair amount,
-        address to
-    )
-        private
-    {
+    function _requestSendFees(NodeId node, Fair amount, address to) private {
         // sender can be allowed user, nodeOwner, or Nodes.sol contract (node deleted)
         emit FeeClaimRequested(node, msg.sender, to, amount);
         _pullReward(node);
         Fair balance = _getTotalBalance();
         bool nodeIsEnabled = isNodeEnabled(node);
         if (nodeIsEnabled) {
-            _nodesFunds[node].claimFee(
-                _rootFund.getBalance(balance, FundLibrary.nodeToHolder(node)),
-                amount
-            );
-            _rootFund.remove(
-                balance,
-                FundLibrary.nodeToHolder(node),
-                amount
-            );
+            _nodesFunds[node].claimFee(_rootFund.getBalance(balance, FundLibrary.nodeToHolder(node)), amount);
+            _rootFund.remove(balance, FundLibrary.nodeToHolder(node), amount);
         } else {
             Fair nodeBalance = _disabledNodesBalances.get(node);
-            _nodesFunds[node].claimFee(
-                nodeBalance,
-                amount
-            );
+            _nodesFunds[node].claimFee(nodeBalance, amount);
             // node is already disabled, should return false
             assert(!_disabledNodesBalances.set(node, nodeBalance - amount));
             totalDisabled = totalDisabled - amount;
@@ -1153,23 +1060,16 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
 
         if (nodeIsEnabled) {
             Fair balance = _getTotalBalance();
-            _nodesFunds[node].remove(
+            _nodesFunds[node]
+            .remove(
                 _rootFund.getBalance(balance, FundLibrary.nodeToHolder(node)),
                 FundLibrary.addressToHolder(staker),
                 value
             );
-            _rootFund.remove(
-                balance,
-                FundLibrary.nodeToHolder(node),
-                value
-            );
+            _rootFund.remove(balance, FundLibrary.nodeToHolder(node), value);
         } else {
             Fair nodeFundBalance = _disabledNodesBalances.get(node);
-            _nodesFunds[node].remove(
-                nodeFundBalance,
-                FundLibrary.addressToHolder(staker),
-                value
-            );
+            _nodesFunds[node].remove(nodeFundBalance, FundLibrary.addressToHolder(staker), value);
             assert(!_disabledNodesBalances.set(node, nodeFundBalance - value));
             totalDisabled = totalDisabled - value;
         }
@@ -1178,7 +1078,6 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
             assert(_stakedNodes[staker].remove(node) && !exists);
             emit StoppedStaking(staker, node);
         }
-
     }
 
     /**
@@ -1199,18 +1098,15 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
      */
     function _deployRewardWallet(NodeId node) private {
         emit RewardWalletCreated(node);
-        _rewardWallets[node] = IRewardWallet(payable(new BeaconProxy(
-            address(rewardWalletBeacon),
-            abi.encodeWithSelector(
-                IRewardWallet.initialize.selector,
-                authority(),
-                IStaking(payable(this)),
-                nodes,
-                node
-            )
-        )));
+        _rewardWallets[node] = IRewardWallet(
+            payable(new BeaconProxy(
+                    address(rewardWalletBeacon),
+                    abi.encodeWithSelector(
+                        IRewardWallet.initialize.selector, authority(), IStaking(payable(this)), nodes, node
+                    )
+                ))
+        );
     }
-
 
     /**
      * @notice Pulls pending rewards from a node's reward wallet
@@ -1237,16 +1133,12 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
      */
     function _updateNodeFeeRate(NodeId node, uint16 feeRate) private {
         Fair balance;
-        if (isNodeEnabled(node)){
+        if (isNodeEnabled(node)) {
             balance = _rootFund.getBalance(_getTotalBalance(), FundLibrary.nodeToHolder(node));
-        }
-        else {
+        } else {
             balance = _disabledNodesBalances.get(node);
         }
-        _nodesFunds[node].setFeeRate(
-            balance,
-            feeRate
-        );
+        _nodesFunds[node].setFeeRate(balance, feeRate);
     }
 
     /**
@@ -1256,10 +1148,7 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
      */
     function _checkProvidedSelfStake(NodeId nodeId) private {
         Fair providedStake = Fair.wrap(msg.value);
-        require(
-            !(selfStakeRequirement > providedStake),
-            InsufficientSelfStake(providedStake, selfStakeRequirement)
-        );
+        require(!(selfStakeRequirement > providedStake), InsufficientSelfStake(providedStake, selfStakeRequirement));
         emit SelfStakeProvided(nodeId, providedStake);
     }
 
@@ -1323,14 +1212,7 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
      * @return result True if within limit, false otherwise
      * @return currentNodeStake The current stake on the node
      */
-    function _isWithinStakeLimit(
-        NodeId node,
-        Fair amount
-    )
-        private
-        view
-        returns (bool result, Fair currentNodeStake)
-    {
+    function _isWithinStakeLimit(NodeId node, Fair amount) private view returns (bool result, Fair currentNodeStake) {
         result = true;
         if (stakeLimit > FundLibrary.ZERO_FAIR) {
             currentNodeStake = _getNodeTotalStakeBeforeAmount(node, amount);
@@ -1347,10 +1229,7 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
      */
     function _validateStakeLimit(NodeId node, Fair amount) private view {
         (bool isWithinLimit, Fair currentNodeStake) = _isWithinStakeLimit(node, amount);
-        require(
-            isWithinLimit,
-            StakeLimitExceeded(currentNodeStake, amount, stakeLimit)
-        );
+        require(isWithinLimit, StakeLimitExceeded(currentNodeStake, amount, stakeLimit));
     }
 
     /**
@@ -1372,10 +1251,7 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
     function _checkNodeOwnerRestriction(address sender, NodeId node) private view {
         if (nodes.activeNodeExists(node)) {
             address nodeOwner = nodes.getNode(node).nodeAddress;
-            require(
-                sender != nodeOwner,
-                NodeOwnerCannotRetrieveWhileNodeExists(sender, node)
-            );
+            require(sender != nodeOwner, NodeOwnerCannotRetrieveWhileNodeExists(sender, node));
         }
     }
 
@@ -1385,15 +1261,8 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
      * @param pubKey The public key as a 2-element bytes32 array
      * @return nodeAddress The derived solidity address
      */
-    function _publicKeyToAddress(
-        bytes32[2] memory pubKey
-    )
-        private
-        pure
-        returns (address nodeAddress)
-    {
+    function _publicKeyToAddress(bytes32[2] memory pubKey) private pure returns (address nodeAddress) {
         bytes32 hash = keccak256(abi.encodePacked(pubKey[0], pubKey[1]));
         return address(uint160(uint256(hash)));
     }
-
 }

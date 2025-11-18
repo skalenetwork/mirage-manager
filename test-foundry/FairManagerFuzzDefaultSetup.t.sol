@@ -34,7 +34,6 @@ import {Fair, NodeId} from "./handlers/StakingHandler.sol";
  * @notice Interface for the Fair Manager fuzz testing contract
  */
 interface IFairManagerFuzzDefaultSetup {
-
     // solhint-disable func-name-mixedcase
     /// @notice Core invariant check for the Fair Manager system
     function invariant_coreInvariants() external view;
@@ -53,7 +52,6 @@ interface IFairManagerFuzzDefaultSetup {
  * @notice Fuzz test contract with core invariants for the Fair Manager system
  */
 contract FairManagerFuzzDefaultSetup is StdInvariant, DefaultSetup, IFairManagerFuzzDefaultSetup {
-
     error NodeShouldBeDisabled(NodeId node);
     error NotEnoughTokensInStaking(Fair calculated, Fair stakingBalance);
     error TotalDisabledHigherThanStakingBalance(Fair totalDisabled, Fair stakingBalance);
@@ -70,15 +68,15 @@ contract FairManagerFuzzDefaultSetup is StdInvariant, DefaultSetup, IFairManager
         checkNotWhitelistedAreDisabled();
         checkStakingBalances();
     }
-    // solhint-enable func-name-mixedcase
 
+    // solhint-enable func-name-mixedcase
 
     /// @inheritdoc IFairManagerFuzzDefaultSetup
     function checkNotWhitelistedAreDisabled() public view override {
         uint256 numNodes = staking.getNumNodes();
         for (uint256 i = 0; i < numNodes; ++i) {
             NodeId node = staking.fixtureNode(i);
-            if (!status.status().isWhitelisted(node)){
+            if (!status.status().isWhitelisted(node)) {
                 require(!staking.staking().isNodeEnabled(node), NodeShouldBeDisabled(node));
             }
         }

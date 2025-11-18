@@ -22,10 +22,10 @@
 
 pragma solidity ^0.8.24;
 
-import { IDkg } from "@skalenetwork/fair-manager-interfaces/IDkg.sol";
+import {IDkg} from "@skalenetwork/fair-manager-interfaces/IDkg.sol";
 
-import { LARGE_PRIME } from "../constants.sol";
-import { Precompiled } from "../Precompiled.sol";
+import {LARGE_PRIME} from "../constants.sol";
+import {Precompiled} from "../Precompiled.sol";
 
 /**
  * @title Fp2 (Quadratic Extension of base field Fp) Operations
@@ -34,22 +34,15 @@ import { Precompiled } from "../Precompiled.sol";
  * @notice Provides functionality for working with  Quadratic Extension of Fp points
  */
 library Fp2Operations {
-
     /// @notice BN254 base field prime modulus (alt_bn128). All arithmetic is modulo this value.
-    uint256 constant public P = LARGE_PRIME;
+    uint256 public constant P = LARGE_PRIME;
 
     /**
      * @notice Computes the inverse of an Fp2 point
      * @param value The Fp2 point to invert
      * @return result The inverse of the input point
      */
-    function inverseFp2(
-        IDkg.Fp2Point memory value
-    )
-        internal
-        view
-        returns (IDkg.Fp2Point memory result)
-    {
+    function inverseFp2(IDkg.Fp2Point memory value) internal view returns (IDkg.Fp2Point memory result) {
         uint256 p = P;
         uint256 t0 = mulmod(value.a, value.a, p);
         uint256 t1 = mulmod(value.b, value.b, p);
@@ -75,10 +68,7 @@ library Fp2Operations {
         pure
         returns (IDkg.Fp2Point memory result)
     {
-        return IDkg.Fp2Point({
-            a: addmod(value1.a, value2.a, P),
-            b: addmod(value1.b, value2.b, P)
-        });
+        return IDkg.Fp2Point({a: addmod(value1.a, value2.a, P), b: addmod(value1.b, value2.b, P)});
     }
 
     /**
@@ -92,7 +82,7 @@ library Fp2Operations {
         pure
         returns (IDkg.Fp2Point memory result)
     {
-        return IDkg.Fp2Point({ a: mulmod(scalar, value.a, P), b: mulmod(scalar, value.b, P) });
+        return IDkg.Fp2Point({a: mulmod(scalar, value.a, P), b: mulmod(scalar, value.b, P)});
     }
 
     /**
@@ -101,10 +91,7 @@ library Fp2Operations {
      * @param subtracted The point to subtract (subtrahend)
      * @return difference The difference between the two points
      */
-    function minusFp2(
-        IDkg.Fp2Point memory diminished,
-        IDkg.Fp2Point memory subtracted
-    )
+    function minusFp2(IDkg.Fp2Point memory diminished, IDkg.Fp2Point memory subtracted)
         internal
         pure
         returns (IDkg.Fp2Point memory difference)
@@ -128,29 +115,20 @@ library Fp2Operations {
      * @param value2 The second Fp2 point
      * @return result The product of the two points
      */
-    function mulFp2(
-        IDkg.Fp2Point memory value1,
-        IDkg.Fp2Point memory value2
-    )
+    function mulFp2(IDkg.Fp2Point memory value1, IDkg.Fp2Point memory value2)
         internal
         pure
         returns (IDkg.Fp2Point memory result)
     {
         uint256 p = P;
-        IDkg.Fp2Point memory point = IDkg.Fp2Point({
-            a: mulmod(value1.a, value2.a, p),
-            b: mulmod(value1.b, value2.b, p)});
-        result.a = addmod(
-            point.a,
-            mulmod(p - 1, point.b, p),
-            p);
+        IDkg.Fp2Point memory f2point =
+            IDkg.Fp2Point({a: mulmod(value1.a, value2.a, p), b: mulmod(value1.b, value2.b, p)});
+        result.a = addmod(f2point.a, mulmod(p - 1, f2point.b, p), p);
         result.b = addmod(
-            mulmod(
-                addmod(value1.a, value1.b, p),
-                addmod(value2.a, value2.b, p),
-                p),
-            p - addmod(point.a, point.b, p),
-            p);
+            mulmod(addmod(value1.a, value1.b, p), addmod(value2.a, value2.b, p), p),
+            p - addmod(f2point.a, f2point.b, p),
+            p
+        );
     }
 
     /**
@@ -158,21 +136,11 @@ library Fp2Operations {
      * @param value The Fp2 point to square
      * @return result The squared point
      */
-    function squaredFp2(
-        IDkg.Fp2Point memory value
-    )
-        internal
-        pure
-        returns (IDkg.Fp2Point memory result)
-    {
+    function squaredFp2(IDkg.Fp2Point memory value) internal pure returns (IDkg.Fp2Point memory result) {
         uint256 p = P;
         uint256 ab = mulmod(value.a, value.b, p);
-        uint256 multiplication = mulmod(
-            addmod(value.a, value.b, p),
-            addmod(value.a, mulmod(p - 1, value.b, p), p),
-            p
-        );
-        return IDkg.Fp2Point({ a: multiplication, b: addmod(ab, ab, p) });
+        uint256 multiplication = mulmod(addmod(value.a, value.b, p), addmod(value.a, mulmod(p - 1, value.b, p), p), p);
+        return IDkg.Fp2Point({a: multiplication, b: addmod(ab, ab, p)});
     }
 
     /**
@@ -181,14 +149,7 @@ library Fp2Operations {
      * @param value2 The second Fp2 point
      * @return result True if the points are equal, false otherwise
      */
-    function isEqual(
-        IDkg.Fp2Point memory value1,
-        IDkg.Fp2Point memory value2
-    )
-        internal
-        pure
-        returns (bool result)
-    {
+    function isEqual(IDkg.Fp2Point memory value1, IDkg.Fp2Point memory value2) internal pure returns (bool result) {
         return value1.a == value2.a && value1.b == value2.b;
     }
 }

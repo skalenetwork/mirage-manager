@@ -26,7 +26,6 @@ import {CommitteeHandler} from "./handlers/CommitteeHandler.sol";
 import {StakingHandler} from "./handlers/StakingHandler.sol";
 import {StatusHandler} from "./handlers/StatusHandler.sol";
 
-
 /**
  * @title IDefaultSetup
  * @author Eduardo Vasques
@@ -61,7 +60,6 @@ interface IDefaultSetup {
  * @notice Contract with default setup for Fair Manager tests
  */
 contract DefaultSetup is Test, IDefaultSetup {
-
     /// @inheritdoc IDefaultSetup
     StatusHandler public status;
 

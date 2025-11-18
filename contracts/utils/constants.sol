@@ -1,4 +1,3 @@
-
 // SPDX-License-Identifier: AGPL-3.0-only
 
 /**
@@ -33,12 +32,10 @@ pragma solidity ^0.8.24;
 /// @dev Maximum number of iterations allowed for heavier loops
 uint256 constant MAX_ITERATIONS = 2000;
 
-
 // Field Operations
 
 /// @dev Large prime number used for DKG cryptographic operations
 uint256 constant LARGE_PRIME = 21888242871839275222246405745257275088696311157297823662689037894645226208583;
-
 
 // Committee
 
@@ -48,7 +45,6 @@ uint256 constant DEFAULT_COMMITTEE_SIZE = 22;
 uint256 constant DEFAULT_TRANSITION_DELAY = 1 days;
 /// @dev Minimum allowed transition delay - reasonable interval for off-chain components to react
 uint256 constant DEFAULT_MIN_TRANSITION_DELAY = 10 minutes;
-
 
 // Staking
 
@@ -63,7 +59,6 @@ uint256 constant DEFAULT_RETRIEVING_DELAY = 1 days;
 uint16 constant FEE_RATE_PRECISION_VALUE = 1000;
 /// @dev Allowed error margin for fund calculations (0.000000001 FAIR)
 uint256 constant ALLOWED_ERROR = 1e9;
-
 
 // Status
 

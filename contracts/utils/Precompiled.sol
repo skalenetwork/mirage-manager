@@ -31,7 +31,6 @@ pragma solidity ^0.8.24;
  * and random number generation using SKALE's on-chain RNG.
  */
 library Precompiled {
-
     /// @notice Address of the modular exponentiation precompiled contract
     address public constant MOD_EXP = address(5);
 
@@ -51,27 +50,14 @@ library Precompiled {
      * @param modulus The modulus value
      * @return value The result of (base^exponent) % modulus
      */
-    function bigModExp(
-        uint256 base,
-        uint256 exponent,
-        uint256 modulus
-    )
-        internal
-        view
-        returns (uint256 value)
-    {
+    function bigModExp(uint256 base, uint256 exponent, uint256 modulus) internal view returns (uint256 value) {
         uint256 lengthOfBase = 32;
         uint256 lengthOfExponent = 32;
         uint256 lengthOfModulus = 32;
 
-        bytes memory output = _callPrecompiled(MOD_EXP, abi.encodePacked(
-            lengthOfBase,
-            lengthOfExponent,
-            lengthOfModulus,
-            base,
-            exponent,
-            modulus
-        ));
+        bytes memory output = _callPrecompiled(
+            MOD_EXP, abi.encodePacked(lengthOfBase, lengthOfExponent, lengthOfModulus, base, exponent, modulus)
+        );
         return abi.decode(output, (uint256));
     }
 
@@ -83,15 +69,7 @@ library Precompiled {
      * @return xValue The x-coordinate of the resulting point
      * @return yValue The y-coordinate of the resulting point
      */
-    function bn256ScalarMul(
-        uint256 x,
-        uint256 y,
-        uint256 k
-    )
-        internal
-        view
-        returns (uint256 xValue, uint256 yValue)
-    {
+    function bn256ScalarMul(uint256 x, uint256 y, uint256 k) internal view returns (uint256 xValue, uint256 yValue) {
         bytes memory output = _callPrecompiled(EC_MUL, abi.encodePacked(x, y, k));
         return abi.decode(output, (uint256, uint256));
     }
@@ -125,17 +103,14 @@ library Precompiled {
         uint256 a2,
         uint256 b2,
         uint256 c2,
-        uint256 d2)
-        internal view returns (bool pairing)
+        uint256 d2
+    )
+        internal
+        view
+        returns (bool pairing)
     {
-        bytes memory output = _callPrecompiled(EC_PAIRING, abi.encodePacked(
-            x1, y1,
-            a1, b1,
-            c1, d1,
-            x2, y2,
-            a2, b2,
-            c2, d2
-        ));
+        bytes memory output =
+            _callPrecompiled(EC_PAIRING, abi.encodePacked(x1, y1, a1, b1, c1, d1, x2, y2, a2, b2, c2, d2));
         return abi.decode(output, (uint256)) != 0;
     }
 
@@ -166,10 +141,7 @@ library Precompiled {
      * @param input The input data to pass to the precompiled contract
      * @return output The output data from the precompiled contract
      */
-    function _callPrecompiled(
-        address precompiledContract,
-        bytes memory input
-    )
+    function _callPrecompiled(address precompiledContract, bytes memory input)
         private
         view
         returns (bytes memory output)

@@ -13,6 +13,8 @@ fi
 
 yarn docgen
 
+forge fmt --check
+
 exec git diff --cached --name-only | yarn exec cspell --no-summary --no-progress --no-must-find-files --file-list stdin
 
 yarn fullCheck

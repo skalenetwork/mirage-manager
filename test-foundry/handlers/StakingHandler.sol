@@ -163,7 +163,6 @@ contract StakingHandler is Test, IStakingHandler {
 
     /// @inheritdoc IStakingHandler
     function stakeFor(address user, uint8 nodeIndex, uint48 amountToStake) public override {
-
         // user should not be a precompile address (0x1 - 0xFFFF) or a contract
         vm.assume(user.code.length == 0);
         vm.assume(uint160(user) > 0xFFFF);

@@ -21,9 +21,9 @@
 
 pragma solidity ^0.8.24;
 
-import { IDkg } from "@skalenetwork/fair-manager-interfaces/IDkg.sol";
+import {IDkg} from "@skalenetwork/fair-manager-interfaces/IDkg.sol";
 
-import { Fp2Operations } from "./Fp2Operations.sol";
+import {Fp2Operations} from "./Fp2Operations.sol";
 
 /**
  * @title G1 (elliptic-curve subgroup over Fp) Operations
@@ -40,10 +40,7 @@ library G1Operations {
     function getG1Generator() internal pure returns (IDkg.Fp2Point memory generator) {
         // Current solidity version does not support Constants of non-value type
         // so we implemented this function
-        return IDkg.Fp2Point({
-            a: 1,
-            b: 2
-        });
+        return IDkg.Fp2Point({a: 1, b: 2});
     }
 
     /**
@@ -58,8 +55,7 @@ library G1Operations {
             return true;
         }
         uint256 p = Fp2Operations.P;
-        return mulmod(y, y, p) ==
-            addmod(mulmod(mulmod(x, x, p), x, p), 3, p);
+        return mulmod(y, y, p) == addmod(mulmod(mulmod(x, x, p), x, p), 3, p);
     }
 
     /**
@@ -88,5 +84,4 @@ library G1Operations {
     function negate(uint256 y) internal pure returns (uint256 result) {
         return (Fp2Operations.P - y) % Fp2Operations.P;
     }
-
 }

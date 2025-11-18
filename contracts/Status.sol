@@ -25,13 +25,13 @@ pragma solidity ^0.8.24;
 import {
     AccessManagedUpgradeable
 } from "@openzeppelin/contracts-upgradeable/access/manager/AccessManagedUpgradeable.sol";
-import { ICommittee } from "@skalenetwork/fair-manager-interfaces/ICommittee.sol";
-import { INodes, NodeId } from "@skalenetwork/fair-manager-interfaces/INodes.sol";
-import { Duration, IStatus } from "@skalenetwork/fair-manager-interfaces/IStatus.sol";
+import {ICommittee} from "@skalenetwork/fair-manager-interfaces/ICommittee.sol";
+import {INodes, NodeId} from "@skalenetwork/fair-manager-interfaces/INodes.sol";
+import {Duration, IStatus} from "@skalenetwork/fair-manager-interfaces/IStatus.sol";
 
-import { TypedSet } from "./structs/typed/TypedSet.sol";
-import { DEFAULT_HEARTBEAT_INTERVAL } from "./utils/constants.sol";
-import { NodeDoesNotExist } from "./utils/errors.sol";
+import {TypedSet} from "./structs/typed/TypedSet.sol";
+import {DEFAULT_HEARTBEAT_INTERVAL} from "./utils/constants.sol";
+import {NodeDoesNotExist} from "./utils/errors.sol";
 
 /**
  * @title Status
@@ -41,14 +41,13 @@ import { NodeDoesNotExist } from "./utils/errors.sol";
  * @notice Manages node health monitoring and whitelisting in the FAIR network
  */
 contract Status is AccessManagedUpgradeable, IStatus {
-
     using TypedSet for TypedSet.NodeIdSet;
 
     /// @notice Maximum allowed time between heartbeats before a node is considered unhealthy
     Duration public heartbeatInterval;
 
     /// @notice Mapping of node IDs to their last heartbeat timestamp
-    mapping (NodeId id => uint256 timestamp) public lastHeartbeatTimestamp;
+    mapping(NodeId id => uint256 timestamp) public lastHeartbeatTimestamp;
 
     /// @dev Internal set of whitelisted node IDs
     TypedSet.NodeIdSet private _whitelist;
@@ -110,11 +109,7 @@ contract Status is AccessManagedUpgradeable, IStatus {
      * @param nodesAddress The address of the Nodes contract
      * @param committeeAddress The address of the Committee contract
      */
-    function initialize(
-        address initialAuthority,
-        INodes nodesAddress,
-        ICommittee committeeAddress
-    )
+    function initialize(address initialAuthority, INodes nodesAddress, ICommittee committeeAddress)
         external
         override
         initializer
@@ -162,10 +157,7 @@ contract Status is AccessManagedUpgradeable, IStatus {
      */
     function whitelistNode(NodeId nodeId) external override restricted {
         bool isActive = nodes.activeNodeExists(nodeId);
-        require(
-            isActive || nodes.passiveNodeExists(nodeId),
-            NodeDoesNotExist(nodeId)
-        );
+        require(isActive || nodes.passiveNodeExists(nodeId), NodeDoesNotExist(nodeId));
 
         require(_whitelist.add(nodeId), NodeAlreadyWhitelisted(nodeId));
         emit NodeWhitelisted(nodeId);
@@ -196,7 +188,7 @@ contract Status is AccessManagedUpgradeable, IStatus {
      * @param nodeId The ID of the node that was removed
      */
     function nodeRemoved(NodeId nodeId) external override restricted {
-        if(_whitelist.contains(nodeId)){
+        if (_whitelist.contains(nodeId)) {
             assert(_whitelist.remove(nodeId));
         }
         delete lastHeartbeatTimestamp[nodeId];

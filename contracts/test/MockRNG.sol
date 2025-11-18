@@ -51,8 +51,7 @@ interface IMockRNG {
  * @notice Mock implementation of a random number generator for testing
  * @dev Simulates a predeployed RNG contract by returning timestamp-based values
  */
-contract MockRNG is IMockRNG{
-
+contract MockRNG is IMockRNG {
     // If make fallback function payable
     // compiler throws a warning to include a receive function.
     // A receive function can't be defined
@@ -74,6 +73,7 @@ contract MockRNG is IMockRNG{
     fallback(bytes calldata) external override returns (bytes memory result) {
         return abi.encode(block.timestamp);
     }
+
     // solhint-enable payable-fallback, use-natspec
 
     /**

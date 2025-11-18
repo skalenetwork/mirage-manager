@@ -22,7 +22,7 @@
 
 pragma solidity ^0.8.24;
 
-import { IRandom } from "@skalenetwork/fair-manager-interfaces/IRandom.sol";
+import {IRandom} from "@skalenetwork/fair-manager-interfaces/IRandom.sol";
 
 /**
  * @title Random Library
@@ -33,7 +33,6 @@ import { IRandom } from "@skalenetwork/fair-manager-interfaces/IRandom.sol";
  * within specified ranges for weighted sampling and selection algorithms.
  */
 library Random {
-
     /**
      * @notice Creates a RandomGenerator instance from a seed value
      * @param seed The initial seed value for random generation
@@ -48,14 +47,8 @@ library Random {
      * @param entropy The entropy bytes to hash into a seed
      * @return generator The initialized RandomGenerator
      */
-    function createFromEntropy(
-        bytes memory entropy
-    )
-        internal
-        pure
-        returns (IRandom.RandomGenerator memory generator)
-    {
-        return create(uint(keccak256(entropy)));
+    function createFromEntropy(bytes memory entropy) internal pure returns (IRandom.RandomGenerator memory generator) {
+        return create(uint256(keccak256(entropy)));
     }
 
     /**
@@ -74,14 +67,7 @@ library Random {
      * @param max The exclusive upper bound (must be greater than 0)
      * @return value The generated random value in range [0, max)
      */
-    function random(
-        IRandom.RandomGenerator memory self,
-        uint256 max
-    )
-        internal
-        pure
-        returns (uint256 value)
-    {
+    function random(IRandom.RandomGenerator memory self, uint256 max) internal pure returns (uint256 value) {
         assert(max > 0);
         uint256 maxRand = type(uint256).max - type(uint256).max % max;
         uint256 rand;
@@ -98,11 +84,7 @@ library Random {
      * @param max The exclusive upper bound (must be greater than min)
      * @return value The generated random value in range [min, max)
      */
-    function random(
-        IRandom.RandomGenerator memory self,
-        uint256 min,
-        uint256 max
-    )
+    function random(IRandom.RandomGenerator memory self, uint256 min, uint256 max)
         internal
         pure
         returns (uint256 value)

@@ -25,10 +25,6 @@ show_solidity = true
 
 
 [fmt]
-ignore = ["contracts/hardhat-dependency-compiler"]
-bracket_spacing = true
-override_spacing = false
-contract_new_lines = true
-multiline_func_header = "all"
+ignore = ["contracts/hardhat-dependency-compiler/**/*.sol"]
+multiline_func_header = "all" # Solidity reccomended
 single_line_statement_blocks = "multi"
-wrap_comments = true

@@ -23,8 +23,8 @@ pragma solidity ^0.8.24;
 
 import {IDkg} from "@skalenetwork/fair-manager-interfaces/IDkg.sol";
 
-import { Fp2Operations } from "../../utils/fieldOperations/Fp2Operations.sol";
-import { G2Operations } from "../../utils/fieldOperations/G2Operations.sol";
+import {Fp2Operations} from "../../utils/fieldOperations/Fp2Operations.sol";
+import {G2Operations} from "../../utils/fieldOperations/G2Operations.sol";
 
 /**
  * @title IFieldOperationsTester
@@ -51,8 +51,7 @@ interface IFiedOperationsTester {
  * @notice Test harness for field and elliptic curve operations
  * @dev Exposes field operations for testing cryptographic primitives used in DKG
  */
-contract FieldOperationsTester is IFiedOperationsTester{
-
+contract FieldOperationsTester is IFiedOperationsTester {
     using Fp2Operations for IDkg.Fp2Point;
     using G2Operations for IDkg.G2Point;
 
