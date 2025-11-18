@@ -251,7 +251,7 @@ library FundLibrary {
         view
         returns (Fair amount)
     {
-        // Earned fee is allways capped by the fund's current balance
+        // Earned fee is always capped by the fund's current balance
         return Fair.wrap(Math.min(
             Fair.unwrap(fund.earnedFee + _getUncountedFee(fund, balance)),
             Fair.unwrap(balance)
