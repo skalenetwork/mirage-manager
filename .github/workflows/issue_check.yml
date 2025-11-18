@@ -13,6 +13,17 @@ jobs:
     if:  ${{ !startsWith(github.head_ref, 'dependabot/') }}
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'yarn'
+
+      - name: Install dependencies
+        run: yarn install
+
       - name: Get issues
         id: get-issues
         uses: mondeja/pr-linked-issues-action@v2
@@ -22,3 +33,12 @@ jobs:
         if: join(steps.get-issues.outputs.issues) == ''
         run:
           exit 1
+
+      - name: Comment on linked issues
+        if: steps.get-issues.outputs.issues != ''
+        env:
+          ISSUES: ${{ steps.get-issues.outputs.issues }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          VERSION: "MOCK_VERSION-0.0.1"
+        run: yarn ts-node scripts/comment-release.ts
