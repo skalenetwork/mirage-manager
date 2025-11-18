@@ -116,12 +116,15 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const version = process.env.VERSION;
+            if (!version) {
+              throw new Error("VERSION environment variable is not set");
+            }
             const tagUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}/releases/tag/${version}`;
             const commentBody = `Release created: [${version}](${tagUrl})`;
 
             const issues = '${{ steps.get-issues.outputs.issues }}';
-            const issueNumbers = JSON.parse(issues);
-
+            const issueNumbers = issues.split(',').map(s => Number(s.trim())).filter(Boolean);
+            console.log(`Found linked issues: ${issueNumbers}`);
             // Comment on each linked issue
             for (const issueNumber of issueNumbers) {
               console.log(`Commenting on issue #${issueNumber}`);
