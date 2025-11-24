@@ -14,6 +14,8 @@ export default [
       ".pnp.cjs",
       "coverage/",
       "typechain-types/",
+      "types-package/",
+      "typechain-output/",
       "venv/",
       ".solcover.js"
     ],
