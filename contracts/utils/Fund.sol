@@ -240,6 +240,8 @@ library FundLibrary {
      * @param fund Storage reference to the fund
      * @param balance Current balance to calculate against
      * @return amount Total earned fees
+     * @dev Earned fees are updated using a lazy approach based on balance changes.
+     * @dev The amount of fees earned should never be higher than the current balance.
      */
     function getEarnedFee(
         Fund storage fund,
@@ -249,7 +251,11 @@ library FundLibrary {
         view
         returns (Fair amount)
     {
-        return fund.earnedFee + _getUncountedFee(fund, balance);
+        // Earned fee is always capped by the fund's current balance
+        return Fair.wrap(Math.min(
+            Fair.unwrap(fund.earnedFee + _getUncountedFee(fund, balance)),
+            Fair.unwrap(balance)
+        ));
     }
 
     /**
@@ -302,12 +308,8 @@ library FundLibrary {
         private
     {
         if (!(fundBalance == fund.lastBalance)) {
-            if (fundBalance > fund.lastBalance) {
-                fund.earnedFee = fund.earnedFee + _getUncountedFee(fund, fundBalance);
-            }
-            if (fund.earnedFee > fundBalance) {
-                fund.earnedFee = fundBalance;
-            }
+            // getEarnedFee caps the returned value to the fund balance
+            fund.earnedFee = getEarnedFee(fund, fundBalance);
             fund.lastBalance = fundBalance;
         }
     }
@@ -384,7 +386,7 @@ library FundLibrary {
         view
         returns (Fair amount)
     {
-        return fundBalance - (fund.earnedFee + _getUncountedFee(fund, fundBalance));
+        return fundBalance - getEarnedFee(fund, fundBalance);
     }
 
     /**

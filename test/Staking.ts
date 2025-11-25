@@ -1507,7 +1507,6 @@ describe("Staking", () => {
             const node = nodesData1[nodeIndex % nodesData1.length];
             await grantNetworkRewards(staking, ethers.parseEther("1"));
             await grantNodeRewards(staking, node.id, 10n**14n);
-            console.log(`Paid some rewards to node ${node.id}`);
         };
 
         await status.whitelistNode(15n);
@@ -1538,10 +1537,60 @@ describe("Staking", () => {
         // however remaining credits are not enough to make 1 wei of stake
 
         expect(await staking.getNodeTotalStake(1)).to.be.eql(0n);
-        expect(await staking.getEarnedFeeAmount(1)).to.be.eql(1n);
+        // fund.earnedFee is actually 1, but the view function caps it to node's stake
+        expect(await staking.getEarnedFeeAmount(1)).to.be.eql(0n);
+        expect(await staking.getNodeShare(1)).to.be.gt(0n); // it has some dust credits left
 
         // dust credits should be removed because it was worthless
         await forceEjectNodes(1);
+    });
+
+    it("Claiming current earned fees should be equal to claimAll and never revert", async () => {
+        const {nodesData, staking, status, committee} = await registeredOnlyNodes();
+        const nodesData1 = nodesData.slice(0, 22);
+        const [, user1] = await ethers.getSigners();
+        const forceEjectNodes = async (num: number) => {
+            await skipTime(await status.heartbeatInterval() + 1n);
+            for (let i = 0; i < num; i++) {
+                await committee.ejectUnhealthyNode();
+            }
+        };
+
+        const alivesAfterAllUnhealthy = async () => {
+            await skipTime(await status.heartbeatInterval() * 2n);
+            for (const n of nodesData1) {
+                await status.connect(n.wallet).alive();
+            }
+        };
+
+
+        const paySomeConsensusRewards = async (nodeIndex: number) => {
+            const node = nodesData1[nodeIndex % nodesData1.length];
+            await grantNetworkRewards(staking, ethers.parseEther("1"));
+            await grantNodeRewards(staking, node.id, 10n**14n);
+        };
+
+        await status.whitelistNode(1n);
+
+        await staking.stake(1n, {value: 10000000924618n});
+        await staking.connect(user1).stake(11n, {value: 10000000000600n});
+        await forceEjectNodes(3);
+        await status.whitelistNode(11n);
+
+        await forceEjectNodes(3);
+        await alivesAfterAllUnhealthy();
+
+        await paySomeConsensusRewards(0); // node 1
+
+        await alivesAfterAllUnhealthy();
+        const snapshot = await takeSnapshot();
+
+        await staking.connect(nodesData1[0].wallet).requestAllFees(1n);
+        expect(await staking.getEarnedFeeAmount(1n)).to.be.eql(0n);
+        await snapshot.restore();
+
+        await staking.connect(nodesData1[0].wallet).requestFees(1n, await staking.getEarnedFeeAmount(1n));
+        expect(await staking.getEarnedFeeAmount(1n)).to.be.eql(0n);
     });
 
     describe("when node is registered with self stake", () => {

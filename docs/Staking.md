@@ -424,6 +424,20 @@ error NodeIsNotDisabled(NodeId node)
 | ---- | ---- | ----------- |
 | node | NodeId | The node that is not disabled |
 
+### NodeIsNotEnabled
+
+Thrown when attempting an operation that requires an enabled node
+
+```solidity
+error NodeIsNotEnabled(NodeId node)
+```
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| node | NodeId | The node that is not disabled |
+
 ### NotAllowedToClaimRewards
 
 Thrown when an unauthorized address attempts to claim rewards

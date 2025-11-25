@@ -274,6 +274,12 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
     error NodeIsNotDisabled(NodeId node);
 
     /**
+     * @notice Thrown when attempting an operation that requires an enabled node
+     * @param node The node that is not disabled
+     */
+    error NodeIsNotEnabled(NodeId node);
+
+    /**
      * @notice Thrown when an unauthorized address attempts to claim rewards
      * @param sender The unauthorized address
      */
@@ -984,7 +990,10 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
             return _nodesFunds[node].getEarnedFee(_disabledNodesBalances.get(node) + nonPulledReward);
         }
         return _nodesFunds[node].getEarnedFee(
-            _rootFund.getBalance(_getTotalBalance(), FundLibrary.nodeToHolder(node)) + nonPulledReward
+            _rootFund.getBalance(
+                _getTotalBalance(),
+                FundLibrary.nodeToHolder(node)
+            ) + _simulateEnabledNodeBalanceAfterSupply(node, nonPulledReward, _getTotalBalance())
         );
     }
 
@@ -1023,6 +1032,7 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
         if (!isNodeEnabled(node)) {
             nodeBalance = _disabledNodesBalances.get(node) + nonPulledReward;
         } else {
+            nonPulledReward = _simulateEnabledNodeBalanceAfterSupply(node, nonPulledReward, _getTotalBalance());
             nodeBalance = _rootFund.getBalance(_getTotalBalance(), FundLibrary.nodeToHolder(node)) + nonPulledReward;
         }
         return _nodesFunds[node].getBalance(
@@ -1264,6 +1274,46 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
     }
 
     /**
+     * @notice Calculates the enabled node balance if supplied with a specific amount
+     * @dev Only use for enabled nodes
+     * @dev This function is used to calculate the node's final balance including un-pulled rewards
+     * @param node The node to query
+     * @param amount The amount to be supplied
+     * @param totalBalance The total balance of the rootFund before supply
+     * @return balance The new resulting balance after supply
+     */
+    function _simulateEnabledNodeBalanceAfterSupply(
+        NodeId node,
+        Fair amount,
+        Fair totalBalance
+    ) private view returns (Fair balance) {
+        require(isNodeEnabled(node), NodeIsNotEnabled(node));
+        Fair balanceBefore = _rootFund.getBalance(totalBalance, FundLibrary.nodeToHolder(node));
+        Credit totalCredits = _rootFund.totalCredits;
+        if (totalCredits == FundLibrary.ZERO_CREDIT) {
+            // Do NOT account with delayed rewards - claimed by first to flush
+            return amount;
+        }
+        (bool exists, Credit nodeCredits) = _rootFund.credits.tryGet(FundLibrary.nodeToHolder(node));
+        assert(exists || nodeCredits == FundLibrary.ZERO_CREDIT);
+
+        // rounded down
+        Credit creditsToAdd = Credit.wrap(Math.mulDiv(
+            Credit.unwrap(totalCredits),
+            Fair.unwrap(amount),
+            Fair.unwrap(totalBalance),
+            Math.Rounding.Floor
+        ));
+        nodeCredits = nodeCredits + creditsToAdd;
+
+        balance = Fair.wrap(Math.mulDiv(
+            Fair.unwrap(totalBalance) + Fair.unwrap(amount),
+            Credit.unwrap(nodeCredits),
+            Credit.unwrap(totalCredits + creditsToAdd),
+            Math.Rounding.Floor
+        )) - balanceBefore;
+    }
+    /**
      * @notice Gets the credits for a specific node
      * @dev Validates that existence matches whether credits are zero
      * @param node The node to query
@@ -1284,13 +1334,15 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
      * @return total The total stake
      */
     function _getNodeTotalStakeBeforeAmount(NodeId node, Fair amount) private view returns (Fair total) {
+        Fair nonPulledRewards = _getNonPulledReward(node);
         if (isNodeEnabled(node)) {
             Fair balance = _getTotalBalance() - amount;
+            nonPulledRewards = _simulateEnabledNodeBalanceAfterSupply(node, nonPulledRewards, balance);
             total = _rootFund.getBalance(balance, FundLibrary.nodeToHolder(node));
         } else {
             total = _disabledNodesBalances.get(node);
         }
-        total = total + _getNonPulledReward(node);
+        total = total + nonPulledRewards;
     }
 
     /**

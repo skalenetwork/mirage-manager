@@ -199,6 +199,9 @@ Calculates total earned fees including uncounted fees
 function getEarnedFee(struct FundLibrary.Fund fund, Fair balance) internal view returns (Fair amount)
 ```
 
+**dev:** _Earned fees are updated using a lazy approach based on balance changes.
+The amount of fees earned should never be higher than the current balance._
+
 #### Parameters
 
 | Name | Type | Description |

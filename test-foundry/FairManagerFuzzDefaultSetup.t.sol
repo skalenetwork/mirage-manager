@@ -58,6 +58,7 @@ contract FairManagerFuzzDefaultSetup is StdInvariant, DefaultSetup, IFairManager
     error NotEnoughTokensInStaking(Fair calculated, Fair stakingBalance);
     error TotalDisabledHigherThanStakingBalance(Fair totalDisabled, Fair stakingBalance);
     error TotalDisabledDifferentFromSumOfDisabledStake(Fair totalDisabled, Fair sumOfDisabledStake);
+    error SumOfFeesHigherThanStake();
 
     /// @notice Sets up the test environment
     function setUp() public override {
@@ -105,8 +106,9 @@ contract FairManagerFuzzDefaultSetup is StdInvariant, DefaultSetup, IFairManager
                 totalFees = totalFees + staking.staking().getEarnedFeeAmount(node);
             }
         }
-        // TODO: FIX #247 - uncomment require
-        //require(!(totalFees > totalStake), "Fees are higher than stake");
+
+        require(!(totalFees > totalStake), SumOfFeesHigherThanStake());
+
         uint256 stakingBalance = address(staking.staking()).balance;
         Fair minimumRequiredBalance = totalStake - walletsBalance + totalInExitQueue;
 
