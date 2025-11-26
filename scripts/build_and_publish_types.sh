@@ -23,6 +23,19 @@ yarn buildTypesPackage
 
 cd "$TYPES_PACKAGE_DIR"
 
+echo "Configuring npm authentication..."
+cat > .npmrc << EOF
+//registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}
+registry=https://registry.npmjs.org/
+EOF
+
+echo "Verifying authentication..."
+if ! npm whoami; then
+  echo "Error: npm authentication failed"
+  rm -f .npmrc
+  exit 1
+fi
+
 echo "Publishing types package..."
 TAG=""
 if [[ "$BRANCH" != "stable" ]]; then
@@ -30,3 +43,6 @@ if [[ "$BRANCH" != "stable" ]]; then
 fi
 
 npm publish --access public $TAG
+
+# Clean up .npmrc for security
+rm -f .npmrc
