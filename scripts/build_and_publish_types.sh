@@ -10,6 +10,14 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$SCRIPT_DIR/.."
 TYPES_PACKAGE_DIR="$PROJECT_ROOT/types-package"
 
+# Cleanup function to ensure .npmrc is always removed
+cleanup() {
+  rm -f "$TYPES_PACKAGE_DIR/.npmrc"
+}
+
+# Trap to ensure cleanup runs even if script fails or is interrupted
+trap cleanup EXIT
+
 cd "$PROJECT_ROOT"
 
 echo "Ensuring dependencies installed..."
@@ -29,6 +37,9 @@ cat > .npmrc << EOF
 registry=https://registry.npmjs.org/
 EOF
 
+# Set restrictive permissions on .npmrc to protect the auth token
+chmod 600 .npmrc
+
 echo "Verifying authentication..."
 if ! npm whoami; then
   echo "Error: npm authentication failed"
@@ -44,5 +55,4 @@ fi
 
 npm publish --access public $TAG
 
-# Clean up .npmrc for security
-rm -f .npmrc
+
