@@ -6,12 +6,16 @@ set -e
 : "${VERSION?Need to set VERSION}"
 : "${NODE_AUTH_TOKEN?Need to set NODE_AUTH_TOKEN}"
 
+# Optional: Set DRY_RUN=1 to skip actual publishing
+DRY_RUN="${DRY_RUN:-0}"
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$SCRIPT_DIR/.."
 TYPES_PACKAGE_DIR="$PROJECT_ROOT/types-package"
 
 # Cleanup function to ensure .npmrc is always removed
 cleanup() {
+  echo "Cleaning up .npmrc file..."
   rm -f "$TYPES_PACKAGE_DIR/.npmrc"
 }
 
@@ -43,7 +47,6 @@ chmod 600 .npmrc
 echo "Verifying authentication..."
 if ! npm whoami; then
   echo "Error: npm authentication failed"
-  rm -f .npmrc
   exit 1
 fi
 
@@ -53,6 +56,12 @@ if [[ "$BRANCH" != "stable" ]]; then
   TAG="--tag $BRANCH"
 fi
 
-npm publish --access public $TAG
+if [[ "$DRY_RUN" == "1" ]]; then
+  echo "DRY RUN: Would execute: npm publish --access public $TAG"
+  echo "Package contents:"
+  npm pack --dry-run
+else
+  npm publish --access public $TAG
+fi
 
 
