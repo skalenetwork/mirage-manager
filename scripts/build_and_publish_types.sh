@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-
+# cspell:ignore npmjs
 set -e
 
 : "${BRANCH?Need to set BRANCH}"
