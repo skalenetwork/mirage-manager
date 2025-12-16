@@ -87,7 +87,12 @@ contract RewardWallet is AccessManagedUpgradeable, IRewardWallet {
      * @param nodes_ The address of the Nodes contract
      * @param ownerNode_ The node ID that this reward wallet is associated with
      */
-    function initialize(address initialAuthority, IStaking staking_, INodes nodes_, NodeId ownerNode_)
+    function initialize(
+        address initialAuthority,
+        IStaking staking_,
+        INodes nodes_,
+        NodeId ownerNode_
+    )
         external
         override
         initializer

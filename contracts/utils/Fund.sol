@@ -338,7 +338,11 @@ library FundLibrary {
      * @param amount Amount of FAIR to convert
      * @return credits Converted credit amount
      */
-    function _toCreditsRoundedDown(Fund storage fund, Fair fundBalance, Fair amount)
+    function _toCreditsRoundedDown(
+        Fund storage fund,
+        Fair fundBalance,
+        Fair amount
+    )
         private
         view
         returns (Credit credits)
@@ -364,7 +368,11 @@ library FundLibrary {
      * @param amount Amount of FAIR to convert
      * @return credits Converted credit amount
      */
-    function _toCreditsRoundedUp(Fund storage fund, Fair fundBalance, Fair amount)
+    function _toCreditsRoundedUp(
+        Fund storage fund,
+        Fair fundBalance,
+        Fair amount
+    )
         private
         view
         returns (Credit credits)

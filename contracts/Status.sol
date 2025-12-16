@@ -109,7 +109,11 @@ contract Status is AccessManagedUpgradeable, IStatus {
      * @param nodesAddress The address of the Nodes contract
      * @param committeeAddress The address of the Committee contract
      */
-    function initialize(address initialAuthority, INodes nodesAddress, ICommittee committeeAddress)
+    function initialize(
+        address initialAuthority,
+        INodes nodesAddress,
+        ICommittee committeeAddress
+    )
         external
         override
         initializer

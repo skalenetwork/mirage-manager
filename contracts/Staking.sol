@@ -343,7 +343,12 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
      * @param nodes_ The address of the Nodes contract
      * @param rewardWalletBeacon_ The address of the reward wallet beacon contract
      */
-    function initialize(address initialAuthority, ICommittee committee_, INodes nodes_, IBeacon rewardWalletBeacon_)
+    function initialize(
+        address initialAuthority,
+        ICommittee committee_,
+        INodes nodes_,
+        IBeacon rewardWalletBeacon_
+    )
         external
         override
         initializer
@@ -471,8 +476,9 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
         // Force update on nodeFund
         Fair finalBalance = _rootFund.getBalance(_getTotalBalance(), FundLibrary.nodeToHolder(node));
         if (!(finalBalance == value)) {
-            _nodesFunds[node]
-            .updateTotalBalance(_rootFund.getBalance(_getTotalBalance(), FundLibrary.nodeToHolder(node)));
+            _nodesFunds[node].updateTotalBalance(
+                _rootFund.getBalance(_getTotalBalance(), FundLibrary.nodeToHolder(node))
+            );
         }
 
         emit NodeEnabled(node);
@@ -796,7 +802,10 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
      * @param fromIndex The index to start searching from
      * @return request The unlocked exit request
      */
-    function getUnlockedExitRequestFor(address user, uint256 fromIndex)
+    function getUnlockedExitRequestFor(
+        address user,
+        uint256 fromIndex
+    )
         external
         view
         override
@@ -917,8 +926,9 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
         if (!isNodeEnabled(node)) {
             return _nodesFunds[node].getEarnedFee(_disabledNodesBalances.get(node) + nonPulledReward);
         }
-        return _nodesFunds[node]
-        .getEarnedFee(_rootFund.getBalance(_getTotalBalance(), FundLibrary.nodeToHolder(node)) + nonPulledReward);
+        return _nodesFunds[node].getEarnedFee(
+            _rootFund.getBalance(_getTotalBalance(), FundLibrary.nodeToHolder(node)) + nonPulledReward
+        );
     }
 
     /**
@@ -988,8 +998,7 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
         _validateStakeLimit(node, amount);
 
         if (nodeIsEnabled) {
-            _nodesFunds[node]
-            .supply(
+            _nodesFunds[node].supply(
                 _rootFund.getBalance(balance, FundLibrary.nodeToHolder(node)),
                 FundLibrary.addressToHolder(staker),
                 amount
@@ -1060,8 +1069,7 @@ contract Staking is AccessManagedUpgradeable, ReentrancyGuardUpgradeable, IStaki
 
         if (nodeIsEnabled) {
             Fair balance = _getTotalBalance();
-            _nodesFunds[node]
-            .remove(
+            _nodesFunds[node].remove(
                 _rootFund.getBalance(balance, FundLibrary.nodeToHolder(node)),
                 FundLibrary.addressToHolder(staker),
                 value

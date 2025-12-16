@@ -240,7 +240,11 @@ contract Nodes is AccessManagedUpgradeable, INodes {
      * @param initialNodes Array of initial nodes to register
      * @param nodesPublicKeys Array of public keys corresponding to initial nodes
      */
-    function initialize(address initialAuthority, Node[] calldata initialNodes, bytes32[2][] calldata nodesPublicKeys)
+    function initialize(
+        address initialAuthority,
+        Node[] calldata initialNodes,
+        bytes32[2][] calldata nodesPublicKeys
+    )
         external
         override
         initializer
@@ -269,7 +273,11 @@ contract Nodes is AccessManagedUpgradeable, INodes {
      * @param publicKey The node's public key
      * @param port The port number the node listens on
      */
-    function registerNode(bytes calldata ip, bytes32[2] calldata publicKey, uint16 port)
+    function registerNode(
+        bytes calldata ip,
+        bytes32[2] calldata publicKey,
+        uint16 port
+    )
         external
         payable
         override
@@ -315,7 +323,10 @@ contract Nodes is AccessManagedUpgradeable, INodes {
      * @param nodeId The ID of the node
      * @param newOwner The address of the new owner
      */
-    function requestChangeOwner(NodeId nodeId, address newOwner)
+    function requestChangeOwner(
+        NodeId nodeId,
+        address newOwner
+    )
         external
         override
         nodeExists(nodeId)
@@ -386,7 +397,11 @@ contract Nodes is AccessManagedUpgradeable, INodes {
      * @param ip The new IP address (IPv4 or IPv6)
      * @param port The new port number
      */
-    function setIpAddress(NodeId nodeId, bytes calldata ip, uint16 port)
+    function setIpAddress(
+        NodeId nodeId,
+        bytes calldata ip,
+        uint16 port
+    )
         external
         override
         nodeExists(nodeId)
@@ -408,7 +423,10 @@ contract Nodes is AccessManagedUpgradeable, INodes {
      * @param nodeId The ID of the node
      * @param name The domain name to set
      */
-    function setDomainName(NodeId nodeId, string calldata name)
+    function setDomainName(
+        NodeId nodeId,
+        string calldata name
+    )
         external
         override
         nodeExists(nodeId)

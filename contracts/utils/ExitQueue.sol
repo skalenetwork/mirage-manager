@@ -181,7 +181,10 @@ library ExitQueueLibrary {
      * @param id The unique identifier of the request
      * @return request The exit request
      */
-    function getRequest(ExitQueue storage queue, uint256 id)
+    function getRequest(
+        ExitQueue storage queue,
+        uint256 id
+    )
         internal
         view
         returns (IStaking.ExitRequest storage request)
@@ -197,7 +200,11 @@ library ExitQueueLibrary {
      * @param index The index of the request in the user's request list
      * @return request The exit request
      */
-    function getRequestAt(ExitQueue storage queue, address user, uint256 index)
+    function getRequestAt(
+        ExitQueue storage queue,
+        address user,
+        uint256 index
+    )
         internal
         view
         returns (IStaking.ExitRequest memory request)
@@ -214,7 +221,11 @@ library ExitQueueLibrary {
      * @param from The starting index to search from
      * @return request The first unlocked exit request found
      */
-    function getUnlockedRequest(ExitQueue storage queue, address user, uint256 from)
+    function getUnlockedRequest(
+        ExitQueue storage queue,
+        address user,
+        uint256 from
+    )
         internal
         view
         returns (IStaking.ExitRequest memory request)

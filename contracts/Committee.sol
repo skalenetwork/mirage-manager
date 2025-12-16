@@ -538,7 +538,10 @@ contract Committee is AccessManagedUpgradeable, ICommittee {
      * @param index The committee index to assign
      * @return committee The created committee storage reference
      */
-    function _createCommittee(NodeId[] memory nodes_, CommitteeIndex index)
+    function _createCommittee(
+        NodeId[] memory nodes_,
+        CommitteeIndex index
+    )
         private
         returns (Committee storage committee)
     {

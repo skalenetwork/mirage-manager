@@ -106,7 +106,11 @@ library PoolLibrary {
      * @param generator The random number generator instance
      * @return nodesSample Array of selected node IDs
      */
-    function sample(Pool storage pool, uint256 size, IRandom.RandomGenerator memory generator)
+    function sample(
+        Pool storage pool,
+        uint256 size,
+        IRandom.RandomGenerator memory generator
+    )
         internal
         returns (NodeId[] memory nodesSample)
     {

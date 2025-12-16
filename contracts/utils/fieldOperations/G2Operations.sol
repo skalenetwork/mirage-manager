@@ -59,7 +59,10 @@ library G2Operations {
      * @param value2 The second G2 point
      * @return sum The sum of the two G2 points
      */
-    function addG2(IDkg.G2Point memory value1, IDkg.G2Point memory value2)
+    function addG2(
+        IDkg.G2Point memory value1,
+        IDkg.G2Point memory value2
+    )
         internal
         view
         returns (IDkg.G2Point memory sum)

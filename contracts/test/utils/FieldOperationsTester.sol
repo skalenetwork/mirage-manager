@@ -39,7 +39,10 @@ interface IFiedOperationsTester {
      * @param value2 The second G2 point
      * @return result The sum of the two G2 points
      */
-    function addG2(IDkg.G2Point calldata value1, IDkg.G2Point calldata value2)
+    function addG2(
+        IDkg.G2Point calldata value1,
+        IDkg.G2Point calldata value2
+    )
         external
         view
         returns (IDkg.G2Point memory result);
@@ -62,7 +65,10 @@ contract FieldOperationsTester is IFiedOperationsTester {
      * @param value2 The second G2 point on the BN254 curve
      * @return result The sum of the two G2 points
      */
-    function addG2(IDkg.G2Point calldata value1, IDkg.G2Point calldata value2)
+    function addG2(
+        IDkg.G2Point calldata value1,
+        IDkg.G2Point calldata value2
+    )
         external
         view
         override

@@ -141,7 +141,10 @@ library Precompiled {
      * @param input The input data to pass to the precompiled contract
      * @return output The output data from the precompiled contract
      */
-    function _callPrecompiled(address precompiledContract, bytes memory input)
+    function _callPrecompiled(
+        address precompiledContract,
+        bytes memory input
+    )
         private
         view
         returns (bytes memory output)

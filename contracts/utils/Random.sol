@@ -84,7 +84,11 @@ library Random {
      * @param max The exclusive upper bound (must be greater than min)
      * @return value The generated random value in range [min, max)
      */
-    function random(IRandom.RandomGenerator memory self, uint256 min, uint256 max)
+    function random(
+        IRandom.RandomGenerator memory self,
+        uint256 min,
+        uint256 max
+    )
         internal
         pure
         returns (uint256 value)

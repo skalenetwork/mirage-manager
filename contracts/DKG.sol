@@ -205,7 +205,11 @@ contract DKG is AccessManagedUpgradeable, IDkg {
      * @param committeeAddress The address of the Committee contract
      * @param nodesAddress The address of the Nodes contract
      */
-    function initialize(address initialAuthority, ICommittee committeeAddress, INodes nodesAddress)
+    function initialize(
+        address initialAuthority,
+        ICommittee committeeAddress,
+        INodes nodesAddress
+    )
         external
         override
         initializer
@@ -244,7 +248,11 @@ contract DKG is AccessManagedUpgradeable, IDkg {
      * @param verificationVector The verification vector (length t) for the secret polynomial
      * @param secretKeyContribution The encrypted secret key shares (length n) for other nodes
      */
-    function broadcast(DkgId dkg, G2Point[] calldata verificationVector, KeyShare[] calldata secretKeyContribution)
+    function broadcast(
+        DkgId dkg,
+        G2Point[] calldata verificationVector,
+        KeyShare[] calldata secretKeyContribution
+    )
         external
         override
         onlyBroadcastingDkg(dkg)
@@ -426,7 +434,10 @@ contract DKG is AccessManagedUpgradeable, IDkg {
      * @param verificationVector The verification vector for the secret
      * @return hash The keccak256 hash of the encoded data
      */
-    function _hashData(KeyShare[] calldata secretKeyContribution, G2Point[] calldata verificationVector)
+    function _hashData(
+        KeyShare[] calldata secretKeyContribution,
+        G2Point[] calldata verificationVector
+    )
         private
         pure
         returns (bytes32 hash)

@@ -63,7 +63,10 @@ library Fp2Operations {
      * @param value2 The second Fp2 point
      * @return result The sum of the two points
      */
-    function addFp2(IDkg.Fp2Point memory value1, IDkg.Fp2Point memory value2)
+    function addFp2(
+        IDkg.Fp2Point memory value1,
+        IDkg.Fp2Point memory value2
+    )
         internal
         pure
         returns (IDkg.Fp2Point memory result)
@@ -77,7 +80,10 @@ library Fp2Operations {
      * @param scalar The scalar value to multiply by
      * @return result The product of the point and scalar
      */
-    function scalarMulFp2(IDkg.Fp2Point memory value, uint256 scalar)
+    function scalarMulFp2(
+        IDkg.Fp2Point memory value,
+        uint256 scalar
+    )
         internal
         pure
         returns (IDkg.Fp2Point memory result)
@@ -91,7 +97,10 @@ library Fp2Operations {
      * @param subtracted The point to subtract (subtrahend)
      * @return difference The difference between the two points
      */
-    function minusFp2(IDkg.Fp2Point memory diminished, IDkg.Fp2Point memory subtracted)
+    function minusFp2(
+        IDkg.Fp2Point memory diminished,
+        IDkg.Fp2Point memory subtracted
+    )
         internal
         pure
         returns (IDkg.Fp2Point memory difference)
@@ -115,7 +124,10 @@ library Fp2Operations {
      * @param value2 The second Fp2 point
      * @return result The product of the two points
      */
-    function mulFp2(IDkg.Fp2Point memory value1, IDkg.Fp2Point memory value2)
+    function mulFp2(
+        IDkg.Fp2Point memory value1,
+        IDkg.Fp2Point memory value2
+    )
         internal
         pure
         returns (IDkg.Fp2Point memory result)
