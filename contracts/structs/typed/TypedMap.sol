@@ -21,11 +21,11 @@
  */
 pragma solidity ^0.8.24;
 
-import { EnumerableMap } from "@openzeppelin/contracts/utils/structs/EnumerableMap.sol";
-import { NodeId } from "@skalenetwork/fair-manager-interfaces/INodes.sol";
-import { Fair } from "@skalenetwork/fair-manager-interfaces/units.sol";
-import { Credit, Holder } from "../../utils/Fund.sol";
-import { TypedSet } from "./TypedSet.sol";
+import {EnumerableMap} from "@openzeppelin/contracts/utils/structs/EnumerableMap.sol";
+import {NodeId} from "@skalenetwork/fair-manager-interfaces/INodes.sol";
+import {Fair} from "@skalenetwork/fair-manager-interfaces/units.sol";
+import {Credit, Holder} from "../../utils/Fund.sol";
+import {TypedSet} from "./TypedSet.sol";
 
 /**
  * @title TypedMap Library
@@ -336,7 +336,7 @@ library TypedMap {
      * @param map The NodeIdToFairMap to query
      * @return nodes Array containing all NodeId keys in the map
      */
-    function keys(NodeIdToFairMap storage map) internal view returns (NodeId[] memory nodes){
+    function keys(NodeIdToFairMap storage map) internal view returns (NodeId[] memory nodes) {
         uint256[] memory values = EnumerableMap.keys(map.inner);
         nodes = new NodeId[](values.length);
         uint256 loops = values.length;
@@ -386,7 +386,7 @@ library TypedMap {
      * @param map The HolderToCreditMap to query
      * @return nodes Array containing all Holder keys in the map
      */
-    function keys(HolderToCreditMap storage map) internal view returns (Holder[] memory nodes){
+    function keys(HolderToCreditMap storage map) internal view returns (Holder[] memory nodes) {
         uint256[] memory values = EnumerableMap.keys(map.inner);
         nodes = new Holder[](values.length);
         uint256 loops = values.length;

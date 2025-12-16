@@ -22,15 +22,15 @@
 
 pragma solidity ^0.8.24;
 
-import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
-import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
+import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
-import { NodeId } from "@skalenetwork/fair-manager-interfaces/INodes.sol";
-import { IStaking } from "@skalenetwork/fair-manager-interfaces/IStaking.sol";
-import { Fair, Timestamp } from "@skalenetwork/fair-manager-interfaces/units.sol";
+import {NodeId} from "@skalenetwork/fair-manager-interfaces/INodes.sol";
+import {IStaking} from "@skalenetwork/fair-manager-interfaces/IStaking.sol";
+import {Fair, Timestamp} from "@skalenetwork/fair-manager-interfaces/units.sol";
 
-import { MAX_ITERATIONS } from "./constants.sol";
-import { FundLibrary } from "./Fund.sol";
+import {MAX_ITERATIONS} from "./constants.sol";
+import {FundLibrary} from "./Fund.sol";
 
 /**
  * @title Exit Queue Library
@@ -38,7 +38,7 @@ import { FundLibrary } from "./Fund.sol";
  * @author Dmytro Stebaiev
  * @notice Manages delayed retrieval of staked tokens
  */
-library ExitQueueLibrary{
+library ExitQueueLibrary {
     using EnumerableSet for EnumerableSet.UintSet;
 
     /// @notice Stores exit request data for a specific user
@@ -69,11 +69,7 @@ library ExitQueueLibrary{
      */
 
     event RequestCreated(
-        address indexed user,
-        uint256 indexed requestId,
-        NodeId indexed nodeId,
-        Fair amount,
-        Timestamp unlockDate
+        address indexed user, uint256 indexed requestId, NodeId indexed nodeId, Fair amount, Timestamp unlockDate
     );
 
     /**
@@ -85,11 +81,7 @@ library ExitQueueLibrary{
      * @param claimDate The timestamp when the request was claimed
      */
     event RequestClaimed(
-        address indexed user,
-        uint256 indexed requestId,
-        NodeId indexed nodeId,
-        Fair amount,
-        Timestamp claimDate
+        address indexed user, uint256 indexed requestId, NodeId indexed nodeId, Fair amount, Timestamp claimDate
     );
 
     /// @dev The request with the given ID does not exist
@@ -116,14 +108,7 @@ library ExitQueueLibrary{
      * @param nodeId The node identifier
      * @param amount The amount of tokens to exit
      */
-    function createRequest(
-        ExitQueue storage queue,
-        address user,
-        NodeId nodeId,
-        Fair amount
-    )
-        internal
-    {
+    function createRequest(ExitQueue storage queue, address user, NodeId nodeId, Fair amount) internal {
         if (amount == FundLibrary.ZERO_FAIR) {
             return;
         }
@@ -133,19 +118,9 @@ library ExitQueueLibrary{
         assert(userData.requestIds.add(requestId));
         assert(queue.exitRequests[requestId].user == address(0));
         queue.exitRequests[requestId] = IStaking.ExitRequest({
-            requestId: requestId,
-            user: user,
-            nodeId: nodeId,
-            amount: amount,
-            unlockDate: unlockDate
+            requestId: requestId, user: user, nodeId: nodeId, amount: amount, unlockDate: unlockDate
         });
-        emit RequestCreated({
-            user: user,
-            requestId: requestId,
-            nodeId: nodeId,
-            amount: amount,
-            unlockDate: unlockDate
-        });
+        emit RequestCreated({user: user, requestId: requestId, nodeId: nodeId, amount: amount, unlockDate: unlockDate});
         ++queue.numRequests;
         userData.totalLeaving = userData.totalLeaving + amount;
         queue.totalInExitQueue = queue.totalInExitQueue + amount;
@@ -162,10 +137,7 @@ library ExitQueueLibrary{
         IStaking.ExitRequest storage request = getRequest(queue, id);
 
         require(request.user == user, RequestDoesNotExistForUser(user, id));
-        require(
-            _isRequestUnlocked(request),
-            RequestIsStillLocked(Timestamp.wrap(block.timestamp), request.unlockDate)
-        );
+        require(_isRequestUnlocked(request), RequestIsStillLocked(Timestamp.wrap(block.timestamp), request.unlockDate));
 
         amount = request.amount;
         UserExitData storage userData = queue.userExitData[user];
@@ -265,7 +237,7 @@ library ExitQueueLibrary{
         for (uint256 i = from; i < end; ++i) {
             uint256 id = userData.requestIds.at(i);
             IStaking.ExitRequest storage req = queue.exitRequests[id];
-            if(_isRequestUnlocked(req)){
+            if (_isRequestUnlocked(req)) {
                 return req;
             }
         }
@@ -289,7 +261,7 @@ library ExitQueueLibrary{
      * @param request The exit request to check
      * @return isUnlocked True if the request is unlocked
      */
-    function _isRequestUnlocked(IStaking.ExitRequest storage request) private view returns (bool isUnlocked){
+    function _isRequestUnlocked(IStaking.ExitRequest storage request) private view returns (bool isUnlocked) {
         return request.unlockDate < Timestamp.wrap(block.timestamp);
     }
 }

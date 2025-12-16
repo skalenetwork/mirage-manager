@@ -70,7 +70,6 @@ interface IRBTTest {
  * @notice Red-Black Tree testing contract
  */
 contract RBTTest is StdInvariant, Test, IRBTTest {
-
     /// @inheritdoc IRBTTest
     RedBlackTreeTester public rbt;
 

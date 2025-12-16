@@ -21,7 +21,7 @@
 
 pragma solidity ^0.8.24;
 
-import { Committee, ICommittee, NodeId, TypedSet } from "../Committee.sol";
+import {Committee, ICommittee, NodeId, TypedSet} from "../Committee.sol";
 
 /**
  * @title ICommitteeTester
@@ -56,5 +56,4 @@ contract CommitteeTester is Committee, ICommitteeTester {
     function isNodeInRBTree(NodeId node) external view override returns (bool result) {
         return _pool.presentNodes.contains(node);
     }
-
 }

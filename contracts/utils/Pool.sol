@@ -22,11 +22,11 @@
 
 pragma solidity ^0.8.24;
 
-import { NodeId } from "@skalenetwork/fair-manager-interfaces/INodes.sol";
-import { IStatus } from "@skalenetwork/fair-manager-interfaces/IStatus.sol";
-import { RedBlackTree } from "../structs/RedBlackTree.sol";
-import { TypedSet } from "../structs/typed/TypedSet.sol";
-import { IRandom, Random } from "./Random.sol";
+import {NodeId} from "@skalenetwork/fair-manager-interfaces/INodes.sol";
+import {IStatus} from "@skalenetwork/fair-manager-interfaces/IStatus.sol";
+import {RedBlackTree} from "../structs/RedBlackTree.sol";
+import {TypedSet} from "../structs/typed/TypedSet.sol";
+import {IRandom, Random} from "./Random.sol";
 
 /**
  * @title Pool Library
@@ -43,7 +43,7 @@ library PoolLibrary {
 
     /// @notice Pool data structure with weighted tree and incoming nodes
     struct Pool {
-        mapping (NodeId id => RedBlackTree.Node node) tree;
+        mapping(NodeId id => RedBlackTree.Node node) tree;
         NodeId root;
         TypedSet.NodeIdSet presentNodes;
         TypedSet.NodeIdSet incomingNodes;
@@ -55,10 +55,7 @@ library PoolLibrary {
      * @param needed The number of nodes needed
      * @param available The number of nodes available
      */
-    error TooFewCandidates(
-        uint256 needed,
-        uint256 available
-    );
+    error TooFewCandidates(uint256 needed, uint256 available);
 
     /**
      * @notice Adds a node to the incoming pool (waiting heartbeat)
@@ -140,11 +137,7 @@ library PoolLibrary {
      * @param node The node ID to update
      * @param weight The new weight value
      */
-    function setWeight(
-        Pool storage pool,
-        NodeId node,
-        uint256 weight
-    ) internal {
+    function setWeight(Pool storage pool, NodeId node, uint256 weight) internal {
         if (pool.presentNodes.contains(node)) {
             pool.tree.setWeight(node, weight);
         }

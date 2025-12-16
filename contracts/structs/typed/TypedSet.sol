@@ -21,8 +21,8 @@
  */
 pragma solidity ^0.8.24;
 
-import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
-import { NodeId } from "@skalenetwork/fair-manager-interfaces/INodes.sol";
+import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+import {NodeId} from "@skalenetwork/fair-manager-interfaces/INodes.sol";
 
 /**
  * @title TypedSet Library
@@ -32,7 +32,6 @@ import { NodeId } from "@skalenetwork/fair-manager-interfaces/INodes.sol";
  * @dev Implements strongly-typed sets for NodeId to prevent type confusion and improve code safety and readability.
  */
 library TypedSet {
-
     /// @notice Set of NodeIds with enumeration support
     struct NodeIdSet {
         EnumerableSet.UintSet inner;

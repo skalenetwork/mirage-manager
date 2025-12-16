@@ -25,15 +25,13 @@ pragma solidity ^0.8.24;
 import {
     AccessManagedUpgradeable
 } from "@openzeppelin/contracts-upgradeable/access/manager/AccessManagedUpgradeable.sol";
-import {
-    Address
-} from "@openzeppelin/contracts/utils/Address.sol";
+import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 
 import {INodes, NodeId} from "@skalenetwork/fair-manager-interfaces/INodes.sol";
 import {IRewardWallet} from "@skalenetwork/fair-manager-interfaces/IRewardWallet.sol";
 import {IStaking} from "@skalenetwork/fair-manager-interfaces/IStaking.sol";
 
-import { InvalidNodesAddress, InvalidStakingAddress } from "./utils/errors.sol";
+import {InvalidNodesAddress, InvalidStakingAddress} from "./utils/errors.sol";
 
 /**
  * @title RewardWallet
@@ -67,11 +65,8 @@ contract RewardWallet is AccessManagedUpgradeable, IRewardWallet {
     }
 
     /// @dev Ensures that receiving value wouldn't exceed the stake limit
-    modifier onlyWithinStakeLimit(){
-        require(
-            staking.isWithinStakeLimit(ownerNode),
-            ValueExceedsStakeLimit()
-        );
+    modifier onlyWithinStakeLimit() {
+        require(staking.isWithinStakeLimit(ownerNode), ValueExceedsStakeLimit());
         _;
     }
 
@@ -124,13 +119,11 @@ contract RewardWallet is AccessManagedUpgradeable, IRewardWallet {
                 // by Staking contract so the warning is false positive
                 // slither-disable-next-line arbitrary-send-eth
                 staking.payReward{value: address(this).balance}(ownerNode);
-            }
-            else {
+            } else {
                 // Rewards are sent as network rewards
                 // This is a failsafe mechanism, it's expected to never happen under normal conditions
                 payable(staking).sendValue(address(this).balance);
             }
-
         }
     }
 

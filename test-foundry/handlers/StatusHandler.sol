@@ -29,8 +29,6 @@ import {Duration, NodeId, Status} from "../../contracts/Status.sol";
 
 import {Test} from "../../lib/forge-std/src/Test.sol";
 
-
-
 /**
  * @title IStatusHandler
  * @author Eduardo Vasques
@@ -85,13 +83,13 @@ interface IStatusHandler {
      */
     function admin() external view returns (address admin);
 }
+
 /**
  * @title Status Handler
  * @author Eduardo Vasques
  * @notice Handler contract for testing the Status contract
  */
 contract StatusHandler is Test, IStatusHandler {
-
     /// @notice Precision constant for gas estimation calculations
     uint256 public constant PRECISION = 1_000_000_000_000_000_000;
 
@@ -206,14 +204,7 @@ contract StatusHandler is Test, IStatusHandler {
      * @return sample The random sample array
      * @dev `n` intentionally allows to control the subset of fixtureNode being sampled from
      */
-    function _getRandomSample(
-        uint256 x,
-        uint256 n
-    )
-        private
-        view
-        returns (uint256[] memory sample)
-    {
+    function _getRandomSample(uint256 x, uint256 n) private view returns (uint256[] memory sample) {
         // Handle edge cases
         if (x == 0) {
             return new uint256[](0);
@@ -287,7 +278,7 @@ contract StatusHandler is Test, IStatusHandler {
         uint256 ln10Scaled = 2_302_585_092_994_045_684;
 
         // WAD constant (10**18)
-        uint256 scaleWAD = 10**18;
+        uint256 scaleWAD = 10 ** 18;
 
         // No real improvements possible here
         // solhint-disable-next-line gas-strict-inequalities

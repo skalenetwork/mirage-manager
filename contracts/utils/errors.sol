@@ -22,7 +22,7 @@
 
 pragma solidity ^0.8.24;
 
-import { NodeId } from "@skalenetwork/fair-manager-interfaces/INodes.sol";
+import {NodeId} from "@skalenetwork/fair-manager-interfaces/INodes.sol";
 
 /*
  * Central file for error messages used across the project

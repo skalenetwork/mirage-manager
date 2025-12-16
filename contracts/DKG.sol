@@ -33,7 +33,7 @@ import {INodes, NodeId} from "@skalenetwork/fair-manager-interfaces/INodes.sol";
 
 import {TypedMap} from "./structs/typed/TypedMap.sol";
 import {TypedSet} from "./structs/typed/TypedSet.sol";
-import { InvalidCommitteeAddress, InvalidNodesAddress } from "./utils/errors.sol";
+import {InvalidCommitteeAddress, InvalidNodesAddress} from "./utils/errors.sol";
 import {G2Operations} from "./utils/fieldOperations/G2Operations.sol";
 
 /**
@@ -82,10 +82,7 @@ contract DKG is AccessManagedUpgradeable, IDkg {
      * @param secretKeyContribution The encrypted secret key shares for other nodes
      */
     event BroadcastAndKeyShare(
-        DkgId dkg,
-        NodeId indexed node,
-        G2Point[] verificationVector,
-        KeyShare[] secretKeyContribution
+        DkgId dkg, NodeId indexed node, G2Point[] verificationVector, KeyShare[] secretKeyContribution
     );
 
     /**
@@ -93,18 +90,13 @@ contract DKG is AccessManagedUpgradeable, IDkg {
      * @param dkg The DKG round ID
      * @param node The node that confirmed all data received
      */
-    event AllDataReceived(
-        DkgId dkg,
-        NodeId indexed node
-    );
+    event AllDataReceived(DkgId dkg, NodeId indexed node);
 
     /**
      * @notice Emitted when a DKG round completes successfully
      * @param dkg The DKG round ID that succeeded
      */
-    event SuccessfulDkg(
-        DkgId dkg
-    );
+    event SuccessfulDkg(DkgId dkg);
 
     /**
      * @notice Emitted when a new DKG round is created
@@ -137,20 +129,14 @@ contract DKG is AccessManagedUpgradeable, IDkg {
      * @param actual The actual number of elements provided
      * @param expected The expected number of elements (threshold t)
      */
-    error IncorrectVerificationsVectorQuantity(
-        uint256 actual,
-        uint256 expected
-    );
+    error IncorrectVerificationsVectorQuantity(uint256 actual, uint256 expected);
 
     /**
      * @notice Incorrect number of secret key contribution shares
      * @param actual The actual number of shares provided
      * @param expected The expected number of shares (n participants)
      */
-    error IncorrectSecretKeyContributionQuantity(
-        uint256 actual,
-        uint256 expected
-    );
+    error IncorrectSecretKeyContributionQuantity(uint256 actual, uint256 expected);
 
     /**
      * @notice A node ID appears more than once in the participant list
@@ -266,7 +252,11 @@ contract DKG is AccessManagedUpgradeable, IDkg {
         DkgId dkg,
         G2Point[] calldata verificationVector,
         KeyShare[] calldata secretKeyContribution
-    ) external onlyBroadcastingDkg(dkg) override {
+    )
+        external
+        override
+        onlyBroadcastingDkg(dkg)
+    {
         uint256 n = _rounds[dkg].nodes.length();
         uint256 t = _getT(n);
         // The verificationVector length should be strictly equal to t
@@ -277,8 +267,7 @@ contract DKG is AccessManagedUpgradeable, IDkg {
         // disable the warning because of false positive
         // slither-disable-next-line incorrect-equality
         require(
-            secretKeyContribution.length == n,
-            IncorrectSecretKeyContributionQuantity(secretKeyContribution.length, n)
+            secretKeyContribution.length == n, IncorrectSecretKeyContributionQuantity(secretKeyContribution.length, n)
         );
         NodeId node = nodes.getNodeId(msg.sender);
         RoundData storage round = _rounds[dkg];
@@ -290,18 +279,13 @@ contract DKG is AccessManagedUpgradeable, IDkg {
 
         // false-positive: No real improvement in gas from replacing non-strict inequality
         // solhint-disable-next-line gas-strict-inequalities
-        if ( round.hashedData.length() >= n ) {
+        if (round.hashedData.length() >= n) {
             round.status = Status.ALRIGHT;
         }
 
         _contributeToPublicKey(round, verificationVector[0]);
 
-        emit BroadcastAndKeyShare(
-            dkg,
-            node,
-            verificationVector,
-            secretKeyContribution
-        );
+        emit BroadcastAndKeyShare(dkg, node, verificationVector, secretKeyContribution);
     }
 
     /**

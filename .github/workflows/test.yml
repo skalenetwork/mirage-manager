@@ -26,6 +26,9 @@ jobs:
         node-version: ${{ matrix.node-version }}
         cache: 'yarn'
 
+    - name: Install Foundry
+      uses: foundry-rs/foundry-toolchain@v1
+
     - name: Install project
       run: yarn install
 
@@ -51,6 +54,14 @@ jobs:
         else
           echo "✅ Documentation is up to date!"
         fi
+
+    - name: Solidity format check
+      run: |
+        forge fmt --check \
+        || { \
+          echo "Format check failed. Run 'forge fmt' and commit the changes."; \
+          exit 1; \
+        }
 
     - name: Slither
       uses: crytic/slither-action@v0.4.1

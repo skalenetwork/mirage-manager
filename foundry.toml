@@ -22,3 +22,9 @@ fail_on_revert = true
 corpus_dir = ".foundry-cache/invariant"
 shrink_run_limit = 2000
 show_solidity = true
+
+
+[fmt]
+ignore = ["contracts/hardhat-dependency-compiler/**/*.sol"]
+multiline_func_header = "all" # Solidity recommended
+single_line_statement_blocks = "multi"
